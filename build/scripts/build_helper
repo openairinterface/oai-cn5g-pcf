@@ -39,8 +39,9 @@ case "$OS_DISTRO" in
 esac
 
 IS_CONTAINER=`egrep -c "docker|podman|kubepods|libpod|buildah" /proc/self/cgroup || true`
+IS_DOCKERBUILD=${IS_DOCKERFILE:-0}
 
-if [ $IS_CONTAINER -eq 0 ]
+if [ $IS_CONTAINER -eq 0 ] && [ $IS_DOCKERBUILD -eq 0 ]
 then
   SUDO='sudo -S -E'
 else

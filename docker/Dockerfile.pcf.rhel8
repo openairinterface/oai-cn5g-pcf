@@ -32,6 +32,8 @@ FROM registry.access.redhat.com/ubi8/ubi:latest AS oai-pcf-builder
 
 ARG NEEDED_GIT_PROXY
 
+ENV IS_DOCKERFILE=1
+
 # Copy the entitlements
 COPY ./etc-pki-entitlement /etc/pki/entitlement
 
