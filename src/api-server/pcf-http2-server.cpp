@@ -52,14 +52,14 @@ void pcf_http2_server::start() {
   boost::system::error_code ec;
 
   Logger::pcf_sbi().info("HTTP2 server started");
-  std::string nfId = {};
+  std::string nfId           = {};
   std::string subscriptionID = {};
 
   // Get list of supported APIs
-  server.handle("/", [&](const request &request, const response &response) {
-    request.on_data([&](const uint8_t *data, std::size_t len) {
+  server.handle("/", [&](const request& request, const response& response) {
+    request.on_data([&](const uint8_t* data, std::size_t len) {
       if (request.method().compare("GET") == 0) {
-        //this->get_api_list(response);
+        // this->get_api_list(response);
       }
     });
   });
@@ -89,4 +89,6 @@ void pcf_http2_server::start() {
 //   }
 // }
 //------------------------------------------------------------------------------
-void pcf_http2_server::stop() { server.stop(); }
+void pcf_http2_server::stop() {
+  server.stop();
+}

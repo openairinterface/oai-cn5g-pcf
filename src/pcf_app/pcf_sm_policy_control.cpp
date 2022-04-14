@@ -45,7 +45,7 @@ using namespace oai::pcf::model;
 
 using namespace std;
 
-extern pcf_smpc *pcf_smpc_inst;
+extern pcf_smpc* pcf_smpc_inst;
 extern pcf_config pcf_cfg;
 pcf_client* pcf_client_instance = nullptr;
 

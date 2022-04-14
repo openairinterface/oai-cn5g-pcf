@@ -60,7 +60,7 @@ namespace oai::pcf::config {
 // int pcf_config::execute() { return RETURNok; }
 
 //------------------------------------------------------------------------------
-int pcf_config::load_interface(const Setting &if_cfg, interface_cfg_t &cfg) {
+int pcf_config::load_interface(const Setting& if_cfg, interface_cfg_t& cfg) {
   if_cfg.lookupValue(PCF_CONFIG_STRING_INTERFACE_NAME, cfg.if_name);
   util::trim(cfg.if_name);
   if (not boost::iequals(cfg.if_name, "none")) {
@@ -68,23 +68,23 @@ int pcf_config::load_interface(const Setting &if_cfg, interface_cfg_t &cfg) {
     if_cfg.lookupValue(PCF_CONFIG_STRING_IPV4_ADDRESS, address);
     util::trim(address);
     if (boost::iequals(address, "read")) {
-      if (get_inet_addr_infos_from_iface(cfg.if_name, cfg.addr4, cfg.network4,
-                                         cfg.mtu)) {
+      if (get_inet_addr_infos_from_iface(
+              cfg.if_name, cfg.addr4, cfg.network4, cfg.mtu)) {
         Logger::pcf_app().error(
             "Could not read %s network interface configuration", cfg.if_name);
         return RETURNerror;
       }
     } else {
       std::vector<std::string> words;
-      boost::split(words, address, boost::is_any_of("/"),
-                   boost::token_compress_on);
+      boost::split(
+          words, address, boost::is_any_of("/"), boost::token_compress_on);
       if (words.size() != 2) {
-        Logger::pcf_app().error("Bad value " PCF_CONFIG_STRING_IPV4_ADDRESS
-                                 " = %s in config file",
-                                 address.c_str());
+        Logger::pcf_app().error(
+            "Bad value " PCF_CONFIG_STRING_IPV4_ADDRESS " = %s in config file",
+            address.c_str());
         return RETURNerror;
       }
-      unsigned char buf_in_addr[sizeof(struct in6_addr)]; // you never know...
+      unsigned char buf_in_addr[sizeof(struct in6_addr)];  // you never know...
       if (inet_pton(AF_INET, util::trim(words.at(0)).c_str(), buf_in_addr) ==
           1) {
         memcpy(&cfg.addr4, buf_in_addr, sizeof(struct in_addr));
@@ -95,9 +95,9 @@ int pcf_config::load_interface(const Setting &if_cfg, interface_cfg_t &cfg) {
             util::trim(words.at(0)).c_str());
         return RETURNerror;
       }
-      cfg.network4.s_addr =
-          htons(ntohs(cfg.addr4.s_addr) &
-                0xFFFFFFFF << (32 - std::stoi(util::trim(words.at(1)))));
+      cfg.network4.s_addr = htons(
+          ntohs(cfg.addr4.s_addr) &
+          0xFFFFFFFF << (32 - std::stoi(util::trim(words.at(1)))));
     }
     if_cfg.lookupValue(PCF_CONFIG_STRING_SBI_PORT_HTTP1, cfg.http1_port);
     if_cfg.lookupValue(PCF_CONFIG_STRING_SBI_PORT_HTTP2, cfg.http2_port);
@@ -106,7 +106,7 @@ int pcf_config::load_interface(const Setting &if_cfg, interface_cfg_t &cfg) {
 }
 
 //------------------------------------------------------------------------------
-int pcf_config::load(const string &config_file) {
+int pcf_config::load(const string& config_file) {
   Config cfg;
   unsigned char buf_in_addr[sizeof(struct in_addr) + 1];
   unsigned char buf_in6_addr[sizeof(struct in6_addr) + 1];
@@ -114,67 +114,69 @@ int pcf_config::load(const string &config_file) {
   // Read the file. If there is an error, report it and exit.
   try {
     cfg.readFile(config_file.c_str());
-  } catch (const FileIOException &fioex) {
-    Logger::pcf_app().error("I/O error while reading file %s - %s",
-                             config_file.c_str(), fioex.what());
+  } catch (const FileIOException& fioex) {
+    Logger::pcf_app().error(
+        "I/O error while reading file %s - %s", config_file.c_str(),
+        fioex.what());
     throw;
-  } catch (const ParseException &pex) {
-    Logger::pcf_app().error("Parse error at %s:%d - %s", pex.getFile(),
-                             pex.getLine(), pex.getError());
+  } catch (const ParseException& pex) {
+    Logger::pcf_app().error(
+        "Parse error at %s:%d - %s", pex.getFile(), pex.getLine(),
+        pex.getError());
     throw;
   }
 
-  const Setting &root = cfg.getRoot();
+  const Setting& root = cfg.getRoot();
 
   try {
-    const Setting &pcf_cfg = root[PCF_CONFIG_STRING_PCF_CONFIG];
-  } catch (const SettingNotFoundException &nfex) {
+    const Setting& pcf_cfg = root[PCF_CONFIG_STRING_PCF_CONFIG];
+  } catch (const SettingNotFoundException& nfex) {
     Logger::pcf_app().error("%s : %s", nfex.what(), nfex.getPath());
     return RETURNerror;
   }
 
-  const Setting &pcf_cfg = root[PCF_CONFIG_STRING_PCF_CONFIG];
+  const Setting& pcf_cfg = root[PCF_CONFIG_STRING_PCF_CONFIG];
 
   try {
     pcf_cfg.lookupValue(PCF_CONFIG_STRING_FQDN, fqdn);
     util::trim(fqdn);
-  } catch (const SettingNotFoundException &nfex) {
-    Logger::pcf_app().info("%s : %s, No FQDN configured", nfex.what(),
-                            nfex.getPath());
+  } catch (const SettingNotFoundException& nfex) {
+    Logger::pcf_app().info(
+        "%s : %s, No FQDN configured", nfex.what(), nfex.getPath());
   }
 
   try {
-    const Setting &nw_if_cfg = pcf_cfg[PCF_CONFIG_STRING_INTERFACES];
+    const Setting& nw_if_cfg = pcf_cfg[PCF_CONFIG_STRING_INTERFACES];
 
-    const Setting &sbi_cfg = nw_if_cfg[PCF_CONFIG_STRING_SBI_INTERFACE];
+    const Setting& sbi_cfg = nw_if_cfg[PCF_CONFIG_STRING_SBI_INTERFACE];
     load_interface(sbi_cfg, sbi);
 
     sbi_cfg.lookupValue(PCF_CONFIG_STRING_API_VERSION, sbi_api_version);
-  } catch (const SettingNotFoundException &nfex) {
+  } catch (const SettingNotFoundException& nfex) {
     Logger::pcf_app().error("%s : %s", nfex.what(), nfex.getPath());
     return RETURNerror;
   }
-    // Support features
-    try {
-      const Setting& support_features =
-          pcf_cfg[PCF_CONFIG_STRING_SUPPORT_FEATURES];
-      string opt;
-      unsigned int httpVersion = {0};
-      support_features.lookupValue(
-          PCF_CONFIG_STRING_SUPPORT_FEATURES_REGISTER_NRF, opt);
-      if (boost::iequals(opt, "yes")) {
-        pcf_features.register_nrf = true;
-      } else {
-        pcf_features.register_nrf = false;
-      }
+  // Support features
+  try {
+    const Setting& support_features =
+        pcf_cfg[PCF_CONFIG_STRING_SUPPORT_FEATURES];
+    string opt;
+    unsigned int httpVersion = {0};
+    support_features.lookupValue(
+        PCF_CONFIG_STRING_SUPPORT_FEATURES_REGISTER_NRF, opt);
+    if (boost::iequals(opt, "yes")) {
+      pcf_features.register_nrf = true;
+    } else {
+      pcf_features.register_nrf = false;
+    }
 
-      support_features.lookupValue(
-          PCF_CONFIG_STRING_SUPPORT_FEATURES_USE_FQDN_DNS, opt);
-      if (boost::iequals(opt, "yes")) {
-        pcf_features.use_fqdn = true;
-      } else {
-        pcf_features.use_fqdn = false;
-      }
+    support_features.lookupValue(
+        PCF_CONFIG_STRING_SUPPORT_FEATURES_USE_FQDN_DNS, opt);
+    if (boost::iequals(opt, "yes")) {
+      pcf_features.use_fqdn = true;
+    } else {
+      pcf_features.use_fqdn = false;
+    }
 
     support_features.lookupValue(
         PCF_CONFIG_STRING_SUPPORT_FEATURES_USE_HTTP2, opt);
@@ -184,11 +186,11 @@ int pcf_config::load(const string &config_file) {
       pcf_features.use_http2 = false;
     }
 
-    } catch (const SettingNotFoundException& nfex) {
-      Logger::pcf_app().error(
-          "%s : %s, using defaults", nfex.what(), nfex.getPath());
-      return -1;
-    }
+  } catch (const SettingNotFoundException& nfex) {
+    Logger::pcf_app().error(
+        "%s : %s, using defaults", nfex.what(), nfex.getPath());
+    return -1;
+  }
   try {
     string astring = {};
 
@@ -251,20 +253,18 @@ int pcf_config::load(const string &config_file) {
 
 //------------------------------------------------------------------------------
 void pcf_config::display() {
-  Logger::pcf_app().info("==== OPENAIRINTERFACE %s v%s ====", PACKAGE_NAME,
-                          PACKAGE_VERSION);
+  Logger::pcf_app().info(
+      "==== OPENAIRINTERFACE %s v%s ====", PACKAGE_NAME, PACKAGE_VERSION);
   Logger::pcf_app().info("Configuration:");
   Logger::pcf_app().info("- FQDN ..................: %s", fqdn.c_str());
   Logger::pcf_app().info("- SBI:");
   Logger::pcf_app().info("    iface ............: %s", sbi.if_name.c_str());
   Logger::pcf_app().info("    ipv4.addr ........: %s", inet_ntoa(sbi.addr4));
-  Logger::pcf_app().info("    ipv4.mask ........: %s",
-                          inet_ntoa(sbi.network4));
+  Logger::pcf_app().info("    ipv4.mask ........: %s", inet_ntoa(sbi.network4));
   Logger::pcf_app().info("    mtu ..............: %d", sbi.mtu);
   Logger::pcf_app().info("    http1_port .......: %u", sbi.http1_port);
   Logger::pcf_app().info("    http2_port .......: %u", sbi.http2_port);
-  Logger::pcf_app().info("    api_version ......: %s",
-                          sbi_api_version.c_str());
+  Logger::pcf_app().info("    api_version ......: %s", sbi_api_version.c_str());
   if (pcf_features.register_nrf) {
     Logger::pcf_app().info("- NRF:");
     Logger::pcf_app().info(
@@ -282,11 +282,9 @@ void pcf_config::display() {
       "    Register to NRF........: %s",
       pcf_features.register_nrf ? "Yes" : "No");
   Logger::pcf_app().info(
-      "    Use FQDN ..............: %s",
-      pcf_features.use_fqdn ? "Yes" : "No");
+      "    Use FQDN ..............: %s", pcf_features.use_fqdn ? "Yes" : "No");
   Logger::pcf_app().info(
       "    Use HTTP2..............: %s", pcf_features.use_http2 ? "Yes" : "No");
-  
 }
 
 //------------------------------------------------------------------------------
@@ -307,7 +305,8 @@ void pcf_config::display() {
 //         {"URI Path",
 //          "/npcf-nsselection/<api_version>/network-slice-information"},
 //         {"Details",
-//          "Retrieve the Network Slice Selection Information (PDU Session)"}}}};
+//          "Retrieve the Network Slice Selection Information (PDU
+//          Session)"}}}};
 //   return true;
 // }
 //------------------------------------------------------------------------------

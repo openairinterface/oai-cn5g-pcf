@@ -174,7 +174,7 @@ typedef struct nf_service_s {
 
 // for CURL
 #define NF_CURL_TIMEOUT_MS 100L
-#define MAX_WAIT_MSECS 10000 // 1 second
+#define MAX_WAIT_MSECS 10000  // 1 second
 #define AMF_NUMBER_RETRIES 3
 #define UDM_NUMBER_RETRIES 3
 

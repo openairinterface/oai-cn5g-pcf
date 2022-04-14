@@ -45,23 +45,22 @@ using namespace oai::pcf::model;
 using namespace oai::pcf::app;
 
 class pcf_http2_server {
-public:
-  pcf_http2_server(std::string addr, uint32_t port,
-                    pcf_app *pcf_app_inst)
+ public:
+  pcf_http2_server(std::string addr, uint32_t port, pcf_app* pcf_app_inst)
       : m_address(addr), m_port(port), server(), m_pcf_app(pcf_app_inst) {}
   void start();
   void init(size_t thr) {}
 
-  // PCF 
+  // PCF
 
   void stop();
 
-private:
+ private:
   util::uint_generator<uint32_t> m_promise_id_generator;
   std::string m_address;
   uint32_t m_port;
   http2 server;
-  pcf_app *m_pcf_app;
+  pcf_app* m_pcf_app;
 };
 
 #endif

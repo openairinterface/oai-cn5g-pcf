@@ -46,12 +46,13 @@ using namespace oai::pcf::model;
 
 using namespace std;
 
-extern pcf_app *pcf_app_inst;
+extern pcf_app* pcf_app_inst;
 extern pcf_config pcf_cfg;
-pcf_nrf *pcf_nrf_inst;
+pcf_nrf* pcf_nrf_inst;
 
 //------------------------------------------------------------------------------
-pcf_app::pcf_app(const std::string& config_file, pcf_event& ev) : event_sub(ev) {
+pcf_app::pcf_app(const std::string& config_file, pcf_event& ev)
+    : event_sub(ev) {
   Logger::pcf_app().startup("Starting...");
   // Register to NRF
   if (pcf_cfg.pcf_features.register_nrf) {

@@ -48,7 +48,7 @@
 #include "logger.hpp"
 #include "pcf_app.hpp"
 
-//using namespace oai::pcf::api;
+// using namespace oai::pcf::api;
 using namespace oai::pcf::app;
 
 class PCFApiServer {
@@ -57,7 +57,6 @@ class PCFApiServer {
       : m_httpEndpoint(std::make_shared<Pistache::Http::Endpoint>(address)) {
     m_router  = std::make_shared<Pistache::Rest::Router>();
     m_address = address.host() + ":" + (address.port()).toString();
-
   }
   void init(size_t thr = 1);
   void start();
@@ -66,7 +65,6 @@ class PCFApiServer {
  private:
   std::shared_ptr<Pistache::Http::Endpoint> m_httpEndpoint;
   std::shared_ptr<Pistache::Rest::Router> m_router;
-
 
   std::string m_address;
 };

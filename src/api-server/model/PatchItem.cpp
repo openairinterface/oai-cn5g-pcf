@@ -39,7 +39,7 @@ using namespace std;
 namespace oai {
 namespace pcf {
 namespace model {
-  
+
 PatchItem::PatchItem() {
   m_Path       = "";
   m_From       = "";

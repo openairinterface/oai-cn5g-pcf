@@ -41,7 +41,7 @@
 #include <string>
 #include <unistd.h>
 
-//using namespace oai::pcf::model;
+// using namespace oai::pcf::model;
 
 #define PCF_CONFIG_STRING_PCF_CONFIG "PCF"
 #define PCF_CONFIG_STRING_FQDN "FQDN"
@@ -60,7 +60,7 @@
 #define PCF_CONFIG_STRING_ITTI_TASKS "ITTI_TASKS"
 #define PCF_CONFIG_STRING_ITTI_TIMER_SCHED_PARAMS "ITTI_TIMER_SCHED_PARAMS"
 #define PCF_CONFIG_STRING_SBI_SCHED_PARAMS "SBI_SCHED_PARAMS"
-        
+
 #define PCF_CONFIG_STRING_SUPPORT_FEATURES "SUPPORT_FEATURES"
 #define PCF_CONFIG_STRING_SUPPORT_FEATURES_REGISTER_NRF "REGISTER_NRF"
 #define PCF_CONFIG_STRING_NRF "NRF"
@@ -83,11 +83,11 @@ typedef struct interface_cfg_s {
 } interface_cfg_t;
 
 class pcf_config {
-protected:
-private:
-  int load_interface(const libconfig::Setting &if_cfg, interface_cfg_t &cfg);
+ protected:
+ private:
+  int load_interface(const libconfig::Setting& if_cfg, interface_cfg_t& cfg);
 
-public:
+ public:
   /* Reader/writer lock for this configuration */
   std::mutex m_rw_lock;
   std::string pid_dir;
@@ -135,12 +135,12 @@ public:
 
   void lock() { m_rw_lock.lock(); };
   void unlock() { m_rw_lock.unlock(); };
-  int load(const std::string &config_file);
+  int load(const std::string& config_file);
   int execute();
   void display();
 
   static bool parse_config();
 };
-} // namespace pcf
+}  // namespace oai::pcf::config
 
 #endif /* FILE_PCF_CONFIG_HPP_SEEN */

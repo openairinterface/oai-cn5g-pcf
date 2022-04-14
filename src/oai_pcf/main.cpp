@@ -32,7 +32,7 @@
 #include <signal.h>
 #include <stdint.h>
 #include <thread>
-#include <unistd.h> // get_pid(), pause()
+#include <unistd.h>  // get_pid(), pause()
 #include <vector>
 
 #include <boost/algorithm/string.hpp>
@@ -43,11 +43,11 @@ using namespace std;
 using namespace oai::pcf::app;
 using namespace oai::pcf::config;
 
-pcf_app *pcf_app_inst = nullptr;
+pcf_app* pcf_app_inst = nullptr;
 pcf_config pcf_cfg;
 boost::asio::io_service io_service;
-PCFApiServer *pcf_api_server_1 = nullptr;
-pcf_http2_server *pcf_api_server_2 = nullptr;
+PCFApiServer* pcf_api_server_1     = nullptr;
+pcf_http2_server* pcf_api_server_2 = nullptr;
 
 //------------------------------------------------------------------------------
 void my_app_signal_handler(int s) {
@@ -61,8 +61,7 @@ void my_app_signal_handler(int s) {
     pcf_api_server_1 = nullptr;
   }
   std::cout << "PCF API Server memory done." << std::endl;
-  if (pcf_app_inst)
-    delete pcf_app_inst;
+  if (pcf_app_inst) delete pcf_app_inst;
   pcf_app_inst = nullptr;
   std::cout << "PCF APP memory done." << std::endl;
   // if (itti_inst) delete itti_inst;
@@ -75,18 +74,19 @@ void my_app_signal_handler(int s) {
 // We are doing a check to see if an existing process already runs this program.
 // We have seen that running at least twice this program in a container may lead
 // to the container host to crash.
-int my_check_redundant_process(char *exec_name) {
-  FILE *fp;
-  char *cmd = new char[200];
+int my_check_redundant_process(char* exec_name) {
+  FILE* fp;
+  char* cmd = new char[200];
   std::vector<std::string> words;
-  int result = 0;
+  int result     = 0;
   size_t retSize = 0;
 
   // Retrieving only the executable name
   boost::split(words, exec_name, boost::is_any_of("/"));
   memset(cmd, 0, 200);
-  sprintf(cmd, "ps aux | grep -v grep | grep -v nohup | grep -c %s || true",
-          words[words.size() - 1].c_str());
+  sprintf(
+      cmd, "ps aux | grep -v grep | grep -v nohup | grep -c %s || true",
+      words[words.size() - 1].c_str());
   fp = popen(cmd, "r");
 
   // clearing the buffer
@@ -105,8 +105,7 @@ int my_check_redundant_process(char *exec_name) {
   return result;
 }
 //------------------------------------------------------------------------------
-int main(int argc, char **argv) {
-
+int main(int argc, char** argv) {
   // Checking if another instance of pcf is running
   int nb_processes = my_check_redundant_process(argv[0]);
   if (nb_processes > 1) {
@@ -131,7 +130,7 @@ int main(int argc, char **argv) {
   sigIntHandler.sa_flags = 0;
   sigaction(SIGINT, &sigIntHandler, NULL);
 
- // Event subsystem
+  // Event subsystem
   pcf_event ev;
 
   // Config
@@ -140,7 +139,7 @@ int main(int argc, char **argv) {
 
   // PCF application layer
   pcf_app_inst = new pcf_app(Options::getlibconfigConfig(), ev);
-  
+
   // Task Manager
   task_manager tm(ev);
   std::thread task_manager_thread(&task_manager::run, &tm);
@@ -149,31 +148,29 @@ int main(int argc, char **argv) {
   // Currently hard-coded value. TODO: add as config option.
   string pid_file_name = get_exe_absolute_path("/var/run", pcf_cfg.instance);
   if (!is_pid_file_lock_success(pid_file_name.c_str())) {
-    Logger::pcf_app().error("Lock PID file %s failed\n",
-                             pid_file_name.c_str());
+    Logger::pcf_app().error("Lock PID file %s failed\n", pid_file_name.c_str());
     exit(-EDEADLK);
   }
 
   // PCF Pistache API server (HTTP1)
   Pistache::Address addr(
-      std::string(inet_ntoa(*((struct in_addr *)&pcf_cfg.sbi.addr4))),
+      std::string(inet_ntoa(*((struct in_addr*) &pcf_cfg.sbi.addr4))),
       Pistache::Port(pcf_cfg.sbi.http1_port));
   pcf_api_server_1 = new PCFApiServer(addr, pcf_app_inst);
   pcf_api_server_1->init(2);
   std::thread pcf_http1_manager(&PCFApiServer::start, pcf_api_server_1);
 
   // PCF NGHTTP API server (HTTP2)
-  pcf_api_server_2 =
-      new pcf_http2_server(conv::toString(pcf_cfg.sbi.addr4),
-                            pcf_cfg.sbi.http2_port, pcf_app_inst);
+  pcf_api_server_2 = new pcf_http2_server(
+      conv::toString(pcf_cfg.sbi.addr4), pcf_cfg.sbi.http2_port, pcf_app_inst);
   std::thread pcf_http2_manager(&pcf_http2_server::start, pcf_api_server_2);
 
   pcf_http1_manager.join();
   pcf_http2_manager.join();
 
-  FILE *fp = NULL;
+  FILE* fp             = NULL;
   std::string filename = fmt::format("/tmp/pcf_{}.status", getpid());
-  fp = fopen(filename.c_str(), "w+");
+  fp                   = fopen(filename.c_str(), "w+");
   fprintf(fp, "STARTED\n");
   fflush(fp);
   fclose(fp);

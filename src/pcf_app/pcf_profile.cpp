@@ -368,7 +368,7 @@ void pcf_profile::display() const {
   Logger::pcf_app().debug("    Priority: %d", priority);
   Logger::pcf_app().debug("    Capacity: %d", capacity);
 
-    // SNSSAIs
+  // SNSSAIs
   if (snssais.size() > 0) {
     Logger::pcf_app().debug("    SNSSAI:");
   }
@@ -399,7 +399,7 @@ void pcf_profile::display() const {
   }
   for (auto dnn : pcf_info.dnn_list) {
     Logger::pcf_app().debug("\t\t DNN: %s", dnn.c_str());
-  }  
+  }
 }
 
 //------------------------------------------------------------------------------
@@ -437,10 +437,10 @@ void pcf_profile::to_json(nlohmann::json& data) const {
   data["custom_info"] = custom_info;
 
   // PCF info
-  data["pcfInfo"]["groupId"]                        = pcf_info.groupid;
-  data["pcfInfo"]["dnnList"]                        = nlohmann::json::array();
-  data["pcfInfo"]["supiRanges"]                     = nlohmann::json::array();
-  data["pcfInfo"]["gpsiRanges"]                     = nlohmann::json::array();
+  data["pcfInfo"]["groupId"]    = pcf_info.groupid;
+  data["pcfInfo"]["dnnList"]    = nlohmann::json::array();
+  data["pcfInfo"]["supiRanges"] = nlohmann::json::array();
+  data["pcfInfo"]["gpsiRanges"] = nlohmann::json::array();
 
   for (auto supi : pcf_info.supi_ranges) {
     nlohmann::json tmp = {};
@@ -525,8 +525,7 @@ void pcf_profile::from_json(const nlohmann::json& data) {
       pcf_info.groupid = info["groupId"].get<std::string>();
     }
     if (info.find("dnnList") != info.end()) {
-      nlohmann::json dnnList =
-          data["pcfInfo"]["dnnList"];
+      nlohmann::json dnnList = data["pcfInfo"]["dnnList"];
       for (auto d : dnnList) {
         pcf_info.dnn_list.push_back(d);
       }
@@ -550,10 +549,8 @@ void pcf_profile::from_json(const nlohmann::json& data) {
         gpsi.identity_range.pattern = d["pattern"];
         pcf_info.gpsi_ranges.push_back(gpsi);
       }
-    
-  // TODO: custom_info;
 
-
+      // TODO: custom_info;
     }
   }
 

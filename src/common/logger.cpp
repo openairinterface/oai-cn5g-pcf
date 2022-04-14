@@ -55,8 +55,8 @@ void Logger::_init(
 
   m_async_cmd = new _Logger("async_c  ", m_sinks, ss.str().c_str());
   m_itti      = new _Logger("itti     ", m_sinks, ss.str().c_str());
-  m_pcf_app  = new _Logger("pcf_app ", m_sinks, ss.str().c_str());
-  m_pcf_sbi  = new _Logger("pcf_sbi ", m_sinks, ss.str().c_str());
+  m_pcf_app   = new _Logger("pcf_app ", m_sinks, ss.str().c_str());
+  m_pcf_sbi   = new _Logger("pcf_sbi ", m_sinks, ss.str().c_str());
   m_system    = new _Logger("system   ", m_sinks, ss.str().c_str());
 }
 

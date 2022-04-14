@@ -69,14 +69,13 @@ void setUpUnixSignals(std::vector<int> quitSignals) {
 }
 #endif
 
-//using namespace oai::pcf::api;
+// using namespace oai::pcf::api;
 
 void PCFApiServer::init(size_t thr) {
   auto opts = Pistache::Http::Endpoint::options().threads(thr);
   opts.flags(Pistache::Tcp::Options::ReuseAddr);
   opts.maxRequestSize(PISTACHE_SERVER_MAX_PAYLOAD);
   m_httpEndpoint->init(opts);
-
 
   // Custom APIs
 }

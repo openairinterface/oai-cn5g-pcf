@@ -49,7 +49,7 @@
 namespace oai::pcf::app {
 
 class pcf_smpc {
-public:
+ public:
   explicit pcf_smpc();
   pcf_smpc(pcf_smpc const&) = delete;
   void operator=(pcf_smpc const&) = delete;
@@ -63,13 +63,13 @@ public:
    */
   void create_sm_policy_handler();
 
-    // void delete_sm_policy(const std::string &smPolicyId, const SmPolicyDeleteData &smPolicyDeleteData);
-    void get_sm_policy(const std::string &smPolicyId);
-    //void update_sm_policy(const std::string &smPolicyId, const SmPolicyUpdateContextData &smPolicyUpdateContextData);
+  // void delete_sm_policy(const std::string &smPolicyId, const
+  // SmPolicyDeleteData &smPolicyDeleteData);
+  void get_sm_policy(const std::string& smPolicyId);
+  // void update_sm_policy(const std::string &smPolicyId, const
+  // SmPolicyUpdateContextData &smPolicyUpdateContextData);
 
-  private:
-
-}; 
-}// namespace pcf
+ private:
+};
+}  // namespace oai::pcf::app
 #endif /* FILE_PCF_SM_POLICY_CONTROL_SEEN */
-

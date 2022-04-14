@@ -44,7 +44,7 @@
 namespace oai::pcf::app {
 
 class pcf_app {
-public:
+ public:
   explicit pcf_app(const std::string& config_file, pcf_event& ev);
   pcf_app(pcf_app const&) = delete;
   void operator=(pcf_app const&) = delete;
@@ -58,13 +58,12 @@ public:
    */
   void handle_create_sm_policy();
 
-  private:
-    pcf_profile nf_instance_profile;  // PCF profile
-    std::string pcf_instance_id;      // PCF instance id
-    // for Event Handling
-    pcf_event& event_sub;
-    bs2::connection task_connection;
-}; 
-}// namespace pcf
+ private:
+  pcf_profile nf_instance_profile;  // PCF profile
+  std::string pcf_instance_id;      // PCF instance id
+  // for Event Handling
+  pcf_event& event_sub;
+  bs2::connection task_connection;
+};
+}  // namespace oai::pcf::app
 #endif /* FILE_PCF_APP_HPP_SEEN */
-

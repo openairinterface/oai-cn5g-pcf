@@ -44,8 +44,8 @@
 
 // namespace oai {
 // namespace pcf {
-namespace oai::pcf::app{
-  
+namespace oai::pcf::app {
+
 using namespace std;
 class nf_profile : public std::enable_shared_from_this<nf_profile> {
  public:
@@ -457,7 +457,7 @@ class pcf_profile : public nf_profile {
 };
 
 // }  // namespace app
-}  // namespace pcf
+}  // namespace oai::pcf::app
 // }  // namespace oai
 
 #endif

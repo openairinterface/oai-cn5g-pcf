@@ -44,7 +44,7 @@
 namespace oai::pcf::app {
 
 class pcf_nrf {
-public:
+ public:
   explicit pcf_nrf(pcf_event& ev);
   pcf_nrf(pcf_nrf const&) = delete;
   void operator=(pcf_nrf const&) = delete;
@@ -83,7 +83,8 @@ public:
    * @param [void]
    * @return void
    */
-  void generate_pcf_profile(pcf_profile& pcf_nf_profile, std::string& pcf_instance_id);
+  void generate_pcf_profile(
+      pcf_profile& pcf_nf_profile, std::string& pcf_instance_id);
 
   /*
    * Send request to N11 task to trigger NF instance registration to NRF
@@ -98,13 +99,13 @@ public:
    * @return void
    */
   void trigger_nf_deregistration();
-  private:
-    pcf_profile nf_instance_profile;  // PCF profile
-    std::string pcf_instance_id;      // PCF instance id
-    // for Event Handling
-    pcf_event& event_sub;
-    bs2::connection task_connection;
-}; 
-}// namespace pcf
-#endif /* FILE_PCF_NRF_HPP_SEEN */
 
+ private:
+  pcf_profile nf_instance_profile;  // PCF profile
+  std::string pcf_instance_id;      // PCF instance id
+  // for Event Handling
+  pcf_event& event_sub;
+  bs2::connection task_connection;
+};
+}  // namespace oai::pcf::app
+#endif /* FILE_PCF_NRF_HPP_SEEN */

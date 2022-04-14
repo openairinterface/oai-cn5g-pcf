@@ -45,7 +45,7 @@ using namespace oai::pcf::model;
 
 using namespace std;
 
-extern pcf_nrf *pcf_nrf_inst;
+extern pcf_nrf* pcf_nrf_inst;
 extern pcf_config pcf_cfg;
 pcf_client* pcf_client_instance = nullptr;
 
@@ -61,7 +61,8 @@ void pcf_nrf::get_pcf_api_root(std::string& api_root) {
 }
 
 //---------------------------------------------------------------------------------------------
-void pcf_nrf::generate_pcf_profile (pcf_profile& pcf_nf_profile, std::string& pcf_instance_id) {
+void pcf_nrf::generate_pcf_profile(
+    pcf_profile& pcf_nf_profile, std::string& pcf_instance_id) {
   // TODO: remove hardcoded values
   // generate UUID
   pcf_nf_profile.set_nf_instance_id(pcf_instance_id);
