@@ -18,22 +18,22 @@
 # For more information about the OpenAirInterface (OAI) Software Alliance:
 #      contact@openairinterface.org
 ################################################################################
-cmake_minimum_required (VERSION 3.0.2)
+# Author: Stefan SPETTEL
+###############################################################################
 
-enable_testing()
+set(SRC_TOP_DIR /openair-pcf/src)
+set(TEST_TOP_DIR ${SRC_TOP_DIR}/../test)
 
-# Override options for PCF
-set (  PACKAGE_NAME                    "PCF" )
-set (  STATIC_LINKING                   False )
-#############################################
-# Base directories, compatible with legacy OAI building
-################################################
-set (OPENAIRCN_DIR   $ENV{OPENAIRCN_DIR})
-set (BUILD_TOP_DIR   ${OPENAIRCN_DIR}/build)
-set (SRC_TOP_DIR     $ENV{OPENAIRCN_DIR}/src)
+set(TESTDIR1 ${TEST_TOP_DIR}/sm_policy_control_api)
+set(TEST11 ${TESTDIR1}/collection_api_test)
 
-include(${CMAKE_CURRENT_SOURCE_DIR}/../../src/oai_pcf/CMakeLists.txt)
 
-ADD_SUBDIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/../../src/pcf_app ${CMAKE_CURRENT_BINARY_DIR}/pcf_app)
+include_directories(${SRC_TOP_DIR})
 
-ADD_SUBDIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/../../test ${CMAKE_CURRENT_BINARY_DIR}/pcf_tests)
+add_executable(run_unit_tests ${TEST_TOP_DIR}/run_unit_tests.cpp 
+${TEST11})
+target_link_libraries(run_unit_tests PCF PCF_API gtest pthread)
+
+ADD_SUBDIRECTORY(sm_policy_control_api)
+
+add_test(NAME test COMMAND run_unit_tests)
