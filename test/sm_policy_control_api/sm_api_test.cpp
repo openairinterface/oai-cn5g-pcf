@@ -39,8 +39,7 @@
 
 using namespace oai::pcf;
 
-
-extern config::pcf_config pcf_cfg; //defined in main
+extern config::pcf_config pcf_cfg;  // defined in main
 
 class SMApiTest : public ::testing::Test {
  protected:
@@ -57,8 +56,9 @@ class SMApiTest : public ::testing::Test {
 
     // PCF application layer
     pcf_app_inst = new pcf_app(pcf_config_path, ev);
-    
-    //hack to increment ports to prevent address already in use due to bad shutdown routine
+
+    // hack to increment ports to prevent address already in use due to bad
+    // shutdown routine
     int port = pcf_cfg.sbi.http1_port + port_inc;
     port_inc++;
     Pistache::Address addr(Pistache::Ipv4::any(), port);
@@ -72,16 +72,17 @@ class SMApiTest : public ::testing::Test {
   void TearDown() override {
     bool fail = false;
     if (pcf_api_server_1) {
-      //pistache has a race condition here when called too quickly after init
+      // pistache has a race condition here when called too quickly after init
       for (int i = 0; i < 5; i++) {
         try {
           pcf_api_server_1->shutdown();
         } catch (std::runtime_error e) {
-          std::cout << "Pistache invalid object state, try again after 500ms" << std::endl;
-          if (i==4)
-          {
-            fail =true;
-            std::cout << "Could not shutdown Pistache after 2 seconds. Fail" << std::endl;
+          std::cout << "Pistache invalid object state, try again after 500ms"
+                    << std::endl;
+          if (i == 4) {
+            fail = true;
+            std::cout << "Could not shutdown Pistache after 2 seconds. Fail"
+                      << std::endl;
           }
           std::this_thread::sleep_for(std::chrono::milliseconds(500ms));
         }
@@ -98,10 +99,8 @@ class SMApiTest : public ::testing::Test {
       delete pcf_app_inst;
       pcf_app_inst = nullptr;
     }
-    if (fail)
-    {
+    if (fail) {
       GTEST_SKIP();
     }
   }
 };
-

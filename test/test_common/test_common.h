@@ -19,14 +19,13 @@
  *      contact@openairinterface.org
  */
 
-/*! \file test_common.h 
+/*! \file test_common.h
  \brief
  \author  Stefan Spettel
  \company Openairinterface Software Allianse
  \date 2022
  \email: stefan.spettel@eurecom.fr
  */
-
 
 #ifndef FILE_COMMON_TEST_H_SEEN
 #define FILE_COMMON_TEST_H_SEEN
@@ -35,6 +34,5 @@
 
 extern std::string pcf_config_path;
 extern int port_inc;
-
 
 #endif
