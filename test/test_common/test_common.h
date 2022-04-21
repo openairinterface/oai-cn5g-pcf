@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file collection_api_test.cpp
+/*! \file test_common.h 
  \brief
  \author  Stefan Spettel
  \company Openairinterface Software Allianse
@@ -27,30 +27,14 @@
  \email: stefan.spettel@eurecom.fr
  */
 
-#include "gtest/gtest.h"
-#include "sm_api_test.cpp"
+
+#ifndef FILE_COMMON_TEST_H_SEEN
+#define FILE_COMMON_TEST_H_SEEN
+
 #include "pcf_config.hpp"
 
-TEST_F(SMApiTest, CreateNewSMPolicyAssociation) {
-  // TODO real test with REST client
-  const std::string a = "ASDF";
-  const std::string b = "ASDF";
+extern std::string pcf_config_path;
+extern int port_inc;
 
-  EXPECT_EQ(a, b);
-}
 
-TEST_F(SMApiTest, RemoveExistingSMPolicyAssociation) {
-  // TODO real test with REST client
-  const std::string a = "ASDF";
-  const std::string b = "fSDF";
-
-  EXPECT_NE(a, b);
-}
-
-TEST_F(SMApiTest, GetAllPolicyAssociationsEmpty) {
-  // TODO real test with REST client
-  const std::string a = "ASDF";
-  const std::string b = "fSDF";
-
-  EXPECT_NE(a, b);
-}
+#endif

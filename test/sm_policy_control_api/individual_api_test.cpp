@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file collection_api_test.cpp
+/*! \file individual_api_test.cpp
  \brief
  \author  Stefan Spettel
  \company Openairinterface Software Allianse
@@ -31,23 +31,7 @@
 #include "sm_api_test.cpp"
 #include "pcf_config.hpp"
 
-TEST_F(SMApiTest, CreateNewSMPolicyAssociation) {
-  // TODO real test with REST client
-  const std::string a = "ASDF";
-  const std::string b = "ASDF";
-
-  EXPECT_EQ(a, b);
-}
-
-TEST_F(SMApiTest, RemoveExistingSMPolicyAssociation) {
-  // TODO real test with REST client
-  const std::string a = "ASDF";
-  const std::string b = "fSDF";
-
-  EXPECT_NE(a, b);
-}
-
-TEST_F(SMApiTest, GetAllPolicyAssociationsEmpty) {
+TEST_F(SMApiTest, Test4) {
   // TODO real test with REST client
   const std::string a = "ASDF";
   const std::string b = "fSDF";
