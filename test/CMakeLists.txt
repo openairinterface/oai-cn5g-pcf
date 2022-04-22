@@ -31,6 +31,7 @@ set(TEST12 ${TESTDIR1}/individual_api_test)
 file(GLOB PCF_TEST_SRC_FILES
     ${TESTDIR1}/collection_api_test.cpp
     ${TESTDIR1}/individual_api_test.cpp
+    ${TEST_TOP_DIR}/test_common/*.cpp
 )
  
 

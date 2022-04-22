@@ -33,9 +33,15 @@
 #include "pcf_app.hpp"
 #include "pcf_config.hpp"
 #include "test_common.h"
+#include "test_rest_client.hpp"
+#include "PduSessionType_anyOf.h"
+#include "PduSessionType.h"
+#include "SmPolicyContextData.h"
 
 #include <thread>
 #include <chrono>
+#include <memory>
+#include <nlohmann/json.hpp>
 
 using namespace oai::pcf;
 
@@ -47,6 +53,9 @@ class SMApiTest : public ::testing::Test {
   PCFApiServer* pcf_api_server_1;
   app::pcf_app* pcf_app_inst = nullptr;
   std::thread pcf_http1_manager;
+  std::string base_url;
+
+  std::unique_ptr<TestRestClient> rest_client;
 
   void SetUp() override {
     pcf_event ev;
@@ -62,11 +71,15 @@ class SMApiTest : public ::testing::Test {
     int port = pcf_cfg.sbi.http1_port + port_inc;
     port_inc++;
     Pistache::Address addr(Pistache::Ipv4::any(), port);
+    base_url = fmt::format("127.0.0.1:{}/npcf-smpolicycontrol/v1/", port);
+
     pcf_api_server_1 = new PCFApiServer(addr, pcf_app_inst);
 
     pcf_api_server_1->init(2);
     std::thread temp_thread(&PCFApiServer::start, pcf_api_server_1);
     pcf_http1_manager.swap(temp_thread);
+
+    rest_client = std::make_unique<TestRestClient>();
   }
 
   void TearDown() override {
@@ -99,6 +112,11 @@ class SMApiTest : public ::testing::Test {
       delete pcf_app_inst;
       pcf_app_inst = nullptr;
     }
+
+    if (rest_client) {
+      rest_client = nullptr;
+    }
+
     if (fail) {
       GTEST_SKIP();
     }

@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file collection_api_test.cpp
+/*! \file test_rest_client.hpp
  \brief
  \author  Stefan Spettel
  \company Openairinterface Software Allianse
@@ -27,30 +27,34 @@
  \email: stefan.spettel@eurecom.fr
  */
 
-#include "gtest/gtest.h"
-#include "sm_api_test.cpp"
-#include "pcf_config.hpp"
-#include "test_rest_client.hpp"
-#include "SmPolicyContextData.h"
-#include "SmPolicyDecision.h"
+#ifndef FILE_TEST_REST_CLIENT_H_SEEN
+#define FILE_TEST_REST_CLIENT_H_SEEN
 
-using namespace oai::pcf::model;
+#include <iostream>
+#include <string>
 
-TEST_F(SMApiTest, CreateNewSMPolicyAssociation) {
-  std::string response_body;
-  std::string response_headers;
+class TestRestClient {
+ private:
+  std::string custom_method;
+  bool get_method;
+  bool post_method;
+  std::string body;
+  std::string url;
 
-  std::string url = fmt::format("{}sm-policies", base_url);
+  bool use_json;
 
-  // TODO correct json values
-  std::string body = "{}";
+  long doRequest(std::string& response, std::string& response_headers);
 
-  std::cout << "send the following json" << body << std::endl;
+ public:
+  long sendPost(
+      std::string url, std::string body, std::string& response,
+      std::string& headers);
+  long sendGet(
+      std::string url, std::string body, std::string& response,
+      std::string& headers);
+  long sendDelete(
+      std::string url, std::string body, std::string& response,
+      std::string& headers);
+};
 
-  int code = rest_client->sendPost(url, body, response_body, response_headers);
-
-  std::cout << "Received response: " << response_body << std::endl;
-  std::cout << "Received headers: " << response_headers << std::endl;
-
-  EXPECT_EQ(code, 201);
-}
+#endif
