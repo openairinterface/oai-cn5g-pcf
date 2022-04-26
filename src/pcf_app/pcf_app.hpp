@@ -40,6 +40,7 @@
 #include "pcf_event.hpp"
 #include "3gpp_29.510.h"
 #include "PatchItem.h"
+#include "pcf_sm_policy_control.hpp"
 
 namespace oai::pcf::app {
 
@@ -58,12 +59,16 @@ class pcf_app {
    */
   void handle_create_sm_policy();
 
+  std::shared_ptr<pcf_smpc> get_pcf_smpc_service();
+
  private:
   pcf_profile nf_instance_profile;  // PCF profile
   std::string pcf_instance_id;      // PCF instance id
   // for Event Handling
   pcf_event& event_sub;
   bs2::connection task_connection;
+
+  std::shared_ptr<pcf_smpc> pcf_smpc_service;
 };
 }  // namespace oai::pcf::app
 #endif /* FILE_PCF_APP_HPP_SEEN */

@@ -78,6 +78,7 @@ void PCFApiServer::init(size_t thr) {
   m_httpEndpoint->init(opts);
 
   // Custom APIs
+  m_smPoliciesCollectionApi->init();
 }
 
 void PCFApiServer::start() {
@@ -87,4 +88,5 @@ void PCFApiServer::start() {
 }
 void PCFApiServer::shutdown() {
   m_httpEndpoint->shutdown();
+  m_smPoliciesCollectionApi = nullptr;
 }

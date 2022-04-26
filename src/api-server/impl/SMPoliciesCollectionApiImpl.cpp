@@ -19,10 +19,15 @@ namespace api {
 
 using namespace oai::pcf::helpers;
 using namespace oai::pcf::model;
+using namespace oai::pcf::app;
 
 SMPoliciesCollectionApiImpl::SMPoliciesCollectionApiImpl(
-    const std::shared_ptr<Pistache::Rest::Router>& rtr)
-    : SMPoliciesCollectionApi(rtr) {}
+    const std::shared_ptr<Pistache::Rest::Router>& rtr,
+    const std::shared_ptr<pcf_smpc> smpc_service, std::string address)
+    : SMPoliciesCollectionApi(rtr) {
+  this->m_address    = address;
+  this->smpc_service = smpc_service;
+}
 
 void SMPoliciesCollectionApiImpl::create_sm_policy(
     const SmPolicyContextData& smPolicyContextData,
