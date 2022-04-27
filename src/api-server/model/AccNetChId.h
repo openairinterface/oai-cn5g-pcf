@@ -62,8 +62,8 @@ class AccNetChId {
   /// <summary>
   ///
   /// </summary>
-  int32_t getAccNetChaIdValue() const;
-  void setAccNetChaIdValue(int32_t const value);
+  uint32_t getAccNetChaIdValue() const;
+  void setAccNetChaIdValue(uint32_t const value);
   /// <summary>
   /// Contains the identifier of the PCC rule(s) associated to the provided
   /// Access Network Charging Identifier.
@@ -85,7 +85,7 @@ class AccNetChId {
   friend void from_json(const nlohmann::json& j, AccNetChId& o);
 
  protected:
-  int32_t m_AccNetChaIdValue;
+  uint32_t m_AccNetChaIdValue;
 
   std::vector<std::string> m_RefPccRuleIds;
   bool m_RefPccRuleIdsIsSet;
