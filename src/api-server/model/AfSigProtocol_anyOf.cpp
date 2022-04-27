@@ -73,16 +73,28 @@ void to_json(nlohmann::json& j, const AfSigProtocol_anyOf& o) {
     case AfSigProtocol_anyOf::eAfSigProtocol_anyOf::SIP:
       j = "SIP";
       break;
+    case AfSigProtocol_anyOf::eAfSigProtocol_anyOf::NULL_VALUE:
+      j = nullptr;
+      break;
   }
 }
 
 void from_json(const nlohmann::json& j, AfSigProtocol_anyOf& o) {
+  if (j.is_null()) {
+    o.setValue(AfSigProtocol_anyOf::eAfSigProtocol_anyOf::NULL_VALUE);
+    return;
+  }
+
   auto s = j.get<std::string>();
   if (s == "NO_INFORMATION") {
     o.setValue(AfSigProtocol_anyOf::eAfSigProtocol_anyOf::NO_INFORMATION);
   } else if (s == "SIP") {
     o.setValue(AfSigProtocol_anyOf::eAfSigProtocol_anyOf::SIP);
-  } else {
+  } else if (s == "null") {
+    o.setValue(AfSigProtocol_anyOf::eAfSigProtocol_anyOf::NULL_VALUE);
+  }
+
+  else {
     std::stringstream ss;
     ss << "Unexpected value " << s << " in json"
        << " cannot be converted to enum of type"

@@ -69,10 +69,16 @@ class MeteringMethod {
   /////////////////////////////////////////////
   /// MeteringMethod members
 
+  MeteringMethod_anyOf getValue() const;
+  void setValue(MeteringMethod_anyOf value);
+  MeteringMethod_anyOf::eMeteringMethod_anyOf getEnumValue() const;
+  void setEnumValue(MeteringMethod_anyOf::eMeteringMethod_anyOf value);
+
   friend void to_json(nlohmann::json& j, const MeteringMethod& o);
   friend void from_json(const nlohmann::json& j, MeteringMethod& o);
 
  protected:
+  MeteringMethod_anyOf m_value;
 };
 
 }  // namespace model

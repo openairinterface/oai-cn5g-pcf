@@ -38,6 +38,7 @@ class FlowDirection_anyOf {
     // Avoiding name clashes with user defined
     // enum values
     INVALID_VALUE_OPENAPI_GENERATED = 0,
+    NULL_VALUE,
     DOWNLINK,
     UPLINK,
     BIDIRECTIONAL,

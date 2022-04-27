@@ -79,10 +79,18 @@ void to_json(nlohmann::json& j, const FlowDirection_anyOf& o) {
     case FlowDirection_anyOf::eFlowDirection_anyOf::UNSPECIFIED:
       j = "UNSPECIFIED";
       break;
+    case FlowDirection_anyOf::eFlowDirection_anyOf::NULL_VALUE:
+      j = nullptr;
+      break;
   }
 }
 
 void from_json(const nlohmann::json& j, FlowDirection_anyOf& o) {
+  if (j.is_null()) {
+    o.setValue(FlowDirection_anyOf::eFlowDirection_anyOf::NULL_VALUE);
+    return;
+  }
+
   auto s = j.get<std::string>();
   if (s == "DOWNLINK") {
     o.setValue(FlowDirection_anyOf::eFlowDirection_anyOf::DOWNLINK);
@@ -92,6 +100,8 @@ void from_json(const nlohmann::json& j, FlowDirection_anyOf& o) {
     o.setValue(FlowDirection_anyOf::eFlowDirection_anyOf::BIDIRECTIONAL);
   } else if (s == "UNSPECIFIED") {
     o.setValue(FlowDirection_anyOf::eFlowDirection_anyOf::UNSPECIFIED);
+  } else if (s == "null") {
+    o.setValue(FlowDirection_anyOf::eFlowDirection_anyOf::NULL_VALUE);
   } else {
     std::stringstream ss;
     ss << "Unexpected value " << s << " in json"

@@ -38,6 +38,7 @@ class ReportingLevel_anyOf {
     // Avoiding name clashes with user defined
     // enum values
     INVALID_VALUE_OPENAPI_GENERATED = 0,
+    NULL_VALUE, 
     SER_ID_LEVEL,
     RAT_GR_LEVEL,
     SPON_CON_LEVEL

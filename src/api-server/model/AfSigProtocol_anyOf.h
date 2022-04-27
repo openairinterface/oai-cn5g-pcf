@@ -38,6 +38,7 @@ class AfSigProtocol_anyOf {
     // Avoiding name clashes with user defined
     // enum values
     INVALID_VALUE_OPENAPI_GENERATED = 0,
+    NULL_VALUE,
     NO_INFORMATION,
     SIP
   };
