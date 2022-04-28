@@ -29,8 +29,8 @@
 
 enum access_type_e { ACESS_3GPP = 1, ACESS_NON_3GPP = 2 };
 
-static const std::vector<std::string> access_type_e2str = {
-    "3GPP_ACCESS", "NON_3GPP_ACCESS"};
+static const std::vector<std::string> access_type_e2str = {"3GPP_ACCESS",
+                                                           "NON_3GPP_ACCESS"};
 
 typedef struct sd_range_s {
   std::string start;
