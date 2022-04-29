@@ -49,8 +49,8 @@ RUN rm -f /etc/rhsm-host && \
         psmisc \
         git \
         diffutils \
-        file \
- && rm -rf /var/lib/apt/lists/*
+        file && \
+    yum clean all -y
 
 # Some GIT configuration command quite useful
 RUN /bin/bash -c "if [[ -v NEEDED_GIT_PROXY ]]; then git config --global http.proxy $NEEDED_GIT_PROXY; fi"
@@ -64,11 +64,11 @@ COPY . /openair-pcf
 # Installing and Building PCF
 WORKDIR /openair-pcf/build/scripts
 RUN ./build_pcf --install-deps --force && \
+    ldconfig -v && \
     rm /etc/pki/entitlement/*pem
 RUN ./build_pcf --clean --Verbose --build-type Release --jobs && \
     ldd /openair-pcf/build/pcf/build/pcf && \
-    mv /openair-pcf/build/pcf/build/pcf /openair-pcf/build/pcf/build/oai_pcf && \
-    rm /etc/pki/entitlement/*pem
+    mv /openair-pcf/build/pcf/build/pcf /openair-pcf/build/pcf/build/oai_pcf
 
 #---------------------------------------------------------------------
 # TARGET IMAGE
