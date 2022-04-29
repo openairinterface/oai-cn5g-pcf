@@ -55,6 +55,7 @@ RUN apt-get update && \
       net-tools \
       tzdata \
       bc \
+      libldap-2.4-2 \
       libkrb5-3 \
       libgssapi-krb5-2 \
       openssl \
