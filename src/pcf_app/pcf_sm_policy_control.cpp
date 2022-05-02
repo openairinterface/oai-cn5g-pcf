@@ -64,11 +64,11 @@ pcf_smpc::pcf_smpc() {
   std::vector<FlowInformation> flow_information;
   flow_information.push_back(flow);
 
-  rule.setPccRuleId("default");
+  rule.setPccRuleId("default_slice1");
   rule.setFlowInfos(flow_information);
 
   std::map<std::string, PccRule> pcc_rule_map;
-  pcc_rule_map["default"] = rule;
+  pcc_rule_map["default_slice"] = rule;
 
   decision.setPccRules(pcc_rule_map);
 
