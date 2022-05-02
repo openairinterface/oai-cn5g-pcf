@@ -33,6 +33,7 @@
 #include "common_root_types.h"
 #include <boost/atomic.hpp>
 #include <string>
+#include <unordered_map>
 
 #include "3gpp_29.500.h"
 #include "pcf.h"
@@ -45,9 +46,17 @@
 #include "SmPolicyDecision.h"
 #include "SmPolicyDeleteData.h"
 #include "SmPolicyUpdateContextData.h"
+#include "sm_policy/pcf_sm_policy_control_errors.hpp"
+// #include "sm_policy/individual_sm_association.hpp"
+#include "sm_policy/slice_policy_decision.hpp"
+#include "sm_policy/snssai_hasher.hpp"
 
 namespace oai::pcf::app {
 
+/**
+ * @brief Service class to handle Session Management Policies
+ *
+ */
 class pcf_smpc {
  public:
   explicit pcf_smpc();
@@ -56,20 +65,27 @@ class pcf_smpc {
 
   virtual ~pcf_smpc();
 
-  /*
-   * Start event nf heartbeat procedure
-   * @param [void]
-   * @return void
+  /**
+   * @brief Handler for receiving create sm policy requests
+   *
+   * @param context input: context from the request
+   * @param decision output: policy decision based on context and local
+   * provisioning
+   * @return sm_policy::pcf_smpc_error_code
    */
-  void create_sm_policy_handler();
-
-  // void delete_sm_policy(const std::string &smPolicyId, const
-  // SmPolicyDeleteData &smPolicyDeleteData);
-  void get_sm_policy(const std::string& smPolicyId);
-  // void update_sm_policy(const std::string &smPolicyId, const
-  // SmPolicyUpdateContextData &smPolicyUpdateContextData);
+  sm_policy::pcf_smpc_error_code create_sm_policy_handler(
+      const oai::pcf::model::SmPolicyContextData& context,
+      oai::pcf::model::SmPolicyDecision& decision,
+      std::string& problem_details);
 
  private:
+  // std::unordered_map<
+  //    std::string, oai::pcf::app::sm_policy::individual_sm_association>
+  //    m_associations;
+  std::unordered_map<
+      oai::pcf::model::Snssai, oai::pcf::app::sm_policy::slice_policy_decision,
+      oai::pcf::app::sm_policy::snssai_hasher>
+      m_slice_policy_decisions;
 };
 }  // namespace oai::pcf::app
 #endif /* FILE_PCF_SM_POLICY_CONTROL_SEEN */

@@ -12,6 +12,9 @@
  */
 
 #include "SMPoliciesCollectionApiImpl.h"
+#include "sm_policy/pcf_sm_policy_control_errors.hpp"
+#include "3gpp_29.500.h"
+#include "logger.hpp"
 
 namespace oai {
 namespace pcf {
@@ -20,6 +23,7 @@ namespace api {
 using namespace oai::pcf::helpers;
 using namespace oai::pcf::model;
 using namespace oai::pcf::app;
+using namespace oai::pcf::app::sm_policy;
 
 SMPoliciesCollectionApiImpl::SMPoliciesCollectionApiImpl(
     const std::shared_ptr<Pistache::Rest::Router>& rtr,
@@ -32,7 +36,51 @@ SMPoliciesCollectionApiImpl::SMPoliciesCollectionApiImpl(
 void SMPoliciesCollectionApiImpl::create_sm_policy(
     const SmPolicyContextData& smPolicyContextData,
     Pistache::Http::ResponseWriter& response) {
-  response.send(Pistache::Http::Code::Ok, "Do some magic\n");
+  int http_code = 500;
+  std::string cause;
+  ProblemDetails problem_details;
+  SmPolicyDecision decision;
+  std::string details_string = "";
+
+  pcf_smpc_error_code res = smpc_service->create_sm_policy_handler(
+      smPolicyContextData, decision, details_string);
+  nlohmann::json json_data;
+
+  switch (res) {
+    case pcf_smpc_error_code::Created:
+      http_code = HTTP_STATUS_CODE_201_CREATED;
+      break;
+
+    case pcf_smpc_error_code::UserUnknown:
+      problem_details.setCause("USER_UNKOWN");
+      problem_details.setDetail(details_string);
+      http_code = HTTP_STATUS_CODE_400_BAD_REQUEST;
+      break;
+
+    case pcf_smpc_error_code::InvalidParameters:
+      problem_details.setCause("ERROR_INITIAL_PARAMETERS");
+      problem_details.setDetail(details_string);
+      http_code = HTTP_STATUS_CODE_400_BAD_REQUEST;
+      break;
+
+    case pcf_smpc_error_code::ContextDenied:
+      problem_details.setCause("POLICY_CONTEXT_DENIED");
+      problem_details.setDetail(details_string);
+      http_code = HTTP_STATUS_CODE_403_FORBIDDEN;
+      break;
+    default:
+      Logger::pcf_app().error("Unknown error code");
+      http_code = HTTP_STATUS_CODE_500_INTERNAL_SERVER_ERROR;
+      problem_details.setCause("INTERNAL_ERROR");
+      problem_details.setDetail("Internal Service Error: Unknown return code.");
+  }
+
+  if (http_code != HTTP_STATUS_CODE_201_CREATED) {
+    to_json(json_data, problem_details);
+  } else {
+    to_json(json_data, decision);
+  }
+  response.send(Pistache::Http::Code(http_code), json_data.dump().c_str());
 }
 
 }  // namespace api

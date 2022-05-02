@@ -28,6 +28,7 @@ include_directories(${SRC_TOP_DIR}/api-server/api)
 include_directories(${SRC_TOP_DIR}/api-server/impl)
 include_directories(${SRC_TOP_DIR}/api-server/model)
 include_directories(${SRC_TOP_DIR}/api-server/)
+include_directories(${SRC_TOP_DIR}/pcf_app/sm_policy/)
 
 add_library (PCF STATIC
   pcf_app.cpp
@@ -38,4 +39,6 @@ add_library (PCF STATIC
   pcf_event.cpp 
   pcf_sm_policy_control.cpp
   task_manager.cpp
+  #sm_policy/individual_sm_association.cpp
+  sm_policy/slice_policy_decision.cpp
   )
