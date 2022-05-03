@@ -24,19 +24,19 @@
  \author  Stefan Spettel
  \company Openairinterface Software Allianse
  \date 2022
- \email: rohan.kharade@openairinterface.org
+ \email: stefan.spettel@eurecom.fr
  */
 
-#ifndef FILE_PCF_SM_POLICY_CONTROL_ERRORS_H_SEEN
-#define FILE_PCF_SM_POLICY_CONTROL_ERRORS_H_SEEN
+#ifndef FILE_PCF_SMPC_STATUS_CODE_H_SEEN
+#define FILE_PCF_SMPC_STATUS_CODE_H_SEEN
 
 namespace oai::pcf::app::sm_policy {
 
-enum class pcf_smpc_error_code {
-  Created,
-  UserUnknown,
-  InvalidParameters,
-  ContextDenied,
+enum class status_code {
+  CREATED,
+  USER_UNKOWN,
+  INVALID_PARAMETERS,
+  CONTEXT_DENIED,
 };
 }  // namespace oai::pcf::app::sm_policy
 #endif

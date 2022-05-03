@@ -33,7 +33,7 @@
 #include "policy_decision.hpp"
 #include "SmPolicyContextData.h"
 #include "SmPolicyDecision.h"
-#include "pcf_sm_policy_control_errors.hpp"
+#include "pcf_smpc_status_code.hpp"
 #include "Snssai.h"
 
 namespace oai::pcf::app::sm_policy {
@@ -59,10 +59,10 @@ class slice_policy_decision : public oai::pcf::app::sm_policy::policy_decision {
    *
    * @param context input: The context of the individual sm policy association
    * @param decision output: The decision based on the context
-   * @return oai::pcf::app::sm_policy::pcf_smpc_error_code   CREATED in case of
+   * @return oai::pcf::app::sm_policy::status_code   CREATED in case of
    * success
    */
-  oai::pcf::app::sm_policy::pcf_smpc_error_code decide(
+  oai::pcf::app::sm_policy::status_code decide(
       const oai::pcf::model::SmPolicyContextData& context,
       oai::pcf::model::SmPolicyDecision& decision) const;
 

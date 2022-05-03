@@ -12,7 +12,7 @@
  */
 
 #include "SMPoliciesCollectionApiImpl.h"
-#include "sm_policy/pcf_sm_policy_control_errors.hpp"
+#include "sm_policy/pcf_smpc_status_code.hpp"
 #include "3gpp_29.500.h"
 #include "logger.hpp"
 
@@ -45,30 +45,30 @@ void SMPoliciesCollectionApiImpl::create_sm_policy(
   std::string location       = "";
   std::string content_type   = "application/problem+json";
 
-  pcf_smpc_error_code res = smpc_service->create_sm_policy_handler(
+  status_code res = smpc_service->create_sm_policy_handler(
       smPolicyContextData, decision, association_id, details_string);
   nlohmann::json json_data;
 
   switch (res) {
-    case pcf_smpc_error_code::Created:
+    case status_code::CREATED:
       http_code    = HTTP_STATUS_CODE_201_CREATED;
       location     = m_address + base + "/sm-policies/" + association_id;
       content_type = "application/json";
       break;
 
-    case pcf_smpc_error_code::UserUnknown:
+    case status_code::USER_UNKOWN:
       problem_details.setCause("USER_UNKOWN");
       problem_details.setDetail(details_string);
       http_code = HTTP_STATUS_CODE_400_BAD_REQUEST;
       break;
 
-    case pcf_smpc_error_code::InvalidParameters:
+    case status_code::INVALID_PARAMETERS:
       problem_details.setCause("ERROR_INITIAL_PARAMETERS");
       problem_details.setDetail(details_string);
       http_code = HTTP_STATUS_CODE_400_BAD_REQUEST;
       break;
 
-    case pcf_smpc_error_code::ContextDenied:
+    case status_code::CONTEXT_DENIED:
       problem_details.setCause("POLICY_CONTEXT_DENIED");
       problem_details.setDetail(details_string);
       http_code = HTTP_STATUS_CODE_403_FORBIDDEN;

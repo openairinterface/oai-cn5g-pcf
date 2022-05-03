@@ -30,31 +30,19 @@
 #ifndef FILE_PCF_SM_POLICY_CONTROL_SEEN
 #define FILE_PCF_SM_POLICY_CONTROL_SEEN
 
-#include "common_root_types.h"
-#include <boost/atomic.hpp>
 #include <string>
 #include <unordered_map>
 #include <shared_mutex>
 #include <memory>
 
-#include "3gpp_29.500.h"
-#include "pcf.h"
-#include "3gpp_29.510.h"
-#include "PatchItem.h"
 #include "SmPolicyContextData.h"
 #include "SmPolicyDecision.h"
-#include "ProblemDetails.h"
-#include "SmPolicyControl.h"
-#include "SmPolicyDecision.h"
-#include "SmPolicyDeleteData.h"
-#include "SmPolicyUpdateContextData.h"
-#include "sm_policy/pcf_sm_policy_control_errors.hpp"
+#include "sm_policy/pcf_smpc_status_code.hpp"
 #include "sm_policy/individual_sm_association.hpp"
 #include "sm_policy/policy_decision.hpp"
 #include "sm_policy/slice_policy_decision.hpp"
 #include "sm_policy/supi_policy_decision.hpp"
 #include "sm_policy/dnn_policy_decision.hpp"
-
 #include "sm_policy/snssai_hasher.hpp"
 #include "uint_generator.hpp"
 
@@ -78,9 +66,9 @@ class pcf_smpc {
    * @param context input: context from the request
    * @param decision output: policy decision based on context and local
    * provisioning
-   * @return sm_policy::pcf_smpc_error_code
+   * @return sm_policy::status_code
    */
-  sm_policy::pcf_smpc_error_code create_sm_policy_handler(
+  sm_policy::status_code create_sm_policy_handler(
       const oai::pcf::model::SmPolicyContextData& context,
       oai::pcf::model::SmPolicyDecision& decision, std::string& association_id,
       std::string& problem_details);

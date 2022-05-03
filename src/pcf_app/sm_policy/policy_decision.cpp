@@ -33,11 +33,11 @@ using namespace oai::pcf::model;
 using namespace oai::pcf::app::sm_policy;
 using namespace oai::pcf::app;
 
-pcf_smpc_error_code policy_decision::decide(
+status_code policy_decision::decide(
     const SmPolicyContextData& context, SmPolicyDecision& decision) const {
   // default rule, so just reply with the decision
   decision = m_decision;
-  return pcf_smpc_error_code::Created;
+  return status_code::CREATED;
 }
 
 policy_decision::~policy_decision() {}

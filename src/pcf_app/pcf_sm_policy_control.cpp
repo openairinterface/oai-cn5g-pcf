@@ -140,7 +140,7 @@ bool pcf_smpc::find_policy(
 }
 
 //------------------------------------------------------------------------------
-pcf_smpc_error_code pcf_smpc::create_sm_policy_handler(
+status_code pcf_smpc::create_sm_policy_handler(
     const SmPolicyContextData& context, SmPolicyDecision& decision,
     std::string& association_id, std::string& problem_details) {
   std::shared_lock lock_supi(m_supi_policy_decisions_mutex);
@@ -153,16 +153,16 @@ pcf_smpc_error_code pcf_smpc::create_sm_policy_handler(
   if (!found) {
     problem_details = fmt::format(
         "SM policy request from SUPI {}: No policies found", context.getSupi());
-    return pcf_smpc_error_code::ContextDenied;
+    return status_code::CONTEXT_DENIED;
   }
 
-  pcf_smpc_error_code res = chosen_decision->decide(context, decision);
+  status_code res = chosen_decision->decide(context, decision);
   // we can release the locks here
   lock_slice.unlock();
   lock_dnn.unlock();
   lock_supi.unlock();
 
-  if (res != pcf_smpc_error_code::Created) {
+  if (res != status_code::CREATED) {
     problem_details = fmt::format(
         "SM Policy request from SUPI {}: Invalid policy decision provisioned",
         context.getSupi());
