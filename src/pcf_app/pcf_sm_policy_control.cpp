@@ -34,11 +34,6 @@
 #include "pcf_config.hpp"
 #include "pcf_client.hpp"
 #include "Snssai.h"
-//#include "individual_sm_association.hpp"
-#include "slice_policy_decision.hpp"
-#include "supi_policy_decision.hpp"
-#include "dnn_policy_decision.hpp"
-#include "policy_decision.hpp"
 
 #include <boost/uuid/random_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
@@ -147,7 +142,7 @@ bool pcf_smpc::find_policy(
 //------------------------------------------------------------------------------
 pcf_smpc_error_code pcf_smpc::create_sm_policy_handler(
     const SmPolicyContextData& context, SmPolicyDecision& decision,
-    std::string& problem_details) {
+    std::string& association_id, std::string& problem_details) {
   std::shared_lock lock_supi(m_supi_policy_decisions_mutex);
   std::shared_lock lock_dnn(m_dnn_policy_decisions_mutex);
   std::shared_lock lock_slice(m_slice_policy_decisions_mutex);
@@ -172,8 +167,16 @@ pcf_smpc_error_code pcf_smpc::create_sm_policy_handler(
         "SM Policy request from SUPI {}: Invalid policy decision provisioned",
         context.getSupi());
   } else {
-    Logger::pcf_app().info(
-        fmt::format("Created Policy Decision for SUPI {}", context.getSupi()));
+    association_id = std::to_string(m_association_id_generator.get_uid());
+
+    individual_sm_association assoc(context, decision, association_id);
+
+    std::unique_lock lock_assocations(m_associations_mutex);
+    m_associations.insert(std::make_pair(association_id, assoc));
+
+    Logger::pcf_app().info(fmt::format(
+        "Created Policy Decision for SUPI {} with ID {}", context.getSupi(),
+        association_id));
   }
   return res;
 }

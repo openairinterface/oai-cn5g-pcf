@@ -49,13 +49,14 @@
 #include "SmPolicyDeleteData.h"
 #include "SmPolicyUpdateContextData.h"
 #include "sm_policy/pcf_sm_policy_control_errors.hpp"
-//#include "sm_policy/individual_sm_association.hpp"
+#include "sm_policy/individual_sm_association.hpp"
 #include "sm_policy/policy_decision.hpp"
 #include "sm_policy/slice_policy_decision.hpp"
 #include "sm_policy/supi_policy_decision.hpp"
 #include "sm_policy/dnn_policy_decision.hpp"
 
 #include "sm_policy/snssai_hasher.hpp"
+#include "uint_generator.hpp"
 
 namespace oai::pcf::app {
 
@@ -81,7 +82,7 @@ class pcf_smpc {
    */
   sm_policy::pcf_smpc_error_code create_sm_policy_handler(
       const oai::pcf::model::SmPolicyContextData& context,
-      oai::pcf::model::SmPolicyDecision& decision,
+      oai::pcf::model::SmPolicyDecision& decision, std::string& association_id,
       std::string& problem_details);
 
  private:
@@ -100,9 +101,11 @@ class pcf_smpc {
       const oai::pcf::model::SmPolicyContextData& context,
       oai::pcf::app::sm_policy::policy_decision** chosen_decision);
 
-  // std::unordered_map<
-  //    std::string, oai::pcf::app::sm_policy::individual_sm_association>
-  //    m_associations;
+  util::uint_generator<uint32_t> m_association_id_generator;
+
+  std::unordered_map<
+      std::string, oai::pcf::app::sm_policy::individual_sm_association>
+      m_associations;
   std::unordered_map<
       oai::pcf::model::Snssai, oai::pcf::app::sm_policy::slice_policy_decision,
       oai::pcf::app::sm_policy::snssai_hasher>

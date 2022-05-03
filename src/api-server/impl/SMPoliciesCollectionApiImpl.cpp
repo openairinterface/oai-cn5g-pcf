@@ -41,14 +41,19 @@ void SMPoliciesCollectionApiImpl::create_sm_policy(
   ProblemDetails problem_details;
   SmPolicyDecision decision;
   std::string details_string = "";
+  std::string association_id = "";
+  std::string location       = "";
+  std::string content_type   = "application/problem+json";
 
   pcf_smpc_error_code res = smpc_service->create_sm_policy_handler(
-      smPolicyContextData, decision, details_string);
+      smPolicyContextData, decision, association_id, details_string);
   nlohmann::json json_data;
 
   switch (res) {
     case pcf_smpc_error_code::Created:
-      http_code = HTTP_STATUS_CODE_201_CREATED;
+      http_code    = HTTP_STATUS_CODE_201_CREATED;
+      location     = m_address + base + "/sm-policies/" + association_id;
+      content_type = "application/json";
       break;
 
     case pcf_smpc_error_code::UserUnknown:
@@ -68,6 +73,7 @@ void SMPoliciesCollectionApiImpl::create_sm_policy(
       problem_details.setDetail(details_string);
       http_code = HTTP_STATUS_CODE_403_FORBIDDEN;
       break;
+
     default:
       Logger::pcf_app().error("Unknown error code");
       http_code = HTTP_STATUS_CODE_500_INTERNAL_SERVER_ERROR;
@@ -79,7 +85,12 @@ void SMPoliciesCollectionApiImpl::create_sm_policy(
     to_json(json_data, problem_details);
   } else {
     to_json(json_data, decision);
+    response.headers().add<Pistache::Http::Header::Location>(location);
   }
+
+  response.headers().add<Pistache::Http::Header::ContentType>(
+      Pistache::Http::Mime::MediaType(content_type));
+
   response.send(Pistache::Http::Code(http_code), json_data.dump().c_str());
 }
 

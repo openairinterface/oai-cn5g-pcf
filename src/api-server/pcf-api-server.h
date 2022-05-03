@@ -53,8 +53,9 @@ class PCFApiServer {
  public:
   PCFApiServer(Pistache::Address address, pcf_app* pcf_app_inst)
       : m_httpEndpoint(std::make_shared<Pistache::Http::Endpoint>(address)) {
-    m_router  = std::make_shared<Pistache::Rest::Router>();
-    m_address = address.host() + ":" + (address.port()).toString();
+    m_router = std::make_shared<Pistache::Rest::Router>();
+    // TODO hardcode http string, how to handle https
+    m_address = "http://" + address.host() + ":" + (address.port()).toString();
 
     m_smPoliciesCollectionApi =
         std::make_shared<oai::pcf::api::SMPoliciesCollectionApiImpl>(
