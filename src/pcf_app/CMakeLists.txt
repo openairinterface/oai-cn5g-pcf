@@ -40,5 +40,8 @@ add_library (PCF STATIC
   pcf_sm_policy_control.cpp
   task_manager.cpp
   #sm_policy/individual_sm_association.cpp
+  sm_policy/policy_decision.cpp
   sm_policy/slice_policy_decision.cpp
+  sm_policy/supi_policy_decision.cpp
+  sm_policy/dnn_policy_decision.cpp
   )

@@ -45,7 +45,8 @@ class slice_policy_decision : public oai::pcf::app::sm_policy::policy_decision {
  public:
   explicit slice_policy_decision(
       oai::pcf::model::Snssai snssai,
-      oai::pcf::model::SmPolicyDecision decision) {
+      oai::pcf::model::SmPolicyDecision decision)
+      : policy_decision(decision) {
     m_snssai   = snssai;
     m_decision = decision;
   }

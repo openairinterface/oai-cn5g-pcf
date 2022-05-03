@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file individual_sm_association.hpp
+/*! \file supi_policy_decision.hpp
  \brief
  \author  Stefan Spettel
  \company Openairinterface Software Allianse
@@ -27,43 +27,55 @@
  \email: stefan.spettel@eurecom.fr
  */
 
-#ifndef FILE_POLICY_DECISION_SEEN
-#define FILE_POLICY_DECISION_SEEN
+#ifndef FILE_SUPI_POLICY_DECISION_SEEN
+#define FILE_SUPI_POLICY_DECISION_SEEN
 
+#include "policy_decision.hpp"
 #include "SmPolicyContextData.h"
 #include "SmPolicyDecision.h"
 #include "pcf_sm_policy_control_errors.hpp"
 
-namespace oai::pcf::app::sm_policy {
+#include <string>
 
+namespace oai::pcf::app::sm_policy {
 /**
- * @brief Base class for policy decisions. All sub classes need to
- * implement the decide function
+ * @brief Policy Decision based on SUPI.
  *
  */
-class policy_decision {
+class supi_policy_decision : public oai::pcf::app::sm_policy::policy_decision {
  public:
-  explicit policy_decision(oai::pcf::model::SmPolicyDecision decision) {
+  explicit supi_policy_decision(
+      std::string supi, oai::pcf::model::SmPolicyDecision decision)
+      : policy_decision(decision) {
+    m_supi     = supi;
     m_decision = decision;
   }
 
+  virtual ~supi_policy_decision();
+
   /**
-   * @brief Decides based on context on a policy. In case the return code is !=
-   * CREATED, the decision reference may be undefined
+   * @brief Decides based on context on a policy and the DNN information. In
+   * case the return code is != CREATED, the decision reference may be undefined
    *
    * @param context input: The context of the individual sm policy association
    * @param decision output: The decision based on the context
    * @return oai::pcf::app::sm_policy::pcf_smpc_error_code   CREATED in case of
    * success
    */
-  virtual oai::pcf::app::sm_policy::pcf_smpc_error_code decide(
+  oai::pcf::app::sm_policy::pcf_smpc_error_code decide(
       const oai::pcf::model::SmPolicyContextData& context,
       oai::pcf::model::SmPolicyDecision& decision) const;
 
-  virtual ~policy_decision();
+  /**
+   * @brief Get the supi object
+   *
+   * @return std::string
+   */
+  std::string get_supi() const;
 
  private:
   oai::pcf::model::SmPolicyDecision m_decision;
+  std::string m_supi;
 };
 }  // namespace oai::pcf::app::sm_policy
 #endif

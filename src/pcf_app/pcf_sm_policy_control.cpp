@@ -36,12 +36,17 @@
 #include "Snssai.h"
 //#include "individual_sm_association.hpp"
 #include "slice_policy_decision.hpp"
+#include "supi_policy_decision.hpp"
+#include "dnn_policy_decision.hpp"
+#include "policy_decision.hpp"
 
 #include <boost/uuid/random_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <stdexcept>
 #include <unordered_map>
 #include <map>
+#include <shared_mutex>
+#include <memory>
 
 using namespace oai::pcf::app;
 using namespace oai::pcf::app::sm_policy;
@@ -79,45 +84,98 @@ pcf_smpc::pcf_smpc() {
   slice_policy_decision slice_desc(snssai, decision);
 
   m_slice_policy_decisions.insert(std::make_pair(snssai, slice_desc));
+
+  supi_policy_decision supi_desc("imsi-123", decision);
+
+  m_supi_policy_decisions.insert(std::make_pair("imsi-123", supi_desc));
+
+  dnn_policy_decision dnn_desc("default", decision);
+
+  m_dnn_policy_decisions.insert(std::make_pair("default", dnn_desc));
+
+  default_decision = std::make_unique<policy_decision>(decision);
+}
+
+bool pcf_smpc::find_policy(
+    const SmPolicyContextData& context, policy_decision** chosen_decision) {
+  std::string msg_base =
+      fmt::format("SM Policy request from SUPI {}: ", context.getSupi());
+
+  bool found = true;
+
+  // First, check based on SUPI, then DNN, then Slice, then global default rule.
+  std::shared_lock lock_supi(m_supi_policy_decisions_mutex);
+  std::unordered_map<std::string, supi_policy_decision>::iterator got_supi =
+      m_supi_policy_decisions.find(context.getSupi());
+
+  if (got_supi == m_supi_policy_decisions.end()) {
+    Logger::pcf_app().debug(msg_base + "Did not find SUPI policy");
+    std::shared_lock lock_dnn(m_dnn_policy_decisions_mutex);
+    std::unordered_map<std::string, dnn_policy_decision>::iterator got_dnn =
+        m_dnn_policy_decisions.find(context.getDnn());
+
+    if (got_dnn == m_dnn_policy_decisions.end()) {
+      Logger::pcf_app().debug(msg_base + "Did not find DNN policy");
+      std::shared_lock lock_slice(m_slice_policy_decisions_mutex);
+      std::unordered_map<Snssai, slice_policy_decision, snssai_hasher>::iterator
+          got_slice = m_slice_policy_decisions.find(context.getSliceInfo());
+
+      if (got_slice == m_slice_policy_decisions.end()) {
+        Logger::pcf_app().debug(msg_base + "Did not find slice policy");
+        if (!default_decision) {
+          Logger::pcf_app().debug(msg_base + "Did not find default policy");
+          found = false;
+        } else {
+          Logger::pcf_app().debug(msg_base + "Decide based on default policy");
+          *chosen_decision = default_decision.get();
+        }
+      } else {
+        Logger::pcf_app().debug(msg_base + "Decide based on slice");
+        *chosen_decision = &got_slice->second;
+      }
+    } else {
+      Logger::pcf_app().debug(msg_base + "Decide based on DNN");
+      *chosen_decision = &got_dnn->second;
+    }
+  } else {
+    Logger::pcf_app().debug(msg_base + "Decide based on SUPI");
+    *chosen_decision = &got_supi->second;
+  }
+  return found;
 }
 
 //------------------------------------------------------------------------------
 pcf_smpc_error_code pcf_smpc::create_sm_policy_handler(
     const SmPolicyContextData& context, SmPolicyDecision& decision,
     std::string& problem_details) {
-  Snssai slice = context.getSliceInfo();
-  std::unordered_map<
-      Snssai, slice_policy_decision, snssai_hasher>::const_iterator got =
-      m_slice_policy_decisions.find(slice);
+  std::shared_lock lock_supi(m_supi_policy_decisions_mutex);
+  std::shared_lock lock_dnn(m_dnn_policy_decisions_mutex);
+  std::shared_lock lock_slice(m_slice_policy_decisions_mutex);
 
-  // TODO the plan here is to have: user based decisions, then dnn based
-  // decisions, then slice based decision and a default decision and reply with
-  // the policy decision in that order
-  if (got == m_slice_policy_decisions.end()) {
-    std::string description = fmt::format(
-        "SM Policy request from SUPI {}: Did not find policy based on slice: "
-        "{}-{}",
-        context.getSupi(), slice.getSd(), slice.getSst());
+  policy_decision* chosen_decision;
 
-    Logger::pcf_app().info(description);
-    problem_details = description;
+  bool found = find_policy(context, &chosen_decision);
+  if (!found) {
+    problem_details = fmt::format(
+        "SM policy request from SUPI {}: No policies found", context.getSupi());
     return pcf_smpc_error_code::ContextDenied;
-  } else {
-    pcf_smpc_error_code res = got->second.decide(context, decision);
-    if (res != pcf_smpc_error_code::Created) {
-      std::string description = fmt::format(
-          "SM Policy request from SUPI {}: Could not create policy based on "
-          "slice: {}-{}",
-          context.getSupi(), slice.getSd(), slice.getSst());
-      problem_details = description;
-      return res;
-    }
-
-    Logger::pcf_app().info(fmt::format(
-        "SM Policy request from SUPI {}: CREATED", context.getSupi()));
-
-    return res;
   }
+
+  pcf_smpc_error_code res = chosen_decision->decide(context, decision);
+  // we can release the locks here
+  lock_slice.unlock();
+  lock_dnn.unlock();
+  lock_supi.unlock();
+
+  if (res != pcf_smpc_error_code::Created) {
+    problem_details = fmt::format(
+        "SM Policy request from SUPI {}: Invalid policy decision provisioned",
+        context.getSupi());
+  } else {
+    Logger::pcf_app().info(
+        fmt::format("Created Policy Decision for SUPI {}", context.getSupi()));
+  }
+  return res;
 }
 
 //------------------------------------------------------------------------------

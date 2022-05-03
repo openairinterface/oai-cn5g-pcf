@@ -34,6 +34,8 @@
 #include <boost/atomic.hpp>
 #include <string>
 #include <unordered_map>
+#include <shared_mutex>
+#include <memory>
 
 #include "3gpp_29.500.h"
 #include "pcf.h"
@@ -47,8 +49,12 @@
 #include "SmPolicyDeleteData.h"
 #include "SmPolicyUpdateContextData.h"
 #include "sm_policy/pcf_sm_policy_control_errors.hpp"
-// #include "sm_policy/individual_sm_association.hpp"
+//#include "sm_policy/individual_sm_association.hpp"
+#include "sm_policy/policy_decision.hpp"
 #include "sm_policy/slice_policy_decision.hpp"
+#include "sm_policy/supi_policy_decision.hpp"
+#include "sm_policy/dnn_policy_decision.hpp"
+
 #include "sm_policy/snssai_hasher.hpp"
 
 namespace oai::pcf::app {
@@ -79,6 +85,21 @@ class pcf_smpc {
       std::string& problem_details);
 
  private:
+  /**
+   * @brief Finds a policy based on the existing supi, dnn, slice and default
+   * policies in that order.
+   * PRECONDITION: Lock all mutexes for the maps
+   *
+   * @param context  The policy context containing supi, dnn and snssai
+   * @param chosen_decision pointer to the object implementing the chosen
+   * decision base class
+   * @return true if policy found
+   * @return false if no policy found
+   */
+  bool find_policy(
+      const oai::pcf::model::SmPolicyContextData& context,
+      oai::pcf::app::sm_policy::policy_decision** chosen_decision);
+
   // std::unordered_map<
   //    std::string, oai::pcf::app::sm_policy::individual_sm_association>
   //    m_associations;
@@ -86,6 +107,20 @@ class pcf_smpc {
       oai::pcf::model::Snssai, oai::pcf::app::sm_policy::slice_policy_decision,
       oai::pcf::app::sm_policy::snssai_hasher>
       m_slice_policy_decisions;
+
+  std::unordered_map<std::string, oai::pcf::app::sm_policy::dnn_policy_decision>
+      m_dnn_policy_decisions;
+
+  std::unordered_map<
+      std::string, oai::pcf::app::sm_policy::supi_policy_decision>
+      m_supi_policy_decisions;
+
+  std::unique_ptr<oai::pcf::app::sm_policy::policy_decision> default_decision;
+
+  mutable std::shared_mutex m_associations_mutex;
+  mutable std::shared_mutex m_slice_policy_decisions_mutex;
+  mutable std::shared_mutex m_dnn_policy_decisions_mutex;
+  mutable std::shared_mutex m_supi_policy_decisions_mutex;
 };
 }  // namespace oai::pcf::app
 #endif /* FILE_PCF_SM_POLICY_CONTROL_SEEN */
