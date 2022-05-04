@@ -48,7 +48,9 @@ class IndividualSMPolicyDocumentApiImpl
     : public oai::pcf::api::IndividualSMPolicyDocumentApi {
  public:
   explicit IndividualSMPolicyDocumentApiImpl(
-      const std::shared_ptr<Pistache::Rest::Router>& rtr);
+      const std::shared_ptr<Pistache::Rest::Router>& rtr,
+      const std::shared_ptr<pcf::app::pcf_smpc> smpc_service,
+      std::string m_address);
   ~IndividualSMPolicyDocumentApiImpl() override = default;
 
   void delete_sm_policy(
@@ -61,6 +63,10 @@ class IndividualSMPolicyDocumentApiImpl
       const std::string& smPolicyId,
       const SmPolicyUpdateContextData& smPolicyUpdateContextData,
       Pistache::Http::ResponseWriter& response);
+
+ private:
+  std::string m_address;
+  std::shared_ptr<app::pcf_smpc> m_smpc_service;
 };
 
 }  // namespace api

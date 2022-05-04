@@ -48,6 +48,7 @@
 #include "logger.hpp"
 #include "pcf_app.hpp"
 #include "SMPoliciesCollectionApiImpl.h"
+#include "IndividualSMPolicyDocumentApiImpl.h"
 
 class PCFApiServer {
  public:
@@ -59,6 +60,10 @@ class PCFApiServer {
 
     m_smPoliciesCollectionApi =
         std::make_shared<oai::pcf::api::SMPoliciesCollectionApiImpl>(
+            m_router, pcf_app_inst->get_pcf_smpc_service(), m_address);
+
+    m_individualSmPolicyDocumentApi =
+        std::make_shared<oai::pcf::api::IndividualSMPolicyDocumentApiImpl>(
             m_router, pcf_app_inst->get_pcf_smpc_service(), m_address);
   }
   void init(size_t thr = 1);
@@ -73,6 +78,9 @@ class PCFApiServer {
 
   std::shared_ptr<oai::pcf::api::SMPoliciesCollectionApiImpl>
       m_smPoliciesCollectionApi;
+
+  std::shared_ptr<oai::pcf::api::IndividualSMPolicyDocumentApiImpl>
+      m_individualSmPolicyDocumentApi;
 };
 
 #endif

@@ -250,6 +250,49 @@ status_code pcf_smpc::create_sm_policy_handler(
 }
 
 //------------------------------------------------------------------------------
+sm_policy::status_code pcf_smpc::delete_sm_policy_handler(
+    std::string id, const SmPolicyDeleteData& delete_data,
+    std::string& problem_details) {
+  // TODO for now, just delete, ignore the delete_data
+  std::unique_lock lock_associations(m_associations_mutex);
+  std::unordered_map<std::string, individual_sm_association>::const_iterator
+      iter = m_associations.find(id);
+  if (iter == m_associations.end()) {
+    problem_details =
+        fmt::format("Could not delete policy association: ID {} not found", id);
+    Logger::pcf_app().info(problem_details);
+    return status_code::NOT_FOUND;
+  }
+  m_associations.erase(iter);
+  Logger::pcf_app().info(
+      fmt::format("Deleted policy association with ID {}", id));
+
+  return status_code::OK;
+}
+
+//------------------------------------------------------------------------------
+sm_policy::status_code pcf_smpc::get_sm_policy_handler(
+    std::string id, oai::pcf::model::SmPolicyControl& control,
+    std::string& problem_details) {
+  std::unique_lock lock_associations(m_associations_mutex);
+  std::unordered_map<std::string, individual_sm_association>::const_iterator
+      iter = m_associations.find(id);
+  if (iter == m_associations.end()) {
+    problem_details = fmt::format(
+        "Could not retrieve policy association: ID {} not found", id);
+    Logger::pcf_app().info(problem_details);
+    return status_code::NOT_FOUND;
+  }
+  control.setContext(iter->second.get_sm_policy_context_data());
+  control.setPolicy(iter->second.get_sm_policy_decision());
+
+  Logger::pcf_app().info(
+      fmt::format("Retrieved policy association with ID {}", id));
+
+  return status_code::OK;
+}
+
+//------------------------------------------------------------------------------
 pcf_smpc::~pcf_smpc() {
   Logger::pcf_app().debug("Delete PCF SMPC instance...");
 }

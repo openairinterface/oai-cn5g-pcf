@@ -37,6 +37,8 @@ enum class status_code {
   USER_UNKOWN,
   INVALID_PARAMETERS,
   CONTEXT_DENIED,
+  NOT_FOUND,
+  OK,
 };
 }  // namespace oai::pcf::app::sm_policy
 #endif

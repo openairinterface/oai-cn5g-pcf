@@ -79,6 +79,7 @@ void PCFApiServer::init(size_t thr) {
 
   // Custom APIs
   m_smPoliciesCollectionApi->init();
+  m_individualSmPolicyDocumentApi->init();
 }
 
 void PCFApiServer::start() {
