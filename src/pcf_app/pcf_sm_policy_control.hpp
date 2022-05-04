@@ -92,6 +92,19 @@ class pcf_smpc {
       const oai::pcf::model::SmPolicyContextData& context,
       oai::pcf::app::sm_policy::policy_decision** chosen_decision);
 
+  /**
+   * @brief Helper method to create hardcoded policy decisions
+   *
+   * @param pcc_rule_name
+   * @param flow_description
+   * @param tc_id
+   * @param steering_policy_id
+   */
+  void create_default_policy_decision(
+      std::string pcc_rule_name, std::string flow_description,
+      std::string tc_id, std::string dnai, std::string route_policy_id,
+      int precedence, oai::pcf::model::SmPolicyDecision& decision);
+
   util::uint_generator<uint32_t> m_association_id_generator;
 
   std::unordered_map<
