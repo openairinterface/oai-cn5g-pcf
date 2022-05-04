@@ -61,7 +61,10 @@ class pcf_smpc {
   virtual ~pcf_smpc();
 
   /**
-   * @brief Handler for receiving create sm policy requests
+   * @brief Handler for receiving create sm policy requests, as defined in
+   * 3GPP TS 29.512 Chapter 4.2.2
+   * The result depends on pre-configured policy rules based on supi, dnn,
+   * snssai and default rules in that order
    *
    * @param context input: context from the request
    * @param decision output: policy decision based on context and local

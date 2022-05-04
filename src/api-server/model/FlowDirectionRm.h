@@ -68,7 +68,7 @@ class FlowDirectionRm {
   friend void from_json(const nlohmann::json& j, FlowDirectionRm& o);
 
  protected:
-   FlowDirection_anyOf m_value;
+  FlowDirection_anyOf m_value;
 };
 
 }  // namespace model

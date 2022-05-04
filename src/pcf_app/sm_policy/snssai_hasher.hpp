@@ -38,6 +38,9 @@
  */
 namespace oai::pcf::app::sm_policy {
 class snssai_hasher {
+  const int HASH_SEED   = 17;
+  const int HASH_FACTOR = 31;
+
  public:
   /**
    * @brief Calculates the hash for a snssai
@@ -46,9 +49,10 @@ class snssai_hasher {
    * @return size_t hash value
    */
   size_t operator()(const oai::pcf::model::Snssai& snssai) const {
-    size_t res = 17;
-    res        = res * 31 + std::hash<std::string>()(snssai.getSd());
-    res        = res * 31 + std::hash<int>()(snssai.getSst());
+    size_t res = HASH_SEED;
+    res        = res * HASH_FACTOR + std::hash<std::string>()(snssai.getSd());
+    res        = res * HASH_FACTOR + std::hash<int>()(snssai.getSst());
+    return res;
   }
 };
 }  // namespace oai::pcf::app::sm_policy
