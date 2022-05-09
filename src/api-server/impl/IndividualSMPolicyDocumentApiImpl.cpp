@@ -118,7 +118,55 @@ void IndividualSMPolicyDocumentApiImpl::update_sm_policy(
     const std::string& smPolicyId,
     const SmPolicyUpdateContextData& smPolicyUpdateContextData,
     Pistache::Http::ResponseWriter& response) {
-  response.send(Pistache::Http::Code::Ok, "Do some magic\n");
+  ProblemDetails problem_details;
+  std::string problem_description = "";
+  std::string content_type        = "application/problem+json";
+  nlohmann::json json_data;
+  int http_code = 0;
+
+  SmPolicyDecision decision_update;
+
+  status_code res = m_smpc_service->update_sm_policy_handler(
+      smPolicyId, smPolicyUpdateContextData, decision_update,
+      problem_description);
+
+  problem_details.setDetail(problem_description);
+
+  switch (res) {
+    case status_code::OK:
+      content_type = "application/json";
+      http_code    = HTTP_STATUS_CODE_200_OK;
+      break;
+    case status_code::INVALID_PARAMETERS:
+      http_code = HTTP_STATUS_CODE_400_BAD_REQUEST;
+      problem_details.setCause("ERROR_INITIAL_PARAMETERS");
+      break;
+    case status_code::CONTEXT_DENIED:
+      // should map to 403 but not defined in standard for this request
+      http_code = HTTP_STATUS_CODE_400_BAD_REQUEST;
+      problem_details.setCause("ERROR_INITIAL_PARAMETERS");
+      break;
+    case status_code::NOT_FOUND:
+      // TODO This is not defined in the standard, but this scenario is missig
+      // we could map it to the 400 Bad request but that is somehow misleading
+      problem_details.setCause("SM_POLICY_ID_NOT_FOUND");
+      http_code = HTTP_STATUS_CODE_404_NOT_FOUND;
+      break;
+    default:
+      problem_details.setCause("INTERNAL_ERROR");
+      http_code = HTTP_STATUS_CODE_500_INTERNAL_SERVER_ERROR;
+  }
+
+  if (res == status_code::OK) {
+    to_json(json_data, decision_update);
+  } else {
+    to_json(json_data, problem_details);
+  }
+
+  response.headers().add<Pistache::Http::Header::ContentType>(
+      Pistache::Http::Mime::MediaType(content_type));
+
+  response.send(Pistache::Http::Code(http_code), json_data.dump().c_str());
 }
 
 }  // namespace api

@@ -274,7 +274,7 @@ sm_policy::status_code pcf_smpc::delete_sm_policy_handler(
 sm_policy::status_code pcf_smpc::get_sm_policy_handler(
     std::string id, oai::pcf::model::SmPolicyControl& control,
     std::string& problem_details) {
-  std::unique_lock lock_associations(m_associations_mutex);
+  std::shared_lock lock_associations(m_associations_mutex);
   std::unordered_map<std::string, individual_sm_association>::const_iterator
       iter = m_associations.find(id);
   if (iter == m_associations.end()) {
@@ -290,6 +290,60 @@ sm_policy::status_code pcf_smpc::get_sm_policy_handler(
       fmt::format("Retrieved policy association with ID {}", id));
 
   return status_code::OK;
+}
+
+//------------------------------------------------------------------------------
+sm_policy::status_code pcf_smpc::update_sm_policy_handler(
+    std::string id, const SmPolicyUpdateContextData& update_context,
+    SmPolicyDecision& decision, std::string& problem_details) {
+  std::unique_lock lock_associations(m_associations_mutex);
+  std::unordered_map<std::string, individual_sm_association>::const_iterator
+      iter = m_associations.find(id);
+
+  if (iter == m_associations.end()) {
+    problem_details =
+        fmt::format("Could not update policy association: ID {} not found", id);
+    Logger::pcf_app().info(problem_details);
+    return status_code::NOT_FOUND;
+  }
+
+  SmPolicyDecision orig_decision   = iter->second.get_sm_policy_decision();
+  SmPolicyContextData orig_context = iter->second.get_sm_policy_context_data();
+
+  // find the original decision to redecide
+
+  std::shared_lock lock_supi(m_supi_policy_decisions_mutex);
+  std::shared_lock lock_dnn(m_dnn_policy_decisions_mutex);
+  std::shared_lock lock_slice(m_slice_policy_decisions_mutex);
+
+  policy_decision* chosen_decision;
+
+  // this may happen when the policy has been updated/deleted in the meantime.
+  bool found = find_policy(orig_context, &chosen_decision);
+  if (!found) {
+    problem_details = fmt::format(
+        "SM policy update from SUPI {}: No policies found",
+        orig_context.getSupi());
+    Logger::pcf_app().info(problem_details);
+    return status_code::CONTEXT_DENIED;
+  }
+
+  status_code res = chosen_decision->redecide(
+      orig_context, orig_decision, update_context, decision, problem_details);
+  // we can release the locks here
+  lock_slice.unlock();
+  lock_dnn.unlock();
+  lock_supi.unlock();
+
+  // update the existing context and policy and receive a policy diff
+  // TODO in TS 23.512 Chapter 4.2.6 it is described that only the diff should
+  // be returned. here, we return the whole policy object.
+
+  individual_sm_association assoc(orig_context, decision, id);
+  // overwrite existing association
+  m_associations.insert(std::make_pair(id, assoc));
+
+  return res;
 }
 
 //------------------------------------------------------------------------------

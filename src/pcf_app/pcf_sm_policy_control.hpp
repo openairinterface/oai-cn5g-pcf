@@ -39,6 +39,7 @@
 #include "SmPolicyDecision.h"
 #include "SmPolicyDeleteData.h"
 #include "SmPolicyControl.h"
+#include "SmPolicyUpdateContextData.h"
 #include "sm_policy/pcf_smpc_status_code.hpp"
 #include "sm_policy/individual_sm_association.hpp"
 #include "sm_policy/policy_decision.hpp"
@@ -105,6 +106,23 @@ class pcf_smpc {
    */
   sm_policy::status_code get_sm_policy_handler(
       std::string id, oai::pcf::model::SmPolicyControl& control,
+      std::string& problem_details);
+
+  /**
+   * @brief Handler for updating the policy decision based on the provided
+   * update context, as define in 3GPP TS 29.512 Chapter 4.2.4
+   *
+   * @param id The ID of the existing association, if not exist return
+   * status_code::NOT_FOUND
+   * @param update_context input: The context of the update
+   * @param decision output: The SmPolicyDecision
+   * @param problem_details output: additional information in case of an error
+   * @return sm_policy::status_code
+   */
+  sm_policy::status_code update_sm_policy_handler(
+      std::string id,
+      const oai::pcf::model::SmPolicyUpdateContextData& update_context,
+      oai::pcf::model::SmPolicyDecision& decision,
       std::string& problem_details);
 
  private:
