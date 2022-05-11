@@ -230,7 +230,7 @@ install_nghttp2_from_git() {
     if [[ $OS_DISTRO == "ubuntu" ]]; then
       PACKAGE_LIST="\
       g++ \
-      $CMAKE \
+      cmake \
       binutils \
       autoconf \
       automake \
