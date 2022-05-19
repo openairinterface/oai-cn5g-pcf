@@ -31,6 +31,8 @@
 #include "sm_api_test.cpp"
 #include "pcf_config.hpp"
 
+namespace oai::pcf::test {
+
 TEST_F(SMApiTest, Test4) {
   // TODO real test with REST client
   const std::string a = "ASDF";
@@ -38,3 +40,5 @@ TEST_F(SMApiTest, Test4) {
 
   EXPECT_NE(a, b);
 }
+
+}  // namespace oai::pcf::test

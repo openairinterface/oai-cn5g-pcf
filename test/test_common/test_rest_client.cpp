@@ -33,6 +33,8 @@
 #include <memory>
 #include <curl/curl.h>
 
+using namespace oai::pcf::test;
+
 static std::size_t callback(
     const char* in, std::size_t size, std::size_t num, std::string* out) {
   const std::size_t totalBytes(size * num);

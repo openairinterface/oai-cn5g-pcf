@@ -32,7 +32,9 @@
 
 #include "pcf_config.hpp"
 
+namespace oai::pcf::test {
 extern std::string pcf_config_path;
 extern int port_inc;
 
+}  // namespace oai::pcf::test
 #endif

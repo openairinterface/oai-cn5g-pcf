@@ -36,6 +36,8 @@
 
 using namespace oai::pcf::model;
 
+namespace oai::pcf::test {
+
 TEST_F(SMApiTest, CreateNewSMPolicyAssociation) {
   std::string response_body;
   std::string response_headers;
@@ -54,3 +56,5 @@ TEST_F(SMApiTest, CreateNewSMPolicyAssociation) {
 
   EXPECT_EQ(code, 201);
 }
+
+}  // namespace oai::pcf::test

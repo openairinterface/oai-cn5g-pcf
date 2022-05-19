@@ -32,8 +32,8 @@
 #include "logger.hpp"
 #include "pcf_config.hpp"
 
-std::string pcf_config_path;
-int port_inc = 0;
+std::string oai::pcf::test::pcf_config_path;
+int oai::pcf::test::port_inc = 0;
 
 oai::pcf::config::pcf_config pcf_cfg;
 
@@ -44,7 +44,7 @@ int main(int argc, char* argv[]) {
     std::cout << "You need to specify the PCF config file path" << std::endl;
     return -1;
   }
-  pcf_config_path = argv[1];
+  oai::pcf::test::pcf_config_path = argv[1];
   // TODO logger should not be here, but apparently singleton does not work
   // Thus, when called in SetUp, we get multiple lines per test
   Logger::init("pcf_tests", true, false);

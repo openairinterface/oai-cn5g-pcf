@@ -47,11 +47,13 @@ using namespace oai::pcf;
 
 extern config::pcf_config pcf_cfg;  // defined in main
 
+namespace oai::pcf::test {
+
 class SMApiTest : public ::testing::Test {
  protected:
   config::pcf_config pcf_cfg;
-  PCFApiServer* pcf_api_server_1;
-  app::pcf_app* pcf_app_inst = nullptr;
+  std::unique_ptr<PCFApiServer> pcf_api_server_1;
+  std::unique_ptr<app::pcf_app> pcf_app_inst = nullptr;
   std::thread pcf_http1_manager;
   std::string base_url;
 
@@ -64,7 +66,7 @@ class SMApiTest : public ::testing::Test {
     pcf_cfg.load(pcf_config_path);
 
     // PCF application layer
-    pcf_app_inst = new pcf_app(pcf_config_path, ev);
+    pcf_app_inst = std::make_unique<pcf_app>(pcf_config_path, ev);
 
     // hack to increment ports to prevent address already in use due to bad
     // shutdown routine
@@ -73,10 +75,10 @@ class SMApiTest : public ::testing::Test {
     Pistache::Address addr(Pistache::Ipv4::any(), port);
     base_url = fmt::format("127.0.0.1:{}/npcf-smpolicycontrol/v1/", port);
 
-    pcf_api_server_1 = new PCFApiServer(addr, pcf_app_inst);
+    pcf_api_server_1 = std::make_unique<PCFApiServer>(addr, pcf_app_inst.get());
 
     pcf_api_server_1->init(2);
-    std::thread temp_thread(&PCFApiServer::start, pcf_api_server_1);
+    std::thread temp_thread(&PCFApiServer::start, pcf_api_server_1.get());
     pcf_http1_manager.swap(temp_thread);
 
     rest_client = std::make_unique<TestRestClient>();
@@ -103,22 +105,16 @@ class SMApiTest : public ::testing::Test {
       if (!fail) {
         pcf_http1_manager.join();
       }
-
-      delete pcf_api_server_1;
-      pcf_api_server_1 = nullptr;
+      pcf_api_server_1.release();
     }
+    pcf_app_inst.release();
 
-    if (pcf_app_inst) {
-      delete pcf_app_inst;
-      pcf_app_inst = nullptr;
-    }
-
-    if (rest_client) {
-      rest_client = nullptr;
-    }
+    rest_client.release();
 
     if (fail) {
       GTEST_SKIP();
     }
   }
 };
+
+}  // namespace oai::pcf::test

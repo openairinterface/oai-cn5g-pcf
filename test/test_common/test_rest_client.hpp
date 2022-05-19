@@ -33,6 +33,8 @@
 #include <iostream>
 #include <string>
 
+namespace oai::pcf::test {
+
 class TestRestClient {
  private:
   std::string custom_method;
@@ -57,4 +59,5 @@ class TestRestClient {
       std::string& headers);
 };
 
+}  // namespace oai::pcf::test
 #endif
