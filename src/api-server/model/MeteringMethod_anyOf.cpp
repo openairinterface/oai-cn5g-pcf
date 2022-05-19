@@ -63,6 +63,9 @@ void to_json(nlohmann::json& j, const MeteringMethod_anyOf& o) {
   j = nlohmann::json();
 
   switch (o.getValue()) {
+    case MeteringMethod_anyOf::eMeteringMethod_anyOf::NULL_VALUE:
+      j = nullptr;
+      break;
     case MeteringMethod_anyOf::eMeteringMethod_anyOf::
         INVALID_VALUE_OPENAPI_GENERATED:
       j = "INVALID_VALUE_OPENAPI_GENERATED";
@@ -83,6 +86,11 @@ void to_json(nlohmann::json& j, const MeteringMethod_anyOf& o) {
 }
 
 void from_json(const nlohmann::json& j, MeteringMethod_anyOf& o) {
+  if (j.is_null()) {
+    o.setValue(MeteringMethod_anyOf::eMeteringMethod_anyOf::NULL_VALUE);
+    return;
+  }
+
   auto s = j.get<std::string>();
   if (s == "DURATION") {
     o.setValue(MeteringMethod_anyOf::eMeteringMethod_anyOf::DURATION);
@@ -92,6 +100,8 @@ void from_json(const nlohmann::json& j, MeteringMethod_anyOf& o) {
     o.setValue(MeteringMethod_anyOf::eMeteringMethod_anyOf::DURATION_VOLUME);
   } else if (s == "EVENT") {
     o.setValue(MeteringMethod_anyOf::eMeteringMethod_anyOf::EVENT);
+  } else if (s == "null") {
+    o.setValue(MeteringMethod_anyOf::eMeteringMethod_anyOf::NULL_VALUE);
   } else {
     std::stringstream ss;
     ss << "Unexpected value " << s << " in json"

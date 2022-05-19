@@ -122,10 +122,10 @@ void from_json(const nlohmann::json& j, AccNetChId& o) {
   }
 }
 
-int32_t AccNetChId::getAccNetChaIdValue() const {
+uint32_t AccNetChId::getAccNetChaIdValue() const {
   return m_AccNetChaIdValue;
 }
-void AccNetChId::setAccNetChaIdValue(int32_t const value) {
+void AccNetChId::setAccNetChaIdValue(uint32_t const value) {
   m_AccNetChaIdValue = value;
 }
 std::vector<std::string> AccNetChId::getRefPccRuleIds() const {

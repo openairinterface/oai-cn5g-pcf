@@ -19,56 +19,41 @@
  *      contact@openairinterface.org
  */
 
-/*! \file pcf_app.hpp
+/*! \file snssai_hasher.hpp
  \brief
- \author  Rohan Kharade
+ \author  Stefan Spettel
  \company Openairinterface Software Allianse
- \date 2021
- \email: rohan.kharade@openairinterface.org
+ \date 2022
+ \email: stefan.spettel@eurecom.fr
  */
 
-#ifndef FILE_PCF_APP_HPP_SEEN
-#define FILE_PCF_APP_HPP_SEEN
+#ifndef FILE_SNSSAI_HASHER_SEEN
+#define FILE_SNSSAI_HASHER_SEEN
 
-#include "common_root_types.h"
-#include <boost/atomic.hpp>
-#include <string>
+#include "Snssai.h"
 
-#include "3gpp_29.500.h"
-#include "pcf.h"
-#include "pcf_profile.hpp"
-#include "pcf_event.hpp"
-#include "3gpp_29.510.h"
-#include "PatchItem.h"
-#include "pcf_sm_policy_control.hpp"
+/**
+ * @brief Hash function to use Snssai objects as keys in (unordered) maps
+ *
+ */
+namespace oai::pcf::app::sm_policy {
+class snssai_hasher {
+  const int HASH_SEED   = 17;
+  const int HASH_FACTOR = 31;
 
-namespace oai::pcf::app {
-
-class pcf_app {
  public:
-  explicit pcf_app(const std::string& config_file, pcf_event& ev);
-  pcf_app(pcf_app const&) = delete;
-  void operator=(pcf_app const&) = delete;
-
-  virtual ~pcf_app();
-
-  /*
-   * Start event nf heartbeat procedure
-   * @param [void]
-   * @return void
+  /**
+   * @brief Calculates the hash for a snssai
+   *
+   * @param snssai calculate hash based on this value
+   * @return size_t hash value
    */
-  void handle_create_sm_policy();
-
-  std::shared_ptr<pcf_smpc> get_pcf_smpc_service();
-
- private:
-  pcf_profile nf_instance_profile;  // PCF profile
-  std::string pcf_instance_id;      // PCF instance id
-  // for Event Handling
-  pcf_event& event_sub;
-  bs2::connection task_connection;
-
-  std::shared_ptr<pcf_smpc> pcf_smpc_service;
+  size_t operator()(const oai::pcf::model::Snssai& snssai) const {
+    size_t res = HASH_SEED;
+    res        = res * HASH_FACTOR + std::hash<std::string>()(snssai.getSd());
+    res        = res * HASH_FACTOR + std::hash<int>()(snssai.getSst());
+    return res;
+  }
 };
-}  // namespace oai::pcf::app
-#endif /* FILE_PCF_APP_HPP_SEEN */
+}  // namespace oai::pcf::app::sm_policy
+#endif

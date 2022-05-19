@@ -33,7 +33,7 @@
 #include "SmPolicyDecision.h"
 #include <string>
 
-#include "pcf_app.hpp"
+#include "pcf_sm_policy_control.hpp"
 
 namespace oai {
 namespace pcf {
@@ -46,12 +46,17 @@ class SMPoliciesCollectionApiImpl
     : public oai::pcf::api::SMPoliciesCollectionApi {
  public:
   explicit SMPoliciesCollectionApiImpl(
-      const std::shared_ptr<Pistache::Rest::Router>& rtr);
+      const std::shared_ptr<Pistache::Rest::Router>& rtr,
+      const std::shared_ptr<app::pcf_smpc> smpc_service, std::string address);
   ~SMPoliciesCollectionApiImpl() override = default;
 
   void create_sm_policy(
       const SmPolicyContextData& smPolicyContextData,
       Pistache::Http::ResponseWriter& response);
+
+ private:
+  std::string m_address;
+  std::shared_ptr<app::pcf_smpc> smpc_service;
 };
 
 }  // namespace api

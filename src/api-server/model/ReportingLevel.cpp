@@ -43,13 +43,9 @@ bool ReportingLevel::validate(
   return success;
 }
 
-// bool ReportingLevel::operator==(const ReportingLevel& rhs) const
-// {
-//     return
-
-//     getValue() == rhs.getValue()
-//     ;
-// }
+bool ReportingLevel::operator==(const ReportingLevel& rhs) const {
+  return getValue() == rhs.getValue();
+}
 
 bool ReportingLevel::operator!=(const ReportingLevel& rhs) const {
   return !(*this == rhs);
@@ -60,6 +56,24 @@ void to_json(nlohmann::json& j, const ReportingLevel& o) {
 }
 
 void from_json(const nlohmann::json& j, ReportingLevel& o) {}
+
+ReportingLevel_anyOf ReportingLevel::getValue() const {
+  return m_value;
+}
+
+void ReportingLevel::setValue(ReportingLevel_anyOf value) {
+  m_value = value;
+}
+
+ReportingLevel_anyOf::eReportingLevel_anyOf ReportingLevel::getEnumValue()
+    const {
+  return m_value.getValue();
+}
+
+void ReportingLevel::setEnumValue(
+    ReportingLevel_anyOf::eReportingLevel_anyOf value) {
+  m_value.setValue(value);
+}
 
 }  // namespace model
 }  // namespace pcf

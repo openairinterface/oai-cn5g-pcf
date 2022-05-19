@@ -47,16 +47,19 @@
 
 #include "logger.hpp"
 #include "pcf_app.hpp"
-
-// using namespace oai::pcf::api;
-using namespace oai::pcf::app;
+#include "SMPoliciesCollectionApiImpl.h"
 
 class PCFApiServer {
  public:
   PCFApiServer(Pistache::Address address, pcf_app* pcf_app_inst)
       : m_httpEndpoint(std::make_shared<Pistache::Http::Endpoint>(address)) {
-    m_router  = std::make_shared<Pistache::Rest::Router>();
-    m_address = address.host() + ":" + (address.port()).toString();
+    m_router = std::make_shared<Pistache::Rest::Router>();
+    // TODO hardcode http string, how to handle https
+    m_address = "http://" + address.host() + ":" + (address.port()).toString();
+
+    m_smPoliciesCollectionApi =
+        std::make_shared<oai::pcf::api::SMPoliciesCollectionApiImpl>(
+            m_router, pcf_app_inst->get_pcf_smpc_service(), m_address);
   }
   void init(size_t thr = 1);
   void start();
@@ -67,6 +70,9 @@ class PCFApiServer {
   std::shared_ptr<Pistache::Rest::Router> m_router;
 
   std::string m_address;
+
+  std::shared_ptr<oai::pcf::api::SMPoliciesCollectionApiImpl>
+      m_smPoliciesCollectionApi;
 };
 
 #endif

@@ -67,10 +67,16 @@ class ReportingLevel {
   /////////////////////////////////////////////
   /// ReportingLevel members
 
+  ReportingLevel_anyOf getValue() const;
+  void setValue(ReportingLevel_anyOf value);
+  ReportingLevel_anyOf::eReportingLevel_anyOf getEnumValue() const;
+  void setEnumValue(ReportingLevel_anyOf::eReportingLevel_anyOf value);
+
   friend void to_json(nlohmann::json& j, const ReportingLevel& o);
   friend void from_json(const nlohmann::json& j, ReportingLevel& o);
 
  protected:
+  ReportingLevel_anyOf m_value;
 };
 
 }  // namespace model

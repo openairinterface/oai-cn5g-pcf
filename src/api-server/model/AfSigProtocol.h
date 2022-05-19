@@ -66,7 +66,13 @@ class AfSigProtocol {
   friend void to_json(nlohmann::json& j, const AfSigProtocol& o);
   friend void from_json(const nlohmann::json& j, AfSigProtocol& o);
 
+  AfSigProtocol_anyOf getValue() const;
+  void setValue(AfSigProtocol_anyOf value);
+  AfSigProtocol_anyOf::eAfSigProtocol_anyOf getEnumValue() const;
+  void setEnumValue(AfSigProtocol_anyOf::eAfSigProtocol_anyOf value);
+
  protected:
+  AfSigProtocol_anyOf m_value;
 };
 
 }  // namespace model

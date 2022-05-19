@@ -59,10 +59,20 @@ bool FlowDirection::operator!=(const FlowDirection& rhs) const {
 void to_json(nlohmann::json& j, const FlowDirection& o) {
   j = nlohmann::json();
   to_json(j, o.m_value);
+  if (o.m_value.getValue() ==
+      FlowDirection_anyOf::eFlowDirection_anyOf::NULL_VALUE) {
+    throw std::invalid_argument(
+        "Could not convert to json: FlowDirection does not allow null values");
+  }
 }
 
 void from_json(const nlohmann::json& j, FlowDirection& o) {
   from_json(j, o.m_value);
+  if (j.is_null()) {
+    throw std::invalid_argument(
+        "Could not convert from json: FlowDirection does not allow null "
+        "values");
+  }
 }
 
 FlowDirection_anyOf FlowDirection::getValue() const {

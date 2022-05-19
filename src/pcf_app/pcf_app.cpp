@@ -65,9 +65,16 @@ pcf_app::pcf_app(const std::string& config_file, pcf_event& ev)
       throw;
     }
   }
+
+  pcf_smpc_service = std::make_shared<pcf_smpc>();
 }
 
 //------------------------------------------------------------------------------
 pcf_app::~pcf_app() {
   Logger::pcf_app().debug("Delete PCF_APP instance...");
+  pcf_smpc_service = nullptr;
+}
+
+std::shared_ptr<pcf_smpc> pcf_app::get_pcf_smpc_service() {
+  return pcf_smpc_service;
 }
