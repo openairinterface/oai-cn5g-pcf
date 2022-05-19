@@ -43,13 +43,9 @@ bool FlowDirectionRm::validate(
   return success;
 }
 
-// bool FlowDirectionRm::operator==(const FlowDirectionRm& rhs) const
-// {
-//     return
-
-//     getValue() == rhs.getValue()
-//     ;
-// }
+bool FlowDirectionRm::operator==(const FlowDirectionRm& rhs) const {
+  return getValue() == rhs.getValue();
+}
 
 bool FlowDirectionRm::operator!=(const FlowDirectionRm& rhs) const {
   return !(*this == rhs);
@@ -60,6 +56,24 @@ void to_json(nlohmann::json& j, const FlowDirectionRm& o) {
 }
 
 void from_json(const nlohmann::json& j, FlowDirectionRm& o) {}
+
+FlowDirection_anyOf FlowDirectionRm::getValue() const {
+  return m_value;
+}
+
+void FlowDirectionRm::setValue(FlowDirection_anyOf value) {
+  m_value = value;
+}
+
+FlowDirection_anyOf::eFlowDirection_anyOf FlowDirectionRm::getEnumValue()
+    const {
+  return m_value.getValue();
+}
+
+void FlowDirectionRm::setEnumValue(
+    FlowDirection_anyOf::eFlowDirection_anyOf value) {
+  m_value.setValue(value);
+}
 
 }  // namespace model
 }  // namespace pcf

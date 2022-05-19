@@ -54,6 +54,9 @@ class Ipv6Prefix {
   bool operator==(const Ipv6Prefix& rhs) const;
   bool operator!=(const Ipv6Prefix& rhs) const;
 
+  std::string getIpv6Prefix() const;
+  void setIpv6Prefix(std::string const& value);
+
   /////////////////////////////////////////////
   /// Ipv6Prefix members
 
@@ -61,6 +64,7 @@ class Ipv6Prefix {
   friend void from_json(const nlohmann::json& j, Ipv6Prefix& o);
 
  protected:
+  std::string m_Ipv6Prefix;
 };
 
 }  // namespace model

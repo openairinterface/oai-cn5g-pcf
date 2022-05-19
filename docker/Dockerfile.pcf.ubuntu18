@@ -57,6 +57,7 @@ COPY . /openair-pcf
 WORKDIR /openair-pcf/build/scripts
 RUN ./build_pcf --install-deps --force
 RUN ./build_pcf --clean --Verbose --build-type Release --jobs && \
+    ldd /openair-pcf/build/pcf/build/pcf && \
     mv /openair-pcf/build/pcf/build/pcf /openair-pcf/build/pcf/build/oai_pcf
 
 #---------------------------------------------------------------------
@@ -73,7 +74,9 @@ RUN apt-get update && \
       net-tools \
       tzdata \
       bc \
-      tshark \
+      libldap-2.4-2 \
+      libkrb5-3 \
+      libgssapi-krb5-2 \
       openssl \
       libasan4 \
  && rm -rf /var/lib/apt/lists/*
@@ -89,6 +92,7 @@ WORKDIR /usr/local/lib/
 COPY --from=oai-pcf-builder \
     /usr/lib/libboost_system.so.1.67.0 \
     /usr/local/lib/libpistache.so \
+    /usr/local/lib/libnghttp2.so.14 \
     /usr/local/lib/libnghttp2_asio.so.1 \
     /usr/local/lib/libyaml-cpp.so.0.7 \
     /usr/lib/x86_64-linux-gnu/libcurl-gnutls.so.4 \
@@ -97,7 +101,8 @@ COPY --from=oai-pcf-builder \
     /usr/lib/x86_64-linux-gnu/libconfig++.so.9 \
     ./
 
-RUN ldconfig
+RUN ldconfig && \
+    ldd /openair-pcf/bin/oai_pcf
 
 # Copying template configuration files
 # The configuration folder will be flat

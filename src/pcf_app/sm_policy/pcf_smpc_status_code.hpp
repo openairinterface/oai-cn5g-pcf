@@ -19,31 +19,24 @@
  *      contact@openairinterface.org
  */
 
-#ifndef FILE_3GPP_29_571_SEEN
-#define FILE_3GPP_29_571_SEEN
+/*! \file pcf_sm_policy_control_errors.hpp
+ \brief
+ \author  Stefan Spettel
+ \company Openairinterface Software Allianse
+ \date 2022
+ \email: stefan.spettel@eurecom.fr
+ */
 
-#include "3gpp_23.003.h"
-#include "3gpp_29.510.h"
+#ifndef FILE_PCF_SMPC_STATUS_CODE_H_SEEN
+#define FILE_PCF_SMPC_STATUS_CODE_H_SEEN
 
-#include <vector>
+namespace oai::pcf::app::sm_policy {
 
-enum access_type_e { ACESS_3GPP = 1, ACESS_NON_3GPP = 2 };
-
-static const std::vector<std::string> access_type_e2str = {"3GPP_ACCESS",
-                                                           "NON_3GPP_ACCESS"};
-
-typedef struct sd_range_s {
-  std::string start;
-  std::string end;
-} sd_range_t;
-
-typedef struct snssai_extension_s {
-  std::vector<sd_range_t> sd_ranges;
-  bool wildcard_sd;
-} snssai_extension_t;
-
-typedef struct ext_snssai_s {
-  snssai_t snssai;
-  snssai_extension_t snssai_extension;
-} ext_snssai_t;
+enum class status_code {
+  CREATED,
+  USER_UNKOWN,
+  INVALID_PARAMETERS,
+  CONTEXT_DENIED,
+};
+}  // namespace oai::pcf::app::sm_policy
 #endif

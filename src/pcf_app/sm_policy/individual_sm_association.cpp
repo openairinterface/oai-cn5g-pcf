@@ -19,31 +19,38 @@
  *      contact@openairinterface.org
  */
 
-#ifndef FILE_3GPP_29_571_SEEN
-#define FILE_3GPP_29_571_SEEN
+/*! \file individual_sm_association.cpp
+ \brief
+ \author  Stefan Spettel
+ \company Openairinterface Software Allianse
+ \date 2022
+ \email: stefan.spettel@eurecom.fr
+ */
 
-#include "3gpp_23.003.h"
-#include "3gpp_29.510.h"
+#include "individual_sm_association.hpp"
 
-#include <vector>
+using namespace oai::pcf::model;
+using namespace oai::pcf::app::sm_policy;
 
-enum access_type_e { ACESS_3GPP = 1, ACESS_NON_3GPP = 2 };
+SmPolicyContextData individual_sm_association::get_sm_policy_context_data()
+    const {
+  return m_context;
+}
 
-static const std::vector<std::string> access_type_e2str = {"3GPP_ACCESS",
-                                                           "NON_3GPP_ACCESS"};
+SmPolicyDecision individual_sm_association::get_sm_policy_decision() const {
+  return m_decision;
+}
 
-typedef struct sd_range_s {
-  std::string start;
-  std::string end;
-} sd_range_t;
+void individual_sm_association::set_sm_policy_context_data(
+    SmPolicyContextData& context) {
+  m_context = context;
+}
 
-typedef struct snssai_extension_s {
-  std::vector<sd_range_t> sd_ranges;
-  bool wildcard_sd;
-} snssai_extension_t;
+void individual_sm_association::set_sm_policy_decision(
+    SmPolicyDecision& decision) {
+  m_decision = decision;
+}
 
-typedef struct ext_snssai_s {
-  snssai_t snssai;
-  snssai_extension_t snssai_extension;
-} ext_snssai_t;
-#endif
+std::string individual_sm_association::get_id() const {
+  return m_id;
+}

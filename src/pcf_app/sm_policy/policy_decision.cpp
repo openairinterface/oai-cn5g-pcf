@@ -19,31 +19,25 @@
  *      contact@openairinterface.org
  */
 
-#ifndef FILE_3GPP_29_571_SEEN
-#define FILE_3GPP_29_571_SEEN
+/*! \file policy_decision.cpp
+ \brief
+ \author  Stefan Spettel
+ \company Openairinterface Software Allianse
+ \date 2022
+ \email: stefan.spettel@eurecom.fr
+ */
 
-#include "3gpp_23.003.h"
-#include "3gpp_29.510.h"
+#include "policy_decision.hpp"
 
-#include <vector>
+using namespace oai::pcf::model;
+using namespace oai::pcf::app::sm_policy;
+using namespace oai::pcf::app;
 
-enum access_type_e { ACESS_3GPP = 1, ACESS_NON_3GPP = 2 };
+status_code policy_decision::decide(
+    const SmPolicyContextData& context, SmPolicyDecision& decision) const {
+  // default rule, so just reply with the decision
+  decision = m_decision;
+  return status_code::CREATED;
+}
 
-static const std::vector<std::string> access_type_e2str = {"3GPP_ACCESS",
-                                                           "NON_3GPP_ACCESS"};
-
-typedef struct sd_range_s {
-  std::string start;
-  std::string end;
-} sd_range_t;
-
-typedef struct snssai_extension_s {
-  std::vector<sd_range_t> sd_ranges;
-  bool wildcard_sd;
-} snssai_extension_t;
-
-typedef struct ext_snssai_s {
-  snssai_t snssai;
-  snssai_extension_t snssai_extension;
-} ext_snssai_t;
-#endif
+policy_decision::~policy_decision() {}

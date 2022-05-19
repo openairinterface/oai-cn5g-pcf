@@ -76,10 +76,18 @@ void to_json(nlohmann::json& j, const ReportingLevel_anyOf& o) {
     case ReportingLevel_anyOf::eReportingLevel_anyOf::SPON_CON_LEVEL:
       j = "SPON_CON_LEVEL";
       break;
+    case ReportingLevel_anyOf::eReportingLevel_anyOf::NULL_VALUE:
+      j = nullptr;
+      break;
   }
 }
 
 void from_json(const nlohmann::json& j, ReportingLevel_anyOf& o) {
+  if (j.is_null()) {
+    o.setValue(ReportingLevel_anyOf::eReportingLevel_anyOf::NULL_VALUE);
+    return;
+  }
+
   auto s = j.get<std::string>();
   if (s == "SER_ID_LEVEL") {
     o.setValue(ReportingLevel_anyOf::eReportingLevel_anyOf::SER_ID_LEVEL);
@@ -87,6 +95,8 @@ void from_json(const nlohmann::json& j, ReportingLevel_anyOf& o) {
     o.setValue(ReportingLevel_anyOf::eReportingLevel_anyOf::RAT_GR_LEVEL);
   } else if (s == "SPON_CON_LEVEL") {
     o.setValue(ReportingLevel_anyOf::eReportingLevel_anyOf::SPON_CON_LEVEL);
+  } else if (s == "null") {
+    o.setValue(ReportingLevel_anyOf::eReportingLevel_anyOf::NULL_VALUE);
   } else {
     std::stringstream ss;
     ss << "Unexpected value " << s << " in json"

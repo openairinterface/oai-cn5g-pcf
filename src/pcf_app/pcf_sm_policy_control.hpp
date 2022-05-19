@@ -30,24 +30,28 @@
 #ifndef FILE_PCF_SM_POLICY_CONTROL_SEEN
 #define FILE_PCF_SM_POLICY_CONTROL_SEEN
 
-#include "common_root_types.h"
-#include <boost/atomic.hpp>
 #include <string>
+#include <unordered_map>
+#include <shared_mutex>
+#include <memory>
 
-#include "3gpp_29.500.h"
-#include "pcf.h"
-#include "3gpp_29.510.h"
-#include "PatchItem.h"
 #include "SmPolicyContextData.h"
 #include "SmPolicyDecision.h"
-#include "ProblemDetails.h"
-#include "SmPolicyControl.h"
-#include "SmPolicyDecision.h"
-#include "SmPolicyDeleteData.h"
-#include "SmPolicyUpdateContextData.h"
+#include "sm_policy/pcf_smpc_status_code.hpp"
+#include "sm_policy/individual_sm_association.hpp"
+#include "sm_policy/policy_decision.hpp"
+#include "sm_policy/slice_policy_decision.hpp"
+#include "sm_policy/supi_policy_decision.hpp"
+#include "sm_policy/dnn_policy_decision.hpp"
+#include "sm_policy/snssai_hasher.hpp"
+#include "uint_generator.hpp"
 
 namespace oai::pcf::app {
 
+/**
+ * @brief Service class to handle Session Management Policies
+ *
+ */
 class pcf_smpc {
  public:
   explicit pcf_smpc();
@@ -56,20 +60,74 @@ class pcf_smpc {
 
   virtual ~pcf_smpc();
 
-  /*
-   * Start event nf heartbeat procedure
-   * @param [void]
-   * @return void
+  /**
+   * @brief Handler for receiving create sm policy requests, as defined in
+   * 3GPP TS 29.512 Chapter 4.2.2
+   * The result depends on pre-configured policy rules based on supi, dnn,
+   * snssai and default rules in that order
+   *
+   * @param context input: context from the request
+   * @param decision output: policy decision based on context and local
+   * provisioning
+   * @return sm_policy::status_code
    */
-  void create_sm_policy_handler();
-
-  // void delete_sm_policy(const std::string &smPolicyId, const
-  // SmPolicyDeleteData &smPolicyDeleteData);
-  void get_sm_policy(const std::string& smPolicyId);
-  // void update_sm_policy(const std::string &smPolicyId, const
-  // SmPolicyUpdateContextData &smPolicyUpdateContextData);
+  sm_policy::status_code create_sm_policy_handler(
+      const oai::pcf::model::SmPolicyContextData& context,
+      oai::pcf::model::SmPolicyDecision& decision, std::string& association_id,
+      std::string& problem_details);
 
  private:
+  /**
+   * @brief Finds a policy based on the existing supi, dnn, slice and default
+   * policies in that order.
+   * PRECONDITION: Lock all mutexes for the maps
+   *
+   * @param context  The policy context containing supi, dnn and snssai
+   * @param chosen_decision pointer to the object implementing the chosen
+   * decision base class
+   * @return true if policy found
+   * @return false if no policy found
+   */
+  bool find_policy(
+      const oai::pcf::model::SmPolicyContextData& context,
+      oai::pcf::app::sm_policy::policy_decision** chosen_decision);
+
+  /**
+   * @brief Helper method to create hardcoded policy decisions
+   *
+   * @param pcc_rule_name
+   * @param flow_description
+   * @param tc_id
+   * @param steering_policy_id
+   */
+  void create_default_policy_decision(
+      std::string pcc_rule_name, std::string flow_description,
+      std::string tc_id, std::string dnai, std::string route_policy_id,
+      int precedence, oai::pcf::model::SmPolicyDecision& decision);
+
+  util::uint_generator<uint32_t> m_association_id_generator;
+
+  std::unordered_map<
+      std::string, oai::pcf::app::sm_policy::individual_sm_association>
+      m_associations;
+  std::unordered_map<
+      oai::pcf::model::Snssai, oai::pcf::app::sm_policy::slice_policy_decision,
+      oai::pcf::app::sm_policy::snssai_hasher>
+      m_slice_policy_decisions;
+
+  std::unordered_map<std::string, oai::pcf::app::sm_policy::dnn_policy_decision>
+      m_dnn_policy_decisions;
+
+  std::unordered_map<
+      std::string, oai::pcf::app::sm_policy::supi_policy_decision>
+      m_supi_policy_decisions;
+
+  std::unique_ptr<oai::pcf::app::sm_policy::policy_decision> default_decision;
+
+  mutable std::shared_mutex m_associations_mutex;
+  mutable std::shared_mutex m_slice_policy_decisions_mutex;
+  mutable std::shared_mutex m_dnn_policy_decisions_mutex;
+  mutable std::shared_mutex m_supi_policy_decisions_mutex;
 };
 }  // namespace oai::pcf::app
 #endif /* FILE_PCF_SM_POLICY_CONTROL_SEEN */

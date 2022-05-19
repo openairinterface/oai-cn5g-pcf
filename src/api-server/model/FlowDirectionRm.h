@@ -59,10 +59,16 @@ class FlowDirectionRm {
   /////////////////////////////////////////////
   /// FlowDirectionRm members
 
+  FlowDirection_anyOf getValue() const;
+  void setValue(FlowDirection_anyOf value);
+  FlowDirection_anyOf::eFlowDirection_anyOf getEnumValue() const;
+  void setEnumValue(FlowDirection_anyOf::eFlowDirection_anyOf value);
+
   friend void to_json(nlohmann::json& j, const FlowDirectionRm& o);
   friend void from_json(const nlohmann::json& j, FlowDirectionRm& o);
 
  protected:
+  FlowDirection_anyOf m_value;
 };
 
 }  // namespace model
