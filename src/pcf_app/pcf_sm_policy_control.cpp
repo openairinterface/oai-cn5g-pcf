@@ -297,8 +297,8 @@ sm_policy::status_code pcf_smpc::update_sm_policy_handler(
     std::string id, const SmPolicyUpdateContextData& update_context,
     SmPolicyDecision& decision, std::string& problem_details) {
   std::unique_lock lock_associations(m_associations_mutex);
-  std::unordered_map<std::string, individual_sm_association>::const_iterator
-      iter = m_associations.find(id);
+  std::unordered_map<std::string, individual_sm_association>::iterator iter =
+      m_associations.find(id);
 
   if (iter == m_associations.end()) {
     problem_details =
@@ -338,8 +338,8 @@ sm_policy::status_code pcf_smpc::update_sm_policy_handler(
   // update the existing context and policy and receive a policy diff
   // TODO in TS 23.512 Chapter 4.2.6 it is described that only the diff should
   // be returned. here, we return the whole policy object.
-
   individual_sm_association assoc(orig_context, decision, id);
+  iter->second = assoc;
   // overwrite existing association
   m_associations.insert(std::make_pair(id, assoc));
 
