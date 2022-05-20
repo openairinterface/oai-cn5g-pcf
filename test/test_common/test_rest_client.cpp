@@ -64,7 +64,7 @@ long TestRestClient::doRequest(
       curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, body.length());
       curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body_char);
     }
-    curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
+    // curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
 
     // response information.
     std::unique_ptr<std::string> http_data(new std::string());
