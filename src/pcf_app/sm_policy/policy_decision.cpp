@@ -67,6 +67,7 @@ status_code policy_decision::handle_access_type_change(
     problem_details = "ATSSS not supported";
     return status_code::INVALID_PARAMETERS;
   }
+  return status_code::INVALID_PARAMETERS;
 }
 
 status_code policy_decision::handle_ip_address_change(
