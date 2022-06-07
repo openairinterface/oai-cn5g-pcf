@@ -33,7 +33,7 @@
 #include "pcf_config.hpp"
 
 std::string oai::pcf::test::pcf_config_path;
-int oai::pcf::test::port_inc = 0;
+unsigned int oai::pcf::test::port_inc = 0;
 
 oai::pcf::config::pcf_config pcf_cfg;
 

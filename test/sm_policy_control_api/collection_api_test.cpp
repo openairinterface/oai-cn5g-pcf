@@ -36,6 +36,8 @@
 #include "SmPolicyDecision.h"
 #include "logger.hpp"
 
+#include "3gpp_29.500.h"
+
 using namespace oai::pcf::model;
 
 using ::testing::MatchesRegex;
@@ -72,7 +74,7 @@ TEST_F(SMApiTest, CreateNewSMPolicyAssociation) {
 
   int code = rest_client->sendPost(url, body, response_body, response_headers);
 
-  EXPECT_EQ(code, 201);
+  EXPECT_EQ(code, HTTP_STATUS_CODE_201_CREATED);
 
   // Check that location is here and in correct format
   EXPECT_THAT(
@@ -109,7 +111,7 @@ TEST_F(SMApiTest, CreateNewSMPolicyAssociationMissingSUPI) {
     )";
   int code = rest_client->sendPost(url, body, response_body, response_headers);
 
-  EXPECT_EQ(code, 400);
+  EXPECT_EQ(code, HTTP_STATUS_CODE_400_BAD_REQUEST);
 }
 
 }  // namespace oai::pcf::test

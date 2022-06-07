@@ -70,7 +70,7 @@ class SMApiTest : public ::testing::Test {
 
     // hack to increment ports to prevent address already in use due to bad
     // shutdown routine
-    int port = pcf_cfg.sbi.http1_port + port_inc;
+    unsigned int port = pcf_cfg.sbi.http1_port + port_inc;
     port_inc++;
     Pistache::Address addr(Pistache::Ipv4::any(), port);
     base_url = fmt::format("127.0.0.1:{}/npcf-smpolicycontrol/v1/", port);
