@@ -32,6 +32,7 @@
 
 #include "SmPolicyContextData.h"
 #include "SmPolicyDecision.h"
+#include "SmPolicyUpdateContextData.h"
 #include "pcf_smpc_status_code.hpp"
 
 namespace oai::pcf::app::sm_policy {
@@ -60,7 +61,53 @@ class policy_decision {
       const oai::pcf::model::SmPolicyContextData& context,
       oai::pcf::model::SmPolicyDecision& decision) const;
 
+  /**
+   * @brief Redecides based on the original context, original decision and
+   * creates a new decision. The new_decision contains a complete new policy
+   * decision
+   *
+   * @param original_context The context of the create request and/or
+   * previous update requests, is changed according to updated values in
+   * update_data
+   * @param original_decision input: The original decision
+   * @param update_data input: The data from the update
+   * @param decision_diff output: the new policy decision
+   * @return oai::pcf::app::sm_policy::status_code OK in case of successful
+   * update
+   */
+  virtual oai::pcf::app::sm_policy::status_code redecide(
+      oai::pcf::model::SmPolicyContextData& original_context,
+      const oai::pcf::model::SmPolicyDecision& original_decision,
+      const oai::pcf::model::SmPolicyUpdateContextData& update_data,
+      oai::pcf::model::SmPolicyDecision& new_decision,
+      std::string& problem_details);
+
   virtual ~policy_decision();
+
+ protected:
+  oai::pcf::app::sm_policy::status_code handle_plmn_change(
+      oai::pcf::model::SmPolicyContextData& orig_context,
+      const oai::pcf::model::SmPolicyUpdateContextData& update,
+      oai::pcf::model::SmPolicyDecision& decision,
+      std::string& problem_details);
+
+  oai::pcf::app::sm_policy::status_code handle_access_type_change(
+      oai::pcf::model::SmPolicyContextData& orig_context,
+      const oai::pcf::model::SmPolicyUpdateContextData& update,
+      oai::pcf::model::SmPolicyDecision& decision,
+      std::string& problem_details);
+
+  oai::pcf::app::sm_policy::status_code handle_ip_address_change(
+      oai::pcf::model::SmPolicyContextData& orig_context,
+      const oai::pcf::model::SmPolicyUpdateContextData& update,
+      oai::pcf::model::SmPolicyDecision& decision,
+      std::string& problem_details);
+
+  oai::pcf::app::sm_policy::status_code handle_rat_type_change(
+      oai::pcf::model::SmPolicyContextData& orig_context,
+      const oai::pcf::model::SmPolicyUpdateContextData& update,
+      oai::pcf::model::SmPolicyDecision& decision,
+      std::string& problem_details);
 
  private:
   oai::pcf::model::SmPolicyDecision m_decision;

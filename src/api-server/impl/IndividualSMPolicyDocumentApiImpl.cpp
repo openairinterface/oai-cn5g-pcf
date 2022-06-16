@@ -12,31 +12,161 @@
  */
 
 #include "IndividualSMPolicyDocumentApiImpl.h"
+#include "sm_policy/pcf_smpc_status_code.hpp"
+#include "3gpp_29.500.h"
 
 namespace oai {
 namespace pcf {
 namespace api {
 
 using namespace oai::pcf::model;
+using namespace oai::pcf::app;
+using namespace oai::pcf::app::sm_policy;
 
 IndividualSMPolicyDocumentApiImpl::IndividualSMPolicyDocumentApiImpl(
-    const std::shared_ptr<Pistache::Rest::Router>& rtr)
-    : IndividualSMPolicyDocumentApi(rtr) {}
+    const std::shared_ptr<Pistache::Rest::Router>& rtr,
+    std::shared_ptr<pcf_smpc> smpc_service, std::string address)
+    : IndividualSMPolicyDocumentApi(rtr) {
+  m_address      = address;
+  m_smpc_service = smpc_service;
+}
 
 void IndividualSMPolicyDocumentApiImpl::delete_sm_policy(
     const std::string& smPolicyId, const SmPolicyDeleteData& smPolicyDeleteData,
     Pistache::Http::ResponseWriter& response) {
-  response.send(Pistache::Http::Code::Ok, "Do some magic\n");
+  ProblemDetails problem_details;
+  std::string problem_description;
+  std::string content_type = "application/problem+json";
+  nlohmann::json json_data;
+  int http_code   = 0;
+  status_code res = m_smpc_service->delete_sm_policy_handler(
+      smPolicyId, smPolicyDeleteData, problem_description);
+
+  switch (res) {
+    case status_code::OK:
+      http_code = HTTP_STATUS_CODE_204_NO_CONTENT;
+      break;
+
+    case status_code::NOT_FOUND:
+      problem_details.setDetail(problem_description);
+      // This is not defined in the standard
+      problem_details.setCause("SM_POLICY_ID_NOT_FOUND");
+      http_code = HTTP_STATUS_CODE_404_NOT_FOUND;
+      break;
+
+    default:
+      problem_details.setDetail("Internal Service Error: Unknown return code.");
+      problem_details.setCause("INTERNAL_ERROR");
+      http_code = HTTP_STATUS_CODE_500_INTERNAL_SERVER_ERROR;
+  }
+
+  if (res == status_code::OK) {
+    response.send(Pistache::Http::Code(http_code));
+  } else {
+    response.headers().add<Pistache::Http::Header::ContentType>(
+        Pistache::Http::Mime::MediaType(content_type));
+    to_json(json_data, problem_details);
+    response.send(Pistache::Http::Code(http_code), json_data.dump().c_str());
+  }
 }
+
 void IndividualSMPolicyDocumentApiImpl::get_sm_policy(
     const std::string& smPolicyId, Pistache::Http::ResponseWriter& response) {
-  response.send(Pistache::Http::Code::Ok, "Do some magic\n");
+  ProblemDetails problem_details;
+  std::string problem_description;
+  std::string content_type = "application/problem+json";
+  nlohmann::json json_data;
+  int http_code = 0;
+
+  SmPolicyControl sm_policy_control;
+
+  status_code res = m_smpc_service->get_sm_policy_handler(
+      smPolicyId, sm_policy_control, problem_description);
+
+  switch (res) {
+    case status_code::OK:
+      http_code    = HTTP_STATUS_CODE_200_OK;
+      content_type = "application/json";
+      break;
+
+    case status_code::NOT_FOUND:
+      problem_details.setDetail(problem_description);
+      // This is not defined in the standard
+      problem_details.setCause("SM_POLICY_ID_NOT_FOUND");
+      http_code = HTTP_STATUS_CODE_404_NOT_FOUND;
+      break;
+
+    default:
+      problem_details.setDetail("Internal Service Error: Unknown return code.");
+      problem_details.setCause("INTERNAL_ERROR");
+      http_code = HTTP_STATUS_CODE_500_INTERNAL_SERVER_ERROR;
+  }
+
+  if (res == status_code::OK) {
+    to_json(json_data, sm_policy_control);
+  } else {
+    to_json(json_data, problem_details);
+  }
+
+  response.headers().add<Pistache::Http::Header::ContentType>(
+      Pistache::Http::Mime::MediaType(content_type));
+
+  response.send(Pistache::Http::Code(http_code), json_data.dump().c_str());
 }
+
 void IndividualSMPolicyDocumentApiImpl::update_sm_policy(
     const std::string& smPolicyId,
     const SmPolicyUpdateContextData& smPolicyUpdateContextData,
     Pistache::Http::ResponseWriter& response) {
-  response.send(Pistache::Http::Code::Ok, "Do some magic\n");
+  ProblemDetails problem_details;
+  std::string problem_description = "";
+  std::string content_type        = "application/problem+json";
+  nlohmann::json json_data;
+  int http_code = 0;
+
+  SmPolicyDecision decision_update;
+
+  status_code res = m_smpc_service->update_sm_policy_handler(
+      smPolicyId, smPolicyUpdateContextData, decision_update,
+      problem_description);
+
+  problem_details.setDetail(problem_description);
+
+  switch (res) {
+    case status_code::OK:
+      content_type = "application/json";
+      http_code    = HTTP_STATUS_CODE_200_OK;
+      break;
+    case status_code::INVALID_PARAMETERS:
+      http_code = HTTP_STATUS_CODE_400_BAD_REQUEST;
+      problem_details.setCause("ERROR_INITIAL_PARAMETERS");
+      break;
+    case status_code::CONTEXT_DENIED:
+      // should map to 403 but not defined in standard for this request
+      http_code = HTTP_STATUS_CODE_400_BAD_REQUEST;
+      problem_details.setCause("ERROR_INITIAL_PARAMETERS");
+      break;
+    case status_code::NOT_FOUND:
+      // TODO This is not defined in the standard, but this scenario is missig
+      // we could map it to the 400 Bad request but that is somehow misleading
+      problem_details.setCause("SM_POLICY_ID_NOT_FOUND");
+      http_code = HTTP_STATUS_CODE_404_NOT_FOUND;
+      break;
+    default:
+      problem_details.setCause("INTERNAL_ERROR");
+      http_code = HTTP_STATUS_CODE_500_INTERNAL_SERVER_ERROR;
+  }
+
+  if (res == status_code::OK) {
+    to_json(json_data, decision_update);
+  } else {
+    to_json(json_data, problem_details);
+  }
+
+  response.headers().add<Pistache::Http::Header::ContentType>(
+      Pistache::Http::Mime::MediaType(content_type));
+
+  response.send(Pistache::Http::Code(http_code), json_data.dump().c_str());
 }
 
 }  // namespace api
