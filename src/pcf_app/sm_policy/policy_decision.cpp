@@ -38,7 +38,8 @@ using namespace oai::pcf::app;
 typedef PolicyControlRequestTrigger_anyOf::ePolicyControlRequestTrigger_anyOf E;
 
 status_code policy_decision::decide(
-    const SmPolicyContextData& context, SmPolicyDecision& decision) const {
+    const SmPolicyContextData& context,
+    std::shared_ptr<oai::pcf::model::SmPolicyDecision>& decision) const {
   // default rule, so just reply with the decision
   decision = m_decision;
   return status_code::CREATED;
@@ -46,7 +47,8 @@ status_code policy_decision::decide(
 
 status_code policy_decision::handle_plmn_change(
     SmPolicyContextData& orig_context, const SmPolicyUpdateContextData& update,
-    SmPolicyDecision& decision, std::string& problem_details) {
+    const std::shared_ptr<oai::pcf::model::SmPolicyDecision>& decision,
+    std::string& problem_details) {
   if (update.servingNetworkIsSet()) {
     orig_context.setServingNetwork(update.getServingNetwork());
     return status_code::OK;
@@ -57,7 +59,8 @@ status_code policy_decision::handle_plmn_change(
 
 status_code policy_decision::handle_access_type_change(
     SmPolicyContextData& orig_context, const SmPolicyUpdateContextData& update,
-    SmPolicyDecision& decision, std::string& problem_details) {
+    const std::shared_ptr<oai::pcf::model::SmPolicyDecision>& decision,
+    std::string& problem_details) {
   if (update.accessTypeIsSet()) {
     orig_context.setAccessType(update.getAccessType());
     return status_code::OK;
@@ -72,7 +75,8 @@ status_code policy_decision::handle_access_type_change(
 
 status_code policy_decision::handle_ip_address_change(
     SmPolicyContextData& orig_context, const SmPolicyUpdateContextData& update,
-    SmPolicyDecision& decision, std::string& problem_details) {
+    const std::shared_ptr<oai::pcf::model::SmPolicyDecision>& decision,
+    std::string& problem_details) {
   problem_details  = "";
   status_code code = status_code::INVALID_PARAMETERS;
   if (update.ipv4AddressIsSet()) {
@@ -104,7 +108,8 @@ status_code policy_decision::handle_ip_address_change(
 
 status_code policy_decision::handle_rat_type_change(
     SmPolicyContextData& orig_context, const SmPolicyUpdateContextData& update,
-    SmPolicyDecision& decision, std::string& problem_details) {
+    const std::shared_ptr<oai::pcf::model::SmPolicyDecision>& decision,
+    std::string& problem_details) {
   status_code code = status_code::INVALID_PARAMETERS;
   if (update.ratTypeIsSet()) {
     orig_context.setRatType(update.getRatType());
@@ -129,9 +134,10 @@ status_code policy_decision::handle_rat_type_change(
 
 status_code policy_decision::redecide(
     SmPolicyContextData& original_context,
-    const SmPolicyDecision& original_decision,
+    const std::shared_ptr<oai::pcf::model::SmPolicyDecision>& original_decision,
     const SmPolicyUpdateContextData& update_data,
-    SmPolicyDecision& new_decision, std::string& problem_details) {
+    std::shared_ptr<oai::pcf::model::SmPolicyDecision>& new_decision,
+    std::string& problem_details) {
   new_decision = m_decision;
 
   status_code status = status_code::OK;

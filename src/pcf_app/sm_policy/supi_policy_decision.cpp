@@ -34,7 +34,8 @@ using namespace oai::pcf::app::sm_policy;
 using namespace oai::pcf::app;
 
 status_code supi_policy_decision::decide(
-    const SmPolicyContextData& context, SmPolicyDecision& decision) const {
+    const SmPolicyContextData& context,
+    std::shared_ptr<oai::pcf::model::SmPolicyDecision>& decision) const {
   if (context.getSupi() != m_supi) {
     return status_code::CONTEXT_DENIED;
   }

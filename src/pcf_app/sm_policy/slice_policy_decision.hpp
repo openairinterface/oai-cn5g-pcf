@@ -45,7 +45,7 @@ class slice_policy_decision : public oai::pcf::app::sm_policy::policy_decision {
  public:
   explicit slice_policy_decision(
       oai::pcf::model::Snssai snssai,
-      oai::pcf::model::SmPolicyDecision decision)
+      const std::shared_ptr<oai::pcf::model::SmPolicyDecision>& decision)
       : policy_decision(decision) {
     m_snssai   = snssai;
     m_decision = decision;
@@ -64,7 +64,7 @@ class slice_policy_decision : public oai::pcf::app::sm_policy::policy_decision {
    */
   oai::pcf::app::sm_policy::status_code decide(
       const oai::pcf::model::SmPolicyContextData& context,
-      oai::pcf::model::SmPolicyDecision& decision) const;
+      std::shared_ptr<oai::pcf::model::SmPolicyDecision>& decision) const;
 
   /**
    * @brief Get the snssai object
@@ -74,7 +74,7 @@ class slice_policy_decision : public oai::pcf::app::sm_policy::policy_decision {
   oai::pcf::model::Snssai get_snssai() const;
 
  private:
-  oai::pcf::model::SmPolicyDecision m_decision;
+  std::shared_ptr<oai::pcf::model::SmPolicyDecision> m_decision;
   oai::pcf::model::Snssai m_snssai;
 };
 }  // namespace oai::pcf::app::sm_policy

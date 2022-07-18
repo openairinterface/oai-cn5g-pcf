@@ -44,7 +44,8 @@ namespace oai::pcf::app::sm_policy {
  */
 class policy_decision {
  public:
-  explicit policy_decision(oai::pcf::model::SmPolicyDecision decision) {
+  explicit policy_decision(
+      const std::shared_ptr<oai::pcf::model::SmPolicyDecision>& decision) {
     m_decision = decision;
   }
 
@@ -59,7 +60,7 @@ class policy_decision {
    */
   virtual oai::pcf::app::sm_policy::status_code decide(
       const oai::pcf::model::SmPolicyContextData& context,
-      oai::pcf::model::SmPolicyDecision& decision) const;
+      std::shared_ptr<oai::pcf::model::SmPolicyDecision>& decision) const;
 
   /**
    * @brief Redecides based on the original context, original decision and
@@ -77,9 +78,10 @@ class policy_decision {
    */
   virtual oai::pcf::app::sm_policy::status_code redecide(
       oai::pcf::model::SmPolicyContextData& original_context,
-      const oai::pcf::model::SmPolicyDecision& original_decision,
+      const std::shared_ptr<oai::pcf::model::SmPolicyDecision>&
+          original_decision,
       const oai::pcf::model::SmPolicyUpdateContextData& update_data,
-      oai::pcf::model::SmPolicyDecision& new_decision,
+      std::shared_ptr<oai::pcf::model::SmPolicyDecision>& new_decision,
       std::string& problem_details);
 
   virtual ~policy_decision();
@@ -88,29 +90,29 @@ class policy_decision {
   oai::pcf::app::sm_policy::status_code handle_plmn_change(
       oai::pcf::model::SmPolicyContextData& orig_context,
       const oai::pcf::model::SmPolicyUpdateContextData& update,
-      oai::pcf::model::SmPolicyDecision& decision,
+      const std::shared_ptr<oai::pcf::model::SmPolicyDecision>& decision,
       std::string& problem_details);
 
   oai::pcf::app::sm_policy::status_code handle_access_type_change(
       oai::pcf::model::SmPolicyContextData& orig_context,
       const oai::pcf::model::SmPolicyUpdateContextData& update,
-      oai::pcf::model::SmPolicyDecision& decision,
+      const std::shared_ptr<oai::pcf::model::SmPolicyDecision>& decision,
       std::string& problem_details);
 
   oai::pcf::app::sm_policy::status_code handle_ip_address_change(
       oai::pcf::model::SmPolicyContextData& orig_context,
       const oai::pcf::model::SmPolicyUpdateContextData& update,
-      oai::pcf::model::SmPolicyDecision& decision,
+      const std::shared_ptr<oai::pcf::model::SmPolicyDecision>& decision,
       std::string& problem_details);
 
   oai::pcf::app::sm_policy::status_code handle_rat_type_change(
       oai::pcf::model::SmPolicyContextData& orig_context,
       const oai::pcf::model::SmPolicyUpdateContextData& update,
-      oai::pcf::model::SmPolicyDecision& decision,
+      const std::shared_ptr<oai::pcf::model::SmPolicyDecision>& decision,
       std::string& problem_details);
 
  private:
-  oai::pcf::model::SmPolicyDecision m_decision;
+  std::shared_ptr<oai::pcf::model::SmPolicyDecision> m_decision;
 };
 }  // namespace oai::pcf::app::sm_policy
 #endif
