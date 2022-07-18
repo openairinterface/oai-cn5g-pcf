@@ -70,6 +70,11 @@
 #define PCF_CONFIG_STRING_SUPPORT_FEATURES_USE_HTTP2 "USE_HTTP2"
 #define PCF_CONFIG_STRING_SUPPORT_FEATURES_USE_FQDN_DNS "USE_FQDN"
 
+#define PCF_CONFIG_STRING_PCC_RULES_DIRECTORY "PCC_RULES_DIRECTORY"
+#define PCF_CONFIG_STRING_POLICY_DECISIONS_DIRECTORY                           \
+  "POLICY_DECISIONS_DIRECTORY"
+#define PCF_CONFIG_STRING_TRAFFIC_RULES_DIRECTORY "TRAFFIC_RULES_DIRECTORY"
+
 namespace oai::pcf::config {
 
 typedef struct interface_cfg_s {
@@ -86,6 +91,9 @@ class pcf_config {
  protected:
  private:
   int load_interface(const libconfig::Setting& if_cfg, interface_cfg_t& cfg);
+  int check_directory(
+      const libconfig::Setting& pcf_cfg, const std::string& path_config,
+      std::string& path);
 
  public:
   /* Reader/writer lock for this configuration */
@@ -97,6 +105,10 @@ class pcf_config {
   std::string sbi_api_version;
 
   std::string gateway;
+
+  std::string pcc_rules_path;
+  std::string policy_decisions_path;
+  std::string traffic_rules_path;
 
   struct {
     bool register_nrf;
