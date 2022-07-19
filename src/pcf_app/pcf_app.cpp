@@ -54,6 +54,19 @@ pcf_nrf* pcf_nrf_inst;
 pcf_app::pcf_app(const std::string& config_file, pcf_event& ev)
     : event_sub(ev) {
   Logger::pcf_app().startup("Starting...");
+
+  Logger::pcf_app().startup("Reading local Policy configuration...");
+  m_policy_storage = std::make_shared<sm_policy::policy_storage>();
+
+  provisioning_file =
+      std::make_shared<sm_policy::policy_provisioning_file>(m_policy_storage);
+
+  if (!provisioning_file->read_all_policy_files()) {
+    Logger::pcf_app().error(
+        "Cannot read policy configuration from file. Exiting");
+    exit(-1);
+  }
+
   // Register to NRF
   if (pcf_cfg.pcf_features.register_nrf) {
     try {
@@ -66,7 +79,6 @@ pcf_app::pcf_app(const std::string& config_file, pcf_event& ev)
     }
   }
 
-  m_policy_storage = std::make_shared<sm_policy::policy_storage>();
   pcf_smpc_service = std::make_shared<pcf_smpc>(m_policy_storage);
 }
 

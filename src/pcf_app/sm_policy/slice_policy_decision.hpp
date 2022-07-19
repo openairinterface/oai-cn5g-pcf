@@ -73,9 +73,16 @@ class slice_policy_decision : public oai::pcf::app::sm_policy::policy_decision {
    */
   oai::pcf::model::Snssai get_snssai() const;
 
+  std::string to_string() const;
+
  private:
   std::shared_ptr<oai::pcf::model::SmPolicyDecision> m_decision;
   oai::pcf::model::Snssai m_snssai;
 };
 }  // namespace oai::pcf::app::sm_policy
+
+std::ostream& operator<<(
+    std::ostream& os,
+    const oai::pcf::app::sm_policy::slice_policy_decision& storage);
+
 #endif

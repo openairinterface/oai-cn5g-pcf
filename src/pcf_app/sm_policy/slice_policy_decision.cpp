@@ -28,6 +28,7 @@
  */
 
 #include "slice_policy_decision.hpp"
+#include <sstream>
 
 using namespace oai::pcf::model;
 using namespace oai::pcf::app::sm_policy;
@@ -46,6 +47,20 @@ status_code slice_policy_decision::decide(
 
 Snssai slice_policy_decision::get_snssai() const {
   return m_snssai;
+}
+
+std::string slice_policy_decision::to_string() const {
+  std::stringstream ss;
+  ss << "Slice: Sd: " << m_snssai.getSd()
+     << " Sst: " << std::to_string(m_snssai.getSst()) << "\n";
+  ss << " -- " << *m_decision;
+  return ss.str();
+}
+
+std::ostream& operator<<(
+    std::ostream& os,
+    const oai::pcf::app::sm_policy::slice_policy_decision& storage) {
+  return (os << storage.to_string());
 }
 
 slice_policy_decision::~slice_policy_decision() {}

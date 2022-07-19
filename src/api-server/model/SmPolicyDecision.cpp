@@ -824,3 +824,20 @@ void SmPolicyDecision::unsetTsnPortManContNwtts() {
 }  // namespace model
 }  // namespace pcf
 }  // namespace oai
+
+std::ostream& operator<<(
+    std::ostream& os, const oai::pcf::model::SmPolicyDecision& decision) {
+  os << "PCC Rule IDs: ";
+  std::string ids = "";
+  for (auto rule : decision.getPccRules()) {
+    ids.append(rule.first);
+    ids.append(", ");
+  }
+  if (ids.length() > 1) {
+    ids = ids.substr(0, ids.size() - 2);
+  }
+
+  os << ids << "\n";
+
+  return os;
+}

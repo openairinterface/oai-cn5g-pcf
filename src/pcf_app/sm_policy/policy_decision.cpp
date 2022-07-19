@@ -30,6 +30,7 @@
 #include "policy_decision.hpp"
 #include "PolicyControlRequestTrigger_anyOf.h"
 #include "logger.hpp"
+#include <sstream>
 
 using namespace oai::pcf::model;
 using namespace oai::pcf::app::sm_policy;
@@ -265,4 +266,17 @@ status_code policy_decision::redecide(
   }
   return status;
 }
+
+std::string policy_decision::to_string() const {
+  std::stringstream ss;
+  ss << *m_decision;
+  return ss.str();
+}
+
+std::ostream& operator<<(
+    std::ostream& os,
+    const oai::pcf::app::sm_policy::policy_decision& storage) {
+  return (os << storage.to_string());
+}
+
 policy_decision::~policy_decision() {}

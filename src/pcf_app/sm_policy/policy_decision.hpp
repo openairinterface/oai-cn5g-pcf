@@ -86,6 +86,8 @@ class policy_decision {
 
   virtual ~policy_decision();
 
+  std::string to_string() const;
+
  protected:
   oai::pcf::app::sm_policy::status_code handle_plmn_change(
       oai::pcf::model::SmPolicyContextData& orig_context,
@@ -115,4 +117,8 @@ class policy_decision {
   std::shared_ptr<oai::pcf::model::SmPolicyDecision> m_decision;
 };
 }  // namespace oai::pcf::app::sm_policy
+
+std::ostream& operator<<(
+    std::ostream& os, const oai::pcf::app::sm_policy::policy_decision& storage);
+
 #endif

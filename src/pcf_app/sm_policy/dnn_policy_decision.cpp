@@ -28,6 +28,7 @@
  */
 
 #include "dnn_policy_decision.hpp"
+#include <sstream>
 
 using namespace oai::pcf::model;
 using namespace oai::pcf::app::sm_policy;
@@ -46,6 +47,19 @@ status_code dnn_policy_decision::decide(
 
 std::string dnn_policy_decision::get_dnn() const {
   return m_dnn;
+}
+
+std::string dnn_policy_decision::to_string() const {
+  std::stringstream ss;
+  ss << "DNN: " << m_dnn << "\n";
+  ss << " -- " << *m_decision;
+  return ss.str();
+}
+
+std::ostream& operator<<(
+    std::ostream& os,
+    const oai::pcf::app::sm_policy::dnn_policy_decision& storage) {
+  return (os << storage.to_string());
 }
 
 dnn_policy_decision::~dnn_policy_decision() {}

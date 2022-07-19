@@ -296,4 +296,4 @@ ENDIF(STATIC_LINKING)
 # pthread m rt config++  event boost_system pistache curl -lyaml-cpp )
 
 target_link_libraries (pcf ${ASAN}  -Wl,--start-group CN_UTILS PCF PCF_API 3GPP_COMMON_TYPES ${CRYPTO_LIBRARIES} -lnghttp2_asio -lboost_system -lboost_thread -lssl -lcrypto  dl -Wl,--end-group
-pthread m rt config++ event boost_system pistache curl)
+pthread m rt config++ event boost_system -lboost_filesystem pistache curl -lyaml-cpp)

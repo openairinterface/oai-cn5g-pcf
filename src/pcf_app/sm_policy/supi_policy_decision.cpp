@@ -28,6 +28,7 @@
  */
 
 #include "supi_policy_decision.hpp"
+#include <sstream>
 
 using namespace oai::pcf::model;
 using namespace oai::pcf::app::sm_policy;
@@ -46,6 +47,19 @@ status_code supi_policy_decision::decide(
 
 std::string supi_policy_decision::get_supi() const {
   return m_supi;
+}
+
+std::string supi_policy_decision::to_string() const {
+  std::stringstream ss;
+  ss << "SUPI: " << m_supi << "\n";
+  ss << " -- " << *m_decision;
+  return ss.str();
+}
+
+std::ostream& operator<<(
+    std::ostream& os,
+    const oai::pcf::app::sm_policy::supi_policy_decision& storage) {
+  return (os << storage.to_string());
 }
 
 supi_policy_decision::~supi_policy_decision() {}

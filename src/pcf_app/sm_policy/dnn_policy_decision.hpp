@@ -74,9 +74,16 @@ class dnn_policy_decision : public oai::pcf::app::sm_policy::policy_decision {
    */
   std::string get_dnn() const;
 
+  std::string to_string() const;
+
  private:
   std::shared_ptr<oai::pcf::model::SmPolicyDecision> m_decision;
   std::string m_dnn;
 };
 }  // namespace oai::pcf::app::sm_policy
+
+std::ostream& operator<<(
+    std::ostream& os,
+    const oai::pcf::app::sm_policy::dnn_policy_decision& storage);
+
 #endif

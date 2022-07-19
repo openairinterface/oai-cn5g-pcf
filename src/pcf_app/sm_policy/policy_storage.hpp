@@ -53,20 +53,6 @@ namespace oai::pcf::app::sm_policy {
 
 class policy_storage {
  private:
-  /**
-   * @brief Helper method to create hardcoded policy decisions
-   *
-   * @param pcc_rule_name
-   * @param flow_description
-   * @param tc_id
-   * @param steering_policy_id
-   */
-  void create_default_policy_decision(
-      std::string pcc_rule_name, std::string flow_description,
-      std::string tc_id, std::string dnai, std::string route_policy_id,
-      int precedence,
-      std::shared_ptr<oai::pcf::model::SmPolicyDecision>& decision);
-
   void notify_subscribers(const std::shared_ptr<policy_decision>& decision);
 
   std::unordered_map<
@@ -122,6 +108,12 @@ class policy_storage {
    */
   void subscribe_to_decision_change(
       std::function<void(std::shared_ptr<policy_decision>&)> callback);
+
+  std::string to_string() const;
 };
 }  // namespace oai::pcf::app::sm_policy
+
+std::ostream& operator<<(
+    std::ostream& os, const oai::pcf::app::sm_policy::policy_storage& storage);
+
 #endif
