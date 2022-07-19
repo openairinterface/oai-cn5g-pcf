@@ -53,7 +53,8 @@ namespace oai::pcf::app {
  */
 class pcf_smpc {
  public:
-  explicit pcf_smpc();
+  explicit pcf_smpc(
+      std::shared_ptr<oai::pcf::app::sm_policy::policy_storage> policy_storage);
   pcf_smpc(pcf_smpc const&) = delete;
   void operator=(pcf_smpc const&) = delete;
 
@@ -130,7 +131,11 @@ class pcf_smpc {
 
   mutable std::shared_mutex m_associations_mutex;
 
-  oai::pcf::app::sm_policy::policy_storage m_policy_storage;
+  std::shared_ptr<oai::pcf::app::sm_policy::policy_storage> m_policy_storage;
+
+  void handle_policy_change(
+      const std::shared_ptr<oai::pcf::app::sm_policy::policy_decision>&
+          decision);
 };
 }  // namespace oai::pcf::app
 #endif /* FILE_PCF_SM_POLICY_CONTROL_SEEN */

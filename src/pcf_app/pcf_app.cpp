@@ -66,7 +66,8 @@ pcf_app::pcf_app(const std::string& config_file, pcf_event& ev)
     }
   }
 
-  pcf_smpc_service = std::make_shared<pcf_smpc>();
+  m_policy_storage = std::make_shared<sm_policy::policy_storage>();
+  pcf_smpc_service = std::make_shared<pcf_smpc>(m_policy_storage);
 }
 
 //------------------------------------------------------------------------------

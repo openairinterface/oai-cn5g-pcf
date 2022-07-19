@@ -278,3 +278,8 @@ void policy_storage::notify_subscribers(
     const std::shared_ptr<policy_decision>& decision) {
   // TODO
 }
+
+void policy_storage::subscribe_to_decision_change(
+    std::function<void(std::shared_ptr<policy_decision>&)> callback) {
+  // TODO implement me
+}

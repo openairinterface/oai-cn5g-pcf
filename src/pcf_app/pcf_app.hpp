@@ -41,6 +41,7 @@
 #include "3gpp_29.510.h"
 #include "PatchItem.h"
 #include "pcf_sm_policy_control.hpp"
+#include "sm_policy/policy_storage.hpp"
 
 namespace oai::pcf::app {
 
@@ -69,6 +70,7 @@ class pcf_app {
   bs2::connection task_connection;
 
   std::shared_ptr<pcf_smpc> pcf_smpc_service;
+  std::shared_ptr<oai::pcf::app::sm_policy::policy_storage> m_policy_storage;
 };
 }  // namespace oai::pcf::app
 #endif /* FILE_PCF_APP_HPP_SEEN */

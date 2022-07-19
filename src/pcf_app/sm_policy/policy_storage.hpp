@@ -121,7 +121,7 @@ class policy_storage {
    * @param callback
    */
   void subscribe_to_decision_change(
-      std::function<void(const std::shared_ptr<policy_decision>&)> callback);
+      std::function<void(std::shared_ptr<policy_decision>&)> callback);
 };
 }  // namespace oai::pcf::app::sm_policy
 #endif

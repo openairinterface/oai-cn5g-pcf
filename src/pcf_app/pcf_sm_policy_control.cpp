@@ -57,14 +57,27 @@ extern pcf_smpc* pcf_smpc_inst;
 extern pcf_config pcf_cfg;
 
 //------------------------------------------------------------------------------
-pcf_smpc::pcf_smpc() {}
+pcf_smpc::pcf_smpc(
+    std::shared_ptr<oai::pcf::app::sm_policy::policy_storage> policy_storage) {
+  m_policy_storage = policy_storage;
+
+  std::function<void(const std::shared_ptr<policy_decision>& decision)> f =
+      std::bind(&pcf_smpc::handle_policy_change, this, std::placeholders::_1);
+
+  m_policy_storage->subscribe_to_decision_change(f);
+}
+
+void pcf_smpc::handle_policy_change(
+    const std::shared_ptr<policy_decision>& decision) {
+  Logger::pcf_app().warn("Policy changed, but not implemented!");
+}
 
 //------------------------------------------------------------------------------
 status_code pcf_smpc::create_sm_policy_handler(
     const SmPolicyContextData& context, SmPolicyDecision& decision,
     std::string& association_id, std::string& problem_details) {
   std::shared_ptr<policy_decision> chosen_decision =
-      m_policy_storage.find_policy(context);
+      m_policy_storage->find_policy(context);
 
   if (!chosen_decision) {
     problem_details = fmt::format(
@@ -162,7 +175,7 @@ sm_policy::status_code pcf_smpc::update_sm_policy_handler(
 
   // find the original decision to redecide
   std::shared_ptr<policy_decision> chosen_decision =
-      m_policy_storage.find_policy(orig_context);
+      m_policy_storage->find_policy(orig_context);
   // this may happen when the policy has been updated/deleted in the meantime.
   if (!chosen_decision) {
     problem_details = fmt::format(
