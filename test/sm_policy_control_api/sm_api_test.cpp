@@ -57,10 +57,22 @@ class mock_pcf_smpc : public pcf_smpc_interface {
       oai::pcf::model::SmPolicyDecision& decision, std::string& association_id,
       std::string& problem_details), (override));
 
+  MOCK_METHOD(sm_policy::status_code, update_sm_policy_handler, (std::string id,
+      const oai::pcf::model::SmPolicyUpdateContextData& update_context,
+      oai::pcf::model::SmPolicyDecision& decision, std::string& problem_details), (override));
+
+  MOCK_METHOD(sm_policy::status_code, delete_sm_policy_handler, (std::string id, 
+      const oai::pcf::model::SmPolicyDeleteData& delete_data,
+      std::string& problem_details), (override));
+
+  MOCK_METHOD(sm_policy::status_code, get_sm_policy_handler, (std::string id, 
+      oai::pcf::model::SmPolicyControl& control,
+      std::string& problem_details), (override));
+
   virtual ~mock_pcf_smpc() = default;
 };
 
-class SMApiTest : public ::testing::Test {
+class SMApiTest : public ::testing::TestWithParam<::std::tuple<sm_policy::status_code, http_status_code_e>> {
  protected:
   config::pcf_config pcf_cfg;
   std::unique_ptr<PCFApiServer> pcf_api_server_1;
@@ -70,6 +82,22 @@ class SMApiTest : public ::testing::Test {
   std::string base_url;
 
   std::unique_ptr<TestRestClient> rest_client;
+
+  sm_policy::status_code status()
+  {
+    sm_policy::status_code status_code;
+    http_status_code_e http_status;
+    std::tie(status_code, http_status) = GetParam();
+    return status_code;
+  }
+
+  http_status_code_e expected_http_status()
+  {
+    sm_policy::status_code status_code;
+    http_status_code_e http_status;
+    std::tie(status_code, http_status) = GetParam();
+    return http_status;
+  }
 
   void SetUp() override {
     pcf_event ev;
@@ -120,6 +148,7 @@ class SMApiTest : public ::testing::Test {
       }
       pcf_api_server_1.release();
     }
+    ::testing::Mock::AllowLeak(&*mock_pcf_smpc_inst);
 
     rest_client.release();
 

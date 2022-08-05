@@ -49,7 +49,7 @@ class IndividualSMPolicyDocumentApiImpl
  public:
   explicit IndividualSMPolicyDocumentApiImpl(
       const std::shared_ptr<Pistache::Rest::Router>& rtr,
-      const std::shared_ptr<pcf::app::pcf_smpc> smpc_service,
+      const std::shared_ptr<pcf::app::pcf_smpc_interface> smpc_service,
       std::string m_address);
   ~IndividualSMPolicyDocumentApiImpl() override = default;
 
@@ -66,7 +66,7 @@ class IndividualSMPolicyDocumentApiImpl
 
  private:
   std::string m_address;
-  std::shared_ptr<app::pcf_smpc> m_smpc_service;
+  std::shared_ptr<app::pcf_smpc_interface> m_smpc_service;
 };
 
 }  // namespace api

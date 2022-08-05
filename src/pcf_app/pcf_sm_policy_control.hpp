@@ -59,6 +59,20 @@ class pcf_smpc_interface
       oai::pcf::model::SmPolicyDecision& decision, std::string& association_id,
       std::string& problem_details) = 0;
 
+  virtual sm_policy::status_code delete_sm_policy_handler(
+      std::string id, const oai::pcf::model::SmPolicyDeleteData& delete_data,
+      std::string& problem_details) = 0;
+
+  virtual sm_policy::status_code get_sm_policy_handler(
+      std::string id, oai::pcf::model::SmPolicyControl& control,
+      std::string& problem_details) = 0;
+
+  virtual sm_policy::status_code update_sm_policy_handler(
+      std::string id,
+      const oai::pcf::model::SmPolicyUpdateContextData& update_context,
+      oai::pcf::model::SmPolicyDecision& decision,
+      std::string& problem_details) = 0;
+
   virtual ~pcf_smpc_interface() = default;
 };
 
@@ -102,7 +116,7 @@ class pcf_smpc : public pcf_smpc_interface {
    */
   sm_policy::status_code delete_sm_policy_handler(
       std::string id, const oai::pcf::model::SmPolicyDeleteData& delete_data,
-      std::string& problem_details);
+      std::string& problem_details) override;
 
   /**
    * @brief Handler for getting an existing SM policy association, as defined in
@@ -117,7 +131,7 @@ class pcf_smpc : public pcf_smpc_interface {
    */
   sm_policy::status_code get_sm_policy_handler(
       std::string id, oai::pcf::model::SmPolicyControl& control,
-      std::string& problem_details);
+      std::string& problem_details) override;
 
   /**
    * @brief Handler for updating the policy decision based on the provided
@@ -134,7 +148,7 @@ class pcf_smpc : public pcf_smpc_interface {
       std::string id,
       const oai::pcf::model::SmPolicyUpdateContextData& update_context,
       oai::pcf::model::SmPolicyDecision& decision,
-      std::string& problem_details);
+      std::string& problem_details) override;
 
  private:
   /**

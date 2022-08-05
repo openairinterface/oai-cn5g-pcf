@@ -25,7 +25,7 @@ using namespace oai::pcf::app::sm_policy;
 
 IndividualSMPolicyDocumentApiImpl::IndividualSMPolicyDocumentApiImpl(
     const std::shared_ptr<Pistache::Rest::Router>& rtr,
-    std::shared_ptr<pcf_smpc> smpc_service, std::string address)
+    std::shared_ptr<pcf_smpc_interface> smpc_service, std::string address)
     : IndividualSMPolicyDocumentApi(rtr) {
   m_address      = address;
   m_smpc_service = smpc_service;

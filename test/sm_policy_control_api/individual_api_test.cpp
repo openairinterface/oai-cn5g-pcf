@@ -33,12 +33,12 @@
 
 namespace oai::pcf::test {
 
-TEST_F(SMApiTest, Test4) {
-  // TODO real test with REST client
-  const std::string a = "ASDF";
-  const std::string b = "fSDF";
+//TEST_F(SMApiTest, Test4) {
+  //// TODO real test with REST client
+  //const std::string a = "ASDF";
+  //const std::string b = "fSDF";
 
-  EXPECT_NE(a, b);
-}
+  //EXPECT_NE(a, b);
+//}
 
 }  // namespace oai::pcf::test

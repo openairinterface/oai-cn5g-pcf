@@ -43,6 +43,7 @@ using namespace oai::pcf::model;
 using ::testing::MatchesRegex;
 using ::testing::_;
 using ::testing::Return;
+using ::testing::Values;
 
 
 namespace oai::pcf::test {
@@ -64,7 +65,10 @@ SmPolicyContextData createDefaultContextData() {
   return ctx;
 }
 
-TEST_F(SMApiTest, CreateNewSMPolicyAssociation) {
+INSTANTIATE_TEST_SUITE_P(SMPoliciesCollectionApiTest, SMApiTest,
+    Values(std::make_tuple(sm_policy::status_code::CREATED, HTTP_STATUS_CODE_201_CREATED)));
+
+TEST_P(SMApiTest, CreateNewSMPolicyAssociation) {
   std::string response_body;
   std::string response_headers;
   std::string url = fmt::format("{}sm-policies", base_url);
@@ -101,6 +105,7 @@ TEST_F(SMApiTest, CreateNewSMPolicyAssociation) {
   // }
 }
 
+/*
 TEST_F(SMApiTest, CreateNewSMPolicyAssociationMissingSUPI) {
   std::string response_body;
   std::string response_headers;
@@ -129,6 +134,7 @@ TEST_F(SMApiTest, CreateNewSMPolicyAssociationMissingSUPI) {
 
   EXPECT_EQ(code, HTTP_STATUS_CODE_400_BAD_REQUEST);
 }
+*/
 // IT Can use TEST_P for testing swith case of SMPoliciesCollectionApiImpl
 
 }  // namespace oai::pcf::test
