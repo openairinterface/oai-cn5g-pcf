@@ -51,11 +51,22 @@
 
 namespace oai::pcf::app {
 
+class pcf_smpc_interface
+{
+ public:
+  virtual sm_policy::status_code create_sm_policy_handler(
+      const oai::pcf::model::SmPolicyContextData& context,
+      oai::pcf::model::SmPolicyDecision& decision, std::string& association_id,
+      std::string& problem_details) = 0;
+
+  virtual ~pcf_smpc_interface() = default;
+};
+
 /**
  * @brief Service class to handle Session Management Policies
  *
  */
-class pcf_smpc {
+class pcf_smpc : public pcf_smpc_interface {
  public:
   explicit pcf_smpc();
   pcf_smpc(pcf_smpc const&) = delete;
@@ -77,7 +88,7 @@ class pcf_smpc {
   sm_policy::status_code create_sm_policy_handler(
       const oai::pcf::model::SmPolicyContextData& context,
       oai::pcf::model::SmPolicyDecision& decision, std::string& association_id,
-      std::string& problem_details);
+      std::string& problem_details) override;
 
   /**
    * @brief Handler for deleting an existing SM policy association, as defined

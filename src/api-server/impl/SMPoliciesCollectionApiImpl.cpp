@@ -27,7 +27,7 @@ using namespace oai::pcf::app::sm_policy;
 
 SMPoliciesCollectionApiImpl::SMPoliciesCollectionApiImpl(
     const std::shared_ptr<Pistache::Rest::Router>& rtr,
-    const std::shared_ptr<pcf_smpc> smpc_service, std::string address)
+    const std::shared_ptr<pcf_smpc_interface> smpc_service, std::string address)
     : SMPoliciesCollectionApi(rtr) {
   this->m_address    = address;
   this->smpc_service = smpc_service;

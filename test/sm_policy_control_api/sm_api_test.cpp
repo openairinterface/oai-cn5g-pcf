@@ -28,6 +28,8 @@
  */
 
 #include "gtest/gtest.h"
+#include "gmock/gmock.h"
+
 #include "pistache/endpoint.h"
 #include "pcf-api-server.h"
 #include "pcf_app.hpp"
@@ -49,11 +51,21 @@ extern config::pcf_config pcf_cfg;  // defined in main
 
 namespace oai::pcf::test {
 
+class mock_pcf_smpc : public pcf_smpc_interface {
+ public:
+  MOCK_METHOD(sm_policy::status_code, create_sm_policy_handler, (const oai::pcf::model::SmPolicyContextData& context,
+      oai::pcf::model::SmPolicyDecision& decision, std::string& association_id,
+      std::string& problem_details), (override));
+
+  virtual ~mock_pcf_smpc() = default;
+};
+
 class SMApiTest : public ::testing::Test {
  protected:
   config::pcf_config pcf_cfg;
   std::unique_ptr<PCFApiServer> pcf_api_server_1;
-  std::unique_ptr<app::pcf_app> pcf_app_inst = nullptr;
+  std::shared_ptr<mock_pcf_smpc> mock_pcf_smpc_inst;
+  std::shared_ptr<app::pcf_app> pcf_app_inst = nullptr;
   std::thread pcf_http1_manager;
   std::string base_url;
 
@@ -66,7 +78,8 @@ class SMApiTest : public ::testing::Test {
     pcf_cfg.load(pcf_config_path);
 
     // PCF application layer
-    pcf_app_inst = std::make_unique<pcf_app>(pcf_config_path, ev);
+    mock_pcf_smpc_inst = std::make_shared<mock_pcf_smpc>();
+    pcf_app_inst = std::make_shared<pcf_app>(pcf_config_path, ev, mock_pcf_smpc_inst);
 
     // hack to increment ports to prevent address already in use due to bad
     // shutdown routine
@@ -107,7 +120,6 @@ class SMApiTest : public ::testing::Test {
       }
       pcf_api_server_1.release();
     }
-    pcf_app_inst.release();
 
     rest_client.release();
 

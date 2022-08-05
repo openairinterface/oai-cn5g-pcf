@@ -47,7 +47,7 @@ class SMPoliciesCollectionApiImpl
  public:
   explicit SMPoliciesCollectionApiImpl(
       const std::shared_ptr<Pistache::Rest::Router>& rtr,
-      const std::shared_ptr<app::pcf_smpc> smpc_service, std::string address);
+      const std::shared_ptr<app::pcf_smpc_interface> smpc_service, std::string address);
   ~SMPoliciesCollectionApiImpl() override = default;
 
   void create_sm_policy(
@@ -56,7 +56,7 @@ class SMPoliciesCollectionApiImpl
 
  private:
   std::string m_address;
-  std::shared_ptr<app::pcf_smpc> smpc_service;
+  std::shared_ptr<app::pcf_smpc_interface> smpc_service;
 };
 
 }  // namespace api

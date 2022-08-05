@@ -66,8 +66,27 @@ pcf_app::pcf_app(const std::string& config_file, pcf_event& ev)
     }
   }
 
-  pcf_smpc_service = std::make_shared<pcf_smpc>();
 }
+
+//------------------------------------------------------------------------------
+pcf_app::pcf_app(const std::string& config_file, pcf_event& ev, std::shared_ptr<pcf_smpc_interface> smpc_interface)
+    : event_sub(ev) 
+    , pcf_smpc_service(smpc_interface) {
+  Logger::pcf_app().startup("Starting...");
+  // Register to NRF
+  if (pcf_cfg.pcf_features.register_nrf) {
+    try {
+      pcf_nrf_inst = new pcf_nrf(ev);
+      pcf_nrf_inst->register_to_nrf();
+      Logger::pcf_app().info("NRF TASK Created ");
+    } catch (std::exception& e) {
+      Logger::pcf_app().error("Cannot create NRF TASK: %s", e.what());
+      throw;
+    }
+  }
+
+}
+
 
 //------------------------------------------------------------------------------
 pcf_app::~pcf_app() {
@@ -75,6 +94,6 @@ pcf_app::~pcf_app() {
   pcf_smpc_service = nullptr;
 }
 
-std::shared_ptr<pcf_smpc> pcf_app::get_pcf_smpc_service() {
+std::shared_ptr<pcf_smpc_interface> pcf_app::get_pcf_smpc_service() {
   return pcf_smpc_service;
 }
