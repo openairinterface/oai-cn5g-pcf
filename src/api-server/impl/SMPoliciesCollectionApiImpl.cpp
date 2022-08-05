@@ -45,6 +45,7 @@ void SMPoliciesCollectionApiImpl::create_sm_policy(
   std::string location       = "";
   std::string content_type   = "application/problem+json";
 
+  printf("ASSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS \n");
   status_code res = smpc_service->create_sm_policy_handler(
       smPolicyContextData, decision, association_id, details_string);
   nlohmann::json json_data;

@@ -72,8 +72,8 @@ class mock_pcf_smpc : public pcf_smpc_interface {
   virtual ~mock_pcf_smpc() = default;
 };
 
-class SMApiTest : public ::testing::TestWithParam<::std::tuple<sm_policy::status_code, http_status_code_e>> {
- protected:
+class SMApiTest {
+ public:
   config::pcf_config pcf_cfg;
   std::unique_ptr<PCFApiServer> pcf_api_server_1;
   std::shared_ptr<mock_pcf_smpc> mock_pcf_smpc_inst;
@@ -83,23 +83,7 @@ class SMApiTest : public ::testing::TestWithParam<::std::tuple<sm_policy::status
 
   std::unique_ptr<TestRestClient> rest_client;
 
-  sm_policy::status_code status()
-  {
-    sm_policy::status_code status_code;
-    http_status_code_e http_status;
-    std::tie(status_code, http_status) = GetParam();
-    return status_code;
-  }
-
-  http_status_code_e expected_http_status()
-  {
-    sm_policy::status_code status_code;
-    http_status_code_e http_status;
-    std::tie(status_code, http_status) = GetParam();
-    return http_status;
-  }
-
-  void SetUp() override {
+  SMApiTest() {
     pcf_event ev;
 
     // Config
@@ -125,7 +109,7 @@ class SMApiTest : public ::testing::TestWithParam<::std::tuple<sm_policy::status
     rest_client = std::make_unique<TestRestClient>();
   }
 
-  void TearDown() override {
+  ~SMApiTest() {
     bool fail = false;
     if (pcf_api_server_1) {
       // pistache has a race condition here when called too quickly after init
@@ -148,14 +132,11 @@ class SMApiTest : public ::testing::TestWithParam<::std::tuple<sm_policy::status
       }
       pcf_api_server_1.release();
     }
+
     ::testing::Mock::AllowLeak(&*mock_pcf_smpc_inst);
 
     rest_client.release();
-
-    if (fail) {
-      GTEST_SKIP();
     }
-  }
 };
 
 }  // namespace oai::pcf::test
