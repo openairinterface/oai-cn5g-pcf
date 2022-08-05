@@ -51,6 +51,7 @@ function help()
   echo_error "  -I, --install-deps                        Check installed software necessary to build and run pcf (support $SUPPORTED_DISTRO)."
   echo_error "  -i, --install-min-deps                    Check installed software necessary to run a statically linked pcf_up (support $SUPPORTED_DISTRO)."
   echo_error "  -j, --jobs                                Multiple jobs for compiling."
+  echo_error "  -t, --test                                Build and run unit tests."
   echo_error "  -v, --verbose                             Build process verbose."
   echo_error "  -V, --Verbose                             CMake only build process verbose, display compilation warnings and errors."
   echo_error " "
@@ -64,6 +65,7 @@ function main()
   local -i verbose=0
   local -i var_check_install_min_deps=0
   local -i var_check_install_deps=0
+  local -i build_tests=0
   local    cmake_args=" "
   export make_args=" "
 
@@ -114,6 +116,11 @@ function main()
       -V | --Verbose)
         echo "CMake build process verbose"
         verbose=1
+        shift;
+        ;;
+      -t | --test)
+        echo "Build PCF unit tests"
+        build_tests=1
         shift;
         ;;
       *)
@@ -189,7 +196,13 @@ function main()
   $CMAKE $cmake_args .. > /dev/null
   ret=$?;[[ $ret -ne 0 ]] && return $ret
 
-  compilations pcf pcf $OPENAIRCN_DIR/build/pcf $verbose
+  compilations pcf pcf $OPENAIRCN_DIR/build/pcf/build/pcf $verbose
+  if [ $build_tests -ne 0 ]; then
+    # cmake does not compile the tests, therefore compile then make test
+    # when compilation of test fails, but old test cases pass, still install pcf
+    compilations pcf run_unit_tests $OPENAIRCN_DIR/build/pcf $verbose
+    make_test pcf run_unit_tests $OPENAIRCN_DIR/build/pcf/build/pcf_tests/run_unit_tests $verbose
+  fi
   ret=$?;[[ $ret -ne 0 ]] && return $ret
 
   # For daemon should not be group writable

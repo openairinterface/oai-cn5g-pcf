@@ -18,22 +18,31 @@
 # For more information about the OpenAirInterface (OAI) Software Alliance:
 #      contact@openairinterface.org
 ################################################################################
-cmake_minimum_required (VERSION 3.0.2)
+# Author: Stefan SPETTEL
+###############################################################################
 
-enable_testing()
+set(SRC_TOP_DIR /openair-pcf/src)
+set(TEST_TOP_DIR ${SRC_TOP_DIR}/../test)
 
-# Override options for PCF
-set (  PACKAGE_NAME                    "PCF" )
-set (  STATIC_LINKING                   False )
-#############################################
-# Base directories, compatible with legacy OAI building
-################################################
-set (OPENAIRCN_DIR   $ENV{OPENAIRCN_DIR})
-set (BUILD_TOP_DIR   ${OPENAIRCN_DIR}/build)
-set (SRC_TOP_DIR     $ENV{OPENAIRCN_DIR}/src)
+set(TESTDIR1 ${TEST_TOP_DIR}/sm_policy_control_api)
+set(TEST11 ${TESTDIR1}/collection_api_test)
+set(TEST12 ${TESTDIR1}/individual_api_test)
 
-include(${CMAKE_CURRENT_SOURCE_DIR}/../../src/oai_pcf/CMakeLists.txt)
+file(GLOB PCF_TEST_SRC_FILES
+    ${TESTDIR1}/collection_api_test.cpp
+    ${TESTDIR1}/individual_api_test.cpp
+    ${TEST_TOP_DIR}/test_common/*.cpp
+)
+ 
 
-ADD_SUBDIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/../../src/pcf_app ${CMAKE_CURRENT_BINARY_DIR}/pcf_app)
+include_directories(${SRC_TOP_DIR})
+include_directories(${TEST_TOP_DIR})
+include_directories(${TEST_TOP_DIR}/test_common)
 
-ADD_SUBDIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/../../test ${CMAKE_CURRENT_BINARY_DIR}/pcf_tests)
+add_executable(run_unit_tests ${TEST_TOP_DIR}/run_unit_tests.cpp  ${PCF_TEST_SRC_FILES})
+target_link_libraries (run_unit_tests ${ASAN}  -Wl,--start-group CN_UTILS PCF PCF_API 3GPP_COMMON_TYPES ${CRYPTO_LIBRARIES} -lnghttp2_asio -lboost_system -lboost_thread -lssl -lcrypto  dl -Wl,--end-group
+pthread m rt config++ event boost_system pistache curl gtest)
+
+ADD_SUBDIRECTORY(sm_policy_control_api)
+
+add_test(test run_unit_tests ${TEST_TOP_DIR}/conf/pcf_test1.conf)
