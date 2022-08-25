@@ -45,7 +45,8 @@ namespace oai::pcf::app::sm_policy {
 class dnn_policy_decision : public oai::pcf::app::sm_policy::policy_decision {
  public:
   explicit dnn_policy_decision(
-      std::string dnn, oai::pcf::model::SmPolicyDecision decision)
+      std::string dnn,
+      const std::shared_ptr<oai::pcf::model::SmPolicyDecision>& decision)
       : policy_decision(decision) {
     m_dnn      = dnn;
     m_decision = decision;
@@ -64,7 +65,7 @@ class dnn_policy_decision : public oai::pcf::app::sm_policy::policy_decision {
    */
   oai::pcf::app::sm_policy::status_code decide(
       const oai::pcf::model::SmPolicyContextData& context,
-      oai::pcf::model::SmPolicyDecision& decision) const;
+      std::shared_ptr<oai::pcf::model::SmPolicyDecision>& decision) const;
 
   /**
    * @brief Get the dnn object
@@ -73,9 +74,16 @@ class dnn_policy_decision : public oai::pcf::app::sm_policy::policy_decision {
    */
   std::string get_dnn() const;
 
+  std::string to_string() const;
+
  private:
-  oai::pcf::model::SmPolicyDecision m_decision;
+  std::shared_ptr<oai::pcf::model::SmPolicyDecision> m_decision;
   std::string m_dnn;
 };
 }  // namespace oai::pcf::app::sm_policy
+
+std::ostream& operator<<(
+    std::ostream& os,
+    const oai::pcf::app::sm_policy::dnn_policy_decision& storage);
+
 #endif

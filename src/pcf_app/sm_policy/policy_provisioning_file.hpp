@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file individual_sm_association.hpp
+/*! \file policy_provisioning_file.hpp
  \brief
  \author  Stefan Spettel
  \company Openairinterface Software Allianse
@@ -27,44 +27,43 @@
  \email: stefan.spettel@eurecom.fr
  */
 
-#ifndef FILE_INDIVIDUAL_SM_ASSOCIATION_SEEN
-#define FILE_INDIVIDUAL_SM_ASSOCIATION_SEEN
+#ifndef FILE_POLICY_PROVISIONING_FILE_SEEN
+#define FILE_POLICY_PROVISIONING_FILE_SEEN
 
-#include "SmPolicyContextData.h"
+#include <yaml-cpp/yaml.h>
+#include "nlohmann/json.hpp"
+#include <vector>
 #include "SmPolicyDecision.h"
-
-#include <memory.h>
+#include "PccRule.h"
+#include "TrafficControlData.h"
+#include "policy_storage.hpp"
 
 namespace oai::pcf::app::sm_policy {
 
-class individual_sm_association {
+class policy_provisioning_file {
  public:
-  explicit individual_sm_association(
-      oai::pcf::model::SmPolicyContextData context,
-      std::shared_ptr<oai::pcf::model::SmPolicyDecision> decision,
-      std::string id) {
-    m_decision = decision;
-    m_context  = context;
-    m_id       = id;
-  }
-
-  virtual ~individual_sm_association() = default;
-
-  oai::pcf::model::SmPolicyContextData get_sm_policy_context_data() const;
-  std::shared_ptr<oai::pcf::model::SmPolicyDecision> get_sm_policy_decision()
-      const;
-
-  void set_sm_policy_context_data(
-      oai::pcf::model::SmPolicyContextData& context);
-  void set_sm_policy_decision(
-      const std::shared_ptr<oai::pcf::model::SmPolicyDecision>& decision);
-
-  std::string get_id() const;
+  bool read_all_policy_files();
+  explicit policy_provisioning_file(
+      const std::shared_ptr<oai::pcf::app::sm_policy::policy_storage>&
+          policy_storage);
 
  private:
-  oai::pcf::model::SmPolicyContextData m_context;
-  std::shared_ptr<oai::pcf::model::SmPolicyDecision> m_decision;
-  std::string m_id;
+  bool read_all_files_in_dir(
+      const std::string& dir_path, std::vector<YAML::Node>& yaml_output);
+
+  std::shared_ptr<oai::pcf::model::SmPolicyDecision> decision_from_rules(
+      const YAML::Node& node,
+      const std::map<std::string, oai::pcf::model::PccRule>& pcc_rules,
+      const std::map<std::string, oai::pcf::model::TrafficControlData>&
+          traffic_control);
+
+  template<class T>
+  std::map<std::string, T> convert_yaml_to_model(
+      const std::vector<YAML::Node>& nodes);
+
+  void replace_json_string_with_int(nlohmann::json& j);
+
+  std::shared_ptr<oai::pcf::app::sm_policy::policy_storage> m_policy_storage;
 };
 }  // namespace oai::pcf::app::sm_policy
 #endif

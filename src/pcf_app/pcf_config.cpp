@@ -55,6 +55,7 @@ namespace oai::pcf::config {
 #include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <sys/stat.h>
 
 //------------------------------------------------------------------------------
 // int pcf_config::execute() { return RETURNok; }
@@ -104,7 +105,26 @@ int pcf_config::load_interface(const Setting& if_cfg, interface_cfg_t& cfg) {
   }
   return RETURNok;
 }
+//------------------------------------------------------------------------------
+int pcf_config::check_directory(
+    const Setting& pcf_cfg, const std::string& path_config, std::string& path) {
+  try {
+    pcf_cfg.lookupValue(path_config, path);
 
+    struct stat info;
+    if (stat(path.c_str(), &info) != 0) {
+      Logger::pcf_app().info("Path %s cannot be accessed.", path.c_str());
+      return RETURNerror;
+    } else if (!(info.st_mode & S_IFDIR)) {
+      Logger::pcf_app().info("Path %s is not a directory.", path.c_str());
+      return RETURNerror;
+    }
+  } catch (const SettingNotFoundException& nfex) {
+    Logger::pcf_app().info("Configuration %s is not set.", path_config.c_str());
+    return RETURNerror;
+  }
+  return RETURNok;
+}
 //------------------------------------------------------------------------------
 int pcf_config::load(const string& config_file) {
   Config cfg;
@@ -143,6 +163,28 @@ int pcf_config::load(const string& config_file) {
   } catch (const SettingNotFoundException& nfex) {
     Logger::pcf_app().info(
         "%s : %s, No FQDN configured", nfex.what(), nfex.getPath());
+  }
+
+  if (check_directory(
+          pcf_cfg, PCF_CONFIG_STRING_PCC_RULES_DIRECTORY, pcc_rules_path) !=
+      RETURNok) {
+    Logger::pcf_app().error(
+        "PCC Rules Path is not set or not a valid directory. Exiting");
+    return RETURNerror;
+  }
+  if (check_directory(
+          pcf_cfg, PCF_CONFIG_STRING_POLICY_DECISIONS_DIRECTORY,
+          policy_decisions_path) != RETURNok) {
+    Logger::pcf_app().error(
+        "Policy Decisions Path is not set or not a valid directory. Exiting");
+    return RETURNerror;
+  }
+  if (check_directory(
+          pcf_cfg, PCF_CONFIG_STRING_TRAFFIC_RULES_DIRECTORY,
+          traffic_rules_path) != RETURNok) {
+    Logger::pcf_app().warn(
+        "Traffic Rules Path is not set or not a valid directory. This feature "
+        "is disabled.");
   }
 
   try {
@@ -257,6 +299,13 @@ void pcf_config::display() {
       "==== OPENAIRINTERFACE %s v%s ====", PACKAGE_NAME, PACKAGE_VERSION);
   Logger::pcf_app().info("Configuration:");
   Logger::pcf_app().info("- FQDN ..................: %s", fqdn.c_str());
+  Logger::pcf_app().info(
+      "- Policies Path..........: %s", policy_decisions_path.c_str());
+  Logger::pcf_app().info(
+      "- PCC Rules Path.........: %s", pcc_rules_path.c_str());
+  Logger::pcf_app().info(
+      "- Traffic Rules Path.....: %s", traffic_rules_path.c_str());
+
   Logger::pcf_app().info("- SBI:");
   Logger::pcf_app().info("    iface ............: %s", sbi.if_name.c_str());
   Logger::pcf_app().info("    ipv4.addr ........: %s", inet_ntoa(sbi.addr4));

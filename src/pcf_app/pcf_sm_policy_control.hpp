@@ -42,12 +42,8 @@
 #include "SmPolicyUpdateContextData.h"
 #include "sm_policy/pcf_smpc_status_code.hpp"
 #include "sm_policy/individual_sm_association.hpp"
-#include "sm_policy/policy_decision.hpp"
-#include "sm_policy/slice_policy_decision.hpp"
-#include "sm_policy/supi_policy_decision.hpp"
-#include "sm_policy/dnn_policy_decision.hpp"
-#include "sm_policy/snssai_hasher.hpp"
 #include "uint_generator.hpp"
+#include "sm_policy/policy_storage.hpp"
 
 namespace oai::pcf::app {
 
@@ -57,7 +53,8 @@ namespace oai::pcf::app {
  */
 class pcf_smpc {
  public:
-  explicit pcf_smpc();
+  explicit pcf_smpc(
+      std::shared_ptr<oai::pcf::app::sm_policy::policy_storage> policy_storage);
   pcf_smpc(pcf_smpc const&) = delete;
   void operator=(pcf_smpc const&) = delete;
 
@@ -126,57 +123,19 @@ class pcf_smpc {
       std::string& problem_details);
 
  private:
-  /**
-   * @brief Finds a policy based on the existing supi, dnn, slice and default
-   * policies in that order.
-   * PRECONDITION: Lock all mutexes for the maps
-   *
-   * @param context  The policy context containing supi, dnn and snssai
-   * @param chosen_decision pointer to the object implementing the chosen
-   * decision base class
-   * @return true if policy found
-   * @return false if no policy found
-   */
-  bool find_policy(
-      const oai::pcf::model::SmPolicyContextData& context,
-      oai::pcf::app::sm_policy::policy_decision** chosen_decision);
-
-  /**
-   * @brief Helper method to create hardcoded policy decisions
-   *
-   * @param pcc_rule_name
-   * @param flow_description
-   * @param tc_id
-   * @param steering_policy_id
-   */
-  void create_default_policy_decision(
-      std::string pcc_rule_name, std::string flow_description,
-      std::string tc_id, std::string dnai, std::string route_policy_id,
-      int precedence, oai::pcf::model::SmPolicyDecision& decision);
-
   util::uint_generator<uint32_t> m_association_id_generator;
 
   std::unordered_map<
       std::string, oai::pcf::app::sm_policy::individual_sm_association>
       m_associations;
-  std::unordered_map<
-      oai::pcf::model::Snssai, oai::pcf::app::sm_policy::slice_policy_decision,
-      oai::pcf::app::sm_policy::snssai_hasher>
-      m_slice_policy_decisions;
-
-  std::unordered_map<std::string, oai::pcf::app::sm_policy::dnn_policy_decision>
-      m_dnn_policy_decisions;
-
-  std::unordered_map<
-      std::string, oai::pcf::app::sm_policy::supi_policy_decision>
-      m_supi_policy_decisions;
-
-  std::unique_ptr<oai::pcf::app::sm_policy::policy_decision> default_decision;
 
   mutable std::shared_mutex m_associations_mutex;
-  mutable std::shared_mutex m_slice_policy_decisions_mutex;
-  mutable std::shared_mutex m_dnn_policy_decisions_mutex;
-  mutable std::shared_mutex m_supi_policy_decisions_mutex;
+
+  std::shared_ptr<oai::pcf::app::sm_policy::policy_storage> m_policy_storage;
+
+  void handle_policy_change(
+      const std::shared_ptr<oai::pcf::app::sm_policy::policy_decision>&
+          decision);
 };
 }  // namespace oai::pcf::app
 #endif /* FILE_PCF_SM_POLICY_CONTROL_SEEN */

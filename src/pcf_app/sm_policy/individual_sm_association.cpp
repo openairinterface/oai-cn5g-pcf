@@ -37,7 +37,8 @@ SmPolicyContextData individual_sm_association::get_sm_policy_context_data()
   return m_context;
 }
 
-SmPolicyDecision individual_sm_association::get_sm_policy_decision() const {
+std::shared_ptr<oai::pcf::model::SmPolicyDecision>
+individual_sm_association::get_sm_policy_decision() const {
   return m_decision;
 }
 
@@ -47,7 +48,7 @@ void individual_sm_association::set_sm_policy_context_data(
 }
 
 void individual_sm_association::set_sm_policy_decision(
-    SmPolicyDecision& decision) {
+    const std::shared_ptr<oai::pcf::model::SmPolicyDecision>& decision) {
   m_decision = decision;
 }
 

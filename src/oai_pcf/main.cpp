@@ -134,7 +134,9 @@ int main(int argc, char** argv) {
   pcf_event ev;
 
   // Config
-  pcf_cfg.load(Options::getlibconfigConfig());
+  if (pcf_cfg.load(Options::getlibconfigConfig()) == RETURNerror) {
+    exit(-1);
+  }
   pcf_cfg.display();
 
   // PCF application layer

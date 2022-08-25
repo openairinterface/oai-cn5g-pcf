@@ -4,6 +4,12 @@ set -euo pipefail
 
 CONFIG_DIR="/openair-pcf/etc"
 
+#Default values
+POLICY_BASE_DIR=${POLICY_BASE_DIR:-"/openair-pcf/policy"}
+TRAFFIC_RULES_DIR=${TRAFFIC_RULES_DIR:-"traffic_rules"}
+PCC_RULES_DIR=${PCC_RULES_DIR:-"pcc_rules"}
+POLICY_BASE_DIR=${POLICY_DECISIONS_DIR:-"policy_decisions"}
+
 for c in ${CONFIG_DIR}/*.conf; do
     # grep variable names (format: ${VAR}) from template to be rendered
     if ! grep -oP '@[a-zA-Z0-9_]+@' ${c}; then

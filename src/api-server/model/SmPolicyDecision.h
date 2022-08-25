@@ -330,4 +330,8 @@ class SmPolicyDecision {
 }  // namespace model
 }  // namespace pcf
 }  // namespace oai
+
+std::ostream& operator<<(
+    std::ostream& os, const oai::pcf::model::SmPolicyDecision& decision);
+
 #endif /* SmPolicyDecision_H_ */
