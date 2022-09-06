@@ -590,7 +590,7 @@ class HtmlReport():
 				status = False
 				if nfType == 'PCF':
 					section_start_pattern = 'build_pcf --clean --Verbose --build-type Release --jobs'
-					section_end_pattern = 'FROM ubuntu:bionic as oai-pcf$'
+					section_end_pattern = 'FROM .* as oai-pcf$'
 					pass_pattern = 'pcf installed'
 				section_status = False
 				with open(cwd + '/archives/' + logFileName, 'r') as logfile:
@@ -638,7 +638,7 @@ class HtmlReport():
 			if os.path.isfile(cwd + '/archives/' + logFileName):
 				if nfType == 'PCF':
 					section_start_pattern = 'build_pcf --clean --Verbose --build-type Release --jobs'
-					section_end_pattern = 'FROM ubuntu:bionic as oai-pcf$'
+					section_end_pattern = 'FROM .* as oai-pcf$'
 				section_status = False
 				with open(cwd + '/archives/' + logFileName, 'r') as logfile:
 					for line in logfile:

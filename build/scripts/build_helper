@@ -295,7 +295,7 @@ check_enable_epel_repos() {
       echo "EPEL repos already present. Good."
     else
       echo "EPEL repos not present. Installing them."
-      $SUDO $INSTALLER install $OPTION https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+      $SUDO $INSTALLER install $OPTION https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
     fi
   fi
 }
