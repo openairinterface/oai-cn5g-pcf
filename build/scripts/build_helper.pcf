@@ -30,44 +30,7 @@
 SCRIPT=$(readlink -f ${BASH_SOURCE})
 THIS_SCRIPT_PATH=`dirname $SCRIPT`
 source $THIS_SCRIPT_PATH/build_helper
-source $THIS_SCRIPT_PATH/build_helper.libconfig
 
-#-------------------------------------------------------------------------------
-#arg1 is force (0 or 1) (no interactive script)
-#arg2 is debug (0 or 1) (install debug libraries)
-install_fmt() {
-  echo "Starting to install fmt"
-  if [ $1 -eq 0 ]; then
-    read -p "Do you want to install open-source formatting library for C++ ? <y/N> " prompt
-    OPTION=""
-  else
-    prompt='y'
-    OPTION="-y"
-  fi
-
-  echo "Install fmt from source"
-
-  if [[ $prompt =~ [yY](es)* ]]
-  then
-    cd /tmp
-    echo "Downloading fmt"
-    $SUDO rm -rf /tmp/fmt*
-    git clone https://github.com/fmtlib/fmt.git
-    ret=$?;[[ $ret -ne 0 ]] && return $ret
-    cd fmt
-    # Looks like since Nov 11 commits, we cannot build
-    git checkout -f 1936dddc3c53c1c0db55a665cf419dc7a257ba62
-    $CMAKE -DFMT_TEST=FALSE  .
-    ret=$?;[[ $ret -ne 0 ]] && return $ret
-    make -j `nproc`
-    ret=$?;[[ $ret -ne 0 ]] && return $ret
-    $SUDO make install
-    cd /tmp
-    rm -rf /tmp/fmt*
-  fi
-  echo "fmt installation complete"
-  return 0
-}
 #-------------------------------------------------------------------------------
 #arg1 is force (0 or 1) (no interactive script)
 #arg2 is debug (0 or 1) (install debug libraries)
@@ -140,24 +103,25 @@ install_pistache_from_git() {
     fi
 
     git clone $GIT_URL
-    git submodule update --init
     cd pistache && git checkout e18ed9baeb2145af6f9ea41246cf48054ffd9907
     ret=$?;[[ $ret -ne 0 ]] && popd && return $ret
     mkdir _build && cd _build
-    $CMAKE -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..
+    $CMAKE -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release \
+        -DPISTACHE_BUILD_EXAMPLES=false \
+        -DPISTACHE_BUILD_TESTS=false \
+        -DPISTACHE_BUILD_DOCS=false \
+        ..
     ret=$?;[[ $ret -ne 0 ]] && popd && return $ret
-    make
+    make -j $(nproc)
     ret=$?;[[ $ret -ne 0 ]] && popd && return $ret
     $SUDO make install
     ret=$?;[[ $ret -ne 0 ]] && popd && return $ret
     popd
+    rm -Rf $OPENAIRCN_DIR/build/ext/pistache/_build
   fi
   echo "pistache installation complete"
   return 0
 }
-
-
-
 
 #-------------------------------------------------------------------------------
 #arg1 is force (0 or 1) (no interactive script)
@@ -190,7 +154,6 @@ install_nlohmann_from_git() {
     fi
 
     git clone $GIT_URL
-    git submodule update --init
     cd json && git checkout -f v3.10.3
     ret=$?;[[ $ret -ne 0 ]] && popd && return $ret
     mkdir _build && cd _build
@@ -201,6 +164,7 @@ install_nlohmann_from_git() {
     $SUDO make install
     ret=$?;[[ $ret -ne 0 ]] && popd && return $ret
     popd
+    rm -Rf $OPENAIRCN_DIR/build/ext/json/_build
   fi
   echo "Nlohmann Json installation complete"
   return 0
@@ -241,7 +205,7 @@ install_nghttp2_from_git() {
       libcunit1-dev \
       libssl-dev \
       libxml2-dev libev-dev libevent-dev libjansson-dev libc-ares-dev \
-      libjemalloc-dev libsystemd-dev cython python3-dev python-setuptools"
+      libjemalloc-dev libsystemd-dev python3-dev python-setuptools"
     elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
       PACKAGE_LIST="\
       gcc-c++ \
@@ -255,14 +219,13 @@ install_nghttp2_from_git() {
       zlib-devel \
       CUnit-devel \
       openssl-devel \
-      boost-devel \
       libxml2-devel libev-devel libevent-devel jansson-devel c-ares-devel \
       jemalloc-devel systemd-devel python3-Cython python3-devel python3-setuptools"
     else
       echo_fatal "$OS_DISTRO is not a supported distribution."
     fi
     echo "Install build tools"
-    $SUDO $INSTALLER install $OPTION $PACKAGE_LIST    
+    $SUDO $INSTALLER install $OPTION $PACKAGE_LIST
     ret=$?;[[ $ret -ne 0 ]] && return $ret
    
     GIT_URL=https://github.com/nghttp2/nghttp2.git
@@ -285,12 +248,15 @@ install_nghttp2_from_git() {
     ret=$?;[[ $ret -ne 0 ]] && popd && return $ret
     autoconf
     ret=$?;[[ $ret -ne 0 ]] && popd && return $ret
-    ./configure --enable-asio-lib
+    ./configure --enable-asio-lib --enable-lib-only
     ret=$?;[[ $ret -ne 0 ]] && popd && return $ret
-    make
+    make -j $(nproc)
     ret=$?;[[ $ret -ne 0 ]] && popd && return $ret
     $SUDO make install
     ret=$?;[[ $ret -ne 0 ]] && popd && return $ret
+    $SUDO ldconfig
+    ret=$?;[[ $ret -ne 0 ]] && popd && return $ret
+    git clean -x -d -ff .
     popd
   fi
   echo "nghttp2 installation complete"
@@ -300,81 +266,8 @@ install_nghttp2_from_git() {
 #-------------------------------------------------------------------------------
 #arg1 is force (0 or 1) (no interactive script)
 #arg2 is debug (0 or 1) (install debug libraries)
-install_cpp_jwt_from_git() {
-  echo "Starting to install cpp_jwt"
-  if [ $1 -eq 0 ]; then
-    read -p "Do you want to install CPP-JWT ? <y/N> " prompt
-    OPTION=""
-  else
-    prompt='y'
-    OPTION="-y"
-  fi
-  if [ $2 -eq 0 ]; then
-    debug=0
-  else
-    debug=1
-  fi
-
-
-  if [[ $prompt =~ [yY](es)* ]]
-  then
-    if [[ $OS_DISTRO == "ubuntu" ]]; then
-      PACKAGE_LIST="\
-        libgtest-dev \
-        libssl-dev"
-    elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
-      PACKAGE_LIST="\
-        gtest-devel \
-        openssl-devel"
-    else
-      echo_fatal "$OS_DISTRO is not a supported distribution." 
-    fi
-    $SUDO $INSTALLER install $OPTION $PACKAGE_LIST
-    ret=$?;[[ $ret -ne 0 ]] && return $ret
-   
-   #install libgtest
-    if [[ $OS_DISTRO == "ubuntu" ]]; then
-      echo "Building the gtest library" 
-      pushd $OPENAIRCN_DIR/build/ext    
-      cd /usr/src/gtest
-      $SUDO $CMAKE CMakeLists.txt
-      $SUDO make
-      $SUDO cp *.a /usr/lib
-      ret=$?;[[ $ret -ne 0 ]] && popd && return $ret
-      popd
-    fi
- 
-    GIT_URL=https://github.com/arun11299/cpp-jwt.git
-    echo "Install Cpp-jwt from $GIT_URL"
-    pushd $OPENAIRCN_DIR/build/ext
-    echo "Downloading CPP-JWT"
-    
-    if [[ $prompt =~ [yY](es)* ]]
-    then
-      $SUDO rm -rf cpp-jwt
-    fi
-
-    git clone $GIT_URL
-    cd cpp-jwt && git checkout -f v1.4
-    ret=$?;[[ $ret -ne 0 ]] && popd && return $ret
-    mkdir _build && cd _build
-    $CMAKE ..
-    ret=$?;[[ $ret -ne 0 ]] && popd && return $ret
-    make
-    ret=$?;[[ $ret -ne 0 ]] && popd && return $ret
-    $SUDO make install
-    ret=$?;[[ $ret -ne 0 ]] && popd && return $ret
-    popd
-  fi
-  echo "cpp_jwt installation complete"
-  return 0  
-}
-
-
-#-------------------------------------------------------------------------------
-#arg1 is force (0 or 1) (no interactive script)
-#arg2 is debug (0 or 1) (install debug libraries)
 install_libyaml_cpp_from_git() {
+  # For Ubuntu 2x and RHEL we should install from repo.
   echo "Starting to install libyaml_cpp"
   if [ $1 -eq 0 ]; then
     read -p "Do you want to install yaml_cpp ? <y/N> " prompt
@@ -405,13 +298,14 @@ install_libyaml_cpp_from_git() {
     cd yaml-cpp && git checkout master
     ret=$?;[[ $ret -ne 0 ]] && popd && return $ret
     mkdir _build && cd _build
-    $CMAKE -G "Unix Makefiles" -DYAML_BUILD_SHARED_LIBS=on ..
+    $CMAKE -G "Unix Makefiles" -DYAML_BUILD_SHARED_LIBS=on -DYAML_CPP_BUILD_TESTS=off ..
     ret=$?;[[ $ret -ne 0 ]] && popd && return $ret
     make
     ret=$?;[[ $ret -ne 0 ]] && popd && return $ret
     $SUDO make install
     ret=$?;[[ $ret -ne 0 ]] && popd && return $ret
     popd
+    rm -Rf $OPENAIRCN_DIR/build/ext/yaml-cpp/_build
   fi
   echo "yaml-cpp installation complete"
   return 0
@@ -445,7 +339,9 @@ check_install_pcf_deps() {
     #$SUDO systemctl mask apt-daily.timer
     #$SUDO systemctl mask apt-daily-upgrade.service
     #$SUDO systemctl mask apt-daily-upgrade.timer
-    $SUDO sed -i 's/1/0/g' /etc/apt/apt.conf.d/10periodic
+    if [ $IS_CONTAINER -eq 0 ]; then
+      $SUDO sed -i 's/1/0/g' /etc/apt/apt.conf.d/10periodic
+    fi
   fi
 
   update_package_db
@@ -458,24 +354,16 @@ check_install_pcf_deps() {
     PACKAGE_LIST="\
       autoconf \
       automake \
-      bison \
       build-essential \
       $CMAKE \
-      daemon \
-      doxygen \
-      flex \
-      gdb \
       git"
   elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
     PACKAGE_LIST="\
       autoconf \
       automake \
-      bison \
+      gcc-c++ \
       $CMAKE \
       make \
-      doxygen \
-      flex \
-      gdb \
       git"
   else
     echo_fatal "$OS_DISTRO is not a supported distribution."
@@ -488,46 +376,45 @@ check_install_pcf_deps() {
   if [[ $OS_DISTRO == "ubuntu" ]]; then
     case "$(get_distribution_release)" in
       "ubuntu18.04")
-              # Currently Ubuntu18.04 has boost 1.65 as the latest
+        # Currently Ubuntu18.04 has boost 1.65 as the latest
         # We need at least 1.66
         # PPA has 1.67
+        $SUDO $INSTALLER install $OPTION software-properties-common
         $SUDO add-apt-repository ppa:mhier/libboost-latest --yes
         $SUDO $INSTALLER update
-        specific_packages="libconfig++-dev libboost1.67-dev"
-      ;;
+        specific_packages="libconfig++-dev libasio-dev libboost-all-dev libasan4"
+        ;;
+      "ubuntu20.04")
+        specific_packages="libconfig++-dev libasio-dev libboost-all-dev libasan5"
+        ;;
+      "ubuntu22.04")
+        specific_packages="libconfig++-dev libasio-dev libboost-all-dev libasan6"
+        ;;
     esac
     # removed libspdlog-dev
     PACKAGE_LIST="\
       $specific_packages \
-      guile-2.0-dev \
       libcurl4-gnutls-dev \
       libevent-dev \
-      libgcrypt11-dev \
       libgmp-dev \
       libhogweed? \
       libidn2-0-dev \
       libidn11-dev \
-      libpthread-stubs0-dev \
       libssl-dev \
       libtool \
       libxml2 \
       libxml2-dev \
       openssl \
-      python \
       nettle-dev \
       libcurl4 \
       net-tools \
-      pkg-config"
+      pkg-config \
+      libasan?"
   elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
     PACKAGE_LIST="\
-      guile-devel \
       libconfig-devel \
-      libgcrypt-devel \
       gmp-devel \
-      boost-devel \
       libidn-devel \
-      lksctp-tools \
-      lksctp-tools-devel \
       openssl-devel \
       libtool \
       libxml2 \
@@ -537,32 +424,58 @@ check_install_pcf_deps() {
       nettle-devel \
       libcurl-devel \
       python2 \
-      pkgconfig"
+      pkgconfig \
+      ninja-build \
+      boost-devel \
+      libasan"
   else
     echo_fatal "$OS_DISTRO is not a supported distribution."
   fi
   echo "Install distro libs"
   $SUDO $INSTALLER install $OPTION $PACKAGE_LIST
+
+  # fix issue with libboost in U18 for a bare metal deployment
+  if [[ $OS_DISTRO == "ubuntu" ]]; then
+    case "$(get_distribution_release)" in
+      "ubuntu18.04")
+        $SUDO $INSTALLER remove $OPTION libboost1.65-dev || true
+        $SUDO $INSTALLER autoremove $OPTION || true
+        $SUDO $INSTALLER install $OPTION libboost1.67-dev
+        ;;
+    esac
+  fi
+
   ret=$?;[[ $ret -ne 0 ]] && return $ret
   echo "distro libs installation complete"
 
   install_spdlog_from_git $1 $2
   ret=$?;[[ $ret -ne 0 ]] && return $ret
-  
-  install_nghttp2_from_git $1 $2
+
+  install_pistache_from_git $1 $2
   ret=$?;[[ $ret -ne 0 ]] && return $ret
 
   install_nlohmann_from_git $1 $2
   ret=$?;[[ $ret -ne 0 ]] && return $ret
 
-  #install_cpp_jwt_from_git $1 $2
-  #ret=$?;[[ $ret -ne 0 ]] && return $ret
-    
-  install_pistache_from_git $1 $2
+  install_nghttp2_from_git $1 $2
   ret=$?;[[ $ret -ne 0 ]] && return $ret
 
-  install_libyaml_cpp_from_git $1 $2
-  ret=$?;[[ $ret -ne 0 ]] && return $ret
+  if [[ $OS_DISTRO == "ubuntu" ]]; then
+    case "$(get_distribution_release)" in
+      "ubuntu18.04")
+        install_libyaml_cpp_from_git $1 $2
+        ret=$?;[[ $ret -ne 0 ]] && return $ret
+        ;;
+      "ubuntu20.04")
+        $SUDO $INSTALLER install $OPTION libyaml-cpp0.6 libyaml-cpp-dev
+        ;;
+      "ubuntu22.04")
+        $SUDO $INSTALLER install $OPTION libyaml-cpp0.7 libyaml-cpp-dev
+        ;;
+    esac
+  elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
+    $SUDO $INSTALLER install $OPTION yaml-cpp yaml-cpp-devel
+  fi
 
   $SUDO ldconfig
   return 0
