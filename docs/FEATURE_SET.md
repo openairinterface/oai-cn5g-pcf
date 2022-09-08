@@ -34,7 +34,7 @@
 | 4      | N24           | :x:                | between V-PCF and H-PCF   |
 | 5      | N36           | :x:                | between PCF and UDR       |
 
-(*): support both HTTP/1.1 and HTTP/2
+(*): support both HTTP/1.1 and HTTP/2  
 (**): UpdateNotify feature not supported
 
 # 3. OAI PCF Feature List #
@@ -44,7 +44,7 @@ Based on documents **3GPP TS 23.501 v16.0.0 (Section 6.2.4)** and **3GPP TS 23.5
 | **ID** | **Classification**                                                     | **Status**         | **Comments**                                |
 | ------ | ---------------------------------------------------------------------- | ------------------ | ------------------------------------------- |
 | 1      | Policy and charging control for a service data flows                   | :x:                |                                             |
-| 2      | PDU Session related policy control                                     | :x:                | Except UpdateNotify feature                 |
+| 2      | PDU Session related policy control                                     | :heavy_check_mark: | Except UpdateNotify feature                 |
 | 3      | PDU Session event reporting to the AF                                  | :x:                |                                             | 
 | 4      | Access and mobility related policy control                             | :x:                |                                             |
 | 5      | UE access selection and PDU Session selection related policy control   | :x:                |                                             |
