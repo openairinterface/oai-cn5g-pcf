@@ -195,7 +195,7 @@ class HtmlReport():
 					self.file.write('    <strong>All files in repository follow OAI rules. <span class="glyphicon glyphicon-ok-circle"></span> -> (' + nb_total.strip() + ' were checked)</strong>\n')
 				self.file.write('  </div>\n')
 			else:
-				self.file.write('  <div class="alert alert-warning">\n')
+				self.file.write('  <div class="alert alert-danger">\n')
 				if self.git_pull_request:
 					self.file.write('    <strong>' + nb_fail.strip() + ' modified files in Pull-Request DO NOT follow OAI rules. <span class="glyphicon glyphicon-warning-sign"></span> -> (' + nb_total.strip() + ' were checked)</strong>\n')
 				else:
@@ -590,7 +590,7 @@ class HtmlReport():
 				status = False
 				if nfType == 'PCF':
 					section_start_pattern = 'build_pcf --clean --Verbose --build-type Release --jobs'
-					section_end_pattern = 'FROM ubuntu:bionic as oai-pcf$'
+					section_end_pattern = 'FROM .* as oai-pcf$'
 					pass_pattern = 'pcf installed'
 				section_status = False
 				with open(cwd + '/archives/' + logFileName, 'r') as logfile:
@@ -638,7 +638,7 @@ class HtmlReport():
 			if os.path.isfile(cwd + '/archives/' + logFileName):
 				if nfType == 'PCF':
 					section_start_pattern = 'build_pcf --clean --Verbose --build-type Release --jobs'
-					section_end_pattern = 'FROM ubuntu:bionic as oai-pcf$'
+					section_end_pattern = 'FROM .* as oai-pcf$'
 				section_status = False
 				with open(cwd + '/archives/' + logFileName, 'r') as logfile:
 					for line in logfile:

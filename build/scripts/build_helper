@@ -37,7 +37,7 @@ case "$OS_DISTRO" in
   ubuntu) OS_BASEDISTRO="debian"; INSTALLER="apt-get"; CMAKE="cmake" ;;
 esac
 
-IS_CONTAINER=`egrep -c "docker|podman|kubepods|libpod|buildah" /proc/self/cgroup || true`
+IS_CONTAINER=`egrep -c "docker|kubepods|podman|buildah|libpod" /proc/self/cgroup || true`
 IS_DOCKERBUILD=${IS_DOCKERFILE:-0}
 
 if [ $IS_CONTAINER -eq 0 ] && [ $IS_DOCKERBUILD -eq 0 ]
@@ -127,6 +127,8 @@ check_supported_distribution() {
     local distribution=$(get_distribution_release)
     case "$distribution" in
         "ubuntu18.04") return 0 ;;
+        "ubuntu20.04") return 0 ;;
+        "ubuntu22.04") return 0 ;;
         "rhel8")       return 0 ;;
         "rhel8.2")     return 0 ;;
         "rhel8.3")     return 0 ;;
@@ -162,7 +164,10 @@ clean_kernel() {
 
 #-------------------------------------------------------------------------------
 disable_ipv6() {
-  $SUDO sysctl -w net.ipv6.conf.all.disable_ipv6=1
+  if [ $IS_CONTAINER -eq 0 ]
+  then
+      $SUDO sysctl -w net.ipv6.conf.all.disable_ipv6=1
+  fi
 }
 
 
@@ -285,12 +290,12 @@ update_package_db() {
 check_enable_epel_repos() {
   # on Enterprise Linuxes, ensure EPEL repos are installed
   # (provides: libidn2-devel, vconfig, iperf, phpMyAdmin, dkms, ...)
-  if [[ "$OS_DISTRO" == "rhel" ]]; then
+  if [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "centos" ]]; then
     if rpm -q epel-release > /dev/null; then
       echo "EPEL repos already present. Good."
     else
       echo "EPEL repos not present. Installing them."
-      $SUDO $INSTALLER install $OPTION https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+      $SUDO $INSTALLER install $OPTION https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
     fi
   fi
 }

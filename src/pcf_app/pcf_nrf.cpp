@@ -42,7 +42,7 @@
 using namespace oai::pcf::app;
 using namespace oai::pcf::config;
 using namespace oai::pcf::model;
-
+using namespace boost::placeholders;
 using namespace std;
 
 extern pcf_nrf* pcf_nrf_inst;
