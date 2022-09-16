@@ -31,14 +31,15 @@
 ARG BASE_IMAGE=ubuntu:bionic
 FROM oai-pcf-base:latest as oai-pcf-builder
 
+RUN rm -Rf /openair-pcf
 # Copying source code
 WORKDIR /openair-pcf
 COPY . /openair-pcf
-RUN cp -Rf /openair-pcf-ext-ref /openair-pcf/build/ext
 
 # Building PCF
 WORKDIR /openair-pcf/build/scripts
 RUN ldconfig && \
+    cp -Rf /openair-pcf-ext-ref /openair-pcf/build/ext && \
     ./build_pcf --clean --Verbose --build-type Release --jobs && \
     ldd /openair-pcf/build/pcf/build/pcf && \
     mv /openair-pcf/build/pcf/build/pcf /openair-pcf/build/pcf/build/oai_pcf
