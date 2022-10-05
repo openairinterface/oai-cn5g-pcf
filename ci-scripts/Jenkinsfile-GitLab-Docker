@@ -264,10 +264,7 @@ pipeline {
                   myShCmd('cp /etc/pki/entitlement/*pem ./etc-pki-entitlement', rem_rhel_host_flag, rem_rhel_host_user, rem_rhel_host)
                   myShCmd('sudo cp /etc/rhsm/rhsm.conf ./rhsm-conf', rem_rhel_host_flag, rem_rhel_host_user, rem_rhel_host)
                   myShCmd('sudo cp /etc/rhsm/ca/*pem ./rhsm-ca', rem_rhel_host_flag, rem_rhel_host_user, rem_rhel_host)
-                  myShCmd('sudo podman build --no-cache --target oai-pcf --tag oai-pcf:' + pcf_tag + ' --file docker/Dockerfile.pcf.rhel8 --format docker . > archives/pcf_podman_image_build.log 2>&1', rem_rhel_host_flag, rem_rhel_host_user, rem_rhel_host)
-                  // Putting a place holder to try out on the flattening of image.
-                  // If not satisfactory, we can remove it.
-                  myShCmd('python3 ./ci-scripts/flatten_image.py --tag oai-pcf:' + pcf_tag, rem_rhel_host_flag, rem_rhel_host_user, rem_rhel_host)
+                  myShCmd('sudo podman build --no-cache --squash --target oai-pcf --tag oai-pcf:' + pcf_tag + ' --file docker/Dockerfile.pcf.rhel8 --format docker . > archives/pcf_podman_image_build.log 2>&1', rem_rhel_host_flag, rem_rhel_host_user, rem_rhel_host)
                   myShCmd('sudo podman image ls >> archives/pcf_podman_image_build.log', rem_rhel_host_flag, rem_rhel_host_user, rem_rhel_host)
                   if ("MERGE".equals(env.gitlabActionType)) {
                     myShCmd('sudo podman image tag oai-pcf:' + pcf_tag + ' oai-pcf:' + rhel_pcf_tag, rem_rhel_host_flag, rem_rhel_host_user, rem_rhel_host)
