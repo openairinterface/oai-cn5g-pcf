@@ -39,17 +39,21 @@ using namespace oai::pcf::app;
 typedef PolicyControlRequestTrigger_anyOf::ePolicyControlRequestTrigger_anyOf E;
 
 status_code policy_decision::decide(
-    const SmPolicyContextData& context,
-    std::shared_ptr<oai::pcf::model::SmPolicyDecision>& decision) const {
+    const SmPolicyContextData& context, SmPolicyDecision& decision) const {
   // default rule, so just reply with the decision
   decision = m_decision;
   return status_code::CREATED;
 }
 
+SmPolicyDecision policy_decision::get_sm_policy_decision() const {
+  return m_decision;
+}
+
 status_code policy_decision::handle_plmn_change(
     SmPolicyContextData& orig_context, const SmPolicyUpdateContextData& update,
-    const std::shared_ptr<oai::pcf::model::SmPolicyDecision>& decision,
     std::string& problem_details) {
+  // TODO actually also change m_decision, method should not be static
+
   if (update.servingNetworkIsSet()) {
     orig_context.setServingNetwork(update.getServingNetwork());
     return status_code::OK;
@@ -60,8 +64,8 @@ status_code policy_decision::handle_plmn_change(
 
 status_code policy_decision::handle_access_type_change(
     SmPolicyContextData& orig_context, const SmPolicyUpdateContextData& update,
-    const std::shared_ptr<oai::pcf::model::SmPolicyDecision>& decision,
     std::string& problem_details) {
+  // TODO actually also change m_decision, method should not be static
   if (update.accessTypeIsSet()) {
     orig_context.setAccessType(update.getAccessType());
     return status_code::OK;
@@ -76,8 +80,8 @@ status_code policy_decision::handle_access_type_change(
 
 status_code policy_decision::handle_ip_address_change(
     SmPolicyContextData& orig_context, const SmPolicyUpdateContextData& update,
-    const std::shared_ptr<oai::pcf::model::SmPolicyDecision>& decision,
     std::string& problem_details) {
+  // TODO actually also change m_decision, method should not be static
   problem_details  = "";
   status_code code = status_code::INVALID_PARAMETERS;
   if (update.ipv4AddressIsSet()) {
@@ -101,16 +105,17 @@ status_code policy_decision::handle_ip_address_change(
   if (code != status_code::OK) {
     std::string det = "IPv4 or IPv6 address needs to be specified";
 
-    problem_details =
-        problem_details != "" ? problem_details + " | " + det : det;
+    problem_details = !problem_details.empty() ?
+                          problem_details.append(" | ").append(det) :
+                          det;
   }
   return code;
 }
 
 status_code policy_decision::handle_rat_type_change(
     SmPolicyContextData& orig_context, const SmPolicyUpdateContextData& update,
-    const std::shared_ptr<oai::pcf::model::SmPolicyDecision>& decision,
     std::string& problem_details) {
+  // TODO actually also change m_decision, method should not be static
   status_code code = status_code::INVALID_PARAMETERS;
   if (update.ratTypeIsSet()) {
     orig_context.setRatType(update.getRatType());
@@ -135,12 +140,9 @@ status_code policy_decision::handle_rat_type_change(
 
 status_code policy_decision::redecide(
     SmPolicyContextData& original_context,
-    const std::shared_ptr<oai::pcf::model::SmPolicyDecision>& original_decision,
     const SmPolicyUpdateContextData& update_data,
-    std::shared_ptr<oai::pcf::model::SmPolicyDecision>& new_decision,
+    oai::pcf::model::SmPolicyDecision& new_decision,
     std::string& problem_details) {
-  new_decision = m_decision;
-
   status_code status = status_code::OK;
   // that is not very beautiful, but that is how the API is designed
   // (TS 29.512 4.2.4.2)
@@ -155,18 +157,18 @@ status_code policy_decision::redecide(
       switch (it->getEnumValue()) {
         case E::PLMN_CH:
           status = handle_plmn_change(
-              original_context, update_data, new_decision, problem_details);
+              original_context, update_data, problem_details);
           break;
         case E::RES_MO_RE:
           Logger::pcf_app().error("RES_MO_RE not supported");
           break;
         case E::AC_TY_CH:
           status = handle_access_type_change(
-              original_context, update_data, new_decision, problem_details);
+              original_context, update_data, problem_details);
           break;
         case E::UE_IP_CH:
           status = handle_ip_address_change(
-              original_context, update_data, new_decision, problem_details);
+              original_context, update_data, problem_details);
           break;
         case E::UE_MAC_CH:
           Logger::pcf_app().error("UE_MAC_CH not supported");
@@ -227,7 +229,7 @@ status_code policy_decision::redecide(
           break;
         case E::RAT_TY_CH:
           status = handle_rat_type_change(
-              original_context, update_data, new_decision, problem_details);
+              original_context, update_data, problem_details);
           break;
         case E::REF_QOS_IND_CH:
           Logger::pcf_app().error("REF_QOS_IND_CH not supported");
@@ -264,12 +266,14 @@ status_code policy_decision::redecide(
       }
     }
   }
+
+  new_decision = m_decision;
   return status;
 }
 
 std::string policy_decision::to_string() const {
   std::stringstream ss;
-  ss << *m_decision;
+  ss << m_decision;
   return ss.str();
 }
 
@@ -278,5 +282,3 @@ std::ostream& operator<<(
     const oai::pcf::app::sm_policy::policy_decision& storage) {
   return (os << storage.to_string());
 }
-
-policy_decision::~policy_decision() {}

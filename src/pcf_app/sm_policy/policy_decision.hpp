@@ -38,14 +38,12 @@
 namespace oai::pcf::app::sm_policy {
 
 /**
- * @brief Base class for policy decisions. All sub classes need to
- * implement the decide function
+ * @brief Base class for policy decisions, also acts as default policy
  *
  */
 class policy_decision {
  public:
-  explicit policy_decision(
-      const std::shared_ptr<oai::pcf::model::SmPolicyDecision>& decision) {
+  explicit policy_decision(const oai::pcf::model::SmPolicyDecision& decision) {
     m_decision = decision;
   }
 
@@ -60,7 +58,7 @@ class policy_decision {
    */
   virtual oai::pcf::app::sm_policy::status_code decide(
       const oai::pcf::model::SmPolicyContextData& context,
-      std::shared_ptr<oai::pcf::model::SmPolicyDecision>& decision) const;
+      oai::pcf::model::SmPolicyDecision& decision) const;
 
   /**
    * @brief Redecides based on the original context, original decision and
@@ -70,51 +68,48 @@ class policy_decision {
    * @param original_context The context of the create request and/or
    * previous update requests, is changed according to updated values in
    * update_data
-   * @param original_decision input: The original decision
    * @param update_data input: The data from the update
-   * @param decision_diff output: the new policy decision
+   * @param new_decision output: the diff to the old decision (TODO currently no
+   * diff, but whole object)
+   * @param problem_details output: Error information
    * @return oai::pcf::app::sm_policy::status_code OK in case of successful
    * update
    */
   virtual oai::pcf::app::sm_policy::status_code redecide(
       oai::pcf::model::SmPolicyContextData& original_context,
-      const std::shared_ptr<oai::pcf::model::SmPolicyDecision>&
-          original_decision,
       const oai::pcf::model::SmPolicyUpdateContextData& update_data,
-      std::shared_ptr<oai::pcf::model::SmPolicyDecision>& new_decision,
+      oai::pcf::model::SmPolicyDecision& new_decision,
       std::string& problem_details);
 
-  virtual ~policy_decision();
+  virtual ~policy_decision() = default;
 
-  std::string to_string() const;
+  [[nodiscard]] oai::pcf::model::SmPolicyDecision get_sm_policy_decision()
+      const;
+
+  [[nodiscard]] virtual std::string to_string() const;
 
  protected:
   oai::pcf::app::sm_policy::status_code handle_plmn_change(
       oai::pcf::model::SmPolicyContextData& orig_context,
       const oai::pcf::model::SmPolicyUpdateContextData& update,
-      const std::shared_ptr<oai::pcf::model::SmPolicyDecision>& decision,
       std::string& problem_details);
 
   oai::pcf::app::sm_policy::status_code handle_access_type_change(
       oai::pcf::model::SmPolicyContextData& orig_context,
       const oai::pcf::model::SmPolicyUpdateContextData& update,
-      const std::shared_ptr<oai::pcf::model::SmPolicyDecision>& decision,
       std::string& problem_details);
 
   oai::pcf::app::sm_policy::status_code handle_ip_address_change(
       oai::pcf::model::SmPolicyContextData& orig_context,
       const oai::pcf::model::SmPolicyUpdateContextData& update,
-      const std::shared_ptr<oai::pcf::model::SmPolicyDecision>& decision,
       std::string& problem_details);
 
   oai::pcf::app::sm_policy::status_code handle_rat_type_change(
       oai::pcf::model::SmPolicyContextData& orig_context,
       const oai::pcf::model::SmPolicyUpdateContextData& update,
-      const std::shared_ptr<oai::pcf::model::SmPolicyDecision>& decision,
       std::string& problem_details);
 
- private:
-  std::shared_ptr<oai::pcf::model::SmPolicyDecision> m_decision;
+  oai::pcf::model::SmPolicyDecision m_decision;
 };
 }  // namespace oai::pcf::app::sm_policy
 

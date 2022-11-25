@@ -37,8 +37,7 @@ using namespace oai::pcf::model;
 
 policy_storage::policy_storage() {}
 
-void policy_storage::set_default_decision(
-    const std::shared_ptr<oai::pcf::model::SmPolicyDecision>& decision) {
+void policy_storage::set_default_decision(const SmPolicyDecision& decision) {
   std::shared_ptr<policy_decision> desc =
       std::make_shared<policy_decision>(decision);
 
@@ -47,7 +46,7 @@ void policy_storage::set_default_decision(
 }
 
 void policy_storage::insert_supi_decision(
-    std::string supi, const std::shared_ptr<SmPolicyDecision>& decision) {
+    const std::string& supi, const SmPolicyDecision& decision) {
   std::unique_lock supi_decision_lock(m_supi_policy_decisions_mutex);
 
   std::shared_ptr<supi_policy_decision> desc =
@@ -58,7 +57,7 @@ void policy_storage::insert_supi_decision(
 }
 
 void policy_storage::insert_dnn_decision(
-    std::string dnn, const std::shared_ptr<SmPolicyDecision>& decision) {
+    const std::string& dnn, const SmPolicyDecision& decision) {
   std::unique_lock dnn_decision_lock(m_dnn_policy_decisions_mutex);
 
   std::shared_ptr<dnn_policy_decision> desc =
@@ -69,7 +68,7 @@ void policy_storage::insert_dnn_decision(
 }
 
 void policy_storage::insert_slice_decision(
-    Snssai slice, const std::shared_ptr<SmPolicyDecision>& decision) {
+    const Snssai& slice, const SmPolicyDecision& decision) {
   std::unique_lock slice_decision_lock(m_slice_policy_decisions_mutex);
 
   std::shared_ptr<slice_policy_decision> desc =
@@ -140,7 +139,6 @@ std::shared_ptr<policy_decision> policy_storage::find_policy(
     Logger::pcf_app().debug("%s Decide based on SUPI", msg_base.c_str());
     return got_supi->second;
   }
-  return res_ptr;
 }
 
 void policy_storage::notify_subscribers(

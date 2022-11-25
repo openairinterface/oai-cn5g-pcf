@@ -84,19 +84,18 @@ class policy_storage {
 
   // TODO methods to update and delete policies
   void insert_supi_decision(
-      std::string supi,
-      const std::shared_ptr<oai::pcf::model::SmPolicyDecision>& decision);
+      const std::string& supi,
+      const oai::pcf::model::SmPolicyDecision& decision);
 
   void insert_dnn_decision(
-      std::string dnn,
-      const std::shared_ptr<oai::pcf::model::SmPolicyDecision>& decision);
+      const std::string& dnn,
+      const oai::pcf::model::SmPolicyDecision& decision);
 
   void insert_slice_decision(
-      oai::pcf::model::Snssai,
-      const std::shared_ptr<oai::pcf::model::SmPolicyDecision>& decision);
+      const oai::pcf::model::Snssai&,
+      const oai::pcf::model::SmPolicyDecision& decision);
 
-  void set_default_decision(
-      const std::shared_ptr<oai::pcf::model::SmPolicyDecision>& decision);
+  void set_default_decision(const oai::pcf::model::SmPolicyDecision& decision);
 
   std::shared_ptr<policy_decision> find_policy(
       const oai::pcf::model::SmPolicyContextData& context);
