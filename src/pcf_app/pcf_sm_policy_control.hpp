@@ -54,7 +54,8 @@ namespace oai::pcf::app {
 class pcf_smpc {
  public:
   explicit pcf_smpc(
-      std::shared_ptr<oai::pcf::app::sm_policy::policy_storage> policy_storage);
+      const std::shared_ptr<oai::pcf::app::sm_policy::policy_storage>&
+          policy_storage);
   pcf_smpc(pcf_smpc const&) = delete;
   void operator=(pcf_smpc const&) = delete;
 
@@ -87,7 +88,8 @@ class pcf_smpc {
    * @return sm_policy::status_code
    */
   sm_policy::status_code delete_sm_policy_handler(
-      std::string id, const oai::pcf::model::SmPolicyDeleteData& delete_data,
+      const std::string& id,
+      const oai::pcf::model::SmPolicyDeleteData& delete_data,
       std::string& problem_details);
 
   /**
@@ -102,7 +104,7 @@ class pcf_smpc {
    * @return sm_policy::status_code
    */
   sm_policy::status_code get_sm_policy_handler(
-      std::string id, oai::pcf::model::SmPolicyControl& control,
+      const std::string& id, oai::pcf::model::SmPolicyControl& control,
       std::string& problem_details);
 
   /**
@@ -117,7 +119,7 @@ class pcf_smpc {
    * @return sm_policy::status_code
    */
   sm_policy::status_code update_sm_policy_handler(
-      std::string id,
+      const std::string& id,
       const oai::pcf::model::SmPolicyUpdateContextData& update_context,
       oai::pcf::model::SmPolicyDecision& decision,
       std::string& problem_details);

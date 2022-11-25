@@ -53,12 +53,12 @@ using namespace oai::pcf::model;
 
 using namespace std;
 
-extern pcf_smpc* pcf_smpc_inst;
 extern pcf_config pcf_cfg;
 
 //------------------------------------------------------------------------------
 pcf_smpc::pcf_smpc(
-    std::shared_ptr<oai::pcf::app::sm_policy::policy_storage> policy_storage) {
+    const std::shared_ptr<oai::pcf::app::sm_policy::policy_storage>&
+        policy_storage) {
   m_policy_storage = policy_storage;
 
   std::function<void(const std::shared_ptr<policy_decision>& decision)> f =
@@ -108,12 +108,11 @@ status_code pcf_smpc::create_sm_policy_handler(
 
 //------------------------------------------------------------------------------
 sm_policy::status_code pcf_smpc::delete_sm_policy_handler(
-    std::string id, const SmPolicyDeleteData& delete_data,
+    const std::string& id, const SmPolicyDeleteData& delete_data,
     std::string& problem_details) {
   // TODO for now, just delete, ignore the delete_data
   std::unique_lock lock_associations(m_associations_mutex);
-  std::unordered_map<std::string, individual_sm_association>::const_iterator
-      iter = m_associations.find(id);
+  auto iter = m_associations.find(id);
   if (iter == m_associations.end()) {
     problem_details =
         fmt::format("Could not delete policy association: ID {} not found", id);
@@ -129,11 +128,10 @@ sm_policy::status_code pcf_smpc::delete_sm_policy_handler(
 
 //------------------------------------------------------------------------------
 sm_policy::status_code pcf_smpc::get_sm_policy_handler(
-    std::string id, oai::pcf::model::SmPolicyControl& control,
+    const std::string& id, oai::pcf::model::SmPolicyControl& control,
     std::string& problem_details) {
   std::shared_lock lock_associations(m_associations_mutex);
-  std::unordered_map<std::string, individual_sm_association>::const_iterator
-      iter = m_associations.find(id);
+  auto iter = m_associations.find(id);
   if (iter == m_associations.end()) {
     problem_details = fmt::format(
         "Could not retrieve policy association: ID {} not found", id);
@@ -151,11 +149,10 @@ sm_policy::status_code pcf_smpc::get_sm_policy_handler(
 
 //------------------------------------------------------------------------------
 sm_policy::status_code pcf_smpc::update_sm_policy_handler(
-    std::string id, const SmPolicyUpdateContextData& update_context,
+    const std::string& id, const SmPolicyUpdateContextData& update_context,
     SmPolicyDecision& decision, std::string& problem_details) {
   std::unique_lock lock_associations(m_associations_mutex);
-  std::unordered_map<std::string, individual_sm_association>::iterator iter =
-      m_associations.find(id);
+  auto iter = m_associations.find(id);
 
   if (iter == m_associations.end()) {
     problem_details =

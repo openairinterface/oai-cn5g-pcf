@@ -78,7 +78,7 @@ class policy_storage {
   mutable std::shared_mutex m_supi_policy_decisions_mutex;
 
  public:
-  explicit policy_storage();
+  explicit policy_storage()             = default;
   policy_storage(policy_storage const&) = delete;
   void operator=(policy_storage const&) = delete;
 
