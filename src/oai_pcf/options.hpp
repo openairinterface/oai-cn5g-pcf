@@ -17,14 +17,13 @@
 #ifndef __OPTIONS_H
 #define __OPTIONS_H
 
-#include <stdint.h>
+#include <cstdint>
 #include <string>
 
 class Options {
  public:
   static bool parse(int argc, char** argv);
   static bool parseInputOptions(int argc, char** argv);
-  static bool parseJson();
   static bool validateOptions();
 
   static const std::string& getlibconfigConfig() { return m_libconfigcfg; }

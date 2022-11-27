@@ -15,8 +15,6 @@
  */
 
 #include <iostream>
-#include <stdlib.h>
-#include <unistd.h>
 #include <getopt.h>
 
 #include "options.hpp"
@@ -60,14 +58,14 @@ bool Options::parseInputOptions(int argc, char** argv) {
   bool result      = true;
 
   struct option long_options[] = {
-      {"help", no_argument, NULL, 'h'},
-      {"libconfigcfg", required_argument, NULL, 'f'},
-      {"stdoutlog", no_argument, NULL, 'o'},
-      {"rotatelog", no_argument, NULL, 'r'},
-      {NULL, 0, NULL, 0}};
+      {"help", no_argument, nullptr, 'h'},
+      {"libconfigcfg", required_argument, nullptr, 'f'},
+      {"stdoutlog", no_argument, nullptr, 'o'},
+      {"rotatelog", no_argument, nullptr, 'r'},
+      {nullptr, 0, nullptr, 0}};
 
   // Loop on arguments
-  while (1) {
+  while (true) {
     c = getopt_long(argc, argv, "horc:", long_options, &option_index);
     if (c == -1) break;  // Exit from the loop.
 
@@ -75,7 +73,6 @@ bool Options::parseInputOptions(int argc, char** argv) {
       case 'h': {
         help();
         exit(0);
-        break;
       }
       case 'c': {
         m_libconfigcfg = optarg;
@@ -101,13 +98,13 @@ bool Options::parseInputOptions(int argc, char** argv) {
             break;
           }
           case 'o': {
-            std::cout << "Option -o do not requires an argument, can be also "
+            std::cout << "Option -o does not requires an argument, can be also "
                          "set with option -r."
                       << std::endl;
             break;
           }
           case 'r': {
-            std::cout << "Option -r do not requires an argument, can be also "
+            std::cout << "Option -r does not requires an argument, can be also "
                          "set with option -o."
                       << std::endl;
             break;
