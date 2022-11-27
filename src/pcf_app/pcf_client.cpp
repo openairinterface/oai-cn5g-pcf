@@ -46,7 +46,7 @@ using json = nlohmann::json;
 extern pcf_client* pcf_client_inst;
 
 using namespace oai::pcf::config;
-extern pcf_config pcf_cfg;
+extern std::unique_ptr<pcf_config> pcf_cfg;
 
 //------------------------------------------------------------------------------
 // To read content of the response from NF
@@ -81,7 +81,7 @@ long pcf_client::curl_http_client(
   long httpCode = {0};
 
   uint8_t http_version = 1;
-  if (pcf_cfg.pcf_features.use_http2) http_version = 2;
+  if (pcf_cfg->pcf_features.use_http2) http_version = 2;
 
   if (curl) {
     CURLcode res               = {};
@@ -105,7 +105,7 @@ long pcf_client::curl_http_client(
       curl_easy_setopt(curl, CURLOPT_HTTPGET, 1);
     curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, NF_CURL_TIMEOUT_MS);
     curl_easy_setopt(curl, CURLOPT_TCP_KEEPALIVE, 1);
-    curl_easy_setopt(curl, CURLOPT_INTERFACE, pcf_cfg.sbi.if_name.c_str());
+    curl_easy_setopt(curl, CURLOPT_INTERFACE, pcf_cfg->sbi.if_name.c_str());
 
     if (http_version == 2) {
       curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);

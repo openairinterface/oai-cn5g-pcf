@@ -53,8 +53,6 @@ using namespace oai::pcf::model;
 
 using namespace std;
 
-extern pcf_config pcf_cfg;
-
 //------------------------------------------------------------------------------
 pcf_smpc::pcf_smpc(
     const std::shared_ptr<oai::pcf::app::sm_policy::policy_storage>&

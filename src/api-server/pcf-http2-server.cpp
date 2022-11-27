@@ -27,7 +27,7 @@
  \email: rohan.kharade@openairinterface.org
  */
 
-#include "pcf-http2-server.h"
+#include "pcf-http2-server.hpp"
 #include <boost/algorithm/string.hpp>
 #include <boost/thread.hpp>
 #include <boost/thread/future.hpp>
@@ -45,7 +45,7 @@ using namespace nghttp2::asio_http2::server;
 using namespace oai::pcf::model;
 using namespace oai::pcf::config;
 
-extern pcf_config pcf_cfg;
+extern std::unique_ptr<pcf_config> pcf_cfg;
 
 //------------------------------------------------------------------------------
 void pcf_http2_server::start() {
