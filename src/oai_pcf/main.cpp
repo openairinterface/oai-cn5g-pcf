@@ -64,7 +64,6 @@ void my_app_signal_handler(int s) {
   if (pcf_api_server_2) {
     pcf_api_server_2->stop();
   }
-  exit(0);
 }
 //------------------------------------------------------------------------------
 // We are doing a check to see if an existing process already runs this program.
@@ -162,15 +161,8 @@ int main(int argc, char** argv) {
 
   pcf_http1_manager.join();
   pcf_http2_manager.join();
-  std::cout << " after join server" << std::endl;
 
-  FILE* fp             = nullptr;
-  std::string filename = fmt::format("/tmp/pcf_{}.status", getpid());
-  fp                   = fopen(filename.c_str(), "w+");
-  fprintf(fp, "STARTED\n");
-  fflush(fp);
-  fclose(fp);
+  Logger::pcf_app().info("HTTP servers successfully stopped. Exiting");
 
-  pause();
   return 0;
 }
