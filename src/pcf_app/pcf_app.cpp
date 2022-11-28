@@ -31,7 +31,6 @@
 #include "pcf_nrf.hpp"
 #include "logger.hpp"
 #include "pcf_config.hpp"
-#include "pcf_client.hpp"
 
 #include <stdexcept>
 
@@ -42,7 +41,6 @@ using namespace oai::pcf::model;
 using namespace std;
 
 extern std::unique_ptr<pcf_config> pcf_cfg;
-pcf_nrf* pcf_nrf_inst;
 
 //------------------------------------------------------------------------------
 pcf_app::pcf_app(pcf_event& ev) : event_sub(ev) {
@@ -62,14 +60,9 @@ pcf_app::pcf_app(pcf_event& ev) : event_sub(ev) {
 
   // Register to NRF
   if (pcf_cfg->pcf_features.register_nrf) {
-    try {
-      pcf_nrf_inst = new pcf_nrf(ev);
-      pcf_nrf_inst->register_to_nrf();
-      Logger::pcf_app().info("NRF TASK Created ");
-    } catch (std::exception& e) {
-      Logger::pcf_app().error("Cannot create NRF TASK: %s", e.what());
-      throw;
-    }
+    pcf_nrf_inst = std::make_unique<pcf_nrf>(ev);
+    pcf_nrf_inst->register_to_nrf();
+    Logger::pcf_app().info("NRF TASK Created ");
   }
 
   pcf_smpc_service = std::make_shared<pcf_smpc>(m_policy_storage);
@@ -79,6 +72,7 @@ pcf_app::pcf_app(pcf_event& ev) : event_sub(ev) {
 pcf_app::~pcf_app() {
   Logger::pcf_app().debug("Delete PCF_APP instance...");
   pcf_smpc_service = nullptr;
+  pcf_nrf_inst     = nullptr;
 }
 
 std::shared_ptr<pcf_smpc> pcf_app::get_pcf_smpc_service() {

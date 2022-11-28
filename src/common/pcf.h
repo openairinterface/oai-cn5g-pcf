@@ -51,7 +51,8 @@ enum http_response_codes_e {
   HTTP_RESPONSE_CODE_INTERNAL_SERVER_ERROR  = 500,
   HTTP_RESPONSE_CODE_NOT_IMPLEMENTED        = 501,
   HTTP_RESPONSE_CODE_SERVICE_UNAVAILABLE    = 503,
-  HTTP_RESPONSE_CODE_GATEWAY_TIMEOUT        = 504
+  HTTP_RESPONSE_CODE_GATEWAY_TIMEOUT        = 504,
+  NO_RESPONE                                = 0
 };
 
 #define HEART_BEAT_TIMER 10
@@ -177,5 +178,7 @@ typedef struct nf_service_s {
 #define MAX_WAIT_MSECS 10000  // 1 second
 #define AMF_NUMBER_RETRIES 3
 #define UDM_NUMBER_RETRIES 3
+
+#define SM_POLICY_API_NAME "npcf-smpolicycontrol";
 
 #endif

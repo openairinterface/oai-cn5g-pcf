@@ -33,23 +33,107 @@
 
 #include <map>
 #include <thread>
+#include "pcf.h"
 
-namespace oai {
-namespace pcf {
-namespace app {
+namespace oai::pcf::app {
 
-class pcf_client {
+enum http_methods_e { POST = 1, GET = 2, PUT = 3, PATCH = 4, DELETE = 5 };
+
+class pcf_client_iface {
+ public:
+  /**
+   * Sends a POST request to the URl specified in url
+   * @param url URL to send the request to
+   * @param body body to send in JSON representation
+   * @param response Response
+   * @param resp_headers Response headers
+   * @return HTTP response code
+   */
+  virtual http_response_codes_e send_post(
+      const std::string& url, const std::string& body, std::string& response,
+      std::string& resp_headers) = 0;
+
+  /**
+   * Send a GET request to the URL specified in url
+   * @param url URL to send the request to
+   * @param response
+   * @param resp_header
+   * @return HTTP response code
+   */
+  virtual http_response_codes_e send_get(
+      const std::string& url, std::string& response,
+      std::string& resp_header) = 0;
+
+  /**
+   * Sends a PUT request to the URL specified in url
+   * @param url URL to send the request to
+   * @param body body to send in JSON representation
+   * @param response Response
+   * @param resp_headers Response headers
+   * @return HTTP response code
+   */
+  virtual http_response_codes_e send_put(
+      const std::string& url, const std::string& body, std::string& response,
+      std::string& resp_headers) = 0;
+
+  /**
+   * Sends a PATCH request to the URL specified in url
+   * @param url URL to send the request to
+   * @param body body to send in JSON representation
+   * @param response Response
+   * @param resp_headers Response headers
+   * @return HTTP response code
+   */
+  virtual http_response_codes_e send_patch(
+      const std::string& url, const std::string& body, std::string& response,
+      std::string& resp_headers) = 0;
+
+  /**
+   * Sends a DELETE request to the URL specified in url
+   * @param url URL to send the request to
+   * @param response Response
+   * @param resp_headers Response headers
+   * @return HTTP response code
+   */
+  virtual http_response_codes_e send_delete(
+      const std::string& url, std::string& response,
+      std::string& resp_headers) = 0;
+};
+
+class pcf_client : pcf_client_iface {
  private:
+  static http_response_codes_e do_request(
+      const std::string& url, const http_methods_e& method,
+      const std::string& body, std::string& response,
+      std::string& resp_headers);
+
+  static void prepare_curl_method(CURL*& curl, const http_methods_e& method);
+
  public:
   pcf_client();
   virtual ~pcf_client();
 
+  http_response_codes_e send_post(
+      const std::string& url, const std::string& body, std::string& response,
+      std::string& resp_headers) override;
+
+  http_response_codes_e send_get(
+      const std::string& url, std::string& response,
+      std::string& resp_header) override;
+
+  http_response_codes_e send_put(
+      const std::string& url, const std::string& body, std::string& response,
+      std::string& resp_headers) override;
+
+  http_response_codes_e send_patch(
+      const std::string& url, const std::string& body, std::string& response,
+      std::string& resp_headers) override;
+
+  http_response_codes_e send_delete(
+      const std::string& url, std::string& response,
+      std::string& resp_headers) override;
+
   pcf_client(pcf_client const&) = delete;
-  static long curl_http_client(
-      std::string remoteUri, std::string method, std::string& response,
-      std::string msgBody);
 };
-}  // namespace app
-}  // namespace pcf
-}  // namespace oai
+}  // namespace oai::pcf::app
 #endif /* FILE_PCF_CLIENT_HPP_SEEN */

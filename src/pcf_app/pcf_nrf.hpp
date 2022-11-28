@@ -40,6 +40,7 @@
 #include "pcf_event.hpp"
 #include "3gpp_29.510.h"
 #include "PatchItem.h"
+#include "pcf_client.hpp"
 
 namespace oai::pcf::app {
 
@@ -51,61 +52,54 @@ class pcf_nrf {
 
   virtual ~pcf_nrf();
 
-  void create_sm_policy_handler();
-  /*
+  /**
    * Start event nf heartbeat procedure
-   * @param [void]
-   * @return void
    */
   void start_event_nf_heartbeat(std::string& remoteURI);
-  /*
+  /**
    * Trigger NF heartbeat procedure
-   * @param [void]
-   * @return void
    */
   void trigger_nf_heartbeat_procedure(uint64_t ms);
-  /*
+  /**
    * Trigger NF instance registration to NRF
-   * @param [void]
-   * @return void
    */
   void register_to_nrf();
+
+  /**
+   * Trigger NF instance de-registration to NRF
+   */
+  void deregister_to_nrf();
+
+ private:
+  std::unique_ptr<oai::pcf::app::pcf_client> pcf_client_inst;
+  pcf_profile nf_instance_profile;  // PCF profile
+  std::string pcf_instance_id;      // PCF instance id
+  // for Event Handling
+  pcf_event& event_sub;
+  bs2::connection task_connection;
+  std::string nrf_url;
 
   /*
    * Get pcf API Root
    * @param [std::string& ] api_root: pcf's API Root
    * @return void
    */
-  void get_pcf_api_root(std::string& api_root);
+
+  /**
+   * Generate PCF API root based on the configuration and stores it in nrf_url
+   * @return Generated API root
+   */
+  void generate_nrf_api_url();
 
   /*
    * Generate a SMF profile for this instance
    * @param [void]
    * @return void
    */
-  void generate_pcf_profile(
-      pcf_profile& pcf_nf_profile, std::string& pcf_instance_id);
-
-  /*
-   * Send request to N11 task to trigger NF instance registration to NRF
-   * @param [void]
-   * @return void
+  /**
+   * Generates PCF profile and stores it in nf_instance_profile
    */
-  void trigger_nf_registration_request();
-
-  /*
-   * Send request to N11 task to trigger NF instance deregistration to NRF
-   * @param [void]
-   * @return void
-   */
-  void trigger_nf_deregistration();
-
- private:
-  pcf_profile nf_instance_profile;  // PCF profile
-  std::string pcf_instance_id;      // PCF instance id
-  // for Event Handling
-  pcf_event& event_sub;
-  bs2::connection task_connection;
+  void generate_pcf_profile();
 };
 }  // namespace oai::pcf::app
 #endif /* FILE_PCF_NRF_HPP_SEEN */

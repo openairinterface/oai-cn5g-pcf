@@ -30,8 +30,6 @@
 #include "pcf_client.hpp"
 
 #include <curl/curl.h>
-#include <pistache/http.h>
-#include <pistache/mime.h>
 
 #include <nlohmann/json.hpp>
 #include <stdexcept>
@@ -42,8 +40,6 @@
 
 using namespace oai::pcf::app;
 using json = nlohmann::json;
-
-extern pcf_client* pcf_client_inst;
 
 using namespace oai::pcf::config;
 extern std::unique_ptr<pcf_config> pcf_cfg;
@@ -58,143 +54,130 @@ static std::size_t callback(
 }
 
 //------------------------------------------------------------------------------
-pcf_client::pcf_client() {}
-
-//------------------------------------------------------------------------------
-pcf_client::~pcf_client() {
-  Logger::pcf_app().debug("Delete PCF Client instance...");
+pcf_client::pcf_client() {
+  curl_global_init(CURL_GLOBAL_ALL);
 }
 
 //------------------------------------------------------------------------------
-long pcf_client::curl_http_client(
-    std::string remoteUri, std::string method, std::string& response,
-    std::string msgBody) {
-  Logger::pcf_app().info("Send HTTP message with body %s", msgBody.c_str());
+pcf_client::~pcf_client() {
+  curl_global_cleanup();
+  Logger::pcf_app().debug("Delete PCF Client instance...");
+}
 
-  uint32_t str_len = msgBody.length();
-  char* body_data  = (char*) malloc(str_len + 1);
-  memset(body_data, 0, str_len + 1);
-  memcpy((void*) body_data, (void*) msgBody.c_str(), str_len);
+http_response_codes_e pcf_client::send_post(
+    const std::string& url, const std::string& body, std::string& response,
+    std::string& resp_headers) {
+  return do_request(url, http_methods_e::POST, body, response, resp_headers);
+}
 
-  curl_global_init(CURL_GLOBAL_ALL);
-  CURL* curl    = curl_easy_init();
-  long httpCode = {0};
+http_response_codes_e pcf_client::send_get(
+    const std::string& url, std::string& response, std::string& resp_header) {
+  return do_request(url, http_methods_e::GET, "", response, resp_header);
+}
 
-  uint8_t http_version = 1;
-  if (pcf_cfg->pcf_features.use_http2) http_version = 2;
+http_response_codes_e pcf_client::send_put(
+    const std::string& url, const std::string& body, std::string& response,
+    std::string& resp_headers) {
+  return do_request(url, http_methods_e::PUT, body, response, resp_headers);
+}
 
-  if (curl) {
-    CURLcode res               = {};
-    struct curl_slist* headers = nullptr;
-    if ((method.compare("POST") == 0) or (method.compare("PUT") == 0) or
-        (method.compare("PATCH") == 0)) {
-      std::string content_type = "Content-Type: application/json";
-      headers = curl_slist_append(headers, content_type.c_str());
-      curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-    }
-    curl_easy_setopt(curl, CURLOPT_URL, remoteUri.c_str());
-    if (method.compare("POST") == 0)
-      curl_easy_setopt(curl, CURLOPT_HTTPPOST, 1);
-    else if (method.compare("PUT") == 0)
-      curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PUT");
-    else if (method.compare("DELETE") == 0)
-      curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
-    else if (method.compare("PATCH") == 0)
-      curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PATCH");
-    else
-      curl_easy_setopt(curl, CURLOPT_HTTPGET, 1);
-    curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, NF_CURL_TIMEOUT_MS);
-    curl_easy_setopt(curl, CURLOPT_TCP_KEEPALIVE, 1);
-    curl_easy_setopt(curl, CURLOPT_INTERFACE, pcf_cfg->sbi.if_name.c_str());
+http_response_codes_e pcf_client::send_patch(
+    const std::string& url, const std::string& body, std::string& response,
+    std::string& resp_headers) {
+  return do_request(url, http_methods_e::PATCH, body, response, resp_headers);
+}
 
-    if (http_version == 2) {
-      curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
-      // we use a self-signed test server, skip verification during debugging
-      curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
-      curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
-      curl_easy_setopt(
-          curl, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2_PRIOR_KNOWLEDGE);
-    }
+http_response_codes_e pcf_client::send_delete(
+    const std::string& url, std::string& response, std::string& resp_headers) {
+  return do_request(url, http_methods_e::DELETE, "", response, resp_headers);
+}
 
-    // response information.
-    std::unique_ptr<std::string> httpData(new std::string());
-    std::unique_ptr<std::string> httpHeaderData(new std::string());
+http_response_codes_e pcf_client::do_request(
+    const std::string& url, const http_methods_e& method,
+    const std::string& body, std::string& response, std::string& resp_headers) {
+  CURL* curl = curl_easy_init();
+  if (!curl) {
+    Logger::pcf_sbi().error("Could not create HTTP Client");
+    return http_response_codes_e::NO_RESPONE;
+  }
+  prepare_curl_method(curl, method);
 
-    // Hook up data handling function.
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &callback);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, httpData.get());
-    curl_easy_setopt(curl, CURLOPT_HEADERDATA, httpHeaderData.get());
-    if ((method.compare("POST") == 0) or (method.compare("PUT") == 0) or
-        (method.compare("PATCH") == 0)) {
-      curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, msgBody.length());
-      curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body_data);
-    }
-    res = curl_easy_perform(curl);
-    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &httpCode);
+  // other CURL options
+  curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+  curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, NF_CURL_TIMEOUT_MS);
+  curl_easy_setopt(curl, CURLOPT_TCP_KEEPALIVE, 1);
+  curl_easy_setopt(curl, CURLOPT_INTERFACE, pcf_cfg->sbi.if_name.c_str());
 
-    // get the response
-    response                       = *httpData.get();
-    std::string json_data_response = {};
-    std::string resMsg             = {};
-    bool is_response_ok            = true;
-    Logger::pcf_app().info("Got response with httpcode (%d)", httpCode);
+  if (pcf_cfg->pcf_features.use_http2) {
+    curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+    // we use a self-signed test server, skip verification during debugging
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+    curl_easy_setopt(
+        curl, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2_PRIOR_KNOWLEDGE);
+  }
 
-    if (httpCode == 0) {
-      Logger::pcf_app().info(
-          "Cannot get response when calling %s", remoteUri.c_str());
-      // free curl before returning
-      curl_slist_free_all(headers);
-      curl_easy_cleanup(curl);
-      return httpCode;
-    }
+  // Custom headers
+  struct curl_slist* headers = nullptr;
+  if (!body.empty()) {
+    std::string content_type = "Content-Type: application/json";
+    headers                  = curl_slist_append(headers, content_type.c_str());
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 
-    nlohmann::json response_data = {};
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, body.length());
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.c_str());
+  }
+  // to prevent splitting it into two HTTP messages
+  headers = curl_slist_append(headers, "Expect: ");
 
-    if (httpCode != HTTP_RESPONSE_CODE_OK &&
-        httpCode != HTTP_RESPONSE_CODE_CREATED &&
-        httpCode != HTTP_RESPONSE_CODE_NO_CONTENT) {
-      is_response_ok = false;
-      if (response.size() < 1) {
-        Logger::pcf_app().info("There's no content in the response");
-        // TODO: send context response error
-        return httpCode;
-      }
-      Logger::pcf_app().info("Wrong response code");
+  // curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
 
-      return httpCode;
-    }
+  auto body_response         = std::make_unique<std::string>();
+  auto http_headers_response = std::make_unique<std::string>();
 
-    else {  // httpCode = 200 || httpCode = 201 || httpCode = 204
-      response = *httpData.get();
-    }
+  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &callback);
+  curl_easy_setopt(curl, CURLOPT_WRITEDATA, body_response.get());
+  curl_easy_setopt(curl, CURLOPT_HEADERDATA, http_headers_response.get());
 
-    if (!is_response_ok) {
-      try {
-        response_data = nlohmann::json::parse(json_data_response);
-      } catch (nlohmann::json::exception& e) {
-        Logger::pcf_app().info("Could not get Json content from the response");
-        // Set the default Cause
-        response_data["error"]["cause"] = "504 Gateway Timeout";
-      }
+  CURLcode res = curl_easy_perform(curl);
 
-      Logger::pcf_app().info(
-          "Get response with jsonData: %s", json_data_response.c_str());
-
-      std::string cause = response_data["error"]["cause"];
-      Logger::pcf_app().info("Call Network Function services failure");
-      Logger::pcf_app().info("Cause value: %s", cause.c_str());
-    }
+  if (res != CURLE_OK) {
+    Logger::pcf_sbi().warn(
+        "Could not perform HTTP request to %s. CURL Error code: %d",
+        url.c_str(), res);
     curl_slist_free_all(headers);
     curl_easy_cleanup(curl);
+    return http_response_codes_e::NO_RESPONE;
   }
+  long http_code = -1;
+  curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
 
-  curl_global_cleanup();
+  response.append(*body_response);
+  resp_headers.append(*http_headers_response);
 
-  if (body_data) {
-    free(body_data);
-    body_data = nullptr;
+  curl_slist_free_all(headers);
+  curl_easy_cleanup(curl);
+
+  return http_response_codes_e(http_code);
+}
+
+void pcf_client::prepare_curl_method(
+    CURL*& curl, const http_methods_e& method) {
+  switch (method) {
+    case GET:
+      curl_easy_setopt(curl, CURLOPT_HTTPGET, 1);
+      break;
+    case POST:
+      curl_easy_setopt(curl, CURLOPT_HTTPPOST, 1);
+      break;
+    case PATCH:
+      curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PATCH");
+      break;
+    case PUT:
+      curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PUT");
+      break;
+    case DELETE:
+      curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
+      break;
   }
-  // fflush(stdout);
-
-  return httpCode;
 }

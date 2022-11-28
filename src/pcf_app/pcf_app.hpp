@@ -43,6 +43,7 @@
 #include "pcf_sm_policy_control.hpp"
 #include "sm_policy/policy_storage.hpp"
 #include "sm_policy/policy_provisioning_file.hpp"
+#include "pcf_nrf.hpp"
 
 namespace oai::pcf::app {
 
@@ -53,13 +54,6 @@ class pcf_app {
   void operator=(pcf_app const&) = delete;
 
   virtual ~pcf_app();
-
-  /*
-   * Start event nf heartbeat procedure
-   * @param [void]
-   * @return void
-   */
-  void handle_create_sm_policy();
 
   std::shared_ptr<pcf_smpc> get_pcf_smpc_service();
 
@@ -72,6 +66,7 @@ class pcf_app {
 
   std::shared_ptr<pcf_smpc> pcf_smpc_service;
   std::shared_ptr<oai::pcf::app::sm_policy::policy_storage> m_policy_storage;
+  std::unique_ptr<oai::pcf::app::pcf_nrf> pcf_nrf_inst;
 
   std::shared_ptr<oai::pcf::app::sm_policy::policy_provisioning_file>
       provisioning_file;
