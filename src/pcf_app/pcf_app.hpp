@@ -57,6 +57,12 @@ class pcf_app {
 
   std::shared_ptr<pcf_smpc> get_pcf_smpc_service();
 
+  /**
+   * Stops all the ongoing processes and procedures of the PCF APP layer,
+   * deregisters at NRF
+   */
+  void stop();
+
  private:
   pcf_profile nf_instance_profile;  // PCF profile
   std::string pcf_instance_id;      // PCF instance id

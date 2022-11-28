@@ -78,3 +78,9 @@ pcf_app::~pcf_app() {
 std::shared_ptr<pcf_smpc> pcf_app::get_pcf_smpc_service() {
   return pcf_smpc_service;
 }
+
+void pcf_app::stop() {
+  if (pcf_nrf_inst) {
+    pcf_nrf_inst->deregister_to_nrf();
+  }
+}

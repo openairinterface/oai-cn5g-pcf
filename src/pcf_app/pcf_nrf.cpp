@@ -203,3 +203,21 @@ void pcf_nrf::trigger_nf_heartbeat_procedure(uint64_t ms) {
 pcf_nrf::~pcf_nrf() {
   Logger::pcf_sbi().debug("Delete PCF_NRF instance...");
 }
+
+//------------------------------------------------------------------------------
+void pcf_nrf::deregister_to_nrf() {
+  std::string body_response;
+  std::string response_header;
+
+  Logger::pcf_sbi().info("Sending NF de-registration request");
+
+  http_response_codes_e res =
+      pcf_client_inst->send_delete(nrf_url, body_response, response_header);
+
+  if (res != http_response_codes_e::HTTP_RESPONSE_CODE_NO_CONTENT) {
+    Logger::pcf_sbi().warn(
+        "NF Deregistration failed! Wrong response code: %d", res);
+  } else {
+    Logger::pcf_sbi().info("NF Deregistration successful");
+  }
+}

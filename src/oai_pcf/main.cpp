@@ -64,6 +64,9 @@ void my_app_signal_handler(int s) {
   if (pcf_api_server_2) {
     pcf_api_server_2->stop();
   }
+  if (pcf_app_inst) {
+    pcf_app_inst->stop();
+  }
 }
 //------------------------------------------------------------------------------
 // We are doing a check to see if an existing process already runs this program.
