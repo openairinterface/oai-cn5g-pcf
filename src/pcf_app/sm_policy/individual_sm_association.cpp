@@ -32,13 +32,14 @@
 using namespace oai::pcf::model;
 using namespace oai::pcf::app::sm_policy;
 
-SmPolicyContextData individual_sm_association::get_sm_policy_context_data()
-    const {
+const SmPolicyContextData&
+individual_sm_association::get_sm_policy_context_data() const {
   return m_context;
 }
 
-SmPolicyDecision individual_sm_association::get_sm_policy_decision_dto() const {
-  return m_decision->get_sm_policy_decision();
+const SmPolicyDecision& individual_sm_association::get_sm_policy_decision_dto()
+    const {
+  return m_decision.get_sm_policy_decision();
 }
 
 std::string individual_sm_association::get_id() const {
@@ -49,6 +50,11 @@ oai::pcf::app::sm_policy::status_code
 individual_sm_association::redecide_policy(
     const SmPolicyUpdateContextData& update_data,
     SmPolicyDecision& new_decision, std::string& problem_details) {
-  return m_decision->redecide(
+  return m_decision.redecide(
       m_context, update_data, new_decision, problem_details);
+}
+
+oai::pcf::app::sm_policy::status_code individual_sm_association::decide_policy(
+    oai::pcf::model::SmPolicyDecision& decision) {
+  return m_decision.decide(m_context, decision);
 }

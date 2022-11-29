@@ -47,6 +47,10 @@ class policy_decision {
     m_decision = decision;
   }
 
+  policy_decision(const policy_decision& other) {
+    m_decision = other.m_decision;
+  }
+
   /**
    * @brief Decides based on context on a policy. In case the return code is !=
    * CREATED, the decision reference may be undefined
@@ -56,7 +60,7 @@ class policy_decision {
    * @return oai::pcf::app::sm_policy::status_code   CREATED in case of
    * success
    */
-  virtual oai::pcf::app::sm_policy::status_code decide(
+  [[nodiscard]] virtual oai::pcf::app::sm_policy::status_code decide(
       const oai::pcf::model::SmPolicyContextData& context,
       oai::pcf::model::SmPolicyDecision& decision) const;
 
@@ -75,7 +79,7 @@ class policy_decision {
    * @return oai::pcf::app::sm_policy::status_code OK in case of successful
    * update
    */
-  virtual oai::pcf::app::sm_policy::status_code redecide(
+  [[nodiscard]] virtual oai::pcf::app::sm_policy::status_code redecide(
       oai::pcf::model::SmPolicyContextData& original_context,
       const oai::pcf::model::SmPolicyUpdateContextData& update_data,
       oai::pcf::model::SmPolicyDecision& new_decision,
@@ -83,8 +87,8 @@ class policy_decision {
 
   virtual ~policy_decision() = default;
 
-  [[nodiscard]] oai::pcf::model::SmPolicyDecision get_sm_policy_decision()
-      const;
+  [[nodiscard]] virtual const oai::pcf::model::SmPolicyDecision&
+  get_sm_policy_decision() const;
 
   [[nodiscard]] virtual std::string to_string() const;
 

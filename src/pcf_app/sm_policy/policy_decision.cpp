@@ -45,7 +45,7 @@ status_code policy_decision::decide(
   return status_code::CREATED;
 }
 
-SmPolicyDecision policy_decision::get_sm_policy_decision() const {
+const SmPolicyDecision& policy_decision::get_sm_policy_decision() const {
   return m_decision;
 }
 
