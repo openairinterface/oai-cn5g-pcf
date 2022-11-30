@@ -45,23 +45,25 @@ class policy_provisioning_file {
   bool read_all_policy_files();
   explicit policy_provisioning_file(
       const std::shared_ptr<oai::pcf::app::sm_policy::policy_storage>&
-          policy_storage);
+          policy_storage) {
+    m_policy_storage = policy_storage;
+  }
 
  private:
-  bool read_all_files_in_dir(
+  static bool read_all_files_in_dir(
       const std::string& dir_path, std::vector<YAML::Node>& yaml_output);
 
-  std::shared_ptr<oai::pcf::model::SmPolicyDecision> decision_from_rules(
+  static oai::pcf::model::SmPolicyDecision decision_from_rules(
       const YAML::Node& node,
       const std::map<std::string, oai::pcf::model::PccRule>& pcc_rules,
       const std::map<std::string, oai::pcf::model::TrafficControlData>&
           traffic_control);
 
   template<class T>
-  std::map<std::string, T> convert_yaml_to_model(
+  static std::map<std::string, T> convert_yaml_to_model(
       const std::vector<YAML::Node>& nodes);
 
-  void replace_json_string_with_int(nlohmann::json& j);
+  static void replace_json_string_with_int(nlohmann::json& j);
 
   std::shared_ptr<oai::pcf::app::sm_policy::policy_storage> m_policy_storage;
 };

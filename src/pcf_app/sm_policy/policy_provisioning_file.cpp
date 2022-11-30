@@ -46,19 +46,12 @@ using namespace boost::filesystem;
 
 extern pcf_config pcf_cfg;
 
-policy_provisioning_file::policy_provisioning_file(
-    const std::shared_ptr<oai::pcf::app::sm_policy::policy_storage>&
-        policy_storage) {
-  m_policy_storage = policy_storage;
-}
-
 bool policy_provisioning_file::read_all_policy_files() {
   // first start at the traffic descriptions as they are referenced
   std::vector<YAML::Node> traffic_controls;
   std::vector<YAML::Node> pcc_rules;
   std::vector<YAML::Node> policy_decisions;
 
-  // TODO die sind alle leeeeer
   if (!read_all_files_in_dir(pcf_cfg.traffic_rules_path, traffic_controls)) {
     Logger::pcf_app().warn("Could not load Traffic Control Description files");
   }
@@ -76,10 +69,10 @@ bool policy_provisioning_file::read_all_policy_files() {
       convert_yaml_to_model<TrafficControlData>(traffic_controls);
   auto pcc_rule_objects = convert_yaml_to_model<PccRule>(pcc_rules);
 
-  if (traffic_control_objects.size() == 0) {
+  if (traffic_control_objects.empty()) {
     Logger::pcf_app().warn("No traffic control descriptions are loaded");
   }
-  if (pcc_rule_objects.size() == 0) {
+  if (pcc_rule_objects.empty()) {
     Logger::pcf_app().warn("No mandatory PCC rules are loaded");
     return false;
   }
@@ -91,8 +84,6 @@ bool policy_provisioning_file::read_all_policy_files() {
   }
   for (auto pcc : pcc_rule_objects) {
     pcc.second.setPccRuleId(pcc.first);
-    // TODO debug and see
-    // pcc_rule_objects[pcc.first] = pcc.second;
 
     // check if traffic control data exists
     auto reftc      = pcc.second.getRefTcData();
@@ -115,9 +106,9 @@ bool policy_provisioning_file::read_all_policy_files() {
   // Now parse the decisions (manually as it is not a model)
   for (auto node : policy_decisions) {
     for (auto it = node.begin(); it != node.end(); ++it) {
-      std::shared_ptr<SmPolicyDecision> decision = decision_from_rules(
+      SmPolicyDecision decision = decision_from_rules(
           it->second, pcc_rule_objects, traffic_control_objects);
-      if (!decision) {
+      if (!decision.pccRulesIsSet()) {
         Logger::pcf_app().warn(
             "Decision %s could not be parsed. It is ignored",
             it->first.as<std::string>().c_str());
@@ -128,17 +119,17 @@ bool policy_provisioning_file::read_all_policy_files() {
         std::string supi = "imsi-" + it->second["supi_imsi"].as<std::string>();
         m_policy_storage->insert_supi_decision(supi, decision);
       } else if (it->second["dnn"]) {
-        std::string dnn = it->second["dnn"].as<std::string>();
+        auto dnn = it->second["dnn"].as<std::string>();
         m_policy_storage->insert_dnn_decision(dnn, decision);
       } else if (it->second["slice"]) {
         Snssai snssai;
         try {
-          std::string sd = it->second["slice"]["sd"].as<std::string>();
-          int sst        = it->second["slice"]["sst"].as<int>();
+          auto sd = it->second["slice"]["sd"].as<std::string>();
+          int sst = it->second["slice"]["sst"].as<int>();
           snssai.setSd(sd);
           snssai.setSst(sst);
           m_policy_storage->insert_slice_decision(snssai, decision);
-        } catch (YAML::Exception ex) {
+        } catch (YAML::Exception& ex) {
           Logger::pcf_app().warn(
               "Error while parsing slice decision: %s", ex.msg.c_str());
         }
@@ -157,11 +148,10 @@ bool policy_provisioning_file::read_all_policy_files() {
   return true;
 }
 
-std::shared_ptr<SmPolicyDecision> policy_provisioning_file::decision_from_rules(
+SmPolicyDecision policy_provisioning_file::decision_from_rules(
     const YAML::Node& node, const std::map<std::string, PccRule>& pcc_rules,
     const std::map<std::string, TrafficControlData>& traffic_control) {
-  std::shared_ptr<SmPolicyDecision> decision =
-      std::make_shared<SmPolicyDecision>();
+  SmPolicyDecision decision = {};
 
   std::map<std::string, PccRule> used_rules;
 
@@ -169,8 +159,8 @@ std::shared_ptr<SmPolicyDecision> policy_provisioning_file::decision_from_rules(
     for (auto it = node["pcc_rules"].begin(); it != node["pcc_rules"].end();
          ++it) {
       try {
-        std::string key = it->as<std::string>();
-        auto found      = pcc_rules.find(key);
+        auto key   = it->as<std::string>();
+        auto found = pcc_rules.find(key);
         if (found == pcc_rules.end()) {
           Logger::pcf_app().warn(
               "You configured PCC rule %s in policy decision, but it does not "
@@ -179,43 +169,43 @@ std::shared_ptr<SmPolicyDecision> policy_provisioning_file::decision_from_rules(
         } else {
           used_rules.insert(std::make_pair(key, found->second));
         }
-      } catch (YAML::Exception ex) {
+      } catch (YAML::Exception& ex) {
         Logger::pcf_app().error(
             "Error while parsing decision: %s. Please check your file.",
             ex.msg.c_str());
-        return nullptr;
+        return {};
       }
     }
   } else {
     Logger::pcf_app().warn("You did not set mandatory PCC rules for Decision");
-    return nullptr;
+    return {};
   }
   std::map<std::string, TrafficControlData> used_traffic_control;
   // now add the TrafficControlDescriptions
-  for (auto rule : used_rules) {
-    for (auto traffic : rule.second.getRefTcData()) {
+  for (const auto& rule : used_rules) {
+    for (const auto& traffic : rule.second.getRefTcData()) {
       auto found = traffic_control.find(traffic);
       if (found != traffic_control.end()) {
         used_traffic_control.insert(std::make_pair(traffic, found->second));
       }
     }
   }
-  if (used_rules.size() > 0) {
-    decision->setPccRules(used_rules);
-    decision->setTraffContDecs(used_traffic_control);
+  if (!used_rules.empty()) {
+    decision.setPccRules(used_rules);
+    decision.setTraffContDecs(used_traffic_control);
     return decision;
   }
-  return nullptr;
+  return {};
 }
 
 void policy_provisioning_file::replace_json_string_with_int(nlohmann::json& j) {
-  for (auto elem : j.items()) {
+  for (const auto& elem : j.items()) {
     if (elem.value().is_primitive()) {
       try {
         std::string e = elem.value();
         int val       = std::stoi(e);
         j[elem.key()] = val;  // replace with int
-      } catch (std::invalid_argument ex) {
+      } catch (std::invalid_argument& ex) {
       }
     } else {
       replace_json_string_with_int(elem.value());
@@ -229,7 +219,7 @@ std::map<std::string, T> policy_provisioning_file::convert_yaml_to_model(
   std::map<std::string, T> objects_map;
   // here we convert YAML to json so we can use the already existing JSON parser
   // https://stackoverflow.com/questions/43902941/emitting-json-with-yaml-cpp
-  for (auto node : nodes) {
+  for (const auto& node : nodes) {
     YAML::Emitter emitter;
     emitter << YAML::DoubleQuoted << YAML::Flow << YAML::BeginSeq << node;
     std::string json_string(emitter.c_str() + 1);
@@ -237,7 +227,7 @@ std::map<std::string, T> policy_provisioning_file::convert_yaml_to_model(
     // this is a bit hacky but the problem is that YAML emits ints as strings
     replace_json_string_with_int(j);
 
-    for (auto elem : j.items()) {
+    for (const auto& elem : j.items()) {
       T obj;
       from_json(elem.value(), obj);
       std::stringstream stream;
@@ -271,16 +261,16 @@ bool policy_provisioning_file::read_all_files_in_dir(
     }
   }
 
-  for (auto path : filenames) {
+  for (const auto& path : filenames) {
     YAML::Node node;
     try {
       node = YAML::LoadFile(path);
       yaml_output.push_back(node);
-    } catch (YAML::BadFile ex) {
+    } catch (YAML::BadFile& ex) {
       Logger::pcf_app().warn(
           "Something went wrong while reading the YAML file: %s",
           ex.msg.c_str());
     }
   }
-  return yaml_output.size() > 0;
+  return !yaml_output.empty();
 }

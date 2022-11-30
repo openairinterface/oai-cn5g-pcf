@@ -44,14 +44,13 @@ namespace oai::pcf::app::sm_policy {
 class slice_policy_decision : public oai::pcf::app::sm_policy::policy_decision {
  public:
   explicit slice_policy_decision(
-      oai::pcf::model::Snssai snssai,
-      const std::shared_ptr<oai::pcf::model::SmPolicyDecision>& decision)
+      const oai::pcf::model::Snssai& snssai,
+      const oai::pcf::model::SmPolicyDecision& decision)
       : policy_decision(decision) {
-    m_snssai   = snssai;
-    m_decision = decision;
+    m_snssai = snssai;
   }
 
-  virtual ~slice_policy_decision();
+  ~slice_policy_decision() override = default;
 
   /**
    * @brief Decides based on context on a policy and the snssai information. In
@@ -62,21 +61,20 @@ class slice_policy_decision : public oai::pcf::app::sm_policy::policy_decision {
    * @return oai::pcf::app::sm_policy::status_code   CREATED in case of
    * success
    */
-  oai::pcf::app::sm_policy::status_code decide(
+  [[nodiscard]] oai::pcf::app::sm_policy::status_code decide(
       const oai::pcf::model::SmPolicyContextData& context,
-      std::shared_ptr<oai::pcf::model::SmPolicyDecision>& decision) const;
+      oai::pcf::model::SmPolicyDecision& decision) const override;
 
   /**
    * @brief Get the snssai object
    *
    * @return oai::pcf::model::Snssai
    */
-  oai::pcf::model::Snssai get_snssai() const;
+  [[nodiscard]] oai::pcf::model::Snssai get_snssai() const;
 
-  std::string to_string() const;
+  [[nodiscard]] std::string to_string() const override;
 
  private:
-  std::shared_ptr<oai::pcf::model::SmPolicyDecision> m_decision;
   oai::pcf::model::Snssai m_snssai;
 };
 }  // namespace oai::pcf::app::sm_policy

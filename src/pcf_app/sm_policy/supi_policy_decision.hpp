@@ -45,14 +45,13 @@ namespace oai::pcf::app::sm_policy {
 class supi_policy_decision : public oai::pcf::app::sm_policy::policy_decision {
  public:
   explicit supi_policy_decision(
-      std::string supi,
-      const std::shared_ptr<oai::pcf::model::SmPolicyDecision>& decision)
+      const std::string& supi,
+      const oai::pcf::model::SmPolicyDecision& decision)
       : policy_decision(decision) {
-    m_supi     = supi;
-    m_decision = decision;
+    m_supi = supi;
   }
 
-  virtual ~supi_policy_decision();
+  ~supi_policy_decision() override = default;
 
   /**
    * @brief Decides based on context on a policy and the DNN information. In
@@ -63,21 +62,20 @@ class supi_policy_decision : public oai::pcf::app::sm_policy::policy_decision {
    * @return oai::pcf::app::sm_policy::status_code   CREATED in case of
    * success
    */
-  oai::pcf::app::sm_policy::status_code decide(
+  [[nodiscard]] oai::pcf::app::sm_policy::status_code decide(
       const oai::pcf::model::SmPolicyContextData& context,
-      std::shared_ptr<oai::pcf::model::SmPolicyDecision>& decision) const;
+      oai::pcf::model::SmPolicyDecision& decision) const override;
 
   /**
    * @brief Get the supi object
    *
    * @return std::string
    */
-  std::string get_supi() const;
+  [[nodiscard]] std::string get_supi() const;
 
-  std::string to_string() const;
+  [[nodiscard]] std::string to_string() const override;
 
  private:
-  std::shared_ptr<oai::pcf::model::SmPolicyDecision> m_decision;
   std::string m_supi;
 };
 }  // namespace oai::pcf::app::sm_policy

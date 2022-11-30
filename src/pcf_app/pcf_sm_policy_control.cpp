@@ -53,12 +53,12 @@ using namespace oai::pcf::model;
 
 using namespace std;
 
-extern pcf_smpc* pcf_smpc_inst;
 extern pcf_config pcf_cfg;
 
 //------------------------------------------------------------------------------
 pcf_smpc::pcf_smpc(
-    std::shared_ptr<oai::pcf::app::sm_policy::policy_storage> policy_storage) {
+    const std::shared_ptr<oai::pcf::app::sm_policy::policy_storage>&
+        policy_storage) {
   m_policy_storage = policy_storage;
 
   std::function<void(const std::shared_ptr<policy_decision>& decision)> f =
@@ -85,19 +85,17 @@ status_code pcf_smpc::create_sm_policy_handler(
     return status_code::CONTEXT_DENIED;
   }
 
-  std::shared_ptr<SmPolicyDecision> decision_ptr;
+  association_id = std::to_string(m_association_id_generator.get_uid());
 
-  status_code res = chosen_decision->decide(context, decision_ptr);
+  individual_sm_association assoc(context, *chosen_decision, association_id);
+
+  status_code res = assoc.decide_policy(decision);
 
   if (res != status_code::CREATED) {
     problem_details = fmt::format(
         "SM Policy request from SUPI {}: Invalid policy decision provisioned",
         context.getSupi());
   } else {
-    association_id = std::to_string(m_association_id_generator.get_uid());
-
-    individual_sm_association assoc(context, decision_ptr, association_id);
-
     std::unique_lock lock_assocations(m_associations_mutex);
     m_associations.insert(std::make_pair(association_id, assoc));
 
@@ -105,18 +103,16 @@ status_code pcf_smpc::create_sm_policy_handler(
         "Created Policy Decision for SUPI {} with ID {}", context.getSupi(),
         association_id));
   }
-  decision = *decision_ptr;
   return res;
 }
 
 //------------------------------------------------------------------------------
 sm_policy::status_code pcf_smpc::delete_sm_policy_handler(
-    std::string id, const SmPolicyDeleteData& delete_data,
+    const std::string& id, const SmPolicyDeleteData& delete_data,
     std::string& problem_details) {
   // TODO for now, just delete, ignore the delete_data
   std::unique_lock lock_associations(m_associations_mutex);
-  std::unordered_map<std::string, individual_sm_association>::const_iterator
-      iter = m_associations.find(id);
+  auto iter = m_associations.find(id);
   if (iter == m_associations.end()) {
     problem_details =
         fmt::format("Could not delete policy association: ID {} not found", id);
@@ -132,11 +128,10 @@ sm_policy::status_code pcf_smpc::delete_sm_policy_handler(
 
 //------------------------------------------------------------------------------
 sm_policy::status_code pcf_smpc::get_sm_policy_handler(
-    std::string id, oai::pcf::model::SmPolicyControl& control,
+    const std::string& id, oai::pcf::model::SmPolicyControl& control,
     std::string& problem_details) {
   std::shared_lock lock_associations(m_associations_mutex);
-  std::unordered_map<std::string, individual_sm_association>::const_iterator
-      iter = m_associations.find(id);
+  auto iter = m_associations.find(id);
   if (iter == m_associations.end()) {
     problem_details = fmt::format(
         "Could not retrieve policy association: ID {} not found", id);
@@ -144,7 +139,7 @@ sm_policy::status_code pcf_smpc::get_sm_policy_handler(
     return status_code::NOT_FOUND;
   }
   control.setContext(iter->second.get_sm_policy_context_data());
-  control.setPolicy(*(iter->second.get_sm_policy_decision()));
+  control.setPolicy(iter->second.get_sm_policy_decision_dto());
 
   Logger::pcf_app().info(
       fmt::format("Retrieved policy association with ID {}", id));
@@ -154,11 +149,10 @@ sm_policy::status_code pcf_smpc::get_sm_policy_handler(
 
 //------------------------------------------------------------------------------
 sm_policy::status_code pcf_smpc::update_sm_policy_handler(
-    std::string id, const SmPolicyUpdateContextData& update_context,
+    const std::string& id, const SmPolicyUpdateContextData& update_context,
     SmPolicyDecision& decision, std::string& problem_details) {
   std::unique_lock lock_associations(m_associations_mutex);
-  std::unordered_map<std::string, individual_sm_association>::iterator iter =
-      m_associations.find(id);
+  auto iter = m_associations.find(id);
 
   if (iter == m_associations.end()) {
     problem_details =
@@ -167,38 +161,10 @@ sm_policy::status_code pcf_smpc::update_sm_policy_handler(
     return status_code::NOT_FOUND;
   }
 
-  std::shared_ptr<SmPolicyDecision> new_decision_ptr;
+  SmPolicyDecision new_decision;
 
-  std::shared_ptr<SmPolicyDecision> orig_decision =
-      iter->second.get_sm_policy_decision();
-  SmPolicyContextData orig_context = iter->second.get_sm_policy_context_data();
-
-  // find the original decision to redecide
-  std::shared_ptr<policy_decision> chosen_decision =
-      m_policy_storage->find_policy(orig_context);
-  // this may happen when the policy has been updated/deleted in the meantime.
-  if (!chosen_decision) {
-    problem_details = fmt::format(
-        "SM policy update from SUPI {}: No policies found",
-        orig_context.getSupi());
-    Logger::pcf_app().info(problem_details);
-    return status_code::CONTEXT_DENIED;
-  }
-
-  status_code res = chosen_decision->redecide(
-      orig_context, orig_decision, update_context, new_decision_ptr,
-      problem_details);
-  // we can release the locks here
-
-  // update the existing context and policy and receive a policy diff
-  // TODO in TS 23.512 Chapter 4.2.6 it is described that only the diff should
-  // be returned. here, we return the whole policy object.
-  individual_sm_association assoc(orig_context, new_decision_ptr, id);
-  iter->second = assoc;
-  // overwrite existing association
-  m_associations.insert(std::make_pair(id, assoc));
-  decision = *new_decision_ptr;
-  return res;
+  return iter->second.redecide_policy(
+      update_context, decision, problem_details);
 }
 
 //------------------------------------------------------------------------------

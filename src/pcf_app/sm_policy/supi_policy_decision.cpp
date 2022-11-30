@@ -36,7 +36,7 @@ using namespace oai::pcf::app;
 
 status_code supi_policy_decision::decide(
     const SmPolicyContextData& context,
-    std::shared_ptr<oai::pcf::model::SmPolicyDecision>& decision) const {
+    oai::pcf::model::SmPolicyDecision& decision) const {
   if (context.getSupi() != m_supi) {
     return status_code::CONTEXT_DENIED;
   }
@@ -52,7 +52,7 @@ std::string supi_policy_decision::get_supi() const {
 std::string supi_policy_decision::to_string() const {
   std::stringstream ss;
   ss << "SUPI: " << m_supi << "\n";
-  ss << " -- " << *m_decision;
+  ss << " -- " << m_decision;
   return ss.str();
 }
 
@@ -61,5 +61,3 @@ std::ostream& operator<<(
     const oai::pcf::app::sm_policy::supi_policy_decision& storage) {
   return (os << storage.to_string());
 }
-
-supi_policy_decision::~supi_policy_decision() {}

@@ -36,7 +36,7 @@ using namespace oai::pcf::app;
 
 status_code dnn_policy_decision::decide(
     const SmPolicyContextData& context,
-    std::shared_ptr<oai::pcf::model::SmPolicyDecision>& decision) const {
+    oai::pcf::model::SmPolicyDecision& decision) const {
   if (context.getDnn() != m_dnn) {
     return status_code::CONTEXT_DENIED;
   }
@@ -52,7 +52,7 @@ std::string dnn_policy_decision::get_dnn() const {
 std::string dnn_policy_decision::to_string() const {
   std::stringstream ss;
   ss << "DNN: " << m_dnn << "\n";
-  ss << " -- " << *m_decision;
+  ss << " -- " << m_decision;
   return ss.str();
 }
 
@@ -61,5 +61,3 @@ std::ostream& operator<<(
     const oai::pcf::app::sm_policy::dnn_policy_decision& storage) {
   return (os << storage.to_string());
 }
-
-dnn_policy_decision::~dnn_policy_decision() {}
