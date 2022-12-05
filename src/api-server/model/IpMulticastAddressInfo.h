@@ -76,15 +76,15 @@ class IpMulticastAddressInfo {
   /// <summary>
   ///
   /// </summary>
-  Ipv6Addr getSrcIpv6Addr() const;
-  void setSrcIpv6Addr(Ipv6Addr const& value);
+  oai::model::common::Ipv6Addr getSrcIpv6Addr() const;
+  void setSrcIpv6Addr(oai::model::common::Ipv6Addr const& value);
   bool srcIpv6AddrIsSet() const;
   void unsetSrcIpv6Addr();
   /// <summary>
   ///
   /// </summary>
-  Ipv6Addr getIpv6MulAddr() const;
-  void setIpv6MulAddr(Ipv6Addr const& value);
+  oai::model::common::Ipv6Addr getIpv6MulAddr() const;
+  void setIpv6MulAddr(oai::model::common::Ipv6Addr const& value);
   bool ipv6MulAddrIsSet() const;
   void unsetIpv6MulAddr();
 
@@ -96,9 +96,9 @@ class IpMulticastAddressInfo {
   bool m_SrcIpv4AddrIsSet;
   std::string m_Ipv4MulAddr;
   bool m_Ipv4MulAddrIsSet;
-  Ipv6Addr m_SrcIpv6Addr;
+  oai::model::common::Ipv6Addr m_SrcIpv6Addr;
   bool m_SrcIpv6AddrIsSet;
-  Ipv6Addr m_Ipv6MulAddr;
+  oai::model::common::Ipv6Addr m_Ipv6MulAddr;
   bool m_Ipv6MulAddrIsSet;
 };
 

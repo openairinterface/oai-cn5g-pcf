@@ -20,6 +20,8 @@ namespace oai {
 namespace pcf {
 namespace model {
 
+using namespace oai::model::common;
+
 RanNasRelCause::RanNasRelCause() {
   m_NgApCauseIsSet   = false;
   m_r_5gMmCause      = 0;

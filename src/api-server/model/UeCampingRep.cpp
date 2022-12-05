@@ -20,6 +20,8 @@ namespace oai {
 namespace pcf {
 namespace model {
 
+using namespace oai::model::common;
+
 UeCampingRep::UeCampingRep() {
   m_AccessTypeIsSet       = false;
   m_RatTypeIsSet          = false;

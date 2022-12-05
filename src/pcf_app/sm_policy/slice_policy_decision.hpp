@@ -44,7 +44,7 @@ namespace oai::pcf::app::sm_policy {
 class slice_policy_decision : public oai::pcf::app::sm_policy::policy_decision {
  public:
   explicit slice_policy_decision(
-      const oai::pcf::model::Snssai& snssai,
+      const oai::model::common::Snssai& snssai,
       const oai::pcf::model::SmPolicyDecision& decision)
       : policy_decision(decision) {
     m_snssai = snssai;
@@ -70,12 +70,12 @@ class slice_policy_decision : public oai::pcf::app::sm_policy::policy_decision {
    *
    * @return oai::pcf::model::Snssai
    */
-  [[nodiscard]] oai::pcf::model::Snssai get_snssai() const;
+  [[nodiscard]] oai::model::common::Snssai get_snssai() const;
 
   [[nodiscard]] std::string to_string() const override;
 
  private:
-  oai::pcf::model::Snssai m_snssai;
+  oai::model::common::Snssai m_snssai;
 };
 }  // namespace oai::pcf::app::sm_policy
 

@@ -43,6 +43,7 @@ using namespace oai::pcf::config;
 using namespace oai::pcf::app::sm_policy;
 using namespace oai::pcf::model;
 using namespace boost::filesystem;
+using namespace oai::model::common;
 
 extern std::unique_ptr<pcf_config> pcf_cfg;
 

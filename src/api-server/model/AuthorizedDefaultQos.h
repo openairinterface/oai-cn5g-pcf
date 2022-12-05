@@ -69,8 +69,8 @@ class AuthorizedDefaultQos {
   /// <summary>
   ///
   /// </summary>
-  Arp getArp() const;
-  void setArp(Arp const& value);
+  oai::model::common::Arp getArp() const;
+  void setArp(oai::model::common::Arp const& value);
   bool arpIsSet() const;
   void unsetArp();
   /// <summary>
@@ -145,7 +145,7 @@ class AuthorizedDefaultQos {
  protected:
   int32_t m_r_5qi;
   bool m_r_5qiIsSet;
-  Arp m_Arp;
+  oai::model::common::Arp   m_Arp;
   bool m_ArpIsSet;
   int32_t m_PriorityLevel;
   bool m_PriorityLevelIsSet;

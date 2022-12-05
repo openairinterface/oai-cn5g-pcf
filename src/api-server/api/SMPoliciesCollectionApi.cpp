@@ -17,7 +17,7 @@ namespace oai {
 namespace pcf {
 namespace api {
 
-using namespace oai::pcf::helpers;
+using namespace oai::model::common::helpers;
 using namespace oai::pcf::model;
 
 const std::string SMPoliciesCollectionApi::base = "/npcf-smpolicycontrol/v1";

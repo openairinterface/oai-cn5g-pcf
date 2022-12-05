@@ -20,6 +20,8 @@ namespace oai {
 namespace pcf {
 namespace model {
 
+using namespace oai::model::common;
+
 IpMulticastAddressInfo::IpMulticastAddressInfo() {
   m_SrcIpv4Addr      = "";
   m_SrcIpv4AddrIsSet = false;

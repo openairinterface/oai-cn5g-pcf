@@ -47,3 +47,5 @@ add_library (PCF STATIC
   sm_policy/policy_storage.cpp
   sm_policy/policy_provisioning_file.cpp
   )
+
+include(${BUILD_TOP_DIR}/pcf/used_common_files.cmake)

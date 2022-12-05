@@ -20,6 +20,8 @@ namespace oai {
 namespace pcf {
 namespace model {
 
+using namespace oai::model::common;
+
 AdditionalAccessInfo::AdditionalAccessInfo() {
   m_RatTypeIsSet = false;
 }
@@ -75,10 +77,11 @@ void from_json(const nlohmann::json& j, AdditionalAccessInfo& o) {
   }
 }
 
-AccessType AdditionalAccessInfo::getAccessType() const {
+oai::model::common::AccessType AdditionalAccessInfo::getAccessType() const {
   return m_AccessType;
 }
-void AdditionalAccessInfo::setAccessType(AccessType const& value) {
+void AdditionalAccessInfo::setAccessType(
+    oai::model::common::AccessType const& value) {
   m_AccessType = value;
 }
 RatType AdditionalAccessInfo::getRatType() const {

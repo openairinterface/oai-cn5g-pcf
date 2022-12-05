@@ -48,7 +48,7 @@ class snssai_hasher {
    * @param snssai calculate hash based on this value
    * @return size_t hash value
    */
-  size_t operator()(const oai::pcf::model::Snssai& snssai) const {
+  size_t operator()(const oai::model::common::Snssai& snssai) const {
     size_t res = HASH_SEED;
     res        = res * HASH_FACTOR + std::hash<std::string>()(snssai.getSd());
     res        = res * HASH_FACTOR + std::hash<int>()(snssai.getSst());

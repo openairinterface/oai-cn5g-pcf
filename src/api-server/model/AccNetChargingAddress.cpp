@@ -20,6 +20,8 @@ namespace oai {
 namespace pcf {
 namespace model {
 
+using namespace oai::model::common;
+
 AccNetChargingAddress::AccNetChargingAddress() {
   m_AnChargIpv4Addr      = "";
   m_AnChargIpv4AddrIsSet = false;

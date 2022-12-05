@@ -66,15 +66,15 @@ class UeCampingRep {
   /// <summary>
   ///
   /// </summary>
-  AccessType getAccessType() const;
-  void setAccessType(AccessType const& value);
+  oai::model::common::AccessType getAccessType() const;
+  void setAccessType(oai::model::common::AccessType const& value);
   bool accessTypeIsSet() const;
   void unsetAccessType();
   /// <summary>
   ///
   /// </summary>
-  RatType getRatType() const;
-  void setRatType(RatType const& value);
+  oai::model::common::RatType getRatType() const;
+  void setRatType(oai::model::common::RatType const& value);
   bool ratTypeIsSet() const;
   void unsetRatType();
   /// <summary>
@@ -87,15 +87,15 @@ class UeCampingRep {
   /// <summary>
   ///
   /// </summary>
-  PlmnIdNid getServingNetwork() const;
-  void setServingNetwork(PlmnIdNid const& value);
+  oai::model::common::PlmnIdNid getServingNetwork() const;
+  void setServingNetwork(oai::model::common::PlmnIdNid const& value);
   bool servingNetworkIsSet() const;
   void unsetServingNetwork();
   /// <summary>
   ///
   /// </summary>
-  UserLocation getUserLocationInfo() const;
-  void setUserLocationInfo(UserLocation const& value);
+  oai::model::common::UserLocation getUserLocationInfo() const;
+  void setUserLocationInfo(oai::model::common::UserLocation const& value);
   bool userLocationInfoIsSet() const;
   void unsetUserLocationInfo();
   /// <summary>
@@ -110,15 +110,15 @@ class UeCampingRep {
   friend void from_json(const nlohmann::json& j, UeCampingRep& o);
 
  protected:
-  AccessType m_AccessType;
+  oai::model::common::AccessType m_AccessType;
   bool m_AccessTypeIsSet;
-  RatType m_RatType;
+  oai::model::common::RatType m_RatType;
   bool m_RatTypeIsSet;
   ServingNfIdentity m_ServNfId;
   bool m_ServNfIdIsSet;
-  PlmnIdNid m_ServingNetwork;
+  oai::model::common::PlmnIdNid m_ServingNetwork;
   bool m_ServingNetworkIsSet;
-  UserLocation m_UserLocationInfo;
+  oai::model::common::UserLocation m_UserLocationInfo;
   bool m_UserLocationInfoIsSet;
   std::string m_UeTimeZone;
   bool m_UeTimeZoneIsSet;

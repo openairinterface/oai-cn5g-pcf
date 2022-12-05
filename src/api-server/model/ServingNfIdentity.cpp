@@ -20,6 +20,8 @@ namespace oai {
 namespace pcf {
 namespace model {
 
+using namespace oai::model::common;
+
 ServingNfIdentity::ServingNfIdentity() {
   m_ServNfInstId      = "";
   m_ServNfInstIdIsSet = false;

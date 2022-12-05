@@ -120,8 +120,8 @@ class TrafficControlData {
   /// <summary>
   /// A list of location which the traffic shall be routed to for the AF request
   /// </summary>
-  std::vector<RouteToLocation> getRouteToLocs() const;
-  void setRouteToLocs(std::vector<RouteToLocation> const& value);
+  std::vector<oai::model::common::RouteToLocation  > getRouteToLocs() const;
+  void setRouteToLocs(std::vector<oai::model::common::RouteToLocation  > const& value);
   bool routeToLocsIsSet() const;
   void unsetRouteToLocs();
   /// <summary>
@@ -185,7 +185,7 @@ class TrafficControlData {
   bool m_TrafficSteeringPolIdDlIsSet;
   std::string m_TrafficSteeringPolIdUl;
   bool m_TrafficSteeringPolIdUlIsSet;
-  std::vector<RouteToLocation> m_RouteToLocs;
+  std::vector<oai::model::common::RouteToLocation  > m_RouteToLocs;
   bool m_RouteToLocsIsSet;
   bool m_TraffCorreInd;
   bool m_TraffCorreIndIsSet;
