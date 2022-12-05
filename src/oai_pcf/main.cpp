@@ -109,13 +109,13 @@ int main(int argc, char** argv) {
   }
 
   // Command line options
-  if (!Options::parse(argc, argv)) {
+  if (!oai::utils::options::parse(argc, argv)) {
     std::cout << "Options::parse() failed" << std::endl;
     return 1;
   }
 
   // Logger
-  Logger::init("pcf", Options::getlogStdout(), Options::getlogRotFilelog());
+  Logger::init("pcf", oai::utils::options::getlogStdout(), oai::utils::options::getlogRotFilelog());
 
   struct sigaction sigIntHandler {};
   sigIntHandler.sa_handler = my_app_signal_handler;
@@ -127,7 +127,7 @@ int main(int argc, char** argv) {
   pcf_event ev;
 
   // Config
-  if (pcf_cfg->load(Options::getlibconfigConfig()) == RETURNerror) {
+  if (pcf_cfg->load(oai::utils::options::getlibconfigConfig()) == RETURNerror) {
     exit(-1);
   }
   pcf_cfg->display();

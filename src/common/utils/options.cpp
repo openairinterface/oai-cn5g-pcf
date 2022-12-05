@@ -19,13 +19,14 @@
 
 #include "options.hpp"
 
-int Options::options;
+using namespace oai::utils;
 
-std::string Options::m_libconfigcfg;
-bool Options::m_log_rot_file_log;
-bool Options::m_log_stdout;
+int options::m_options;
+std::string options::m_libconfigcfg;
+bool options::m_log_rot_file_log;
+bool options::m_log_stdout;
 
-void Options::help() {
+void options::help() {
   std::cout << std::endl
             << "Usage:  pcf [OPTIONS]..." << std::endl
             << "  -h, --help                   Print help and exit" << std::endl
@@ -40,19 +41,19 @@ void Options::help() {
             << std::endl;
 }
 
-bool Options::parse(int argc, char** argv) {
-  bool ret = true;
+bool options::parse(int argc, char** argv) {
+  bool ret;
 
   ret = parseInputOptions(argc, argv);
   ret &= validateOptions();
   return ret;
 }
 
-bool Options::validateOptions() {
-  return ((options & libconfigcfg));
+bool options::validateOptions() {
+  return ((m_options & libconfigcfg));
 }
 
-bool Options::parseInputOptions(int argc, char** argv) {
+bool options::parseInputOptions(int argc, char** argv) {
   int c;
   int option_index = 0;
   bool result      = true;
@@ -76,17 +77,17 @@ bool Options::parseInputOptions(int argc, char** argv) {
       }
       case 'c': {
         m_libconfigcfg = optarg;
-        options |= libconfigcfg;
+        m_options |= libconfigcfg;
         break;
       }
       case 'o': {
         m_log_stdout = true;
-        options |= log_stdout;
+        m_options |= log_stdout;
         break;
       }
       case 'r': {
         m_log_rot_file_log = true;
-        options |= log_rot_file_log;
+        m_options |= log_rot_file_log;
         break;
       }
 
@@ -98,13 +99,13 @@ bool Options::parseInputOptions(int argc, char** argv) {
             break;
           }
           case 'o': {
-            std::cout << "Option -o does not requires an argument, can be also "
+            std::cout << "Option -o does not require an argument, can be also "
                          "set with option -r."
                       << std::endl;
             break;
           }
           case 'r': {
-            std::cout << "Option -r does not requires an argument, can be also "
+            std::cout << "Option -r does not require an argument, can be also "
                          "set with option -o."
                       << std::endl;
             break;

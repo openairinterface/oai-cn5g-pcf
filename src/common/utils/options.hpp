@@ -20,7 +20,9 @@
 #include <cstdint>
 #include <string>
 
-class Options {
+namespace oai::utils {
+
+class options {
  public:
   static bool parse(int argc, char** argv);
   static bool parseInputOptions(int argc, char** argv);
@@ -39,11 +41,12 @@ class Options {
 
   static void help();
 
-  static int options;
+  static int m_options;
 
   static bool m_log_rot_file_log;
   static bool m_log_stdout;
   static std::string m_libconfigcfg;
 };
 
+}  // namespace oai::utils
 #endif  // #define __OPTIONS_H
