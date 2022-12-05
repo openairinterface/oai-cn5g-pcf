@@ -21,7 +21,6 @@
 #include "pcf_app.hpp"
 #include "pcf_config.hpp"
 #include "options.hpp"
-#include "launch.hpp"
 #include "pid_file.hpp"
 #include "pistache/http.h"
 
@@ -59,12 +58,6 @@ void my_app_signal_handler(int s) {
 
 //------------------------------------------------------------------------------
 int main(int argc, char** argv) {
-  // Checking if another instance of pcf is running
-  if (!oai::utils::launch::check_redundant_process(argv[0])) {
-    std::cout << "PCF is already running. Exiting" << std::endl;
-    return -1;
-  }
-
   // Command line options
   if (!oai::utils::options::parse(argc, argv)) {
     std::cout << "Options::parse() failed" << std::endl;
@@ -75,6 +68,13 @@ int main(int argc, char** argv) {
   Logger::init(
       "pcf", oai::utils::options::getlogStdout(),
       oai::utils::options::getlogRotFilelog());
+
+  // PID file
+  string pid_file_name = get_exe_absolute_path("/var/run", 0);
+  if (!is_pid_file_lock_success(pid_file_name.c_str())) {
+    Logger::pcf_app().error("Lock PID file %s failed\n", pid_file_name.c_str());
+    exit(-EDEADLK);
+  }
 
   std::signal(SIGINT, my_app_signal_handler);
 
@@ -89,14 +89,6 @@ int main(int argc, char** argv) {
 
   // PCF application layer
   pcf_app_inst = std::make_unique<pcf_app>(ev);
-
-  // PID file
-  // Currently hard-coded value. TODO: add as config option.
-  string pid_file_name = get_exe_absolute_path("/var/run", pcf_cfg->instance);
-  if (!is_pid_file_lock_success(pid_file_name.c_str())) {
-    Logger::pcf_app().error("Lock PID file %s failed\n", pid_file_name.c_str());
-    exit(-EDEADLK);
-  }
 
   std::string v4_address = conv::toString(pcf_cfg->sbi.addr4);
 
