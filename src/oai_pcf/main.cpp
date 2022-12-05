@@ -21,6 +21,7 @@
 #include "pcf_app.hpp"
 #include "pcf_config.hpp"
 #include "options.hpp"
+#include "launch.hpp"
 #include "pid_file.hpp"
 #include "pistache/http.h"
 
@@ -28,8 +29,6 @@
 #include <iostream>
 #include <csignal>
 #include <thread>
-#include <unistd.h>  // get_pid(), pause()
-
 
 using namespace util;
 using namespace std;
@@ -57,46 +56,12 @@ void my_app_signal_handler(int s) {
     pcf_api_server_2->stop();
   }
 }
-//------------------------------------------------------------------------------
-// We are doing a check to see if an existing process already runs this program.
-// We have seen that running at least twice this program in a container may lead
-// to the container host to crash.
-bool check_redundant_process(const std::string& exec_name) {
-  FILE* fp;
-  int result     = 0;
-  size_t retSize = 0;
 
-  // Retrieving only the executable name
-  std::string prog_name =
-      exec_name.substr(exec_name.rfind("/", 0), exec_name.length());
-
-  std::string cmd = "ps aux | grep -v grep | grep -v nohup | grep -c ";
-  cmd.append(prog_name);
-
-  fp = popen(cmd.c_str(), "r");
-
-  char buf[64];
-  retSize = fread(buf, 1, sizeof(buf), fp);
-  pclose(fp);
-  // if something is wrong, then we cannot know
-  if (retSize == 0) {
-    return false;
-  }
-  try {
-    stoi(buf);
-  } catch (invalid_argument& ex) {
-    cout << "ERROR: Could not read how many processes are running" << std::endl;
-    return false;
-  }
-
-  return true;
-}
 //------------------------------------------------------------------------------
 int main(int argc, char** argv) {
   // Checking if another instance of pcf is running
-  if (!check_redundant_process(argv[0])) {
-    std::cout << "An instance of " << argv[0] << " is maybe already called!"
-              << std::endl;
+  if (!oai::utils::launch::check_redundant_process(argv[0])) {
+    std::cout << "PCF is already running. Exiting" << std::endl;
     return -1;
   }
 
@@ -107,7 +72,9 @@ int main(int argc, char** argv) {
   }
 
   // Logger
-  Logger::init("pcf", oai::utils::options::getlogStdout(), oai::utils::options::getlogRotFilelog());
+  Logger::init(
+      "pcf", oai::utils::options::getlogStdout(),
+      oai::utils::options::getlogRotFilelog());
 
   std::signal(SIGINT, my_app_signal_handler);
 

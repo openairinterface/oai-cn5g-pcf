@@ -28,5 +28,8 @@ SET(UTILS_COMMON_DIR ${SRC_TOP_DIR}/common/utils)
 
 ## UTILS used in PCF
 target_include_directories(pcf PUBLIC ${UTILS_COMMON_DIR})
-target_sources(pcf PRIVATE ${UTILS_COMMON_DIR}/options.cpp)
+target_sources(pcf PRIVATE
+        ${UTILS_COMMON_DIR}/options.cpp
+        ${UTILS_COMMON_DIR}/launch.cpp
+        )
 
