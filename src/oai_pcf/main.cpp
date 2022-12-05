@@ -22,21 +22,14 @@
 #include "pcf_config.hpp"
 #include "options.hpp"
 #include "pid_file.hpp"
-#include "pistache/endpoint.h"
 #include "pistache/http.h"
-#include "pistache/router.h"
 
 #include <algorithm>
-#include <boost/asio.hpp>
 #include <iostream>
 #include <csignal>
-#include <cstdint>
 #include <thread>
 #include <unistd.h>  // get_pid(), pause()
-#include <vector>
 
-#include <boost/algorithm/string.hpp>
-#include <boost/algorithm/string/split.hpp>
 
 using namespace util;
 using namespace std;
@@ -48,7 +41,6 @@ std::unique_ptr<pcf_app> pcf_app_inst;
 // We could make a singleton getInstance in config
 // or we handle everything in smf_app init and have a reference to config there
 std::unique_ptr<pcf_config> pcf_cfg = std::make_unique<pcf_config>();
-;
 std::unique_ptr<PCFApiServer> pcf_api_server_1;
 std::unique_ptr<pcf_http2_server> pcf_api_server_2;
 
@@ -117,11 +109,7 @@ int main(int argc, char** argv) {
   // Logger
   Logger::init("pcf", oai::utils::options::getlogStdout(), oai::utils::options::getlogRotFilelog());
 
-  struct sigaction sigIntHandler {};
-  sigIntHandler.sa_handler = my_app_signal_handler;
-  sigemptyset(&sigIntHandler.sa_mask);
-  sigIntHandler.sa_flags = 0;
-  sigaction(SIGINT, &sigIntHandler, nullptr);
+  std::signal(SIGINT, my_app_signal_handler);
 
   // Event subsystem
   pcf_event ev;
