@@ -21,11 +21,3 @@
 
 SET(UTILS_COMMON_DIR ${SRC_TOP_DIR}/common/utils)
 
-if(NOT TARGET spdlog)
-    find_library(spdlog REQUIRED)
-endif()
-
-if (NOT TARGET fmt)
-    find_library(fmt REQUIRED)
-endif()
-
