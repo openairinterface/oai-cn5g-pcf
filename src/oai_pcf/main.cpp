@@ -21,8 +21,8 @@
 #include "pcf_app.hpp"
 #include "pcf_config.hpp"
 #include "options.hpp"
-#include "pid_file.hpp"
 #include "pistache/http.h"
+#include "nf_launch.hpp"
 
 #include <algorithm>
 #include <iostream>
@@ -33,6 +33,7 @@ using namespace util;
 using namespace std;
 using namespace oai::pcf::app;
 using namespace oai::pcf::config;
+using namespace oai::utils;
 
 std::unique_ptr<pcf_app> pcf_app_inst;
 // TODO Stefan: I am not happy with these global variables
@@ -58,6 +59,11 @@ void my_app_signal_handler(int s) {
 
 //------------------------------------------------------------------------------
 int main(int argc, char** argv) {
+  if (!nf_launch::check_redundant_process()) {
+    std::cout << "NF instance already running. Exiting" << std::endl;
+    return 1;
+  }
+
   // Command line options
   if (!oai::utils::options::parse(argc, argv)) {
     std::cout << "Options::parse() failed" << std::endl;
@@ -68,13 +74,6 @@ int main(int argc, char** argv) {
   Logger::init(
       "pcf", oai::utils::options::getlogStdout(),
       oai::utils::options::getlogRotFilelog());
-
-  // PID file
-  string pid_file_name = get_exe_absolute_path("/var/run", 0);
-  if (!is_pid_file_lock_success(pid_file_name.c_str())) {
-    Logger::pcf_app().error("Lock PID file %s failed\n", pid_file_name.c_str());
-    exit(-EDEADLK);
-  }
 
   std::signal(SIGINT, my_app_signal_handler);
 
