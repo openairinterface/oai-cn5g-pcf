@@ -21,6 +21,9 @@
 #include <stdexcept>
 #include <vector>
 
+// Used by SPDLOG to use external FMT library
+#define SPDLOG_FMT_EXTERNAL
+
 //#define SPDLOG_LEVEL_NAMES { "trace", "debug", "info",  "warning", "error",
 //"critical", "off" };
 #define SPDLOG_LEVEL_NAMES                                                     \

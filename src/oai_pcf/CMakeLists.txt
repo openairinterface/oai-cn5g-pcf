@@ -294,5 +294,5 @@ IF(STATIC_LINKING)
     SET(ASAN)
 ENDIF(STATIC_LINKING)
 
-target_link_libraries (pcf ${ASAN}  -Wl,--start-group CN_UTILS PCF PCF_API 3GPP_COMMON_TYPES ${CRYPTO_LIBRARIES} -lnghttp2_asio -lboost_system -lboost_thread -lssl -lcrypto  dl -Wl,--end-group
-pthread m rt config++ event boost_system -lboost_filesystem pistache curl -lyaml-cpp -lfmt -lspdlog)
+target_link_libraries (pcf ${ASAN}  -Wl,--start-group CN_UTILS PCF PCF_API 3GPP_COMMON_TYPES ${CRYPTO_LIBRARIES} -lnghttp2_asio -lboost_system -lboost_thread -lssl -lcrypto -lfmt -lspdlog dl -Wl,--end-group
+pthread m rt config++ event boost_system -lboost_filesystem pistache curl -lyaml-cpp)

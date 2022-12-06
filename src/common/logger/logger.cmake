@@ -22,10 +22,10 @@
 SET(UTILS_COMMON_DIR ${SRC_TOP_DIR}/common/utils)
 
 if(NOT TARGET spdlog)
-    find_package(spdlog REQUIRED)
+    find_library(spdlog REQUIRED)
 endif()
 
 if (NOT TARGET fmt)
-    find_package(fmt REQUIRED)
+    find_library(fmt REQUIRED)
 endif()
 
