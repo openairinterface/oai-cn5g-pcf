@@ -44,8 +44,8 @@ std::unique_ptr<PCFApiServer> pcf_api_server_1;
 std::unique_ptr<pcf_http2_server> pcf_api_server_2;
 
 //------------------------------------------------------------------------------
-void my_app_signal_handler(int s) {
-  std::cout << "Caught signal " << s << std::endl;
+void signal_handler_sigint(int) {
+  std::cout << "Caught SIGINT signal " << std::endl;
   Logger::system().startup("exiting");
   std::cout << "Shutting down HTTP servers..." << std::endl;
 
@@ -75,7 +75,7 @@ int main(int argc, char** argv) {
       "pcf", oai::utils::options::getlogStdout(),
       oai::utils::options::getlogRotFilelog());
 
-  std::signal(SIGINT, my_app_signal_handler);
+  std::signal(SIGINT, signal_handler_sigint);
 
   // Event subsystem
   pcf_event ev;
