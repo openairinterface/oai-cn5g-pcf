@@ -37,11 +37,10 @@ namespace oai::utils {
 class nf_launch {
  public:
   /**
-   * Checks if a process with the given name is already running
-   * @param exec_name Name of the process
-   * @return True when no process with \p exec_name is running
+   * Checks if a process of this NF is already running
+   * @return True when a process is already running
    */
-  static bool check_redundant_process();
+  static bool already_running();
 
  private:
   /**

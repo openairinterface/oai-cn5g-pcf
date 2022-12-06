@@ -59,7 +59,7 @@ void signal_handler_sigint(int) {
 
 //------------------------------------------------------------------------------
 int main(int argc, char** argv) {
-  if (!nf_launch::check_redundant_process()) {
+  if (nf_launch::already_running()) {
     std::cout << "NF instance already running. Exiting" << std::endl;
     return 1;
   }
