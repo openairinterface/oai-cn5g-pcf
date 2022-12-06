@@ -15,7 +15,8 @@
  */
 
 #include "logger.hpp"
-#include "spdlog/sinks/syslog_sink.h"
+#include <spdlog/sinks/syslog_sink.h>
+#include <spdlog/sinks/rotating_file_sink.h>
 
 #include <iostream>
 #include <sstream>
@@ -27,7 +28,6 @@ Logger* Logger::m_singleton = NULL;
 void Logger::_init(
     const char* app, const bool log_stdout, bool const log_rot_file) {
   int num_sinks = 0;
-  spdlog::set_async_mode(2048);
 #if TRACE_IS_ON
   spdlog::level::level_enum llevel = spdlog::level::trace;
 #elif DEBUG_IS_ON

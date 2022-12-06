@@ -18,24 +18,14 @@
 # For more information about the OpenAirInterface (OAI) Software Alliance:
 #      contact@openairinterface.org
 ################################################################################
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-include_directories(${SRC_TOP_DIR}/common)
-include_directories(${SRC_TOP_DIR}/common/msg)
-include_directories(${SRC_TOP_DIR}/common/utils)
-include_directories(${SRC_TOP_DIR}/itti)
-include_directories(${SRC_TOP_DIR}/pcf_app)
-#include_directories(${SRC_TOP_DIR}/api-server/model)
 
+SET(UTILS_COMMON_DIR ${SRC_TOP_DIR}/common/utils)
 
-set(CN_UTILS_SRC STATIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/conversions.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/get_gateway_netlink.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/if.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/string.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/fqdn.cpp
-    )
+if(NOT TARGET spdlog)
+    find_package(spdlog REQUIRED)
+endif()
 
-
-add_library(CN_UTILS ${CN_UTILS_SRC})
-
+if (NOT TARGET fmt)
+    find_package(fmt REQUIRED)
+endif()
 

@@ -275,7 +275,6 @@ include_directories(${SRC_TOP_DIR}/common)
 include_directories(${SRC_TOP_DIR}/common/msg)
 include_directories(${SRC_TOP_DIR}/common/utils)
 include_directories(${SRC_TOP_DIR}/pcf)
-include_directories(${SRC_TOP_DIR}/../build/ext/spdlog/include)
 include_directories(${SRC_TOP_DIR}/api-server)
 include_directories(${SRC_TOP_DIR}/api-server/api)
 include_directories(${SRC_TOP_DIR}/api-server/impl)
@@ -286,6 +285,7 @@ add_executable(pcf
   )
 
 include(${BUILD_TOP_DIR}/pcf/used_common_files.cmake)
+include(${SRC_TOP_DIR}/common/logger/logger.cmake)
 
 IF(STATIC_LINKING)
     SET(CMAKE_EXE_LINKER_FLAGS "-static")
@@ -295,4 +295,4 @@ IF(STATIC_LINKING)
 ENDIF(STATIC_LINKING)
 
 target_link_libraries (pcf ${ASAN}  -Wl,--start-group CN_UTILS PCF PCF_API 3GPP_COMMON_TYPES ${CRYPTO_LIBRARIES} -lnghttp2_asio -lboost_system -lboost_thread -lssl -lcrypto  dl -Wl,--end-group
-pthread m rt config++ event boost_system -lboost_filesystem pistache curl -lyaml-cpp)
+pthread m rt config++ event boost_system -lboost_filesystem pistache curl -lyaml-cpp -lfmt -lspdlog)
