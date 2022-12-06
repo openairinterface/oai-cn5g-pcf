@@ -19,5 +19,22 @@
 #      contact@openairinterface.org
 ################################################################################
 
-SET(UTILS_COMMON_DIR ${SRC_TOP_DIR}/common/utils)
+SET(LOGGER_DIR ${SRC_TOP_DIR}/common/logger)
 
+## Logger used in NF_TARGET (main)
+target_include_directories(${NF_TARGET} PUBLIC ${LOGGER_DIR})
+target_sources(${NF_TARGET} PRIVATE
+        ${LOGGER_DIR}/logger.cpp
+        )
+
+## Logger used in NF_TARGET_LIB ("app" library)
+target_include_directories(${NF_TARGET_LIB} PUBLIC ${LOGGER_DIR})
+target_sources(${NF_TARGET_LIB} PRIVATE
+        ${LOGGER_DIR}/logger.cpp
+        )
+
+## UTILS used in NF_TARGET_API (API library
+target_include_directories(${NF_TARGET_API_LIB} PUBLIC ${LOGGER_DIR})
+target_sources(${NF_TARGET_API_LIB} PRIVATE
+        ${LOGGER_DIR}/logger.cpp
+        )

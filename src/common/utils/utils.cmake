@@ -18,24 +18,34 @@
 # For more information about the OpenAirInterface (OAI) Software Alliance:
 #      contact@openairinterface.org
 ################################################################################
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-include_directories(${SRC_TOP_DIR}/common)
-include_directories(${SRC_TOP_DIR}/common/msg)
-include_directories(${SRC_TOP_DIR}/common/utils)
-include_directories(${SRC_TOP_DIR}/itti)
-include_directories(${SRC_TOP_DIR}/pcf_app)
-#include_directories(${SRC_TOP_DIR}/api-server/model)
 
+SET(UTILS_DIR ${SRC_TOP_DIR}/common/utils)
 
-set(CN_UTILS_SRC STATIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/conversions.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/get_gateway_netlink.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/if.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/string.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/fqdn.cpp
-    )
+## Logger used in NF_TARGET (main)
+## TODO for now only use utils actually used by PCF
+target_include_directories(${NF_TARGET} PUBLIC ${UTILS_DIR})
+target_sources(${NF_TARGET} PRIVATE
+        ${UTILS_DIR}/conversions.cpp
+        ${UTILS_DIR}/string.cpp
+        ${UTILS_DIR}/fqdn.cpp
+        ${UTILS_DIR}/if.cpp
+        )
 
+## Logger used in NF_TARGET_LIB ("app" library)
+target_include_directories(${NF_TARGET_LIB} PUBLIC ${LOGGER_DIR})
+target_sources(${NF_TARGET_LIB} PRIVATE
+        ${UTILS_DIR}/conversions.cpp
+        ${UTILS_DIR}/string.cpp
+        ${UTILS_DIR}/fqdn.cpp
+        ${UTILS_DIR}/if.cpp
+        )
 
-add_library(CN_UTILS ${CN_UTILS_SRC})
-
+## UTILS used in NF_TARGET_API (API library
+target_include_directories(${NF_TARGET_API_LIB} PUBLIC ${LOGGER_DIR})
+target_sources(${NF_TARGET_API_LIB} PRIVATE
+        ${UTILS_DIR}/conversions.cpp
+        ${UTILS_DIR}/string.cpp
+        ${UTILS_DIR}/fqdn.cpp
+        ${UTILS_DIR}/if.cpp
+        )
 

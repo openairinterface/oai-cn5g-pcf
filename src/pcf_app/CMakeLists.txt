@@ -46,3 +46,7 @@ add_library (PCF STATIC
   sm_policy/policy_storage.cpp
   sm_policy/policy_provisioning_file.cpp
   )
+
+## Common modules
+include(${SRC_TOP_DIR}/common/logger/logger.cmake)
+include(${SRC_TOP_DIR}/common/utils/utils.cmake)

@@ -29,6 +29,10 @@ set (OPENAIRCN_DIR   $ENV{OPENAIRCN_DIR})
 set (BUILD_TOP_DIR   ${OPENAIRCN_DIR}/build)
 set (SRC_TOP_DIR     $ENV{OPENAIRCN_DIR}/src)
 
+set (NF_TARGET_LIB       PCF)
+set (NF_TARGET           pcf)
+set (NF_TARGET_API_LIB   PCF_API)
+
 include(${CMAKE_CURRENT_SOURCE_DIR}/../../src/oai_pcf/CMakeLists.txt)
 
 ADD_SUBDIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/../../src/pcf_app ${CMAKE_CURRENT_BINARY_DIR}/pcf_app)
