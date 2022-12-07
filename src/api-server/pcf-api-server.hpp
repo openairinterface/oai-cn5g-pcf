@@ -52,7 +52,9 @@
 
 class PCFApiServer {
  public:
-  PCFApiServer(Pistache::Address address, pcf_app* pcf_app_inst)
+  PCFApiServer(
+      const Pistache::Address& address,
+      const std::unique_ptr<oai::pcf::app::pcf_app>& pcf_app_inst)
       : m_httpEndpoint(std::make_shared<Pistache::Http::Endpoint>(address)) {
     m_router = std::make_shared<Pistache::Rest::Router>();
     // TODO hardcode http string, how to handle https

@@ -46,7 +46,7 @@ using namespace boost::placeholders;
 using namespace std;
 
 extern pcf_nrf* pcf_nrf_inst;
-extern pcf_config pcf_cfg;
+extern std::unique_ptr<pcf_config> pcf_cfg;
 pcf_client* pcf_client_instance = nullptr;
 
 //------------------------------------------------------------------------------
@@ -54,10 +54,10 @@ pcf_nrf::pcf_nrf(pcf_event& ev) : event_sub(ev) {}
 
 //---------------------------------------------------------------------------------------------
 void pcf_nrf::get_pcf_api_root(std::string& api_root) {
-  api_root =
-      std::string(inet_ntoa(*((struct in_addr*) &pcf_cfg.nrf_addr.ipv4_addr))) +
-      ":" + std::to_string(pcf_cfg.nrf_addr.port) + NNRF_NFM_BASE +
-      pcf_cfg.nrf_addr.api_version;
+  api_root = std::string(
+                 inet_ntoa(*((struct in_addr*) &pcf_cfg->nrf_addr.ipv4_addr))) +
+             ":" + std::to_string(pcf_cfg->nrf_addr.port) + NNRF_NFM_BASE +
+             pcf_cfg->nrf_addr.api_version;
 }
 
 //---------------------------------------------------------------------------------------------
@@ -72,7 +72,7 @@ void pcf_nrf::generate_pcf_profile(
   pcf_nf_profile.set_nf_heartBeat_timer(50);
   pcf_nf_profile.set_nf_priority(1);
   pcf_nf_profile.set_nf_capacity(100);
-  pcf_nf_profile.add_nf_ipv4_addresses(pcf_cfg.sbi.addr4);
+  pcf_nf_profile.add_nf_ipv4_addresses(pcf_cfg->sbi.addr4);
 
   // NF services
   nf_service_t nf_service        = {};
@@ -90,8 +90,8 @@ void pcf_nrf::generate_pcf_profile(
   pcf_nf_profile.get_nf_ipv4_addresses(addrs);
   endpoint.ipv4_address = addrs[0];  // TODO: use first IP ADDR for now
   endpoint.transport    = "TCP";
-  endpoint.port         = pcf_cfg.sbi.http1_port;
-  if (pcf_cfg.pcf_features.use_http2) endpoint.port = pcf_cfg.sbi.http2_port;
+  endpoint.port         = pcf_cfg->sbi.http1_port;
+  if (pcf_cfg->pcf_features.use_http2) endpoint.port = pcf_cfg->sbi.http2_port;
   nf_service.ip_endpoints.push_back(endpoint);
 
   pcf_nf_profile.add_nf_service(nf_service);

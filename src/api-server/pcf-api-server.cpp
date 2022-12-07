@@ -30,7 +30,7 @@
  *      contact@openairinterface.org
  */
 
-#include "pcf-api-server.h"
+#include "pcf-api-server.hpp"
 #include "pistache/endpoint.h"
 #include "pistache/http.h"
 #include "pistache/router.h"

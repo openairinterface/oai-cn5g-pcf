@@ -18,25 +18,18 @@
 # For more information about the OpenAirInterface (OAI) Software Alliance:
 #      contact@openairinterface.org
 ################################################################################
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-include_directories(${SRC_TOP_DIR}/common)
-include_directories(${SRC_TOP_DIR}/common/msg)
-include_directories(${SRC_TOP_DIR}/common/utils)
-include_directories(${SRC_TOP_DIR}/itti)
-include_directories(${SRC_TOP_DIR}/pcf_app)
-#include_directories(${SRC_TOP_DIR}/api-server/model)
-include_directories(${SRC_TOP_DIR}/../build/ext/spdlog/include)
 
 
-set(CN_UTILS_SRC STATIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/conversions.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/get_gateway_netlink.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/if.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/string.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/fqdn.cpp
-    )
+## This file is used to specify the common models and utils this library is using
+## DO NOT JUST COPY THIS FILE FROM OTHER NFs. The reasoning behind this is to only compile used files to optimize
+## build speed
 
+SET(UTILS_COMMON_DIR ${SRC_TOP_DIR}/common/utils)
 
-add_library(CN_UTILS ${CN_UTILS_SRC})
-
+## UTILS used in PCF
+target_include_directories(pcf PUBLIC ${UTILS_COMMON_DIR})
+target_sources(pcf PRIVATE
+        ${UTILS_COMMON_DIR}/options.cpp
+        ${UTILS_COMMON_DIR}/nf_launch.cpp
+        )
 

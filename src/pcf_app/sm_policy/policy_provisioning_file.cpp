@@ -44,7 +44,7 @@ using namespace oai::pcf::app::sm_policy;
 using namespace oai::pcf::model;
 using namespace boost::filesystem;
 
-extern pcf_config pcf_cfg;
+extern std::unique_ptr<pcf_config> pcf_cfg;
 
 bool policy_provisioning_file::read_all_policy_files() {
   // first start at the traffic descriptions as they are referenced
@@ -52,14 +52,15 @@ bool policy_provisioning_file::read_all_policy_files() {
   std::vector<YAML::Node> pcc_rules;
   std::vector<YAML::Node> policy_decisions;
 
-  if (!read_all_files_in_dir(pcf_cfg.traffic_rules_path, traffic_controls)) {
+  if (!read_all_files_in_dir(pcf_cfg->traffic_rules_path, traffic_controls)) {
     Logger::pcf_app().warn("Could not load Traffic Control Description files");
   }
-  if (!read_all_files_in_dir(pcf_cfg.pcc_rules_path, pcc_rules)) {
+  if (!read_all_files_in_dir(pcf_cfg->pcc_rules_path, pcc_rules)) {
     Logger::pcf_app().error("Could not load mandatory PCC rules");
     return false;
   }
-  if (!read_all_files_in_dir(pcf_cfg.policy_decisions_path, policy_decisions)) {
+  if (!read_all_files_in_dir(
+          pcf_cfg->policy_decisions_path, policy_decisions)) {
     Logger::pcf_app().error(
         "Could not load mandatory policy decisions configuration");
     return false;

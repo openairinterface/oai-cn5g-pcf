@@ -16,167 +16,99 @@
 
 #include "common_defs.h"
 #include "logger.hpp"
-#include "pcf-api-server.h"
-#include "pcf-http2-server.h"
+#include "pcf-api-server.hpp"
+#include "pcf-http2-server.hpp"
 #include "pcf_app.hpp"
 #include "pcf_config.hpp"
 #include "options.hpp"
-#include "pid_file.hpp"
-#include "pistache/endpoint.h"
 #include "pistache/http.h"
-#include "pistache/router.h"
+#include "nf_launch.hpp"
 
 #include <algorithm>
-#include <boost/asio.hpp>
 #include <iostream>
-#include <signal.h>
-#include <stdint.h>
+#include <csignal>
 #include <thread>
-#include <unistd.h>  // get_pid(), pause()
-#include <vector>
-
-#include <boost/algorithm/string.hpp>
-#include <boost/algorithm/string/split.hpp>
 
 using namespace util;
 using namespace std;
 using namespace oai::pcf::app;
 using namespace oai::pcf::config;
+using namespace oai::utils;
 
-pcf_app* pcf_app_inst = nullptr;
-pcf_config pcf_cfg;
-boost::asio::io_service io_service;
-PCFApiServer* pcf_api_server_1     = nullptr;
-pcf_http2_server* pcf_api_server_2 = nullptr;
+std::unique_ptr<pcf_app> pcf_app_inst;
+// TODO Stefan: I am not happy with these global variables
+// We could make a singleton getInstance in config
+// or we handle everything in smf_app init and have a reference to config there
+std::unique_ptr<pcf_config> pcf_cfg = std::make_unique<pcf_config>();
+std::unique_ptr<PCFApiServer> pcf_api_server_1;
+std::unique_ptr<pcf_http2_server> pcf_api_server_2;
 
 //------------------------------------------------------------------------------
-void my_app_signal_handler(int s) {
-  std::cout << "Caught signal " << s << std::endl;
+void signal_handler_sigint(int) {
+  std::cout << "Caught SIGINT signal " << std::endl;
   Logger::system().startup("exiting");
-  std::cout << "Freeing Allocated memory..." << std::endl;
+  std::cout << "Shutting down HTTP servers..." << std::endl;
 
   if (pcf_api_server_1) {
     pcf_api_server_1->shutdown();
-    delete pcf_api_server_1;
-    pcf_api_server_1 = nullptr;
   }
-  std::cout << "PCF API Server memory done." << std::endl;
-  if (pcf_app_inst) delete pcf_app_inst;
-  pcf_app_inst = nullptr;
-  std::cout << "PCF APP memory done." << std::endl;
-  // if (itti_inst) delete itti_inst;
-  // itti_inst = nullptr;
-  // std::cout << "ITTI memory done." << std::endl;
-  std::cout << "Freeing Allocated memory done" << std::endl;
-  exit(0);
-}
-//------------------------------------------------------------------------------
-// We are doing a check to see if an existing process already runs this program.
-// We have seen that running at least twice this program in a container may lead
-// to the container host to crash.
-int my_check_redundant_process(char* exec_name) {
-  FILE* fp;
-  char* cmd = new char[200];
-  std::vector<std::string> words;
-  int result     = 0;
-  size_t retSize = 0;
-
-  // Retrieving only the executable name
-  boost::split(words, exec_name, boost::is_any_of("/"));
-  memset(cmd, 0, 200);
-  sprintf(
-      cmd, "ps aux | grep -v grep | grep -v nohup | grep -c %s || true",
-      words[words.size() - 1].c_str());
-  fp = popen(cmd, "r");
-
-  // clearing the buffer
-  memset(cmd, 0, 200);
-  retSize = fread(cmd, 1, 200, fp);
-  fclose(fp);
-
-  // if something wrong, then we don't know
-  if (retSize == 0) {
-    delete[] cmd;
-    return 10;
+  if (pcf_api_server_2) {
+    pcf_api_server_2->stop();
   }
-
-  result = atoi(cmd);
-  delete[] cmd;
-  return result;
 }
+
 //------------------------------------------------------------------------------
 int main(int argc, char** argv) {
-  // Checking if another instance of pcf is running
-  int nb_processes = my_check_redundant_process(argv[0]);
-  if (nb_processes > 1) {
-    std::cout << "An instance of " << argv[0] << " is maybe already called!"
-              << std::endl;
-    std::cout << "  " << nb_processes << " were detected" << std::endl;
-    return -1;
+  if (nf_launch::already_running()) {
+    std::cout << "NF instance already running. Exiting" << std::endl;
+    return 1;
   }
 
   // Command line options
-  if (!Options::parse(argc, argv)) {
+  if (!oai::utils::options::parse(argc, argv)) {
     std::cout << "Options::parse() failed" << std::endl;
     return 1;
   }
 
   // Logger
-  Logger::init("pcf", Options::getlogStdout(), Options::getlogRotFilelog());
+  Logger::init(
+      "pcf", oai::utils::options::getlogStdout(),
+      oai::utils::options::getlogRotFilelog());
 
-  struct sigaction sigIntHandler;
-  sigIntHandler.sa_handler = my_app_signal_handler;
-  sigemptyset(&sigIntHandler.sa_mask);
-  sigIntHandler.sa_flags = 0;
-  sigaction(SIGINT, &sigIntHandler, NULL);
+  std::signal(SIGINT, signal_handler_sigint);
 
   // Event subsystem
   pcf_event ev;
 
   // Config
-  if (pcf_cfg.load(Options::getlibconfigConfig()) == RETURNerror) {
+  if (pcf_cfg->load(oai::utils::options::getlibconfigConfig()) == RETURNerror) {
     exit(-1);
   }
-  pcf_cfg.display();
+  pcf_cfg->display();
 
   // PCF application layer
-  pcf_app_inst = new pcf_app(Options::getlibconfigConfig(), ev);
+  pcf_app_inst = std::make_unique<pcf_app>(ev);
 
-  // Task Manager
-  task_manager tm(ev);
-  std::thread task_manager_thread(&task_manager::run, &tm);
-
-  // PID file
-  // Currently hard-coded value. TODO: add as config option.
-  string pid_file_name = get_exe_absolute_path("/var/run", pcf_cfg.instance);
-  if (!is_pid_file_lock_success(pid_file_name.c_str())) {
-    Logger::pcf_app().error("Lock PID file %s failed\n", pid_file_name.c_str());
-    exit(-EDEADLK);
-  }
+  std::string v4_address = conv::toString(pcf_cfg->sbi.addr4);
 
   // PCF Pistache API server (HTTP1)
-  Pistache::Address addr(
-      std::string(inet_ntoa(*((struct in_addr*) &pcf_cfg.sbi.addr4))),
-      Pistache::Port(pcf_cfg.sbi.http1_port));
-  pcf_api_server_1 = new PCFApiServer(addr, pcf_app_inst);
+  Pistache::Address addr(v4_address, Pistache::Port(pcf_cfg->sbi.http1_port));
+  PCFApiServer test(addr, pcf_app_inst);
+
+  pcf_api_server_1 = std::make_unique<PCFApiServer>(addr, pcf_app_inst);
   pcf_api_server_1->init(2);
-  std::thread pcf_http1_manager(&PCFApiServer::start, pcf_api_server_1);
+  std::thread pcf_http1_manager(&PCFApiServer::start, pcf_api_server_1.get());
 
   // PCF NGHTTP API server (HTTP2)
-  pcf_api_server_2 = new pcf_http2_server(
-      conv::toString(pcf_cfg.sbi.addr4), pcf_cfg.sbi.http2_port, pcf_app_inst);
-  std::thread pcf_http2_manager(&pcf_http2_server::start, pcf_api_server_2);
+  pcf_api_server_2 = std::make_unique<pcf_http2_server>(
+      v4_address, pcf_cfg->sbi.http2_port, pcf_app_inst);
+  std::thread pcf_http2_manager(
+      &pcf_http2_server::start, pcf_api_server_2.get());
 
   pcf_http1_manager.join();
   pcf_http2_manager.join();
 
-  FILE* fp             = NULL;
-  std::string filename = fmt::format("/tmp/pcf_{}.status", getpid());
-  fp                   = fopen(filename.c_str(), "w+");
-  fprintf(fp, "STARTED\n");
-  fflush(fp);
-  fclose(fp);
+  Logger::pcf_app().info("HTTP servers successfully stopped. Exiting");
 
-  pause();
   return 0;
 }

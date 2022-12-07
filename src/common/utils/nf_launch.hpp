@@ -19,34 +19,38 @@
  *      contact@openairinterface.org
  */
 
-/*! \file pid_file.hpp
-   \brief
-   \author  Lionel GAUTHIER
-   \date 2016
-   \email: lionel.gauthier@eurecom.fr
-*/
-#ifndef FILE_PID_FILE_SEEN
-#define FILE_PID_FILE_SEEN
+/*! \file launch.hpp
+\brief
+\author  Stefan Spettel
+\company OpenAirInterface Software Alliance
+\date 2022
+\email: stefan.spettel@eurecom.fr
+ */
+
+#pragma once
+
+#include <cstdint>
 #include <string>
 
-namespace util {
+namespace oai::utils {
 
-/*
- * Generate the exe absolute path using a specified base_path.
- *
- * @param base_path
- *        the root directory to use.
- *
- * @return a string for the exe absolute path.
- */
-std::string get_exe_absolute_path(
-    const std::string& base_path, const unsigned int instance);
+class nf_launch {
+ public:
+  /**
+   * Checks if a process of this NF is already running
+   * @return True when a process is already running
+   */
+  static bool already_running();
 
-bool is_pid_file_lock_success(const char* pid_file_name);
+ private:
+  /**
+   * Executes the given command and returns the output
+   * WARNING: This function does not sanitize user input, do not call it on
+   * any un-sanitized user input due to security reasons
+   * @param command Command to execute
+   * @return Output
+   */
+  static std::string command_output(const std::string& command);
+};
 
-void pid_file_unlock(void);
-
-int lockfile(int fd, int lock_type);
-
-}  // namespace util
-#endif
+}  // namespace oai::utils

@@ -39,15 +39,16 @@
 #include "IndividualSMPolicyDocumentApiImpl.h"
 #include "SMPoliciesCollectionApiImpl.h"
 
-using namespace nghttp2::asio_http2;
-using namespace nghttp2::asio_http2::server;
-using namespace oai::pcf::model;
-using namespace oai::pcf::app;
-
 class pcf_http2_server {
  public:
-  pcf_http2_server(std::string addr, uint32_t port, pcf_app* pcf_app_inst)
-      : m_address(addr), m_port(port), server(), m_pcf_app(pcf_app_inst) {}
+  pcf_http2_server(
+      const std::string& addr, uint32_t port,
+      const std::unique_ptr<oai::pcf::app::pcf_app>& pcf_app_inst)
+      : m_address(addr),
+        m_port(port),
+        server(),
+        smpc_service(pcf_app_inst->get_pcf_smpc_service()){};
+
   void start();
   void init(size_t thr) {}
 
@@ -59,8 +60,10 @@ class pcf_http2_server {
   util::uint_generator<uint32_t> m_promise_id_generator;
   std::string m_address;
   uint32_t m_port;
-  http2 server;
-  pcf_app* m_pcf_app;
+
+  nghttp2::asio_http2::server::http2 server;
+
+  std::shared_ptr<oai::pcf::app::pcf_smpc> smpc_service;
 };
 
 #endif
