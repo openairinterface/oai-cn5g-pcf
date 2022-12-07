@@ -70,7 +70,7 @@ class ServingNfIdentity {
   /// <summary>
   ///
   /// </summary>
-  oai::model::common::Guami  getGuami() const;
+  oai::model::common::Guami getGuami() const;
   void setGuami(oai::model::common::Guami const& value);
   bool guamiIsSet() const;
   void unsetGuami();

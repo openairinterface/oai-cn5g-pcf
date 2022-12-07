@@ -145,7 +145,7 @@ class AuthorizedDefaultQos {
  protected:
   int32_t m_r_5qi;
   bool m_r_5qiIsSet;
-  oai::model::common::Arp   m_Arp;
+  oai::model::common::Arp m_Arp;
   bool m_ArpIsSet;
   int32_t m_PriorityLevel;
   bool m_PriorityLevelIsSet;

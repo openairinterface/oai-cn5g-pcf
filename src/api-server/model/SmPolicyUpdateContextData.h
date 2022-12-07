@@ -304,8 +304,10 @@ class SmPolicyUpdateContextData {
   /// <summary>
   /// Reports the changes of presence reporting area.
   /// </summary>
-  std::map<std::string, oai::model::common::PresenceInfo> getRepPraInfos() const;
-  void setRepPraInfos(std::map<std::string, oai::model::common::PresenceInfo> const& value);
+  std::map<std::string, oai::model::common::PresenceInfo> getRepPraInfos()
+      const;
+  void setRepPraInfos(
+      std::map<std::string, oai::model::common::PresenceInfo> const& value);
   bool repPraInfosIsSet() const;
   void unsetRepPraInfos();
   /// <summary>

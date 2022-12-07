@@ -215,7 +215,8 @@ class SmPolicyDecision {
   /// Map of PRA information.
   /// </summary>
   std::map<std::string, oai::model::common::PresenceInfoRm> getPraInfos() const;
-  void setPraInfos(std::map<std::string, oai::model::common::PresenceInfoRm> const& value);
+  void setPraInfos(
+      std::map<std::string, oai::model::common::PresenceInfoRm> const& value);
   bool praInfosIsSet() const;
   void unsetPraInfos();
   /// <summary>

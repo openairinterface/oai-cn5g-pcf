@@ -118,8 +118,8 @@ class SmPolicyContextData {
   /// <summary>
   ///
   /// </summary>
-  oai::model::common::PduSessionType  getPduSessionType() const;
-  void setPduSessionType(oai::model::common::PduSessionType  const& value);
+  oai::model::common::PduSessionType getPduSessionType() const;
+  void setPduSessionType(oai::model::common::PduSessionType const& value);
   /// <summary>
   ///
   /// </summary>
@@ -168,8 +168,8 @@ class SmPolicyContextData {
   /// <summary>
   ///
   /// </summary>
-  oai::model::common::PlmnIdNid  getServingNetwork() const;
-  void setServingNetwork(oai::model::common::PlmnIdNid  const& value);
+  oai::model::common::PlmnIdNid getServingNetwork() const;
+  void setServingNetwork(oai::model::common::PlmnIdNid const& value);
   bool servingNetworkIsSet() const;
   void unsetServingNetwork();
   /// <summary>
@@ -331,8 +331,8 @@ class SmPolicyContextData {
   /// <summary>
   ///
   /// </summary>
-  oai::model::common::AtsssCapability   getAtsssCapab() const;
-  void setAtsssCapab(oai::model::common::AtsssCapability   const& value);
+  oai::model::common::AtsssCapability getAtsssCapab() const;
+  void setAtsssCapab(oai::model::common::AtsssCapability const& value);
   bool atsssCapabIsSet() const;
   void unsetAtsssCapab();
 
@@ -352,7 +352,7 @@ class SmPolicyContextData {
   bool m_InterGrpIdsIsSet;
   int32_t m_PduSessionId;
 
-  oai::model::common::PduSessionType  m_PduSessionType;
+  oai::model::common::PduSessionType m_PduSessionType;
 
   std::string m_Chargingcharacteristics;
   bool m_ChargingcharacteristicsIsSet;
@@ -368,7 +368,7 @@ class SmPolicyContextData {
   bool m_RatTypeIsSet;
   AdditionalAccessInfo m_AddAccessInfo;
   bool m_AddAccessInfoIsSet;
-  oai::model::common::PlmnIdNid  m_ServingNetwork;
+  oai::model::common::PlmnIdNid m_ServingNetwork;
   bool m_ServingNetworkIsSet;
   oai::model::common::UserLocation m_UserLocationInfo;
   bool m_UserLocationInfoIsSet;
@@ -414,7 +414,7 @@ class SmPolicyContextData {
   bool m_RecoveryTimeIsSet;
   MaPduIndication m_MaPduInd;
   bool m_MaPduIndIsSet;
-  oai::model::common::AtsssCapability   m_AtsssCapab;
+  oai::model::common::AtsssCapability m_AtsssCapab;
   bool m_AtsssCapabIsSet;
 };
 

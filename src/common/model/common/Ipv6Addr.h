@@ -47,7 +47,8 @@ class Ipv6Addr {
   /// Helper overload for validate. Used when one model stores another model and
   /// calls it's validate. Not meant to be called outside that case.
   /// </summary>
-  virtual bool validate(std::stringstream& msg, const std::string& pathPrefix) const;
+  virtual bool validate(
+      std::stringstream& msg, const std::string& pathPrefix) const;
 
   bool operator==(const Ipv6Addr& rhs) const;
   bool operator!=(const Ipv6Addr& rhs) const;

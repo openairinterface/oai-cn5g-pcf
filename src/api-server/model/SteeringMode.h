@@ -67,15 +67,15 @@ class SteeringMode {
   /// <summary>
   ///
   /// </summary>
-  oai::model::common::AccessType  getActive() const;
-  void setActive(oai::model::common::AccessType  const& value);
+  oai::model::common::AccessType getActive() const;
+  void setActive(oai::model::common::AccessType const& value);
   bool activeIsSet() const;
   void unsetActive();
   /// <summary>
   ///
   /// </summary>
-  oai::model::common::AccessType  getStandby() const;
-  void setStandby(oai::model::common::AccessType  const& value);
+  oai::model::common::AccessType getStandby() const;
+  void setStandby(oai::model::common::AccessType const& value);
   bool standbyIsSet() const;
   void unsetStandby();
   /// <summary>
@@ -88,8 +88,8 @@ class SteeringMode {
   /// <summary>
   ///
   /// </summary>
-  oai::model::common::AccessType  getPrioAcc() const;
-  void setPrioAcc(oai::model::common::AccessType  const& value);
+  oai::model::common::AccessType getPrioAcc() const;
+  void setPrioAcc(oai::model::common::AccessType const& value);
   bool prioAccIsSet() const;
   void unsetPrioAcc();
 
@@ -99,13 +99,13 @@ class SteeringMode {
  protected:
   SteerModeValue m_SteerModeValue;
 
-  oai::model::common::AccessType  m_Active;
+  oai::model::common::AccessType m_Active;
   bool m_ActiveIsSet;
-  oai::model::common::AccessType  m_Standby;
+  oai::model::common::AccessType m_Standby;
   bool m_StandbyIsSet;
   int32_t m_r_3gLoad;
   bool m_r_3gLoadIsSet;
-  oai::model::common::AccessType  m_PrioAcc;
+  oai::model::common::AccessType m_PrioAcc;
   bool m_PrioAccIsSet;
 };
 

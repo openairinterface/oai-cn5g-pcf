@@ -91,7 +91,7 @@ class UpPathChgEvent {
 
   std::string m_NotifCorreId;
 
-  oai::model::common::DnaiChangeType  m_DnaiChgType;
+  oai::model::common::DnaiChangeType m_DnaiChgType;
 
   bool m_AfAckInd;
   bool m_AfAckIndIsSet;
