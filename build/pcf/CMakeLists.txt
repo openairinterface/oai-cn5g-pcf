@@ -39,8 +39,6 @@ set (NF_TARGET_API_LIB   PCF_API)
 
 project (OpenAirInterface)
 
-project (OpenAirInterface)
-
 include(${CMAKE_CURRENT_SOURCE_DIR}/../../src/oai_pcf/CMakeLists.txt)
 
 ADD_SUBDIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/../../src/pcf_app ${CMAKE_CURRENT_BINARY_DIR}/pcf_app)
