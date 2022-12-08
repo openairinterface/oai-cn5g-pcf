@@ -22,13 +22,12 @@
 /*! \file pcf_app.hpp
  \brief
  \author  Rohan Kharade
- \company Openairinterface Software Allianse
- \date 2021
+ \company OpenAirInterface Software Alliance
+ \date 2022
  \email: rohan.kharade@openairinterface.org
  */
 
-#ifndef FILE_PCF_APP_HPP_SEEN
-#define FILE_PCF_APP_HPP_SEEN
+#pragma once
 
 #include "common_root_types.h"
 #include <boost/atomic.hpp>
@@ -43,6 +42,7 @@
 #include "pcf_sm_policy_control.hpp"
 #include "sm_policy/policy_storage.hpp"
 #include "sm_policy/policy_provisioning_file.hpp"
+#include "pcf_nrf.hpp"
 
 namespace oai::pcf::app {
 
@@ -54,27 +54,26 @@ class pcf_app {
 
   virtual ~pcf_app();
 
-  /*
-   * Start event nf heartbeat procedure
-   * @param [void]
-   * @return void
-   */
-  void handle_create_sm_policy();
-
   std::shared_ptr<pcf_smpc> get_pcf_smpc_service();
 
- private:
-  pcf_profile nf_instance_profile;  // PCF profile
-  std::string pcf_instance_id;      // PCF instance id
-  // for Event Handling
-  pcf_event& event_sub;
-  bs2::connection task_connection;
+  /**
+   * Stop all the ongoing processes and procedures of the PCF APP layer,
+   * deregisters at NRF
+   */
+  void stop();
 
-  std::shared_ptr<pcf_smpc> pcf_smpc_service;
+ private:
+  pcf_profile m_nf_instance_profile;  // PCF profile
+  std::string m_pcf_instance_id;      // PCF instance id
+  // for Event Handling
+  pcf_event& m_event_sub;
+  bs2::connection m_task_connection;
+
+  std::shared_ptr<pcf_smpc> m_pcf_smpc_service;
   std::shared_ptr<oai::pcf::app::sm_policy::policy_storage> m_policy_storage;
+  std::unique_ptr<oai::pcf::app::pcf_nrf> m_pcf_nrf_inst;
 
   std::shared_ptr<oai::pcf::app::sm_policy::policy_provisioning_file>
-      provisioning_file;
+      m_provisioning_file;
 };
 }  // namespace oai::pcf::app
-#endif /* FILE_PCF_APP_HPP_SEEN */

@@ -55,6 +55,9 @@ void signal_handler_sigint(int) {
   if (pcf_api_server_2) {
     pcf_api_server_2->stop();
   }
+  if (pcf_app_inst) {
+    pcf_app_inst->stop();
+  }
 }
 
 //------------------------------------------------------------------------------
