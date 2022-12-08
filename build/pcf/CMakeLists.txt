@@ -25,9 +25,13 @@ set (  STATIC_LINKING                   False )
 #############################################
 # Base directories, compatible with legacy OAI building
 ################################################
-set (OPENAIRCN_DIR   $ENV{OPENAIRCN_DIR})
+if (DEFINED ENV{OPENAIRCN_DIR})
+  set (OPENAIRCN_DIR   $ENV{OPENAIRCN_DIR})
+else()
+  set (OPENAIRCN_DIR ${CMAKE_CURRENT_LIST_DIR}/../..)
+endif()
 set (BUILD_TOP_DIR   ${OPENAIRCN_DIR}/build)
-set (SRC_TOP_DIR     $ENV{OPENAIRCN_DIR}/src)
+set (SRC_TOP_DIR     ${OPENAIRCN_DIR}/src)
 
 set (NF_TARGET_LIB       PCF)
 set (NF_TARGET           pcf)
