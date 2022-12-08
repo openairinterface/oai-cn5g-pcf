@@ -19,8 +19,8 @@
 #      contact@openairinterface.org
 ################################################################################
 cmake_minimum_required (VERSION 3.0.2)
-# Override options for NSSF
-set (  PACKAGE_NAME                    "NSSF" )
+# Override options for PCF
+set (  PACKAGE_NAME                    "PCF" )
 set (  STATIC_LINKING                   False )
 #############################################
 # Base directories, compatible with legacy OAI building
@@ -32,6 +32,8 @@ set (SRC_TOP_DIR     $ENV{OPENAIRCN_DIR}/src)
 set (NF_TARGET_LIB       PCF)
 set (NF_TARGET           pcf)
 set (NF_TARGET_API_LIB   PCF_API)
+
+project (OpenAirInterface)
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/../../src/oai_pcf/CMakeLists.txt)
 
