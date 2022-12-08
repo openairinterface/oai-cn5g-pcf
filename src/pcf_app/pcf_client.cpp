@@ -133,9 +133,6 @@ http_status_code_e pcf_client::do_request(
 
   // curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
 
-  // auto body_response         = std::make_unique<std::string>();
-  // auto http_headers_response = std::make_unique<std::string>();
-
   std::string body_response;
   std::string http_headers_response;
 
