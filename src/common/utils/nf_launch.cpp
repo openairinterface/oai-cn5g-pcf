@@ -41,7 +41,7 @@ using namespace oai::utils;
 namespace fs = boost::filesystem;
 
 //------------------------------------------------------------------------------
-bool nf_launch::check_redundant_process() {
+bool nf_launch::already_running() {
   // Strip the exec name from the path
 
   auto process_name = fs::canonical("/proc/self/exe").filename().string();
@@ -56,15 +56,15 @@ bool nf_launch::check_redundant_process() {
   } catch (std::invalid_argument& ex) {
     std::cout << "ERROR: Could not read how many processes are running"
               << std::endl;
-    return false;
+    return true;
   }
 
   if (running_processes > 1) {
     std::cout << "ERROR: There are " << running_processes << " instances of "
               << process_name << " running" << std::endl;
-    return false;
+    return true;
   }
-  return true;
+  return false;
 }
 
 //------------------------------------------------------------------------------
@@ -77,7 +77,11 @@ std::string nf_launch::command_output(const std::string& command) {
     return "failed to open temporary file " + tmp_path.string();
   }
 
-  std::system((command + " > " + tmp_path.string() + " 2>&1 ").c_str());
+  int ret =
+      std::system((command + " > " + tmp_path.string() + " 2>&1 ").c_str());
+  if (ret != 0) {
+    return "Command return non-zero exit code";
+  }
 
   auto content = std::ostringstream{};
   {

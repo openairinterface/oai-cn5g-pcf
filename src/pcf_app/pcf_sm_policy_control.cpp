@@ -83,17 +83,17 @@ status_code pcf_smpc::create_sm_policy_handler(
     return status_code::CONTEXT_DENIED;
   }
 
-  status_code res = chosen_decision->decide(context, decision);
+  association_id = std::to_string(m_association_id_generator.get_uid());
+
+  individual_sm_association assoc(context, *chosen_decision, association_id);
+
+  status_code res = assoc.decide_policy(decision);
 
   if (res != status_code::CREATED) {
     problem_details = fmt::format(
         "SM Policy request from SUPI {}: Invalid policy decision provisioned",
         context.getSupi());
   } else {
-    association_id = std::to_string(m_association_id_generator.get_uid());
-
-    individual_sm_association assoc(context, *chosen_decision, association_id);
-
     std::unique_lock lock_assocations(m_associations_mutex);
     m_associations.insert(std::make_pair(association_id, assoc));
 

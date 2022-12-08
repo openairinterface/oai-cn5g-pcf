@@ -62,7 +62,7 @@ class supi_policy_decision : public oai::pcf::app::sm_policy::policy_decision {
    * @return oai::pcf::app::sm_policy::status_code   CREATED in case of
    * success
    */
-  oai::pcf::app::sm_policy::status_code decide(
+  [[nodiscard]] oai::pcf::app::sm_policy::status_code decide(
       const oai::pcf::model::SmPolicyContextData& context,
       oai::pcf::model::SmPolicyDecision& decision) const override;
 
