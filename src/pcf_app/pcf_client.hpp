@@ -26,8 +26,7 @@
  \email: Tien-Thinh.Nguyen@eurecom.fr
  */
 
-#ifndef FILE_PCF_CLIENT_HPP_SEEN
-#define FILE_PCF_CLIENT_HPP_SEEN
+#pragma once
 
 #include <curl/curl.h>
 
@@ -42,7 +41,7 @@ enum class http_method_e { POST, GET, PUT, PATCH, DELETE };
 class pcf_client_iface {
  public:
   /**
-   * Sends a POST request to the URl specified in url
+   * Send a POST request to the URl specified in url
    * @param url URL to send the request to
    * @param body body to send in JSON representation
    * @param response Response
@@ -65,7 +64,7 @@ class pcf_client_iface {
       std::string& resp_header) = 0;
 
   /**
-   * Sends a PUT request to the URL specified in url
+   * Send a PUT request to the URL specified in url
    * @param url URL to send the request to
    * @param body body to send in JSON representation
    * @param response Response
@@ -77,7 +76,7 @@ class pcf_client_iface {
       std::string& resp_headers) = 0;
 
   /**
-   * Sends a PATCH request to the URL specified in url
+   * Send a PATCH request to the URL specified in url
    * @param url URL to send the request to
    * @param body body to send in JSON representation
    * @param response Response
@@ -89,7 +88,7 @@ class pcf_client_iface {
       std::string& resp_headers) = 0;
 
   /**
-   * Sends a DELETE request to the URL specified in url
+   * Send a DELETE request to the URL specified in url
    * @param url URL to send the request to
    * @param response Response
    * @param resp_headers Response headers
@@ -136,4 +135,3 @@ class pcf_client : pcf_client_iface {
   pcf_client(pcf_client const&) = delete;
 };
 }  // namespace oai::pcf::app
-#endif /* FILE_PCF_CLIENT_HPP_SEEN */

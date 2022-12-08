@@ -48,38 +48,38 @@ using namespace std;
 extern std::unique_ptr<pcf_config> pcf_cfg;
 
 //------------------------------------------------------------------------------
-pcf_nrf::pcf_nrf(pcf_event& ev) : event_sub(ev) {
-  pcf_instance_id = to_string(boost::uuids::random_generator()());
+pcf_nrf::pcf_nrf(pcf_event& ev) : m_event_sub(ev) {
+  m_pcf_instance_id = to_string(boost::uuids::random_generator()());
   generate_nrf_api_url();
   generate_pcf_profile();
 
-  pcf_client_inst = std::make_unique<pcf_client>();
+  m_pcf_client_inst = std::make_unique<pcf_client>();
 }
 
 //------------------------------------------------------------------------------
 void pcf_nrf::generate_nrf_api_url() {
-  nrf_url = "";
-  nrf_url.append(conv::toString(pcf_cfg->nrf_addr.ipv4_addr))
+  m_nrf_url = "";
+  m_nrf_url.append(conv::toString(pcf_cfg->nrf_addr.ipv4_addr))
       .append(":")
       .append(to_string(pcf_cfg->nrf_addr.port))
       .append(NNRF_NFM_BASE)
       .append(pcf_cfg->nrf_addr.api_version)
       .append(NNRF_DISC_INSTANCES)
-      .append(pcf_instance_id);
+      .append(m_pcf_instance_id);
 }
 
 //---------------------------------------------------------------------------------------------
 void pcf_nrf::generate_pcf_profile() {
   // TODO: remove hardcoded values
   // generate UUID
-  nf_instance_profile.set_nf_instance_id(pcf_instance_id);
-  nf_instance_profile.set_nf_instance_name("OAI-PCF");
-  nf_instance_profile.set_nf_type("PCF");
-  nf_instance_profile.set_nf_status("REGISTERED");
-  nf_instance_profile.set_nf_heartBeat_timer(50);
-  nf_instance_profile.set_nf_priority(1);
-  nf_instance_profile.set_nf_capacity(100);
-  nf_instance_profile.add_nf_ipv4_addresses(pcf_cfg->sbi.addr4);
+  m_nf_instance_profile.set_nf_instance_id(m_pcf_instance_id);
+  m_nf_instance_profile.set_nf_instance_name("OAI-PCF");
+  m_nf_instance_profile.set_nf_type("PCF");
+  m_nf_instance_profile.set_nf_status("REGISTERED");
+  m_nf_instance_profile.set_nf_heartBeat_timer(50);
+  m_nf_instance_profile.set_nf_priority(1);
+  m_nf_instance_profile.set_nf_capacity(100);
+  m_nf_instance_profile.add_nf_ipv4_addresses(pcf_cfg->sbi.addr4);
 
   // NF services
   nf_service_t nf_service        = {};
@@ -100,7 +100,7 @@ void pcf_nrf::generate_pcf_profile() {
   if (pcf_cfg->pcf_features.use_http2) endpoint.port = pcf_cfg->sbi.http2_port;
   nf_service.ip_endpoints.push_back(endpoint);
 
-  nf_instance_profile.add_nf_service(nf_service);
+  m_nf_instance_profile.add_nf_service(nf_service);
 
   // PCF info
   pcf_info_t pcf_info_item;
@@ -119,31 +119,29 @@ void pcf_nrf::generate_pcf_profile() {
   gpsi_ranges.identity_range.pattern = "^gpsi-75274[0-9]{4}$";
   gpsi_ranges.identity_range.end     = "752749999";
   pcf_info_item.gpsi_ranges.push_back(gpsi_ranges);
-  nf_instance_profile.set_pcf_info(pcf_info_item);
+  m_nf_instance_profile.set_pcf_info(pcf_info_item);
   // ToDo: rxDiamHost, rxDiamRealm, v2xSupportInd.
   // Display the profile
-  nf_instance_profile.display();
+  m_nf_instance_profile.display();
 }
 
 //---------------------------------------------------------------------------------------------
 void pcf_nrf::register_to_nrf() {
-  nlohmann::json response_data = {};
-
-  nlohmann::json body{};
-  nf_instance_profile.to_json(body);
+  nlohmann::json body;
+  m_nf_instance_profile.to_json(body);
 
   std::string resp_body;
   std::string resp_headers;
 
   Logger::pcf_sbi().info("Sending NF registration request");
-  http_status_code_e res =
-      pcf_client_inst->send_put(nrf_url, body.dump(), resp_body, resp_headers);
+  http_status_code_e res = m_pcf_client_inst->send_put(
+      m_nrf_url, body.dump(), resp_body, resp_headers);
 
-  if (res == http_status_code_e::HTTP_STATUS_CODE_201_CREATED or
+  if (res == http_status_code_e::HTTP_STATUS_CODE_201_CREATED ||
       res == http_status_code_e::HTTP_STATUS_CODE_200_OK) {
     try {
       if (resp_body.find("REGISTERED") != 0) {
-        start_event_nf_heartbeat(nrf_url);
+        start_event_nf_heartbeat(m_nrf_url);
       }
       Logger::pcf_sbi().debug("NF registration successful");
     } catch (nlohmann::json::exception& e) {
@@ -162,7 +160,7 @@ void pcf_nrf::start_event_nf_heartbeat(std::string& remoteURI) {
                     .count();
   const uint64_t interval = HEART_BEAT_TIMER * 1000;  // ms
 
-  task_connection = event_sub.subscribe_task_nf_heartbeat(
+  m_task_connection = m_event_sub.subscribe_task_nf_heartbeat(
       boost::bind(&pcf_nrf::trigger_nf_heartbeat_procedure, this, _1), interval,
       ms + interval);
 }
@@ -185,10 +183,10 @@ void pcf_nrf::trigger_nf_heartbeat_procedure(uint64_t ms) {
   nlohmann::json j;
   to_json(j, patch_item);
 
-  http_status_code_e res = pcf_client_inst->send_patch(
-      nrf_url, j.dump(), body_response, response_headers);
+  http_status_code_e res = m_pcf_client_inst->send_patch(
+      m_nrf_url, j.dump(), body_response, response_headers);
 
-  if (res == http_status_code_e::HTTP_STATUS_CODE_200_OK or
+  if (res == http_status_code_e::HTTP_STATUS_CODE_200_OK ||
       res == http_status_code_e::HTTP_STATUS_CODE_204_NO_CONTENT) {
     Logger::pcf_sbi().debug("NF heartbeat request successful");
   } else {
@@ -196,7 +194,7 @@ void pcf_nrf::trigger_nf_heartbeat_procedure(uint64_t ms) {
     // We disconnect, but we dont trigger anything else
     Logger::pcf_sbi().warn(
         "NF heartbeat request failed. Wrong response code %d", res);
-    task_connection.disconnect();
+    m_task_connection.disconnect();
   }
 }
 //------------------------------------------------------------------------------
@@ -212,12 +210,12 @@ void pcf_nrf::deregister_to_nrf() {
   Logger::pcf_sbi().info("Sending NF de-registration request");
 
   http_status_code_e res =
-      pcf_client_inst->send_delete(nrf_url, body_response, response_header);
+      m_pcf_client_inst->send_delete(m_nrf_url, body_response, response_header);
 
-  if (res != http_status_code_e::HTTP_STATUS_CODE_204_NO_CONTENT) {
+  if (res == http_status_code_e::HTTP_STATUS_CODE_204_NO_CONTENT) {
+    Logger::pcf_sbi().info("NF Deregistration successful");
+  } else {
     Logger::pcf_sbi().warn(
         "NF Deregistration failed! Wrong response code: %d", res);
-  } else {
-    Logger::pcf_sbi().info("NF Deregistration successful");
   }
 }

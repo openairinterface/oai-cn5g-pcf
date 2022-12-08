@@ -27,8 +27,7 @@
  \email: rohan.kharade@openairinterface.org
  */
 
-#ifndef FILE_PCF_NRF_HPP_SEEN
-#define FILE_PCF_NRF_HPP_SEEN
+#pragma once
 
 #include "common_root_types.h"
 #include <boost/atomic.hpp>
@@ -71,13 +70,13 @@ class pcf_nrf {
   void deregister_to_nrf();
 
  private:
-  std::unique_ptr<oai::pcf::app::pcf_client> pcf_client_inst;
-  pcf_profile nf_instance_profile;  // PCF profile
-  std::string pcf_instance_id;      // PCF instance id
+  std::unique_ptr<oai::pcf::app::pcf_client> m_pcf_client_inst;
+  pcf_profile m_nf_instance_profile;  // PCF profile
+  std::string m_pcf_instance_id;      // PCF instance id
   // for Event Handling
-  pcf_event& event_sub;
-  bs2::connection task_connection;
-  std::string nrf_url;
+  pcf_event& m_event_sub;
+  bs2::connection m_task_connection;
+  std::string m_nrf_url;
 
   /*
    * Get pcf API Root
@@ -92,14 +91,13 @@ class pcf_nrf {
   void generate_nrf_api_url();
 
   /*
-   * Generate a SMF profile for this instance
+   * Generate an SMF profile for this instance
    * @param [void]
    * @return void
    */
   /**
-   * Generates PCF profile and stores it in nf_instance_profile
+   * Generate PCF profile and stores it in nf_instance_profile
    */
   void generate_pcf_profile();
 };
 }  // namespace oai::pcf::app
-#endif /* FILE_PCF_NRF_HPP_SEEN */

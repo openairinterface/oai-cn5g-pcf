@@ -22,8 +22,8 @@
 /*! \file pcf_app.cpp
  \brief
  \author  Rohan Kharade
- \company Openairinterface Software Allianse
- \date 2021
+ \company Openairinterface Software Alliance
+ \date 2022
  \email: rohan.kharade@openairinterface.org
  */
 
@@ -43,16 +43,16 @@ using namespace std;
 extern std::unique_ptr<pcf_config> pcf_cfg;
 
 //------------------------------------------------------------------------------
-pcf_app::pcf_app(pcf_event& ev) : event_sub(ev) {
+pcf_app::pcf_app(pcf_event& ev) : m_event_sub(ev) {
   Logger::pcf_app().startup("Starting...");
 
   Logger::pcf_app().startup("Reading local Policy configuration...");
   m_policy_storage = std::make_shared<sm_policy::policy_storage>();
 
-  provisioning_file =
+  m_provisioning_file =
       std::make_shared<sm_policy::policy_provisioning_file>(m_policy_storage);
 
-  if (!provisioning_file->read_all_policy_files()) {
+  if (!m_provisioning_file->read_all_policy_files()) {
     Logger::pcf_app().error(
         "Cannot read policy configuration from file. Exiting");
     exit(-1);
@@ -60,27 +60,25 @@ pcf_app::pcf_app(pcf_event& ev) : event_sub(ev) {
 
   // Register to NRF
   if (pcf_cfg->pcf_features.register_nrf) {
-    pcf_nrf_inst = std::make_unique<pcf_nrf>(ev);
-    pcf_nrf_inst->register_to_nrf();
+    m_pcf_nrf_inst = std::make_unique<pcf_nrf>(ev);
+    m_pcf_nrf_inst->register_to_nrf();
     Logger::pcf_app().info("NRF TASK Created ");
   }
 
-  pcf_smpc_service = std::make_shared<pcf_smpc>(m_policy_storage);
+  m_pcf_smpc_service = std::make_shared<pcf_smpc>(m_policy_storage);
 }
 
 //------------------------------------------------------------------------------
 pcf_app::~pcf_app() {
   Logger::pcf_app().debug("Delete PCF_APP instance...");
-  pcf_smpc_service = nullptr;
-  pcf_nrf_inst     = nullptr;
 }
 
 std::shared_ptr<pcf_smpc> pcf_app::get_pcf_smpc_service() {
-  return pcf_smpc_service;
+  return m_pcf_smpc_service;
 }
 
 void pcf_app::stop() {
-  if (pcf_nrf_inst) {
-    pcf_nrf_inst->deregister_to_nrf();
+  if (m_pcf_nrf_inst) {
+    m_pcf_nrf_inst->deregister_to_nrf();
   }
 }

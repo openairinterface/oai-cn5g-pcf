@@ -22,13 +22,12 @@
 /*! \file pcf_app.hpp
  \brief
  \author  Rohan Kharade
- \company Openairinterface Software Allianse
- \date 2021
+ \company OpenAirInterface Software Alliance
+ \date 2022
  \email: rohan.kharade@openairinterface.org
  */
 
-#ifndef FILE_PCF_APP_HPP_SEEN
-#define FILE_PCF_APP_HPP_SEEN
+#pragma once
 
 #include "common_root_types.h"
 #include <boost/atomic.hpp>
@@ -58,24 +57,23 @@ class pcf_app {
   std::shared_ptr<pcf_smpc> get_pcf_smpc_service();
 
   /**
-   * Stops all the ongoing processes and procedures of the PCF APP layer,
+   * Stop all the ongoing processes and procedures of the PCF APP layer,
    * deregisters at NRF
    */
   void stop();
 
  private:
-  pcf_profile nf_instance_profile;  // PCF profile
-  std::string pcf_instance_id;      // PCF instance id
+  pcf_profile m_nf_instance_profile;  // PCF profile
+  std::string m_pcf_instance_id;      // PCF instance id
   // for Event Handling
-  pcf_event& event_sub;
-  bs2::connection task_connection;
+  pcf_event& m_event_sub;
+  bs2::connection m_task_connection;
 
-  std::shared_ptr<pcf_smpc> pcf_smpc_service;
+  std::shared_ptr<pcf_smpc> m_pcf_smpc_service;
   std::shared_ptr<oai::pcf::app::sm_policy::policy_storage> m_policy_storage;
-  std::unique_ptr<oai::pcf::app::pcf_nrf> pcf_nrf_inst;
+  std::unique_ptr<oai::pcf::app::pcf_nrf> m_pcf_nrf_inst;
 
   std::shared_ptr<oai::pcf::app::sm_policy::policy_provisioning_file>
-      provisioning_file;
+      m_provisioning_file;
 };
 }  // namespace oai::pcf::app
-#endif /* FILE_PCF_APP_HPP_SEEN */

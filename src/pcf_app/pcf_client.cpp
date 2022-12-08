@@ -133,12 +133,15 @@ http_status_code_e pcf_client::do_request(
 
   // curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
 
-  auto body_response         = std::make_unique<std::string>();
-  auto http_headers_response = std::make_unique<std::string>();
+  // auto body_response         = std::make_unique<std::string>();
+  // auto http_headers_response = std::make_unique<std::string>();
+
+  std::string body_response;
+  std::string http_headers_response;
 
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &callback);
-  curl_easy_setopt(curl, CURLOPT_WRITEDATA, body_response.get());
-  curl_easy_setopt(curl, CURLOPT_HEADERDATA, http_headers_response.get());
+  curl_easy_setopt(curl, CURLOPT_WRITEDATA, &body_response);
+  curl_easy_setopt(curl, CURLOPT_HEADERDATA, &http_headers_response);
 
   CURLcode res = curl_easy_perform(curl);
 
@@ -153,8 +156,8 @@ http_status_code_e pcf_client::do_request(
   long http_code = -1;
   curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
 
-  response.append(*body_response);
-  resp_headers.append(*http_headers_response);
+  response.append(body_response);
+  resp_headers.append(http_headers_response);
 
   curl_slist_free_all(headers);
   curl_easy_cleanup(curl);
