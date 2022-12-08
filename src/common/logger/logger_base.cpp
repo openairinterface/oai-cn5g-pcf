@@ -46,8 +46,14 @@ printf_logger::printf_logger(
 
   if (sinks.empty()) {
     if (log_stdout) {
-      sinks.push_back(
-          std::make_shared<spdlog::sinks::ansicolor_stdout_sink_mt>());
+      auto color_sink =
+          std::make_shared<spdlog::sinks::ansicolor_stdout_sink_mt>();
+      // because we redefine the names, we also redefine the colors
+      color_sink->set_color(spdlog::level::warn, color_sink->magenta);
+      color_sink->set_color(spdlog::level::err, color_sink->yellow_bold);
+      color_sink->set_color(spdlog::level::critical, color_sink->red_bold);
+
+      sinks.push_back(color_sink);
     }
     if (log_rot_file) {
       // TODO would be nice to configure logfile path, and max size maybe?

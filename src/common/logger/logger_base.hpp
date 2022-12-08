@@ -38,6 +38,7 @@
 // Used by SPDLOG to use external FMT library
 #define SPDLOG_FMT_EXTERNAL
 
+// this way we redefine: warn->start, error->warn, critical->error
 #define SPDLOG_LEVEL_NAMES                                                     \
   {"trace", "debug", "info ", "start", "warn ", "error", "off  "};
 
@@ -57,42 +58,72 @@ class printf_logger {
       const std::string& nf_name, const std::string& name, bool log_stdout,
       bool log_rot_file);
 
-  template<typename S, typename... T>
-  void trace(const S& fmt, const T&... args) const {
+  template<typename... T>
+  void trace(const std::string& fmt, const T&... args) const {
     log_printf(spdlog::level::trace, fmt, args...);
   }
 
-  template<typename S, typename... T>
-  void debug(const S& fmt, const T&... args) const {
+  template<typename... T>
+  void trace(const char* fmt, const T&... args) const {
+    log_printf(spdlog::level::trace, fmt, args...);
+  }
+
+  template<typename... T>
+  void debug(const std::string& fmt, const T&... args) const {
     log_printf(spdlog::level::debug, fmt, args...);
   }
 
-  template<typename S, typename... T>
-  void info(const S& fmt, const T&... args) const {
+  template<typename... T>
+  void debug(const char* fmt, const T&... args) const {
+    log_printf(spdlog::level::debug, fmt, args...);
+  }
+
+  template<typename... T>
+  void info(const std::string& fmt, const T&... args) const {
     log_printf(spdlog::level::info, fmt, args...);
   }
 
-  template<typename S, typename... T>
-  void startup(const S& fmt, const T&... args) const {
+  template<typename... T>
+  void info(const char* fmt, const T&... args) const {
+    log_printf(spdlog::level::info, fmt, args...);
+  }
+
+  template<typename... T>
+  void startup(const std::string& fmt, const T&... args) const {
     log_printf(spdlog::level::warn, fmt, args...);
   }
 
-  template<typename S, typename... T>
-  void warn(const S& fmt, const T&... args) const {
+  template<typename... T>
+  void startup(const char* fmt, const T&... args) const {
     log_printf(spdlog::level::warn, fmt, args...);
   }
 
-  template<typename S, typename... T>
-  void error(const S& fmt, const T&... args) const {
+  template<typename... T>
+  void warn(const std::string& fmt, const T&... args) const {
     log_printf(spdlog::level::err, fmt, args...);
+  }
+
+  template<typename... T>
+  void warn(const char* fmt, const T&... args) const {
+    log_printf(spdlog::level::err, fmt, args...);
+  }
+
+  template<typename... T>
+  void error(const std::string& fmt, const T&... args) const {
+    log_printf(spdlog::level::critical, fmt, args...);
+  }
+
+  template<typename... T>
+  void error(const char* fmt, const T&... args) const {
+    log_printf(spdlog::level::critical, fmt, args...);
   }
 
  private:
   std::shared_ptr<spdlog::logger> logger;
 
-  template<typename S, typename... T>
+  template<typename... T>
   void log_printf(
-      const spdlog::level::level_enum& lvl, const S& fmt,
+      const spdlog::level::level_enum& lvl, const std::string& fmt,
       const T&... args) const {
     // to prevent "expensive" string formatting
     if (!logger->should_log(lvl)) {
