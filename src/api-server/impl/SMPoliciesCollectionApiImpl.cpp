@@ -76,7 +76,8 @@ void SMPoliciesCollectionApiImpl::create_sm_policy(
 
     default:
       Logger::pcf_app().error("Unknown error code");
-      http_code = http_status_code_e::HTTP_STATUS_CODE_500_INTERNAL_SERVER_ERROR;
+      http_code =
+          http_status_code_e::HTTP_STATUS_CODE_500_INTERNAL_SERVER_ERROR;
       problem_details.setCause("INTERNAL_ERROR");
       problem_details.setDetail("Internal Service Error: Unknown return code.");
   }
