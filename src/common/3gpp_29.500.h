@@ -4,8 +4,8 @@
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
  * the OAI Public License, Version 1.1  (the "License"); you may not use this
- *file except in compliance with the License. You may obtain a copy of the
- *License at
+ * file except in compliance with the License. You may obtain a copy of the
+ * License at
  *
  *      http://www.openairinterface.org/?page_id=698
  *
@@ -18,13 +18,20 @@
  * For more information about the OpenAirInterface (OAI) Software Alliance:
  *      contact@openairinterface.org
  */
+
+/*! \file 3gpp_29.500.h
+ \brief
+ \author Stefan Spettel
+ \company OpenAirInterface Software Alliance
+ \email: stefan.spettel@eurecom.fr
+*/
+
 #include <string>
 #include <vector>
 
-#ifndef FILE_3GPP_29_500_SEEN
-#define FILE_3GPP_29_500_SEEN
+#pragma once
 
-enum http_status_code_e {
+enum class http_status_code_e {
   HTTP_STATUS_CODE_100_CONTINUE                  = 100,
   HTTP_STATUS_CODE_200_OK                        = 200,
   HTTP_STATUS_CODE_201_CREATED                   = 201,
@@ -52,7 +59,8 @@ enum http_status_code_e {
   HTTP_STATUS_CODE_500_INTERNAL_SERVER_ERROR     = 500,
   HTTP_STATUS_CODE_501_NOT_IMPLEMENTED           = 501,
   HTTP_STATUS_CODE_503_SERVICE_UNAVAILABLE       = 503,
-  HTTP_STATUS_CODE_504_GATEWAY_TIMEOUT           = 504
+  HTTP_STATUS_CODE_504_GATEWAY_TIMEOUT           = 504,
+  NO_RESPONSE                                    = 0
 };
 
 enum protocol_application_error_e {
@@ -97,5 +105,3 @@ static const std::vector<std::string> protocol_application_error_e2str{
     "UNSPECIFIED_NF_FAILURE",
     "SYSTEM_FAILURE",
     "NF_CONGESTION"};
-
-#endif  // FILE_3GPP_29_500_SEEN

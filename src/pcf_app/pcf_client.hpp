@@ -33,11 +33,11 @@
 
 #include <map>
 #include <thread>
-#include "pcf.h"
+#include "3gpp_29.500.h"
 
 namespace oai::pcf::app {
 
-enum http_methods_e { POST = 1, GET = 2, PUT = 3, PATCH = 4, DELETE = 5 };
+enum class http_method_e { POST, GET, PUT, PATCH, DELETE };
 
 class pcf_client_iface {
  public:
@@ -49,7 +49,7 @@ class pcf_client_iface {
    * @param resp_headers Response headers
    * @return HTTP response code
    */
-  virtual http_response_codes_e send_post(
+  virtual http_status_code_e send_post(
       const std::string& url, const std::string& body, std::string& response,
       std::string& resp_headers) = 0;
 
@@ -60,7 +60,7 @@ class pcf_client_iface {
    * @param resp_header
    * @return HTTP response code
    */
-  virtual http_response_codes_e send_get(
+  virtual http_status_code_e send_get(
       const std::string& url, std::string& response,
       std::string& resp_header) = 0;
 
@@ -72,7 +72,7 @@ class pcf_client_iface {
    * @param resp_headers Response headers
    * @return HTTP response code
    */
-  virtual http_response_codes_e send_put(
+  virtual http_status_code_e send_put(
       const std::string& url, const std::string& body, std::string& response,
       std::string& resp_headers) = 0;
 
@@ -84,7 +84,7 @@ class pcf_client_iface {
    * @param resp_headers Response headers
    * @return HTTP response code
    */
-  virtual http_response_codes_e send_patch(
+  virtual http_status_code_e send_patch(
       const std::string& url, const std::string& body, std::string& response,
       std::string& resp_headers) = 0;
 
@@ -95,41 +95,41 @@ class pcf_client_iface {
    * @param resp_headers Response headers
    * @return HTTP response code
    */
-  virtual http_response_codes_e send_delete(
+  virtual http_status_code_e send_delete(
       const std::string& url, std::string& response,
       std::string& resp_headers) = 0;
 };
 
 class pcf_client : pcf_client_iface {
  private:
-  static http_response_codes_e do_request(
-      const std::string& url, const http_methods_e& method,
+  static http_status_code_e do_request(
+      const std::string& url, const http_method_e& method,
       const std::string& body, std::string& response,
       std::string& resp_headers);
 
-  static void prepare_curl_method(CURL*& curl, const http_methods_e& method);
+  static void prepare_curl_method(CURL*& curl, const http_method_e& method);
 
  public:
   pcf_client();
   virtual ~pcf_client();
 
-  http_response_codes_e send_post(
+  http_status_code_e send_post(
       const std::string& url, const std::string& body, std::string& response,
       std::string& resp_headers) override;
 
-  http_response_codes_e send_get(
+  http_status_code_e send_get(
       const std::string& url, std::string& response,
       std::string& resp_header) override;
 
-  http_response_codes_e send_put(
+  http_status_code_e send_put(
       const std::string& url, const std::string& body, std::string& response,
       std::string& resp_headers) override;
 
-  http_response_codes_e send_patch(
+  http_status_code_e send_patch(
       const std::string& url, const std::string& body, std::string& response,
       std::string& resp_headers) override;
 
-  http_response_codes_e send_delete(
+  http_status_code_e send_delete(
       const std::string& url, std::string& response,
       std::string& resp_headers) override;
 

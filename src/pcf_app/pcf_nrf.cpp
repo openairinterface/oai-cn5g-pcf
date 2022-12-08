@@ -30,7 +30,7 @@
 #include "pcf_nrf.hpp"
 #include "conversions.hpp"
 #include "logger.hpp"
-#include "pcf.h"
+#include "3gpp_29.500.h"
 #include "pcf_config.hpp"
 #include "pcf_client.hpp"
 #include "Snssai.h"
@@ -136,11 +136,11 @@ void pcf_nrf::register_to_nrf() {
   std::string resp_headers;
 
   Logger::pcf_sbi().info("Sending NF registration request");
-  http_response_codes_e res =
+  http_status_code_e res =
       pcf_client_inst->send_put(nrf_url, body.dump(), resp_body, resp_headers);
 
-  if (res == http_response_codes_e::HTTP_RESPONSE_CODE_CREATED or
-      res == http_response_codes_e::HTTP_RESPONSE_CODE_OK) {
+  if (res == http_status_code_e::HTTP_STATUS_CODE_201_CREATED or
+      res == http_status_code_e::HTTP_STATUS_CODE_200_OK) {
     try {
       if (resp_body.find("REGISTERED") != 0) {
         start_event_nf_heartbeat(nrf_url);
@@ -185,11 +185,11 @@ void pcf_nrf::trigger_nf_heartbeat_procedure(uint64_t ms) {
   nlohmann::json j;
   to_json(j, patch_item);
 
-  http_response_codes_e res = pcf_client_inst->send_patch(
+  http_status_code_e res = pcf_client_inst->send_patch(
       nrf_url, j.dump(), body_response, response_headers);
 
-  if (res == http_response_codes_e::HTTP_RESPONSE_CODE_OK or
-      res == http_response_codes_e::HTTP_RESPONSE_CODE_NO_CONTENT) {
+  if (res == http_status_code_e::HTTP_STATUS_CODE_200_OK or
+      res == http_status_code_e::HTTP_STATUS_CODE_204_NO_CONTENT) {
     Logger::pcf_sbi().debug("NF heartbeat request successful");
   } else {
     // TODO what should we do in this case?
@@ -211,10 +211,10 @@ void pcf_nrf::deregister_to_nrf() {
 
   Logger::pcf_sbi().info("Sending NF de-registration request");
 
-  http_response_codes_e res =
+  http_status_code_e res =
       pcf_client_inst->send_delete(nrf_url, body_response, response_header);
 
-  if (res != http_response_codes_e::HTTP_RESPONSE_CODE_NO_CONTENT) {
+  if (res != http_status_code_e::HTTP_STATUS_CODE_204_NO_CONTENT) {
     Logger::pcf_sbi().warn(
         "NF Deregistration failed! Wrong response code: %d", res);
   } else {

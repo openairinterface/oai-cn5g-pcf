@@ -35,6 +35,7 @@
 #include <stdexcept>
 
 #include "logger.hpp"
+#include "3gpp_29.500.h"
 #include "pcf.h"
 #include "pcf_config.hpp"
 
@@ -64,41 +65,41 @@ pcf_client::~pcf_client() {
   Logger::pcf_app().debug("Delete PCF Client instance...");
 }
 
-http_response_codes_e pcf_client::send_post(
+http_status_code_e pcf_client::send_post(
     const std::string& url, const std::string& body, std::string& response,
     std::string& resp_headers) {
-  return do_request(url, http_methods_e::POST, body, response, resp_headers);
+  return do_request(url, http_method_e::POST, body, response, resp_headers);
 }
 
-http_response_codes_e pcf_client::send_get(
+http_status_code_e pcf_client::send_get(
     const std::string& url, std::string& response, std::string& resp_header) {
-  return do_request(url, http_methods_e::GET, "", response, resp_header);
+  return do_request(url, http_method_e::GET, "", response, resp_header);
 }
 
-http_response_codes_e pcf_client::send_put(
+http_status_code_e pcf_client::send_put(
     const std::string& url, const std::string& body, std::string& response,
     std::string& resp_headers) {
-  return do_request(url, http_methods_e::PUT, body, response, resp_headers);
+  return do_request(url, http_method_e::PUT, body, response, resp_headers);
 }
 
-http_response_codes_e pcf_client::send_patch(
+http_status_code_e pcf_client::send_patch(
     const std::string& url, const std::string& body, std::string& response,
     std::string& resp_headers) {
-  return do_request(url, http_methods_e::PATCH, body, response, resp_headers);
+  return do_request(url, http_method_e::PATCH, body, response, resp_headers);
 }
 
-http_response_codes_e pcf_client::send_delete(
+http_status_code_e pcf_client::send_delete(
     const std::string& url, std::string& response, std::string& resp_headers) {
-  return do_request(url, http_methods_e::DELETE, "", response, resp_headers);
+  return do_request(url, http_method_e::DELETE, "", response, resp_headers);
 }
 
-http_response_codes_e pcf_client::do_request(
-    const std::string& url, const http_methods_e& method,
+http_status_code_e pcf_client::do_request(
+    const std::string& url, const http_method_e& method,
     const std::string& body, std::string& response, std::string& resp_headers) {
   CURL* curl = curl_easy_init();
   if (!curl) {
     Logger::pcf_sbi().error("Could not create HTTP Client");
-    return http_response_codes_e::NO_RESPONE;
+    return http_status_code_e::NO_RESPONSE;
   }
   prepare_curl_method(curl, method);
 
@@ -147,7 +148,7 @@ http_response_codes_e pcf_client::do_request(
         url.c_str(), res);
     curl_slist_free_all(headers);
     curl_easy_cleanup(curl);
-    return http_response_codes_e::NO_RESPONE;
+    return http_status_code_e::NO_RESPONSE;
   }
   long http_code = -1;
   curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
@@ -158,25 +159,24 @@ http_response_codes_e pcf_client::do_request(
   curl_slist_free_all(headers);
   curl_easy_cleanup(curl);
 
-  return http_response_codes_e(http_code);
+  return http_status_code_e(http_code);
 }
 
-void pcf_client::prepare_curl_method(
-    CURL*& curl, const http_methods_e& method) {
+void pcf_client::prepare_curl_method(CURL*& curl, const http_method_e& method) {
   switch (method) {
-    case GET:
+    case http_method_e::GET:
       curl_easy_setopt(curl, CURLOPT_HTTPGET, 1);
       break;
-    case POST:
+    case http_method_e::POST:
       curl_easy_setopt(curl, CURLOPT_HTTPPOST, 1);
       break;
-    case PATCH:
+    case http_method_e::PATCH:
       curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PATCH");
       break;
-    case PUT:
+    case http_method_e::PUT:
       curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PUT");
       break;
-    case DELETE:
+    case http_method_e::DELETE:
       curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
       break;
   }
