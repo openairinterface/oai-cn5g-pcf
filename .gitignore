@@ -1,0 +1,6 @@
+build/ext/
+build/log/
+build/pcf/build
+src/common/build
+src/oai_pcf/build
+src/pcf_app/build
