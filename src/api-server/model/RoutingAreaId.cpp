@@ -38,21 +38,24 @@ bool RoutingAreaId::validate(std::stringstream& msg) const {
 }
 
 bool RoutingAreaId::validate(
-    std::stringstream& msg, const std::string& pathPrefix) const {
+  std::stringstream& /* msg */, const std::string& /* pathPrefix */) const {
   bool success = true;
+  /*
   const std::string _pathPrefix =
       pathPrefix.empty() ? "RoutingAreaId" : pathPrefix;
 
-  /* Lac */ {
+  // Lac
+  {
     const std::string& value           = m_Lac;
     const std::string currentValuePath = _pathPrefix + ".lac";
   }
 
-  /* Rac */ {
+  // Rac
+  {
     const std::string& value           = m_Rac;
     const std::string currentValuePath = _pathPrefix + ".rac";
   }
-
+  */
   return success;
 }
 

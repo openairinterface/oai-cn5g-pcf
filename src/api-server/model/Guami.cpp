@@ -37,15 +37,16 @@ bool Guami::validate(std::stringstream& msg) const {
 }
 
 bool Guami::validate(
-    std::stringstream& msg, const std::string& pathPrefix) const {
+  std::stringstream& /* msg */, const std::string& /* pathPrefix */) const {
   bool success                  = true;
+  /*
   const std::string _pathPrefix = pathPrefix.empty() ? "Guami" : pathPrefix;
-
-  /* AmfId */ {
+  // AmfId
+  {
     const std::string& value           = m_AmfId;
     const std::string currentValuePath = _pathPrefix + ".amfId";
   }
-
+  */
   return success;
 }
 

@@ -38,20 +38,23 @@ bool PlmnId::validate(std::stringstream& msg) const {
 }
 
 bool PlmnId::validate(
-    std::stringstream& msg, const std::string& pathPrefix) const {
+  std::stringstream& /* msg */, const std::string& /* pathPrefix */) const {
   bool success                  = true;
+  /*
   const std::string _pathPrefix = pathPrefix.empty() ? "PlmnId" : pathPrefix;
 
-  /* Mcc */ {
+  // Mcc
+  {
     const std::string& value           = m_Mcc;
     const std::string currentValuePath = _pathPrefix + ".mcc";
   }
 
-  /* Mnc */ {
+  // Mnc
+  {
     const std::string& value           = m_Mnc;
     const std::string currentValuePath = _pathPrefix + ".mnc";
   }
-
+  */
   return success;
 }
 

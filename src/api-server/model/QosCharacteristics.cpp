@@ -88,12 +88,13 @@ bool QosCharacteristics::validate(
       msg << currentValuePath << ": must be greater than or equal to 1;";
     }
   }
-
-  /* PacketErrorRate */ {
+  /*
+  // PacketErrorRate
+  {
     const std::string& value           = m_PacketErrorRate;
     const std::string currentValuePath = _pathPrefix + ".packetErrorRate";
   }
-
+  */
   if (averagingWindowIsSet()) {
     const int32_t& value               = m_AveragingWindow;
     const std::string currentValuePath = _pathPrefix + ".averagingWindow";

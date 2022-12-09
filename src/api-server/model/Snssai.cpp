@@ -56,12 +56,12 @@ bool Snssai::validate(
       msg << currentValuePath << ": must be less than or equal to 255;";
     }
   }
-
+  /*
   if (sdIsSet()) {
     const std::string& value           = m_Sd;
     const std::string currentValuePath = _pathPrefix + ".sd";
   }
-
+  */
   return success;
 }
 

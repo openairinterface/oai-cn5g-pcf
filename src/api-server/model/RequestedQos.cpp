@@ -59,7 +59,7 @@ bool RequestedQos::validate(
       msg << currentValuePath << ": must be less than or equal to 255;";
     }
   }
-
+  /*
   if (gbrUlIsSet()) {
     const std::string& value           = m_GbrUl;
     const std::string currentValuePath = _pathPrefix + ".gbrUl";
@@ -69,7 +69,7 @@ bool RequestedQos::validate(
     const std::string& value           = m_GbrDl;
     const std::string currentValuePath = _pathPrefix + ".gbrDl";
   }
-
+  */
   return success;
 }
 

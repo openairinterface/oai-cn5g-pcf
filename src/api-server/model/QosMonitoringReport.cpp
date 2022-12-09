@@ -52,6 +52,7 @@ bool QosMonitoringReport::validate(
       success = false;
       msg << currentValuePath << ": must have at least 1 elements;";
     }
+    /*
     {  // Recursive validation of array elements
       const std::string oldValuePath = currentValuePath;
       int i                          = 0;
@@ -62,8 +63,9 @@ bool QosMonitoringReport::validate(
         i++;
       }
     }
+    */
   }
-
+  /*
   if (ulDelaysIsSet()) {
     const std::vector<int32_t>& value  = m_UlDelays;
     const std::string currentValuePath = _pathPrefix + ".ulDelays";
@@ -111,6 +113,7 @@ bool QosMonitoringReport::validate(
       }
     }
   }
+  */
 
   return success;
 }

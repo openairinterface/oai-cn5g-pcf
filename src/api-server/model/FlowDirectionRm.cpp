@@ -13,6 +13,7 @@
 
 #include "FlowDirectionRm.h"
 #include "Helpers.h"
+#include "logger.hpp"
 
 #include <sstream>
 
@@ -35,11 +36,12 @@ bool FlowDirectionRm::validate(std::stringstream& msg) const {
 }
 
 bool FlowDirectionRm::validate(
-    std::stringstream& msg, const std::string& pathPrefix) const {
+  std::stringstream& /* msg */, const std::string& /* pathPrefix */) const {
   bool success = true;
+  /*
   const std::string _pathPrefix =
       pathPrefix.empty() ? "FlowDirectionRm" : pathPrefix;
-
+  */
   return success;
 }
 
@@ -51,11 +53,14 @@ bool FlowDirectionRm::operator!=(const FlowDirectionRm& rhs) const {
   return !(*this == rhs);
 }
 
-void to_json(nlohmann::json& j, const FlowDirectionRm& o) {
-  j = nlohmann::json();
+void to_json(nlohmann::json& /*j*/, const FlowDirectionRm& /*o*/) {
+  // j = nlohmann::json();
+  Logger::pcf_app().error(__PRETTY_FUNCTION__ + std::string{" not implemented"});
 }
 
-void from_json(const nlohmann::json& j, FlowDirectionRm& o) {}
+void from_json(const nlohmann::json& /*j*/, FlowDirectionRm& /*o*/) {
+  Logger::pcf_app().error(__PRETTY_FUNCTION__ + std::string{" not implemented"});
+}
 
 FlowDirection_anyOf FlowDirectionRm::getValue() const {
   return m_value;

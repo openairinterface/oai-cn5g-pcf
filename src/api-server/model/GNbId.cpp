@@ -55,12 +55,13 @@ bool GNbId::validate(
       msg << currentValuePath << ": must be less than or equal to 32;";
     }
   }
-
-  /* GNBValue */ {
+  /*
+  // GNBValue
+  {
     const std::string& value           = m_GNBValue;
     const std::string currentValuePath = _pathPrefix + ".gNBValue";
   }
-
+  */
   return success;
 }
 

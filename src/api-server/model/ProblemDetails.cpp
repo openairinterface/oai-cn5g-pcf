@@ -82,12 +82,12 @@ bool ProblemDetails::validate(
       }
     }
   }
-
+  /*
   if (supportedFeaturesIsSet()) {
     const std::string& value           = m_SupportedFeatures;
     const std::string currentValuePath = _pathPrefix + ".supportedFeatures";
   }
-
+  */
   return success;
 }
 

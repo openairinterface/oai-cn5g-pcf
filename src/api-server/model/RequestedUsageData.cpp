@@ -52,6 +52,7 @@ bool RequestedUsageData::validate(
       success = false;
       msg << currentValuePath << ": must have at least 1 elements;";
     }
+    /*
     {  // Recursive validation of array elements
       const std::string oldValuePath = currentValuePath;
       int i                          = 0;
@@ -62,6 +63,7 @@ bool RequestedUsageData::validate(
         i++;
       }
     }
+    */
   }
 
   return success;

@@ -13,6 +13,7 @@
 
 #include "ReportingLevel.h"
 #include "Helpers.h"
+#include "logger.hpp"
 
 #include <sstream>
 
@@ -35,11 +36,12 @@ bool ReportingLevel::validate(std::stringstream& msg) const {
 }
 
 bool ReportingLevel::validate(
-    std::stringstream& msg, const std::string& pathPrefix) const {
+  std::stringstream& /* msg */, const std::string& /* pathPrefix */) const {
   bool success = true;
+  /*
   const std::string _pathPrefix =
       pathPrefix.empty() ? "ReportingLevel" : pathPrefix;
-
+  */
   return success;
 }
 
@@ -51,11 +53,14 @@ bool ReportingLevel::operator!=(const ReportingLevel& rhs) const {
   return !(*this == rhs);
 }
 
-void to_json(nlohmann::json& j, const ReportingLevel& o) {
-  j = nlohmann::json();
+void to_json(nlohmann::json& /* j */, const ReportingLevel& /* o */) {
+  // j = nlohmann::json();
+  Logger::pcf_app().error(__PRETTY_FUNCTION__ + std::string{" not implemented"});
 }
 
-void from_json(const nlohmann::json& j, ReportingLevel& o) {}
+void from_json(const nlohmann::json& /* j */, ReportingLevel& /* o */) {
+  Logger::pcf_app().error(__PRETTY_FUNCTION__ + std::string{" not implemented"});
+}
 
 ReportingLevel_anyOf ReportingLevel::getValue() const {
   return m_value;
