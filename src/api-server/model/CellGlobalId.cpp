@@ -38,21 +38,24 @@ bool CellGlobalId::validate(std::stringstream& msg) const {
 }
 
 bool CellGlobalId::validate(
-    std::stringstream& msg, const std::string& pathPrefix) const {
+  std::stringstream& /* msg */, const std::string& /* pathPrefix */) const {
   bool success = true;
+  /*
   const std::string _pathPrefix =
       pathPrefix.empty() ? "CellGlobalId" : pathPrefix;
 
-  /* Lac */ {
+  // Lac
+  {
     const std::string& value           = m_Lac;
     const std::string currentValuePath = _pathPrefix + ".lac";
   }
 
-  /* CellId */ {
+  // CellId
+  {
     const std::string& value           = m_CellId;
     const std::string currentValuePath = _pathPrefix + ".cellId";
   }
-
+  */
   return success;
 }
 

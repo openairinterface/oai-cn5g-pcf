@@ -39,8 +39,9 @@ bool AnGwAddress::validate(std::stringstream& msg) const {
 }
 
 bool AnGwAddress::validate(
-    std::stringstream& msg, const std::string& pathPrefix) const {
+  std::stringstream& /* msg */, const std::string& /* pathPrefix */) const {
   bool success = true;
+  /*
   const std::string _pathPrefix =
       pathPrefix.empty() ? "AnGwAddress" : pathPrefix;
 
@@ -48,7 +49,7 @@ bool AnGwAddress::validate(
     const std::string& value           = m_AnGwIpv4Addr;
     const std::string currentValuePath = _pathPrefix + ".anGwIpv4Addr";
   }
-
+  */
   return success;
 }
 

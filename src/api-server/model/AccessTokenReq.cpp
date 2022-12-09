@@ -61,11 +61,6 @@ bool AccessTokenReq::validate(
   const std::string _pathPrefix =
       pathPrefix.empty() ? "AccessTokenReq" : pathPrefix;
 
-  /* Scope */ {
-    const std::string& value           = m_Scope;
-    const std::string currentValuePath = _pathPrefix + ".scope";
-  }
-
   if (requesterPlmnListIsSet()) {
     const std::vector<PlmnId>& value   = m_RequesterPlmnList;
     const std::string currentValuePath = _pathPrefix + ".requesterPlmnList";
@@ -169,6 +164,7 @@ bool AccessTokenReq::validate(
       success = false;
       msg << currentValuePath << ": must have at least 1 elements;";
     }
+    /*
     {  // Recursive validation of array elements
       const std::string oldValuePath = currentValuePath;
       int i                          = 0;
@@ -179,6 +175,7 @@ bool AccessTokenReq::validate(
         i++;
       }
     }
+    */
   }
 
   return success;

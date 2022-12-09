@@ -70,10 +70,6 @@ bool ChargingData::validate(
       success = false;
       msg << currentValuePath << ": must be greater than or equal to 0;";
     }
-    if (value > 4294967295) {
-      success = false;
-      msg << currentValuePath << ": must be less than or equal to 4294967295;";
-    }
   }
 
   if (serviceIdIsSet()) {
@@ -84,10 +80,6 @@ bool ChargingData::validate(
       success = false;
       msg << currentValuePath << ": must be greater than or equal to 0;";
     }
-    if (value > 4294967295) {
-      success = false;
-      msg << currentValuePath << ": must be less than or equal to 4294967295;";
-    }
   }
 
   if (afChargingIdentifierIsSet()) {
@@ -97,10 +89,6 @@ bool ChargingData::validate(
     if (value < 0) {
       success = false;
       msg << currentValuePath << ": must be greater than or equal to 0;";
-    }
-    if (value > 4294967295) {
-      success = false;
-      msg << currentValuePath << ": must be less than or equal to 4294967295;";
     }
   }
 

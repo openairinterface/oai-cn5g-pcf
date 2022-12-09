@@ -38,20 +38,22 @@ bool Ambr::validate(std::stringstream& msg) const {
 }
 
 bool Ambr::validate(
-    std::stringstream& msg, const std::string& pathPrefix) const {
+  std::stringstream& /* msg */, const std::string& /* pathPrefix */) const {
   bool success                  = true;
-  const std::string _pathPrefix = pathPrefix.empty() ? "Ambr" : pathPrefix;
 
-  /* Uplink */ {
+  /*
+  const std::string _pathPrefix = pathPrefix.empty() ? "Ambr" : pathPrefix;
+  // Uplink
+  {
     const std::string& value           = m_Uplink;
     const std::string currentValuePath = _pathPrefix + ".uplink";
   }
-
-  /* Downlink */ {
+  // Downlink
+  {
     const std::string& value           = m_Downlink;
     const std::string currentValuePath = _pathPrefix + ".downlink";
   }
-
+  */
   return success;
 }
 
