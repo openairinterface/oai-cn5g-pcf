@@ -154,7 +154,7 @@ void pcf_nrf::register_to_nrf() {
   }
 }
 //------------------------------------------------------------------------------
-void pcf_nrf::start_event_nf_heartbeat(std::string& remoteURI) {
+void pcf_nrf::start_event_nf_heartbeat(std::string& /* remoteURI */) {
   // get current time
   uint64_t ms = std::chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::system_clock::now().time_since_epoch())

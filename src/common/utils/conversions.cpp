@@ -120,7 +120,7 @@ std::string conv::mncToString(
 //------------------------------------------------------------------------------
 struct in_addr conv::fromString(const std::string addr4) {
   unsigned char buf[sizeof(struct in6_addr)] = {};
-  int s              = inet_pton(AF_INET, addr4.c_str(), buf);
+  inet_pton(AF_INET, addr4.c_str(), buf);
   struct in_addr* ia = (struct in_addr*) buf;
   return *ia;
 }

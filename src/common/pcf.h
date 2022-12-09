@@ -115,7 +115,7 @@ typedef struct nf_service_s {
     s.append(service_instance_id);
     s.append(", Service name: ");
     s.append(service_name);
-    for (auto v : versions) {
+    for (auto const& v : versions) {
       s.append(v.to_string());
     }
     s.append(", Scheme: ");

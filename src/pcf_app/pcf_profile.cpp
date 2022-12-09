@@ -413,7 +413,7 @@ void pcf_profile::to_json(nlohmann::json& data) const {
     srv_tmp["serviceInstanceId"] = service.service_instance_id;
     srv_tmp["serviceName"]       = service.service_name;
     srv_tmp["versions"]          = nlohmann::json::array();
-    for (auto v : service.versions) {
+    for (auto const& v : service.versions) {
       nlohmann::json v_tmp     = {};
       v_tmp["apiVersionInUri"] = v.api_version_in_uri;
       v_tmp["apiFullVersion"]  = v.api_full_version;

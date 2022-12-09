@@ -39,7 +39,7 @@ using namespace oai::pcf::app;
 typedef PolicyControlRequestTrigger_anyOf::ePolicyControlRequestTrigger_anyOf E;
 
 status_code policy_decision::decide(
-    const SmPolicyContextData& context, SmPolicyDecision& decision) const {
+  const SmPolicyContextData& /* context */, SmPolicyDecision& decision) const {
   // default rule, so just reply with the decision
   decision = m_decision;
   return status_code::CREATED;
