@@ -60,7 +60,13 @@ bool AccessTokenReq::validate(
   bool success = true;
   const std::string _pathPrefix =
       pathPrefix.empty() ? "AccessTokenReq" : pathPrefix;
-
+  /*
+  // Scope
+  {
+    const std::string& value           = m_Scope;
+    const std::string currentValuePath = _pathPrefix + ".scope";
+  }
+  */
   if (requesterPlmnListIsSet()) {
     const std::vector<PlmnId>& value   = m_RequesterPlmnList;
     const std::string currentValuePath = _pathPrefix + ".requesterPlmnList";
