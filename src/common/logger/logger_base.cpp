@@ -57,7 +57,7 @@ printf_logger::printf_logger(
     }
     if (log_rot_file) {
       // TODO would be nice to configure logfile path, and max size maybe?
-      std::string filename = fmt::format("{}.log", nf_name);
+      std::string filename = nf_name + ".log";
       // 5MB rotating file limit with max 3 files
       sinks.push_back(std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
           filename, 5 * 1024 * 1024, 3));
@@ -84,8 +84,7 @@ printf_logger::printf_logger(
 #endif
 }
 
-std::unordered_map<std::string, printf_logger> logger_registry::logger_map =
-    std::unordered_map<std::string, printf_logger>();
+std::unordered_map<std::string, printf_logger> logger_registry::logger_map;
 
 void logger_registry::register_logger(
     const std::string& nf_name, const std::string& logger_name, bool log_stdout,
