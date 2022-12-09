@@ -41,11 +41,12 @@ bool UserLocation::validate(std::stringstream& msg) const {
 }
 
 bool UserLocation::validate(
-    std::stringstream& msg, const std::string& pathPrefix) const {
+  std::stringstream& /* msg */, const std::string& /* pathPrefix */) const {
   bool success = true;
+  /*
   const std::string _pathPrefix =
       pathPrefix.empty() ? "UserLocation" : pathPrefix;
-
+  */
   return success;
 }
 
