@@ -149,7 +149,8 @@ void pcf_nrf::register_to_nrf() {
     }
   } else {
     Logger::pcf_sbi().warn(
-        "NF registration failed: Wrong response code: %d", res);
+        "NF registration failed: Wrong response code: %d",
+        static_cast<int>(res));
   }
 }
 //------------------------------------------------------------------------------
@@ -193,7 +194,8 @@ void pcf_nrf::trigger_nf_heartbeat_procedure(uint64_t ms) {
     // TODO what should we do in this case?
     // We disconnect, but we dont trigger anything else
     Logger::pcf_sbi().warn(
-        "NF heartbeat request failed. Wrong response code %d", res);
+        "NF heartbeat request failed. Wrong response code %d",
+        static_cast<int>(res));
     m_task_connection.disconnect();
   }
 }
@@ -216,6 +218,7 @@ void pcf_nrf::deregister_to_nrf() {
     Logger::pcf_sbi().info("NF Deregistration successful");
   } else {
     Logger::pcf_sbi().warn(
-        "NF Deregistration failed! Wrong response code: %d", res);
+        "NF Deregistration failed! Wrong response code: %d",
+        static_cast<int>(res));
   }
 }

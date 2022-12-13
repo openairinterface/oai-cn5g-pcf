@@ -58,6 +58,12 @@ void signal_handler_sigint(int) {
   if (pcf_app_inst) {
     pcf_app_inst->stop();
   }
+  // TODO exit is not always clean, check again after complete refactor
+  // Ensure that objects are destructed before static libraries (e.g. Logger)
+  pcf_api_server_1 = nullptr;
+  pcf_api_server_2 = nullptr;
+  pcf_app_inst     = nullptr;
+  pcf_cfg          = nullptr;
 }
 
 //------------------------------------------------------------------------------
