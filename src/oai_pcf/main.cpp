@@ -62,9 +62,8 @@ void signal_handler_sigint(int) {
   // Ensure that objects are destructed before static libraries (e.g. Logger)
   pcf_api_server_1 = nullptr;
   pcf_api_server_2 = nullptr;
-  pcf_app_inst = nullptr;
-  pcf_cfg = nullptr;
-
+  pcf_app_inst     = nullptr;
+  pcf_cfg          = nullptr;
 }
 
 //------------------------------------------------------------------------------
