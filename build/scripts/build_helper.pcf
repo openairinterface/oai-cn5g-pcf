@@ -364,6 +364,48 @@ install_libyaml_cpp_from_git() {
   return 0
 }
 
+install_google_test_from_git() {
+  echo "Starting to install Googletest (and Google Mock)"
+  if [ $1 -eq 0 ]; then
+    read -p "Do you want to install Googletest ? <y/N> " prompt
+    OPTION="-y"
+  else
+    prompt='y'
+    OPTION="-y"
+  fi
+  if [ $2 -eq 0 ]; then
+    debug=0
+  else
+    debug=1
+  fi
+
+  if [[ $prompt =~ [yY](es)* ]]
+  then
+    GIT_URL=https://github.com/google/googletest
+    echo "Install Googletest from $GIT_URL"
+    pushd $OPENAIRCN_DIR/build/ext
+    echo "Downloading Googletest"
+    if [[ $OPTION =~ -[yY](es)* ]]
+    then
+      $SUDO rm -rf googletest 
+    fi
+
+    git clone $GIT_URL
+    git submodule update --init
+    cd googletest # do not checkout, use main 
+    ret=$?;[[ $ret -ne 0 ]] && popd && return $ret
+    mkdir _build && cd _build
+    $CMAKE ..
+    ret=$?;[[ $ret -ne 0 ]] && popd && return $ret
+    make
+    ret=$?;[[ $ret -ne 0 ]] && popd && return $ret
+    $SUDO make install
+    ret=$?;[[ $ret -ne 0 ]] && popd && return $ret
+    popd
+    echo "Googletest installation complete"
+  fi
+  return 0
+}
 
 
 #-------------------------------------------------------------------------------
@@ -532,6 +574,9 @@ check_install_pcf_deps() {
   elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
     $SUDO $INSTALLER install $OPTION yaml-cpp yaml-cpp-devel
   fi
+
+  install_google_test_from_git $1 $2
+  ret=$?;[[ $ret -ne 0 ]] && return $ret
 
   $SUDO ldconfig
   return 0

@@ -249,7 +249,13 @@ make_test() {
       make test
     } > $dlog/$2_test.txt 2>&1
   fi
-  echo_success "unit tests end"
+  if [ $? == 0 ]; then
+      echo_success "unit tests passed"
+      return 0
+  else 
+      echo_error "unit tests failed"
+      return -1
+  fi
 }
 
 #-------------------------------------------------------------------------------
