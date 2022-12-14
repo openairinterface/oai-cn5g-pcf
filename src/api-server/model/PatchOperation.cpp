@@ -48,11 +48,13 @@ void PatchOperation::validate() {
 
 void to_json(nlohmann::json& /* j */, const PatchOperation& /* o */) {
   // j = nlohmann::json();
-  Logger::pcf_app().error(__PRETTY_FUNCTION__ + std::string{" not implemented"});
+  Logger::pcf_app().error(
+      __PRETTY_FUNCTION__ + std::string{" not implemented"});
 }
 
 void from_json(const nlohmann::json& /* j */, PatchOperation& /* o */) {
-  Logger::pcf_app().error(__PRETTY_FUNCTION__ + std::string{" not implemented"});
+  Logger::pcf_app().error(
+      __PRETTY_FUNCTION__ + std::string{" not implemented"});
 }
 
 }  // namespace model

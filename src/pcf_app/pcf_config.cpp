@@ -147,7 +147,8 @@ int pcf_config::load(const string& config_file) {
   const Setting& root = cfg.getRoot();
 
   if (root.exists(PCF_CONFIG_STRING_PCF_CONFIG) == false) {
-    Logger::pcf_app().error("Setting does not exist: " + std::string{PCF_CONFIG_STRING_PCF_CONFIG});
+    Logger::pcf_app().error(
+        "Setting does not exist: " + std::string{PCF_CONFIG_STRING_PCF_CONFIG});
     return RETURNerror;
   }
 

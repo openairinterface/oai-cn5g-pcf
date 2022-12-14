@@ -56,13 +56,14 @@ void pcf_http2_server::start() {
   std::string subscriptionID = {};
 
   // Get list of supported APIs
-  server.handle("/", [&](const request& request, const response& /* response */) {
-    request.on_data([&](const uint8_t* /* data */, std::size_t /* len */) {
-      if (request.method().compare("GET") == 0) {
-        // this->get_api_list(response);
-      }
-    });
-  });
+  server.handle(
+      "/", [&](const request& request, const response& /* response */) {
+        request.on_data([&](const uint8_t* /* data */, std::size_t /* len */) {
+          if (request.method().compare("GET") == 0) {
+            // this->get_api_list(response);
+          }
+        });
+      });
 
   if (server.listen_and_serve(ec, m_address, std::to_string(m_port))) {
     std::cerr << "HTTP Server error: " << ec.message() << std::endl;

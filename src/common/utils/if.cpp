@@ -33,7 +33,7 @@
 //------------------------------------------------------------------------------
 int get_gateway_and_iface(std::string* gw, std::string* iface) {
   int received_bytes = 0, msg_len = 0, route_attribute_len = 0;
-  int sock = -1;
+  int sock            = -1;
   unsigned int msgseq = 0;
   struct nlmsghdr *nlh, *nlmsg;
   struct rtmsg* route_entry;
@@ -105,7 +105,8 @@ int get_gateway_and_iface(std::string* gw, std::string* iface) {
 
     /* Break if its not a multi part message */
     if ((nlmsg->nlmsg_flags & NLM_F_MULTI) == 0) break;
-  } while ((nlmsg->nlmsg_seq != msgseq) || (nlmsg->nlmsg_pid != static_cast<unsigned int>(getpid())));
+  } while ((nlmsg->nlmsg_seq != msgseq) ||
+           (nlmsg->nlmsg_pid != static_cast<unsigned int>(getpid())));
 
   /* parse response */
   for (; NLMSG_OK(nlh, received_bytes); nlh = NLMSG_NEXT(nlh, received_bytes)) {

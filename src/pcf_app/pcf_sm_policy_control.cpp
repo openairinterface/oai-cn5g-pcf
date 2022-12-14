@@ -106,8 +106,8 @@ status_code pcf_smpc::create_sm_policy_handler(
 
 //------------------------------------------------------------------------------
 sm_policy::status_code pcf_smpc::delete_sm_policy_handler(
-  const std::string& id, const SmPolicyDeleteData& /* delete_data */,
-  std::string& problem_details) {
+    const std::string& id, const SmPolicyDeleteData& /* delete_data */,
+    std::string& problem_details) {
   // TODO for now, just delete, ignore the delete_data
   std::unique_lock lock_associations(m_associations_mutex);
   auto iter = m_associations.find(id);
