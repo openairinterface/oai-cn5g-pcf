@@ -35,8 +35,8 @@ bool Ipv6Addr::validate(std::stringstream& msg) const {
 }
 
 bool Ipv6Addr::validate(
-  std::stringstream& /* msg */, const std::string& /* pathPrefix */) const {
-  bool success                  = true;
+    std::stringstream& /* msg */, const std::string& /* pathPrefix */) const {
+  bool success = true;
   /*
   const std::string _pathPrefix = pathPrefix.empty() ? "Ipv6Addr" : pathPrefix;
   */
