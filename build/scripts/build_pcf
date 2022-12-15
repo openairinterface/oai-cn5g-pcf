@@ -189,7 +189,7 @@ function main()
   $CMAKE $cmake_args .. > /dev/null
   ret=$?;[[ $ret -ne 0 ]] && return $ret
 
-  compilations pcf pcf $OPENAIRCN_DIR/build/pcf $verbose
+  compilations pcf pcf $OPENAIRCN_DIR/build/pcf/build/pcf $verbose
   ret=$?;[[ $ret -ne 0 ]] && return $ret
 
   # For daemon should not be group writable
