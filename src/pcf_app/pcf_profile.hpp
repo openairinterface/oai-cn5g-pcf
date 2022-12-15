@@ -64,14 +64,14 @@ class nf_profile : public std::enable_shared_from_this<nf_profile> {
 
   nf_profile(const std::string& id)
       : nf_instance_id(id),
+        nf_type("NF_TYPE_UNKNOWN"),
         heartBeat_timer(0),
         snssais(),
         fqdn(),
         ipv4_addresses(),
         ipv6_addresses(),
         priority(0),
-        capacity(0),
-        nf_type("NF_TYPE_UNKNOWN") {
+        capacity(0) {
     nf_instance_name = "";
     nf_status        = "";
   }

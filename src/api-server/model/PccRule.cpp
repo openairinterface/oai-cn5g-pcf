@@ -110,6 +110,7 @@ bool PccRule::validate(
       success = false;
       msg << currentValuePath << ": must have at most 1 elements;";
     }
+    /*
     {  // Recursive validation of array elements
       const std::string oldValuePath = currentValuePath;
       int i                          = 0;
@@ -120,6 +121,7 @@ bool PccRule::validate(
         i++;
       }
     }
+    */
   }
 
   if (refAltQosParamsIsSet()) {
@@ -130,6 +132,7 @@ bool PccRule::validate(
       success = false;
       msg << currentValuePath << ": must have at least 1 elements;";
     }
+    /*
     {  // Recursive validation of array elements
       const std::string oldValuePath = currentValuePath;
       int i                          = 0;
@@ -140,6 +143,7 @@ bool PccRule::validate(
         i++;
       }
     }
+    */
   }
 
   if (refTcDataIsSet()) {
@@ -154,6 +158,7 @@ bool PccRule::validate(
       success = false;
       msg << currentValuePath << ": must have at most 1 elements;";
     }
+    /*
     {  // Recursive validation of array elements
       const std::string oldValuePath = currentValuePath;
       int i                          = 0;
@@ -164,6 +169,7 @@ bool PccRule::validate(
         i++;
       }
     }
+    */
   }
 
   if (refChgDataIsSet()) {
@@ -178,6 +184,7 @@ bool PccRule::validate(
       success = false;
       msg << currentValuePath << ": must have at most 1 elements;";
     }
+    /*
     {  // Recursive validation of array elements
       const std::string oldValuePath = currentValuePath;
       int i                          = 0;
@@ -188,6 +195,7 @@ bool PccRule::validate(
         i++;
       }
     }
+    */
   }
 
   if (refChgN3gDataIsSet()) {
@@ -202,6 +210,7 @@ bool PccRule::validate(
       success = false;
       msg << currentValuePath << ": must have at most 1 elements;";
     }
+    /*
     {  // Recursive validation of array elements
       const std::string oldValuePath = currentValuePath;
       int i                          = 0;
@@ -212,6 +221,7 @@ bool PccRule::validate(
         i++;
       }
     }
+    */
   }
 
   if (refUmDataIsSet()) {
@@ -226,6 +236,7 @@ bool PccRule::validate(
       success = false;
       msg << currentValuePath << ": must have at most 1 elements;";
     }
+    /*
     {  // Recursive validation of array elements
       const std::string oldValuePath = currentValuePath;
       int i                          = 0;
@@ -236,6 +247,7 @@ bool PccRule::validate(
         i++;
       }
     }
+    */
   }
 
   if (refUmN3gDataIsSet()) {
@@ -250,6 +262,7 @@ bool PccRule::validate(
       success = false;
       msg << currentValuePath << ": must have at most 1 elements;";
     }
+    /*
     {  // Recursive validation of array elements
       const std::string oldValuePath = currentValuePath;
       int i                          = 0;
@@ -260,6 +273,7 @@ bool PccRule::validate(
         i++;
       }
     }
+    */
   }
 
   if (refQosMonIsSet()) {
@@ -274,6 +288,7 @@ bool PccRule::validate(
       success = false;
       msg << currentValuePath << ": must have at most 1 elements;";
     }
+    /*
     {  // Recursive validation of array elements
       const std::string oldValuePath = currentValuePath;
       int i                          = 0;
@@ -284,6 +299,7 @@ bool PccRule::validate(
         i++;
       }
     }
+    */
   }
 
   return success;

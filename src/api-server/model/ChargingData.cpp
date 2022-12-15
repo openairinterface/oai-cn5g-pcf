@@ -57,53 +57,13 @@ bool ChargingData::validate(std::stringstream& msg) const {
 }
 
 bool ChargingData::validate(
-    std::stringstream& msg, const std::string& pathPrefix) const {
+    std::stringstream& /* msg */, const std::string& /* pathPrefix */) const {
   bool success = true;
+  /*
   const std::string _pathPrefix =
       pathPrefix.empty() ? "ChargingData" : pathPrefix;
-
-  if (ratingGroupIsSet()) {
-    const int32_t& value               = m_RatingGroup;
-    const std::string currentValuePath = _pathPrefix + ".ratingGroup";
-
-    if (value < 0) {
-      success = false;
-      msg << currentValuePath << ": must be greater than or equal to 0;";
-    }
-    if (value > 4294967295) {
-      success = false;
-      msg << currentValuePath << ": must be less than or equal to 4294967295;";
-    }
   }
-
-  if (serviceIdIsSet()) {
-    const int32_t& value               = m_ServiceId;
-    const std::string currentValuePath = _pathPrefix + ".serviceId";
-
-    if (value < 0) {
-      success = false;
-      msg << currentValuePath << ": must be greater than or equal to 0;";
-    }
-    if (value > 4294967295) {
-      success = false;
-      msg << currentValuePath << ": must be less than or equal to 4294967295;";
-    }
-  }
-
-  if (afChargingIdentifierIsSet()) {
-    const int32_t& value               = m_AfChargingIdentifier;
-    const std::string currentValuePath = _pathPrefix + ".afChargingIdentifier";
-
-    if (value < 0) {
-      success = false;
-      msg << currentValuePath << ": must be greater than or equal to 0;";
-    }
-    if (value > 4294967295) {
-      success = false;
-      msg << currentValuePath << ": must be less than or equal to 4294967295;";
-    }
-  }
-
+  */
   return success;
 }
 
@@ -285,10 +245,10 @@ bool ChargingData::sdfHandlIsSet() const {
 void ChargingData::unsetSdfHandl() {
   m_SdfHandlIsSet = false;
 }
-int32_t ChargingData::getRatingGroup() const {
+uint32_t ChargingData::getRatingGroup() const {
   return m_RatingGroup;
 }
-void ChargingData::setRatingGroup(int32_t const value) {
+void ChargingData::setRatingGroup(uint32_t const value) {
   m_RatingGroup      = value;
   m_RatingGroupIsSet = true;
 }
@@ -311,10 +271,10 @@ bool ChargingData::reportingLevelIsSet() const {
 void ChargingData::unsetReportingLevel() {
   m_ReportingLevelIsSet = false;
 }
-int32_t ChargingData::getServiceId() const {
+uint32_t ChargingData::getServiceId() const {
   return m_ServiceId;
 }
-void ChargingData::setServiceId(int32_t const value) {
+void ChargingData::setServiceId(uint32_t const value) {
   m_ServiceId      = value;
   m_ServiceIdIsSet = true;
 }
@@ -350,10 +310,10 @@ bool ChargingData::appSvcProvIdIsSet() const {
 void ChargingData::unsetAppSvcProvId() {
   m_AppSvcProvIdIsSet = false;
 }
-int32_t ChargingData::getAfChargingIdentifier() const {
+uint32_t ChargingData::getAfChargingIdentifier() const {
   return m_AfChargingIdentifier;
 }
-void ChargingData::setAfChargingIdentifier(int32_t const value) {
+void ChargingData::setAfChargingIdentifier(uint32_t const value) {
   m_AfChargingIdentifier      = value;
   m_AfChargingIdentifierIsSet = true;
 }

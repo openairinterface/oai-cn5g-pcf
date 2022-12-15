@@ -64,7 +64,7 @@ bool NrLocation::validate(
       msg << currentValuePath << ": must be less than or equal to 32767;";
     }
   }
-
+  /*
   if (geographicalInformationIsSet()) {
     const std::string& value = m_GeographicalInformation;
     const std::string currentValuePath =
@@ -75,7 +75,7 @@ bool NrLocation::validate(
     const std::string& value           = m_GeodeticInformation;
     const std::string currentValuePath = _pathPrefix + ".geodeticInformation";
   }
-
+  */
   return success;
 }
 

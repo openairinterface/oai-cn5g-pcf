@@ -98,8 +98,8 @@ class ChargingData {
   /// <summary>
   ///
   /// </summary>
-  int32_t getRatingGroup() const;
-  void setRatingGroup(int32_t const value);
+  uint32_t getRatingGroup() const;
+  void setRatingGroup(uint32_t const value);
   bool ratingGroupIsSet() const;
   void unsetRatingGroup();
   /// <summary>
@@ -112,8 +112,8 @@ class ChargingData {
   /// <summary>
   ///
   /// </summary>
-  int32_t getServiceId() const;
-  void setServiceId(int32_t const value);
+  uint32_t getServiceId() const;
+  void setServiceId(uint32_t const value);
   bool serviceIdIsSet() const;
   void unsetServiceId();
   /// <summary>
@@ -133,8 +133,8 @@ class ChargingData {
   /// <summary>
   ///
   /// </summary>
-  int32_t getAfChargingIdentifier() const;
-  void setAfChargingIdentifier(int32_t const value);
+  uint32_t getAfChargingIdentifier() const;
+  void setAfChargingIdentifier(uint32_t const value);
   bool afChargingIdentifierIsSet() const;
   void unsetAfChargingIdentifier();
   /// <summary>
@@ -159,17 +159,17 @@ class ChargingData {
   bool m_OnlineIsSet;
   bool m_SdfHandl;
   bool m_SdfHandlIsSet;
-  int32_t m_RatingGroup;
+  uint32_t m_RatingGroup;
   bool m_RatingGroupIsSet;
   ReportingLevel m_ReportingLevel;
   bool m_ReportingLevelIsSet;
-  int32_t m_ServiceId;
+  uint32_t m_ServiceId;
   bool m_ServiceIdIsSet;
   std::string m_SponsorId;
   bool m_SponsorIdIsSet;
   std::string m_AppSvcProvId;
   bool m_AppSvcProvIdIsSet;
-  int32_t m_AfChargingIdentifier;
+  uint32_t m_AfChargingIdentifier;
   bool m_AfChargingIdentifierIsSet;
   std::string m_AfChargId;
   bool m_AfChargIdIsSet;

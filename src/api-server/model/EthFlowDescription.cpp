@@ -53,17 +53,16 @@ bool EthFlowDescription::validate(
   bool success = true;
   const std::string _pathPrefix =
       pathPrefix.empty() ? "EthFlowDescription" : pathPrefix;
-
+  /*
   if (destMacAddrIsSet()) {
     const std::string& value           = m_DestMacAddr;
     const std::string currentValuePath = _pathPrefix + ".destMacAddr";
   }
-
   if (sourceMacAddrIsSet()) {
     const std::string& value           = m_SourceMacAddr;
     const std::string currentValuePath = _pathPrefix + ".sourceMacAddr";
   }
-
+  */
   if (vlanTagsIsSet()) {
     const std::vector<std::string>& value = m_VlanTags;
     const std::string currentValuePath    = _pathPrefix + ".vlanTags";
@@ -76,6 +75,7 @@ bool EthFlowDescription::validate(
       success = false;
       msg << currentValuePath << ": must have at most 2 elements;";
     }
+    /*
     {  // Recursive validation of array elements
       const std::string oldValuePath = currentValuePath;
       int i                          = 0;
@@ -86,18 +86,18 @@ bool EthFlowDescription::validate(
         i++;
       }
     }
+    */
   }
-
+  /*
   if (srcMacAddrEndIsSet()) {
     const std::string& value           = m_SrcMacAddrEnd;
     const std::string currentValuePath = _pathPrefix + ".srcMacAddrEnd";
   }
-
   if (destMacAddrEndIsSet()) {
     const std::string& value           = m_DestMacAddrEnd;
     const std::string currentValuePath = _pathPrefix + ".destMacAddrEnd";
   }
-
+  */
   return success;
 }
 

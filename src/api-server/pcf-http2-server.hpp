@@ -50,7 +50,7 @@ class pcf_http2_server {
         smpc_service(pcf_app_inst->get_pcf_smpc_service()){};
 
   void start();
-  void init(size_t thr) {}
+  void init(size_t /* thr */) {}
 
   // PCF
 

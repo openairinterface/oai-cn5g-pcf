@@ -49,11 +49,11 @@ bool GlobalRanNodeId::validate(std::stringstream& msg) const {
 }
 
 bool GlobalRanNodeId::validate(
-    std::stringstream& msg, const std::string& pathPrefix) const {
+    std::stringstream& /* msg */, const std::string& /* pathPrefix */) const {
   bool success = true;
+  /*
   const std::string _pathPrefix =
       pathPrefix.empty() ? "GlobalRanNodeId" : pathPrefix;
-
   if (n3IwfIdIsSet()) {
     const std::string& value           = m_N3IwfId;
     const std::string currentValuePath = _pathPrefix + ".n3IwfId";
@@ -83,7 +83,7 @@ bool GlobalRanNodeId::validate(
     const std::string& value           = m_ENbId;
     const std::string currentValuePath = _pathPrefix + ".eNbId";
   }
-
+  */
   return success;
 }
 

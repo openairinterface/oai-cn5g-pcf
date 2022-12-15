@@ -48,12 +48,12 @@ bool TsnBridgeInfo::validate(
   bool success = true;
   const std::string _pathPrefix =
       pathPrefix.empty() ? "TsnBridgeInfo" : pathPrefix;
-
+  /*
   if (bridgeMacIsSet()) {
     const std::string& value           = m_BridgeMac;
     const std::string currentValuePath = _pathPrefix + ".bridgeMac";
   }
-
+  */
   if (nwttPortsIsSet()) {
     const std::vector<TsnPortIdentifier>& value = m_NwttPorts;
     const std::string currentValuePath          = _pathPrefix + ".nwttPorts";
@@ -62,6 +62,7 @@ bool TsnBridgeInfo::validate(
       success = false;
       msg << currentValuePath << ": must have at least 1 elements;";
     }
+    /*
     {  // Recursive validation of array elements
       const std::string oldValuePath = currentValuePath;
       int i                          = 0;
@@ -75,6 +76,7 @@ bool TsnBridgeInfo::validate(
         i++;
       }
     }
+    */
   }
 
   if (dsttResidTimeIsSet()) {

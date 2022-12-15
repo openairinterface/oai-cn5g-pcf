@@ -74,7 +74,7 @@ bool SmPolicyDecision::validate(
   bool success = true;
   const std::string _pathPrefix =
       pathPrefix.empty() ? "SmPolicyDecision" : pathPrefix;
-
+  /*
   if (sessRulesIsSet()) {
     const std::map<std::string, SessionRule>& value = m_SessRules;
     const std::string currentValuePath = _pathPrefix + ".sessRules";
@@ -119,7 +119,7 @@ bool SmPolicyDecision::validate(
     const std::map<std::string, ConditionData>& value = m_Conds;
     const std::string currentValuePath                = _pathPrefix + ".conds";
   }
-
+  */
   if (policyCtrlReqTriggersIsSet()) {
     const std::vector<PolicyControlRequestTrigger>& value =
         m_PolicyCtrlReqTriggers;
@@ -167,7 +167,7 @@ bool SmPolicyDecision::validate(
       }
     }
   }
-
+  /*
   if (praInfosIsSet()) {
     const std::map<std::string, PresenceInfoRm>& value = m_PraInfos;
     const std::string currentValuePath = _pathPrefix + ".praInfos";
@@ -177,7 +177,7 @@ bool SmPolicyDecision::validate(
     const std::string& value           = m_SuppFeat;
     const std::string currentValuePath = _pathPrefix + ".suppFeat";
   }
-
+  */
   if (tsnPortManContNwttsIsSet()) {
     const std::vector<PortManagementContainer>& value = m_TsnPortManContNwtts;
     const std::string currentValuePath = _pathPrefix + ".tsnPortManContNwtts";

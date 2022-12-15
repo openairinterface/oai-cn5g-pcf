@@ -168,6 +168,10 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O2 -fno-omit-frame-pointer -DTATA -s -DINFO_IS_ON=
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-g -O1 -DINFO_IS_ON=1")
 set(CMAKE_CXX_FLAGS_MINSIZEREL "-Os -s")
 
+################################################################
+# Enable warnings
+################################################################
+add_compile_options(-Wall -Wextra)
 
 ################################################################
 # Git Version

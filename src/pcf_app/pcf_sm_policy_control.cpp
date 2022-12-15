@@ -66,7 +66,7 @@ pcf_smpc::pcf_smpc(
 }
 
 void pcf_smpc::handle_policy_change(
-    const std::shared_ptr<policy_decision>& decision) {
+    const std::shared_ptr<policy_decision>& /* decision */) {
   Logger::pcf_app().warn("Policy changed, but not implemented!");
 }
 
@@ -106,7 +106,7 @@ status_code pcf_smpc::create_sm_policy_handler(
 
 //------------------------------------------------------------------------------
 sm_policy::status_code pcf_smpc::delete_sm_policy_handler(
-    const std::string& id, const SmPolicyDeleteData& delete_data,
+    const std::string& id, const SmPolicyDeleteData& /* delete_data */,
     std::string& problem_details) {
   // TODO for now, just delete, ignore the delete_data
   std::unique_lock lock_associations(m_associations_mutex);

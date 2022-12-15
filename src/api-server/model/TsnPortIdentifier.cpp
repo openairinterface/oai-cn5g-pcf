@@ -43,12 +43,13 @@ bool TsnPortIdentifier::validate(
   bool success = true;
   const std::string _pathPrefix =
       pathPrefix.empty() ? "TsnPortIdentifier" : pathPrefix;
-
-  /* PortMac */ {
+  /*
+  // PortMac
+  {
     const std::string& value           = m_PortMac;
     const std::string currentValuePath = _pathPrefix + ".portMac";
   }
-
+  */
   if (portNumberIsSet()) {
     const int32_t& value               = m_PortNumber;
     const std::string currentValuePath = _pathPrefix + ".portNumber";

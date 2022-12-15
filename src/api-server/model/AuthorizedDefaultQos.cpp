@@ -117,7 +117,7 @@ bool AuthorizedDefaultQos::validate(
       msg << currentValuePath << ": must be less than or equal to 4095;";
     }
   }
-
+  /*
   if (maxbrUlIsSet()) {
     const std::string& value           = m_MaxbrUl;
     const std::string currentValuePath = _pathPrefix + ".maxbrUl";
@@ -137,7 +137,7 @@ bool AuthorizedDefaultQos::validate(
     const std::string& value           = m_GbrDl;
     const std::string currentValuePath = _pathPrefix + ".gbrDl";
   }
-
+  */
   if (extMaxDataBurstVolIsSet()) {
     const int32_t& value               = m_ExtMaxDataBurstVol;
     const std::string currentValuePath = _pathPrefix + ".extMaxDataBurstVol";

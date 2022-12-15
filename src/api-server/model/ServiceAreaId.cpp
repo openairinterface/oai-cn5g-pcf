@@ -38,21 +38,24 @@ bool ServiceAreaId::validate(std::stringstream& msg) const {
 }
 
 bool ServiceAreaId::validate(
-    std::stringstream& msg, const std::string& pathPrefix) const {
+    std::stringstream& /* msg */, const std::string& /* pathPrefix */) const {
   bool success = true;
+  /*
   const std::string _pathPrefix =
       pathPrefix.empty() ? "ServiceAreaId" : pathPrefix;
 
-  /* Lac */ {
+  // Lac
+  {
     const std::string& value           = m_Lac;
     const std::string currentValuePath = _pathPrefix + ".lac";
   }
 
-  /* Sac */ {
+  // Sac
+  {
     const std::string& value           = m_Sac;
     const std::string currentValuePath = _pathPrefix + ".sac";
   }
-
+  */
   return success;
 }
 

@@ -69,18 +69,17 @@ bool EutraLocation::validate(
       msg << currentValuePath << ": must be less than or equal to 32767;";
     }
   }
-
+  /*
   if (geographicalInformationIsSet()) {
     const std::string& value = m_GeographicalInformation;
     const std::string currentValuePath =
         _pathPrefix + ".geographicalInformation";
   }
-
   if (geodeticInformationIsSet()) {
     const std::string& value           = m_GeodeticInformation;
     const std::string currentValuePath = _pathPrefix + ".geodeticInformation";
   }
-
+  */
   return success;
 }
 

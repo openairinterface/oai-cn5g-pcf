@@ -25,6 +25,7 @@
   \company Eurecom
 */
 #include "conversions.hpp"
+#include "logger.hpp"
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -120,7 +121,11 @@ std::string conv::mncToString(
 //------------------------------------------------------------------------------
 struct in_addr conv::fromString(const std::string addr4) {
   unsigned char buf[sizeof(struct in6_addr)] = {};
-  int s              = inet_pton(AF_INET, addr4.c_str(), buf);
+  auto ret = inet_pton(AF_INET, addr4.c_str(), buf);
+  if (ret != 1) {
+    Logger::pcf_app().error(
+        __PRETTY_FUNCTION__ + std::string{" Failed to convert "} + addr4);
+  }
   struct in_addr* ia = (struct in_addr*) buf;
   return *ia;
 }
