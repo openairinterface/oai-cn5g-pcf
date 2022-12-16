@@ -1,0 +1,54 @@
+################################################################################
+# Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The OpenAirInterface Software Alliance licenses this file to You under
+# the OAI Public License, Version 1.1  (the "License"); you may not use this file
+# except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.openairinterface.org/?page_id=698
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#-------------------------------------------------------------------------------
+# For more information about the OpenAirInterface (OAI) Software Alliance:
+#      contact@openairinterface.org
+################################################################################
+
+##### Base configuration #####
+
+# Name of the component, used towards NRF. Valid values: any string
+name: "PCF"
+# Directories where policy configuration is stored
+pcc_rules_directory: "/openair-pcf/policies/pcc_rules"
+traffic_rules_directory: "/openair-pcf/policies/traffic_rules"
+policy_decisions_directory: "/openair-pcf/policies/policy_decisions"
+
+##### Options to enable/disable #####
+# If "yes": Register to NRF
+register_nrf: on
+# If "yes": Send only HTTP/2 requests
+use_http2: off
+
+##### Local interface #####
+# Local SBI interface, you can choose any key, but it must be unique
+## name: Name of the NIC to read the IP address from
+## Port: unsigned int between 0-65,535
+## api_version: Allowed values: "v1", "v2", used to create the 3GPP API version for the SBI URL
+local_sbi_interface:
+  name: "eth0"
+  port: 80
+  api_version: "v1"
+
+##### Next hop interfaces #####
+
+# Next hop SBI interfaces, you can choose any key, but it must be unique
+## url: has to follow this scheme: http://<name>:<port>/
+## api_version: Allowed values: "v1", "v2", used to create the 3GPP API version for the SBI URL
+nrf:
+  url: "http://oai-nrf:80/"
+  api_version: "v1"
