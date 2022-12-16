@@ -18,36 +18,32 @@
 # For more information about the OpenAirInterface (OAI) Software Alliance:
 #      contact@openairinterface.org
 ################################################################################
-include_directories(${SRC_TOP_DIR}/common)
-include_directories(${SRC_TOP_DIR}/common/msg)
-include_directories(${SRC_TOP_DIR}/common/utils)
-include_directories(${SRC_TOP_DIR}/itti)
-include_directories(${SRC_TOP_DIR}/pcf)
-include_directories(${SRC_TOP_DIR}/api-server/api)
-include_directories(${SRC_TOP_DIR}/api-server/impl)
-include_directories(${SRC_TOP_DIR}/api-server/model)
-include_directories(${SRC_TOP_DIR}/api-server/)
-include_directories(${SRC_TOP_DIR}/pcf_app/sm_policy/)
 
-add_library (PCF STATIC
-  pcf_app.cpp
-  pcf_nrf.cpp
-  pcf_client.cpp 
-  pcf_config.cpp
-  pcf_profile.cpp
-  pcf_event.cpp 
-  pcf_sm_policy_control.cpp
-  task_manager.cpp
-  sm_policy/individual_sm_association.cpp
-  sm_policy/policy_decision.cpp
-  sm_policy/slice_policy_decision.cpp
-  sm_policy/supi_policy_decision.cpp
-  sm_policy/dnn_policy_decision.cpp
-  sm_policy/policy_storage.cpp
-  sm_policy/policy_provisioning_file.cpp
-  )
+SET(CONFIG_DIR ${SRC_TOP_DIR}/common/config)
 
-## Common modules
-include(${SRC_TOP_DIR}/common/logger/logger.cmake)
-include(${SRC_TOP_DIR}/common/utils/utils.cmake)
-include(${SRC_TOP_DIR}/common/config/config.cmake)
+SET(CONFIG_SRC_FILES
+        ${CONFIG_DIR}/config.cpp
+        ${CONFIG_DIR}/config_types.cpp
+        )
+
+if (TARGET ${NF_TARGET})
+## CONFIG used in NF_TARGET (main)
+target_include_directories(${NF_TARGET} PUBLIC ${CONFIG_DIR})
+target_sources(${NF_TARGET} PRIVATE
+        ${CONFIG_SRC_FILES}
+        )
+endif()
+
+if (TARGET ${NF_TARGET_LIB})
+## CONFIG used in NF_TARGET_LIB ("app" library)
+target_include_directories(${NF_TARGET_LIB} PUBLIC ${CONFIG_DIR})
+target_sources(${NF_TARGET_LIB} PRIVATE
+        ${CONFIG_SRC_FILES}
+        )
+endif()
+
+## CONFIG used in NF_TARGET_API (API library)
+#target_include_directories(${NF_TARGET_API_LIB} PUBLIC ${CONFIG_DIR})
+#target_sources(${NF_TARGET_API_LIB} PRIVATE
+#        ${CONFIG_SRC_FILES}
+#        )

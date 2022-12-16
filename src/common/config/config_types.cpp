@@ -1,0 +1,147 @@
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this
+ * file except in compliance with the License. You may obtain a copy of the
+ * License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
+
+/*! \file config_types.cpp
+ \brief
+ \author  Stefan Spettel
+ \company phine.tech
+ \date 2022
+ \email: stefan.spettel@phine.tech
+*/
+
+#include "config_types.hpp"
+#include "fmt/format.h"
+#include "config.hpp"
+#include "conversions.hpp"
+#include "algorithm"
+#include "logger_base.hpp"
+
+using namespace oai::config;
+
+const std::string INNER_LIST_ELEM = "+";
+
+bool sbi_interface::validate() const {
+  // TODO validation
+  return true;
+}
+
+std::string sbi_interface::to_string(const std::string& indent) const {
+  std::string out;
+  unsigned int inner_width = COLUMN_WIDTH - indent.length();
+  out.append("SBI Interface\n");
+  out.append(indent).append(
+      fmt::format(BASE_FORMATTER, INNER_LIST_ELEM, "URL", inner_width, url));
+  out.append(indent).append(fmt::format(
+      BASE_FORMATTER, INNER_LIST_ELEM, "API Version", inner_width,
+      api_version));
+  return out;
+}
+
+config_type_e sbi_interface::get_config_type() const {
+  return type;
+}
+
+bool local_interface::validate() const {
+  // TODO validation
+  return true;
+}
+
+std::string local_interface::to_string(const std::string& indent) const {
+  std::string out;
+  unsigned int inner_width = COLUMN_WIDTH - indent.length();
+  out.append("Local Interface\n");
+  std::string ip4 = conv::toString(addr4);
+  std::string ip6 = conv::toString(addr6);
+
+  out.append(indent).append(fmt::format(
+      BASE_FORMATTER, INNER_LIST_ELEM, "IPv4 Address ", inner_width, ip4));
+  if (!ip6.empty()) {
+    out.append(indent).append(fmt::format(
+        BASE_FORMATTER, INNER_LIST_ELEM, "IPv6 Address", inner_width, ip4));
+  }
+  out.append(indent).append(
+      fmt::format(BASE_FORMATTER, INNER_LIST_ELEM, "MTU", inner_width, mtu));
+  out.append(indent).append(fmt::format(
+      BASE_FORMATTER, INNER_LIST_ELEM, "Interface name: ", inner_width,
+      iface_name));
+  out.append(indent).append(
+      fmt::format(BASE_FORMATTER, INNER_LIST_ELEM, "Port", inner_width, port));
+
+  return out;
+}
+
+config_type_e local_interface::get_config_type() const {
+  return type;
+}
+
+bool local_sbi_interface::validate() const {
+  bool sbi_validate = validate_sbi_api_version(api_version);
+  if (!sbi_validate) {
+    return false;
+  }
+  return local_interface::validate();
+}
+
+std::string local_sbi_interface::to_string(const std::string& indent) const {
+  unsigned int inner_width = COLUMN_WIDTH - indent.length();
+  std::string out          = local_interface::to_string(indent);
+  out.append(indent).append(fmt::format(
+      BASE_FORMATTER, INNER_LIST_ELEM, "API Version", inner_width,
+      api_version));
+  return out;
+}
+
+bool network_interface::validate_sbi_api_version(const std::string& v) {
+  auto it =
+      std::find(allowed_api_versions.begin(), allowed_api_versions.end(), v);
+  if (it == allowed_api_versions.end()) {
+    logger::logger_registry::get_logger(LOGGER_NAME)
+        .error("API version %s not valid!", v);
+    return false;
+  }
+  return true;
+}
+
+std::string string_config_value::to_string(const std::string&) const {
+  std::string out;
+  return out.append(value);
+}
+
+bool string_config_value::validate() const {
+  return false;
+}
+
+config_type_e string_config_value::get_config_type() const {
+  return type;
+}
+
+std::string option_config_value::to_string(const std::string&) const {
+  std::string val = value ? "Yes" : "No";
+  return val;
+}
+
+bool option_config_value::validate() const {
+  return true;
+}
+
+config_type_e option_config_value::get_config_type() const {
+  return type;
+}

@@ -285,6 +285,7 @@ add_executable(pcf
   )
 
 include(${BUILD_TOP_DIR}/pcf/used_common_files.cmake)
+include(${SRC_TOP_DIR}/common/config/config.cmake)
 
 IF(STATIC_LINKING)
     SET(CMAKE_EXE_LINKER_FLAGS "-static")
