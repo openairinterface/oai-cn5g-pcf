@@ -80,8 +80,7 @@ void from_json(const nlohmann::json& j, AdditionalAccessInfo& o) {
 AccessType AdditionalAccessInfo::getAccessType() const {
   return m_AccessType;
 }
-void AdditionalAccessInfo::setAccessType(
-    AccessType const& value) {
+void AdditionalAccessInfo::setAccessType(AccessType const& value) {
   m_AccessType = value;
 }
 RatType AdditionalAccessInfo::getRatType() const {
