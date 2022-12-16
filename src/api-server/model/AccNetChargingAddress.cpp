@@ -41,8 +41,9 @@ bool AccNetChargingAddress::validate(std::stringstream& msg) const {
 }
 
 bool AccNetChargingAddress::validate(
-    std::stringstream& msg, const std::string& pathPrefix) const {
+    std::stringstream& /* msg */, const std::string& /* pathPrefix */) const {
   bool success = true;
+  /*
   const std::string _pathPrefix =
       pathPrefix.empty() ? "AccNetChargingAddress" : pathPrefix;
 
@@ -50,6 +51,7 @@ bool AccNetChargingAddress::validate(
     const std::string& value           = m_AnChargIpv4Addr;
     const std::string currentValuePath = _pathPrefix + ".anChargIpv4Addr";
   }
+  */
 
   return success;
 }

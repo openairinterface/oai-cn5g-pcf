@@ -93,17 +93,18 @@ bool SmPolicyContextData::validate(
   bool success = true;
   const std::string _pathPrefix =
       pathPrefix.empty() ? "SmPolicyContextData" : pathPrefix;
-
+  /*
   if (gpsiIsSet()) {
     const std::string& value           = m_Gpsi;
     const std::string currentValuePath = _pathPrefix + ".gpsi";
   }
 
-  /* Supi */ {
+  // Supi
+  {
     const std::string& value           = m_Supi;
     const std::string currentValuePath = _pathPrefix + ".supi";
   }
-
+  */
   if (interGrpIdsIsSet()) {
     const std::vector<std::string>& value = m_InterGrpIds;
     const std::string currentValuePath    = _pathPrefix + ".interGrpIds";
@@ -112,6 +113,7 @@ bool SmPolicyContextData::validate(
       success = false;
       msg << currentValuePath << ": must have at least 1 elements;";
     }
+    /*
     {  // Recursive validation of array elements
       const std::string oldValuePath = currentValuePath;
       int i                          = 0;
@@ -122,6 +124,7 @@ bool SmPolicyContextData::validate(
         i++;
       }
     }
+    */
   }
 
   /* PduSessionId */ {
@@ -137,7 +140,7 @@ bool SmPolicyContextData::validate(
       msg << currentValuePath << ": must be less than or equal to 255;";
     }
   }
-
+  /*
   if (peiIsSet()) {
     const std::string& value           = m_Pei;
     const std::string currentValuePath = _pathPrefix + ".pei";
@@ -152,7 +155,7 @@ bool SmPolicyContextData::validate(
     const std::string& value           = m_SuppFeat;
     const std::string currentValuePath = _pathPrefix + ".suppFeat";
   }
-
+  */
   return success;
 }
 

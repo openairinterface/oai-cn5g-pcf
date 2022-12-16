@@ -145,7 +145,7 @@ bool SmPolicyUpdateContextData::validate(
       }
     }
   }
-
+  /*
   if (relIpv4AddressIsSet()) {
     const std::string& value           = m_RelIpv4Address;
     const std::string currentValuePath = _pathPrefix + ".relIpv4Address";
@@ -165,7 +165,7 @@ bool SmPolicyUpdateContextData::validate(
     const std::string& value           = m_UeMac;
     const std::string currentValuePath = _pathPrefix + ".ueMac";
   }
-
+  */
   if (accuUsageReportsIsSet()) {
     const std::vector<AccuUsageReport>& value = m_AccuUsageReports;
     const std::string currentValuePath = _pathPrefix + ".accuUsageReports";
@@ -300,12 +300,12 @@ bool SmPolicyUpdateContextData::validate(
       }
     }
   }
-
+  /*
   if (repPraInfosIsSet()) {
     const std::map<std::string, PresenceInfo>& value = m_RepPraInfos;
     const std::string currentValuePath = _pathPrefix + ".repPraInfos";
   }
-
+  */
   if (tsnPortManContNwttsIsSet()) {
     const std::vector<PortManagementContainer>& value = m_TsnPortManContNwtts;
     const std::string currentValuePath = _pathPrefix + ".tsnPortManContNwtts";

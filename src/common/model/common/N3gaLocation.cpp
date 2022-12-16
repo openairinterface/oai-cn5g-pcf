@@ -52,7 +52,7 @@ bool N3gaLocation::validate(
   bool success = true;
   const std::string _pathPrefix =
       pathPrefix.empty() ? "N3gaLocation" : pathPrefix;
-
+  /*
   if (n3IwfIdIsSet()) {
     const std::string& value           = m_N3IwfId;
     const std::string currentValuePath = _pathPrefix + ".n3IwfId";
@@ -62,7 +62,7 @@ bool N3gaLocation::validate(
     const std::string& value           = m_UeIpv4Addr;
     const std::string currentValuePath = _pathPrefix + ".ueIpv4Addr";
   }
-
+  */
   if (portNumberIsSet()) {
     const int32_t& value               = m_PortNumber;
     const std::string currentValuePath = _pathPrefix + ".portNumber";

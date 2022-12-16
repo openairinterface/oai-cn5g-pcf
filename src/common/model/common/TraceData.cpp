@@ -41,21 +41,24 @@ bool TraceData::validate(std::stringstream& msg) const {
 }
 
 bool TraceData::validate(
-    std::stringstream& msg, const std::string& pathPrefix) const {
-  bool success                  = true;
+    std::stringstream& /* msg */, const std::string& /* pathPrefix */) const {
+  bool success = true;
+  /*
   const std::string _pathPrefix = pathPrefix.empty() ? "TraceData" : pathPrefix;
-
-  /* TraceRef */ {
+  // TraceRef
+  {
     const std::string& value           = m_TraceRef;
     const std::string currentValuePath = _pathPrefix + ".traceRef";
   }
 
-  /* NeTypeList */ {
+  // NeTypeList
+  {
     const std::string& value           = m_NeTypeList;
     const std::string currentValuePath = _pathPrefix + ".neTypeList";
   }
 
-  /* EventList */ {
+  // EventList
+  {
     const std::string& value           = m_EventList;
     const std::string currentValuePath = _pathPrefix + ".eventList";
   }
@@ -70,7 +73,7 @@ bool TraceData::validate(
     const std::string& value           = m_InterfaceList;
     const std::string currentValuePath = _pathPrefix + ".interfaceList";
   }
-
+  */
   return success;
 }
 

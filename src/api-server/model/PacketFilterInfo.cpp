@@ -47,11 +47,12 @@ bool PacketFilterInfo::validate(std::stringstream& msg) const {
 }
 
 bool PacketFilterInfo::validate(
-    std::stringstream& msg, const std::string& pathPrefix) const {
+    std::stringstream& /* msg */, const std::string& /* pathPrefix */) const {
   bool success = true;
+  /*
   const std::string _pathPrefix =
       pathPrefix.empty() ? "PacketFilterInfo" : pathPrefix;
-
+  */
   return success;
 }
 

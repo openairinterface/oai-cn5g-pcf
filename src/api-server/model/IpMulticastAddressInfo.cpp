@@ -44,8 +44,9 @@ bool IpMulticastAddressInfo::validate(std::stringstream& msg) const {
 }
 
 bool IpMulticastAddressInfo::validate(
-    std::stringstream& msg, const std::string& pathPrefix) const {
+    std::stringstream& /* msg */, const std::string& /* pathPrefix */) const {
   bool success = true;
+  /*
   const std::string _pathPrefix =
       pathPrefix.empty() ? "IpMulticastAddressInfo" : pathPrefix;
 
@@ -58,7 +59,7 @@ bool IpMulticastAddressInfo::validate(
     const std::string& value           = m_Ipv4MulAddr;
     const std::string currentValuePath = _pathPrefix + ".ipv4MulAddr";
   }
-
+  */
   return success;
 }
 

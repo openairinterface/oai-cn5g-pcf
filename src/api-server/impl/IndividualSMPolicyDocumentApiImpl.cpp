@@ -39,26 +39,27 @@ void IndividualSMPolicyDocumentApiImpl::delete_sm_policy(
   std::string problem_description;
   std::string content_type = "application/problem+json";
   nlohmann::json json_data;
-  int http_code   = 0;
+  http_status_code_e http_code;
   status_code res = m_smpc_service->delete_sm_policy_handler(
       smPolicyId, smPolicyDeleteData, problem_description);
 
   switch (res) {
     case status_code::OK:
-      http_code = HTTP_STATUS_CODE_204_NO_CONTENT;
+      http_code = http_status_code_e::HTTP_STATUS_CODE_204_NO_CONTENT;
       break;
 
     case status_code::NOT_FOUND:
       problem_details.setDetail(problem_description);
       // This is not defined in the standard
       problem_details.setCause("SM_POLICY_ID_NOT_FOUND");
-      http_code = HTTP_STATUS_CODE_404_NOT_FOUND;
+      http_code = http_status_code_e::HTTP_STATUS_CODE_404_NOT_FOUND;
       break;
 
     default:
       problem_details.setDetail("Internal Service Error: Unknown return code.");
       problem_details.setCause("INTERNAL_ERROR");
-      http_code = HTTP_STATUS_CODE_500_INTERNAL_SERVER_ERROR;
+      http_code =
+          http_status_code_e::HTTP_STATUS_CODE_500_INTERNAL_SERVER_ERROR;
   }
 
   if (res == status_code::OK) {
@@ -77,7 +78,7 @@ void IndividualSMPolicyDocumentApiImpl::get_sm_policy(
   std::string problem_description;
   std::string content_type = "application/problem+json";
   nlohmann::json json_data;
-  int http_code = 0;
+  http_status_code_e http_code;
 
   SmPolicyControl sm_policy_control;
 
@@ -86,7 +87,7 @@ void IndividualSMPolicyDocumentApiImpl::get_sm_policy(
 
   switch (res) {
     case status_code::OK:
-      http_code    = HTTP_STATUS_CODE_200_OK;
+      http_code    = http_status_code_e::HTTP_STATUS_CODE_200_OK;
       content_type = "application/json";
       break;
 
@@ -94,13 +95,14 @@ void IndividualSMPolicyDocumentApiImpl::get_sm_policy(
       problem_details.setDetail(problem_description);
       // This is not defined in the standard
       problem_details.setCause("SM_POLICY_ID_NOT_FOUND");
-      http_code = HTTP_STATUS_CODE_404_NOT_FOUND;
+      http_code = http_status_code_e::HTTP_STATUS_CODE_404_NOT_FOUND;
       break;
 
     default:
       problem_details.setDetail("Internal Service Error: Unknown return code.");
       problem_details.setCause("INTERNAL_ERROR");
-      http_code = HTTP_STATUS_CODE_500_INTERNAL_SERVER_ERROR;
+      http_code =
+          http_status_code_e::HTTP_STATUS_CODE_500_INTERNAL_SERVER_ERROR;
   }
 
   if (res == status_code::OK) {
@@ -123,7 +125,7 @@ void IndividualSMPolicyDocumentApiImpl::update_sm_policy(
   std::string problem_description = "";
   std::string content_type        = "application/problem+json";
   nlohmann::json json_data;
-  int http_code = 0;
+  http_status_code_e http_code;
 
   SmPolicyDecision decision_update;
 
@@ -136,26 +138,27 @@ void IndividualSMPolicyDocumentApiImpl::update_sm_policy(
   switch (res) {
     case status_code::OK:
       content_type = "application/json";
-      http_code    = HTTP_STATUS_CODE_200_OK;
+      http_code    = http_status_code_e::HTTP_STATUS_CODE_200_OK;
       break;
     case status_code::INVALID_PARAMETERS:
-      http_code = HTTP_STATUS_CODE_400_BAD_REQUEST;
+      http_code = http_status_code_e::HTTP_STATUS_CODE_400_BAD_REQUEST;
       problem_details.setCause("ERROR_INITIAL_PARAMETERS");
       break;
     case status_code::CONTEXT_DENIED:
       // should map to 403 but not defined in standard for this request
-      http_code = HTTP_STATUS_CODE_400_BAD_REQUEST;
+      http_code = http_status_code_e::HTTP_STATUS_CODE_400_BAD_REQUEST;
       problem_details.setCause("ERROR_INITIAL_PARAMETERS");
       break;
     case status_code::NOT_FOUND:
       // TODO This is not defined in the standard, but this scenario is missig
       // we could map it to the 400 Bad request but that is somehow misleading
       problem_details.setCause("SM_POLICY_ID_NOT_FOUND");
-      http_code = HTTP_STATUS_CODE_404_NOT_FOUND;
+      http_code = http_status_code_e::HTTP_STATUS_CODE_404_NOT_FOUND;
       break;
     default:
       problem_details.setCause("INTERNAL_ERROR");
-      http_code = HTTP_STATUS_CODE_500_INTERNAL_SERVER_ERROR;
+      http_code =
+          http_status_code_e::HTTP_STATUS_CODE_500_INTERNAL_SERVER_ERROR;
   }
 
   if (res == status_code::OK) {

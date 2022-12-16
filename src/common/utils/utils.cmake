@@ -18,15 +18,34 @@
 # For more information about the OpenAirInterface (OAI) Software Alliance:
 #      contact@openairinterface.org
 ################################################################################
-set(ITTI_DIR ${CMAKE_CURRENT_SOURCE_DIR}/itti)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/itti)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/msg)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/..)
-include_directories(${SRC_TOP_DIR}/../build/ext/spdlog/include)
 
-add_library(3GPP_COMMON_TYPES STATIC
-  ${CMAKE_CURRENT_SOURCE_DIR}/logger.cpp
-)
+SET(UTILS_DIR ${SRC_TOP_DIR}/common/utils)
 
+## Logger used in NF_TARGET (main)
+## TODO for now only use utils actually used by PCF
+target_include_directories(${NF_TARGET} PUBLIC ${UTILS_DIR})
+target_sources(${NF_TARGET} PRIVATE
+        ${UTILS_DIR}/conversions.cpp
+        ${UTILS_DIR}/string.cpp
+        ${UTILS_DIR}/fqdn.cpp
+        ${UTILS_DIR}/if.cpp
+        )
+
+## Logger used in NF_TARGET_LIB ("app" library)
+target_include_directories(${NF_TARGET_LIB} PUBLIC ${LOGGER_DIR})
+target_sources(${NF_TARGET_LIB} PRIVATE
+        ${UTILS_DIR}/conversions.cpp
+        ${UTILS_DIR}/string.cpp
+        ${UTILS_DIR}/fqdn.cpp
+        ${UTILS_DIR}/if.cpp
+        )
+
+## UTILS used in NF_TARGET_API (API library
+target_include_directories(${NF_TARGET_API_LIB} PUBLIC ${LOGGER_DIR})
+target_sources(${NF_TARGET_API_LIB} PRIVATE
+        ${UTILS_DIR}/conversions.cpp
+        ${UTILS_DIR}/string.cpp
+        ${UTILS_DIR}/fqdn.cpp
+        ${UTILS_DIR}/if.cpp
+        )
 

@@ -28,7 +28,6 @@ include_directories(${PCF_API_SERVER_DIR}/)
 include_directories(${SRC_TOP_DIR}/pcf_app)
 include_directories(${SRC_TOP_DIR}/common)
 include_directories(${SRC_TOP_DIR}/common/utils)
-include_directories(${SRC_TOP_DIR}/../build/ext/spdlog/include)
 
 file(GLOB PCF_API_SERVER_src_files
     ${PCF_API_SERVER_DIR}/pcf-api-server.cpp

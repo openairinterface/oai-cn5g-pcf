@@ -36,11 +36,13 @@ bool Tai::validate(std::stringstream& msg) const {
 }
 
 bool Tai::validate(
-    std::stringstream& msg, const std::string& pathPrefix) const {
-  bool success                  = true;
+    std::stringstream& /* msg */, const std::string& /* pathPrefix */) const {
+  bool success = true;
+  /*
   const std::string _pathPrefix = pathPrefix.empty() ? "Tai" : pathPrefix;
 
-  /* Tac */ {
+  // Tac
+  {
     const std::string& value           = m_Tac;
     const std::string currentValuePath = _pathPrefix + ".tac";
   }
@@ -49,7 +51,7 @@ bool Tai::validate(
     const std::string& value           = m_Nid;
     const std::string currentValuePath = _pathPrefix + ".nid";
   }
-
+  */
   return success;
 }
 

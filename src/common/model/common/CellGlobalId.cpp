@@ -26,7 +26,8 @@ CellGlobalId::CellGlobalId() {
 void CellGlobalId::validate() const {
   std::stringstream msg;
   if (!validate(msg)) {
-    throw oai::model::common::helpers::ValidationException(msg.str());
+    //        throw
+    //        org::openapitools::server::helpers::ValidationException(msg.str());
   }
 }
 
@@ -35,16 +36,24 @@ bool CellGlobalId::validate(std::stringstream& msg) const {
 }
 
 bool CellGlobalId::validate(
-    std::stringstream& msg, const std::string& pathPrefix) const {
+    std::stringstream& /* msg */, const std::string& /* pathPrefix */) const {
   bool success = true;
+  /*
   const std::string _pathPrefix =
       pathPrefix.empty() ? "CellGlobalId" : pathPrefix;
 
-  /* CellId */ {
+  // Lac
+  {
+    const std::string& value           = m_Lac;
+    const std::string currentValuePath = _pathPrefix + ".lac";
+  }
+
+  // CellId
+  {
     const std::string& value           = m_CellId;
     const std::string currentValuePath = _pathPrefix + ".cellId";
   }
-
+  */
   return success;
 }
 

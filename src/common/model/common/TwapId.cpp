@@ -38,10 +38,11 @@ bool TwapId::validate(std::stringstream& msg) const {
 }
 
 bool TwapId::validate(
-    std::stringstream& msg, const std::string& pathPrefix) const {
-  bool success                  = true;
+    std::stringstream& /* msg */, const std::string& /* pathPrefix */) const {
+  bool success = true;
+  /*
   const std::string _pathPrefix = pathPrefix.empty() ? "TwapId" : pathPrefix;
-
+  */
   return success;
 }
 

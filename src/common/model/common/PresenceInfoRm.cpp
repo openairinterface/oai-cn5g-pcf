@@ -52,10 +52,6 @@ bool PresenceInfoRm::validate(
     const std::vector<oai::model::common::Tai>& value = m_TrackingAreaList;
     const std::string currentValuePath = _pathPrefix + ".trackingAreaList";
 
-    if (value.size() < 0) {
-      success = false;
-      msg << currentValuePath << ": must have at least 0 elements;";
-    }
     {  // Recursive validation of array elements
       const std::string oldValuePath = currentValuePath;
       int i                          = 0;
@@ -75,10 +71,6 @@ bool PresenceInfoRm::validate(
     const std::vector<oai::model::common::Ecgi>& value = m_EcgiList;
     const std::string currentValuePath = _pathPrefix + ".ecgiList";
 
-    if (value.size() < 0) {
-      success = false;
-      msg << currentValuePath << ": must have at least 0 elements;";
-    }
     {  // Recursive validation of array elements
       const std::string oldValuePath = currentValuePath;
       int i                          = 0;
@@ -98,10 +90,6 @@ bool PresenceInfoRm::validate(
     const std::vector<oai::model::common::Ncgi>& value = m_NcgiList;
     const std::string currentValuePath = _pathPrefix + ".ncgiList";
 
-    if (value.size() < 0) {
-      success = false;
-      msg << currentValuePath << ": must have at least 0 elements;";
-    }
     {  // Recursive validation of array elements
       const std::string oldValuePath = currentValuePath;
       int i                          = 0;

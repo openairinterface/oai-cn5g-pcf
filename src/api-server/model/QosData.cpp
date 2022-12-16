@@ -89,7 +89,7 @@ bool QosData::validate(
       msg << currentValuePath << ": must be less than or equal to 255;";
     }
   }
-
+  /*
   if (maxbrUlIsSet()) {
     const std::string& value           = m_MaxbrUl;
     const std::string currentValuePath = _pathPrefix + ".maxbrUl";
@@ -109,7 +109,7 @@ bool QosData::validate(
     const std::string& value           = m_GbrDl;
     const std::string currentValuePath = _pathPrefix + ".gbrDl";
   }
-
+  */
   if (priorityLevelIsSet()) {
     const int32_t& value               = m_PriorityLevel;
     const std::string currentValuePath = _pathPrefix + ".priorityLevel";

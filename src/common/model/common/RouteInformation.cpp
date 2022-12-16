@@ -41,12 +41,12 @@ bool RouteInformation::validate(
   bool success = true;
   const std::string _pathPrefix =
       pathPrefix.empty() ? "RouteInformation" : pathPrefix;
-
+  /*
   if (ipv4AddrIsSet()) {
     const std::string& value           = m_Ipv4Addr;
     const std::string currentValuePath = _pathPrefix + ".ipv4Addr";
   }
-
+  */
   /* PortNumber */ {
     const int32_t& value               = m_PortNumber;
     const std::string currentValuePath = _pathPrefix + ".portNumber";

@@ -44,8 +44,8 @@ void SMPoliciesCollectionApi::setupRoutes() {
 }
 
 std::pair<Pistache::Http::Code, std::string>
-SMPoliciesCollectionApi::handleParsingException(const std::exception& ex) const
-    noexcept {
+SMPoliciesCollectionApi::handleParsingException(
+    const std::exception& /* ex */) const noexcept {
   try {
     throw;
   } catch (nlohmann::detail::exception& e) {

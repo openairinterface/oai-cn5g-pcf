@@ -128,8 +128,6 @@ int pcf_config::check_directory(
 //------------------------------------------------------------------------------
 int pcf_config::load(const string& config_file) {
   Config cfg;
-  unsigned char buf_in_addr[sizeof(struct in_addr) + 1];
-  unsigned char buf_in6_addr[sizeof(struct in6_addr) + 1];
 
   // Read the file. If there is an error, report it and exit.
   try {
@@ -148,10 +146,9 @@ int pcf_config::load(const string& config_file) {
 
   const Setting& root = cfg.getRoot();
 
-  try {
-    const Setting& pcf_cfg = root[PCF_CONFIG_STRING_PCF_CONFIG];
-  } catch (const SettingNotFoundException& nfex) {
-    Logger::pcf_app().error("%s : %s", nfex.what(), nfex.getPath());
+  if (root.exists(PCF_CONFIG_STRING_PCF_CONFIG) == false) {
+    Logger::pcf_app().error(
+        "Setting does not exist: " + std::string{PCF_CONFIG_STRING_PCF_CONFIG});
     return RETURNerror;
   }
 
@@ -203,7 +200,6 @@ int pcf_config::load(const string& config_file) {
     const Setting& support_features =
         pcf_cfg[PCF_CONFIG_STRING_SUPPORT_FEATURES];
     string opt;
-    unsigned int httpVersion = {0};
     support_features.lookupValue(
         PCF_CONFIG_STRING_SUPPORT_FEATURES_REGISTER_NRF, opt);
     if (boost::iequals(opt, "yes")) {

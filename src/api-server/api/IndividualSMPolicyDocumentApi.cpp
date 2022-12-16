@@ -57,7 +57,7 @@ void IndividualSMPolicyDocumentApi::setupRoutes() {
 
 std::pair<Pistache::Http::Code, std::string>
 IndividualSMPolicyDocumentApi::handleParsingException(
-    const std::exception& ex) const noexcept {
+    const std::exception& /* ex */) const noexcept {
   try {
     throw;
   } catch (nlohmann::detail::exception& e) {

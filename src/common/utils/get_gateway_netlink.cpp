@@ -59,7 +59,8 @@ bool util::get_iface_l2_addr(const std::string& iface, std::string& mac) {
 //------------------------------------------------------------------------------
 bool util::get_gateway_and_iface(std::string& gw, std::string& iface) {
   int received_bytes = 0, msg_len = 0, route_attribute_len = 0;
-  int sock = -1, msgseq = 0;
+  int sock            = -1;
+  unsigned int msgseq = 0;
   struct nlmsghdr *nlh, *nlmsg;
   struct rtmsg* route_entry;
   // This struct contain route attributes (route type)
@@ -68,7 +69,6 @@ bool util::get_gateway_and_iface(std::string& gw, std::string& iface) {
   char msgbuf[BUFFER_SIZE], buffer[BUFFER_SIZE];
   char* ptr = buffer;
   struct timeval tv;
-  int rv = RETURNok;
 
   if ((sock = socket(AF_NETLINK, SOCK_RAW, NETLINK_ROUTE)) < 0) {
     perror("socket failed");
@@ -130,7 +130,8 @@ bool util::get_gateway_and_iface(std::string& gw, std::string& iface) {
 
     /* Break if its not a multi part message */
     if ((nlmsg->nlmsg_flags & NLM_F_MULTI) == 0) break;
-  } while ((nlmsg->nlmsg_seq != msgseq) || (nlmsg->nlmsg_pid != getpid()));
+  } while ((nlmsg->nlmsg_seq != msgseq) ||
+           (nlmsg->nlmsg_pid != static_cast<unsigned int>(getpid())));
 
   /* parse response */
   for (; NLMSG_OK(nlh, received_bytes); nlh = NLMSG_NEXT(nlh, received_bytes)) {
@@ -164,8 +165,6 @@ bool util::get_gateway_and_iface(std::string& gw, std::string& iface) {
       gw.assign(gateway_address);
       iface.assign(interface);
       break;
-    } else {
-      rv = false;
     }
   }
   close(sock);

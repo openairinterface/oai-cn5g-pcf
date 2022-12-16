@@ -23,7 +23,6 @@ include_directories(${SRC_TOP_DIR}/common/msg)
 include_directories(${SRC_TOP_DIR}/common/utils)
 include_directories(${SRC_TOP_DIR}/itti)
 include_directories(${SRC_TOP_DIR}/pcf)
-include_directories(${SRC_TOP_DIR}/../build/ext/spdlog/include)
 include_directories(${SRC_TOP_DIR}/api-server/api)
 include_directories(${SRC_TOP_DIR}/api-server/impl)
 include_directories(${SRC_TOP_DIR}/api-server/model)
@@ -47,5 +46,9 @@ add_library (PCF STATIC
   sm_policy/policy_storage.cpp
   sm_policy/policy_provisioning_file.cpp
   )
+
+## Common modules
+include(${SRC_TOP_DIR}/common/logger/logger.cmake)
+include(${SRC_TOP_DIR}/common/utils/utils.cmake)
 
 include(${BUILD_TOP_DIR}/pcf/used_common_files.cmake)

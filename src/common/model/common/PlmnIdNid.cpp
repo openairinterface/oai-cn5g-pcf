@@ -37,16 +37,18 @@ bool PlmnIdNid::validate(std::stringstream& msg) const {
 }
 
 bool PlmnIdNid::validate(
-    std::stringstream& msg, const std::string& pathPrefix) const {
-  bool success                  = true;
+    std::stringstream& /* msg */, const std::string& /* pathPrefix */) const {
+  bool success = true;
+  /*
   const std::string _pathPrefix = pathPrefix.empty() ? "PlmnIdNid" : pathPrefix;
-
-  /* Mcc */ {
+  // Mcc
+  {
     const std::string& value           = m_Mcc;
     const std::string currentValuePath = _pathPrefix + ".mcc";
   }
 
-  /* Mnc */ {
+  // Mnc
+  {
     const std::string& value           = m_Mnc;
     const std::string currentValuePath = _pathPrefix + ".mnc";
   }
@@ -55,7 +57,7 @@ bool PlmnIdNid::validate(
     const std::string& value           = m_Nid;
     const std::string currentValuePath = _pathPrefix + ".nid";
   }
-
+  */
   return success;
 }
 
