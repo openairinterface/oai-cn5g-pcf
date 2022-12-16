@@ -77,11 +77,11 @@ void from_json(const nlohmann::json& j, AdditionalAccessInfo& o) {
   }
 }
 
-oai::model::common::AccessType AdditionalAccessInfo::getAccessType() const {
+AccessType AdditionalAccessInfo::getAccessType() const {
   return m_AccessType;
 }
 void AdditionalAccessInfo::setAccessType(
-    oai::model::common::AccessType const& value) {
+    AccessType const& value) {
   m_AccessType = value;
 }
 RatType AdditionalAccessInfo::getRatType() const {
