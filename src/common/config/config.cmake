@@ -24,6 +24,7 @@ SET(CONFIG_DIR ${SRC_TOP_DIR}/common/config)
 SET(CONFIG_SRC_FILES
         ${CONFIG_DIR}/config.cpp
         ${CONFIG_DIR}/config_types.cpp
+        ${CONFIG_DIR}/config_yaml_file.cpp
         )
 
 if (TARGET ${NF_TARGET})
