@@ -69,8 +69,8 @@ class AccNetChargingAddress {
   /// <summary>
   ///
   /// </summary>
-  Ipv6Addr getAnChargIpv6Addr() const;
-  void setAnChargIpv6Addr(Ipv6Addr const& value);
+  oai::model::common::Ipv6Addr getAnChargIpv6Addr() const;
+  void setAnChargIpv6Addr(oai::model::common::Ipv6Addr const& value);
   bool anChargIpv6AddrIsSet() const;
   void unsetAnChargIpv6Addr();
 
@@ -80,7 +80,7 @@ class AccNetChargingAddress {
  protected:
   std::string m_AnChargIpv4Addr;
   bool m_AnChargIpv4AddrIsSet;
-  Ipv6Addr m_AnChargIpv6Addr;
+  oai::model::common::Ipv6Addr m_AnChargIpv6Addr;
   bool m_AnChargIpv6AddrIsSet;
 };
 

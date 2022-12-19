@@ -67,8 +67,8 @@ class QosCharacteristics {
   /// <summary>
   ///
   /// </summary>
-  QosResourceType getResourceType() const;
-  void setResourceType(QosResourceType const& value);
+  oai::model::common::QosResourceType getResourceType() const;
+  void setResourceType(oai::model::common::QosResourceType const& value);
   /// <summary>
   ///
   /// </summary>
@@ -112,7 +112,7 @@ class QosCharacteristics {
  protected:
   int32_t m_r_5qi;
 
-  QosResourceType m_ResourceType;
+  oai::model::common::QosResourceType m_ResourceType;
 
   int32_t m_PriorityLevel;
 

@@ -50,3 +50,5 @@ add_library (PCF STATIC
 ## Common modules
 include(${SRC_TOP_DIR}/common/logger/logger.cmake)
 include(${SRC_TOP_DIR}/common/utils/utils.cmake)
+
+include(${BUILD_TOP_DIR}/pcf/used_common_files.cmake)

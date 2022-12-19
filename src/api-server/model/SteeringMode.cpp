@@ -20,6 +20,8 @@ namespace oai {
 namespace pcf {
 namespace model {
 
+using namespace oai::model::common;
+
 SteeringMode::SteeringMode() {
   m_ActiveIsSet   = false;
   m_StandbyIsSet  = false;

@@ -20,6 +20,8 @@ namespace oai {
 namespace pcf {
 namespace model {
 
+using namespace oai::model::common;
+
 QosCharacteristics::QosCharacteristics() {
   m_r_5qi                   = 0;
   m_PriorityLevel           = 0;

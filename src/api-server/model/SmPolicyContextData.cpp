@@ -20,6 +20,8 @@ namespace oai {
 namespace pcf {
 namespace model {
 
+using namespace oai::model::common;
+
 SmPolicyContextData::SmPolicyContextData() {
   m_AccNetChIdIsSet              = false;
   m_ChargEntityAddrIsSet         = false;

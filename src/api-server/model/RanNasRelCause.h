@@ -61,8 +61,8 @@ class RanNasRelCause {
   /// <summary>
   ///
   /// </summary>
-  NgApCause getNgApCause() const;
-  void setNgApCause(NgApCause const& value);
+  oai::model::common::NgApCause getNgApCause() const;
+  void setNgApCause(oai::model::common::NgApCause const& value);
   bool ngApCauseIsSet() const;
   void unsetNgApCause();
   /// <summary>
@@ -84,7 +84,7 @@ class RanNasRelCause {
   friend void from_json(const nlohmann::json& j, RanNasRelCause& o);
 
  protected:
-  NgApCause m_NgApCause;
+  oai::model::common::NgApCause m_NgApCause;
   bool m_NgApCauseIsSet;
   int32_t m_r_5gMmCause;
   bool m_r_5gMmCauseIsSet;

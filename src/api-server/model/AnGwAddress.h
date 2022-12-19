@@ -69,8 +69,8 @@ class AnGwAddress {
   /// <summary>
   ///
   /// </summary>
-  Ipv6Addr getAnGwIpv6Addr() const;
-  void setAnGwIpv6Addr(Ipv6Addr const& value);
+  oai::model::common::Ipv6Addr getAnGwIpv6Addr() const;
+  void setAnGwIpv6Addr(oai::model::common::Ipv6Addr const& value);
   bool anGwIpv6AddrIsSet() const;
   void unsetAnGwIpv6Addr();
 
@@ -80,7 +80,7 @@ class AnGwAddress {
  protected:
   std::string m_AnGwIpv4Addr;
   bool m_AnGwIpv4AddrIsSet;
-  Ipv6Addr m_AnGwIpv6Addr;
+  oai::model::common::Ipv6Addr m_AnGwIpv6Addr;
   bool m_AnGwIpv6AddrIsSet;
 };
 

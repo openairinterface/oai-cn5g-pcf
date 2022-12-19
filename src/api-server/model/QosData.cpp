@@ -20,6 +20,8 @@ namespace oai {
 namespace pcf {
 namespace model {
 
+using namespace oai::model::common;
+
 QosData::QosData() {
   m_QosId                     = "";
   m_r_5qi                     = 0;

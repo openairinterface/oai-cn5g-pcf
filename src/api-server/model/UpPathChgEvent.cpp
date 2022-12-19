@@ -20,6 +20,8 @@ namespace oai {
 namespace pcf {
 namespace model {
 
+using namespace oai::model::common;
+
 UpPathChgEvent::UpPathChgEvent() {
   m_NotificationUri = "";
   m_NotifCorreId    = "";

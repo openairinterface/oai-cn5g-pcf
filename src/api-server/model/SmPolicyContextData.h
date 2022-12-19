@@ -118,8 +118,8 @@ class SmPolicyContextData {
   /// <summary>
   ///
   /// </summary>
-  PduSessionType getPduSessionType() const;
-  void setPduSessionType(PduSessionType const& value);
+  oai::model::common::PduSessionType getPduSessionType() const;
+  void setPduSessionType(oai::model::common::PduSessionType const& value);
   /// <summary>
   ///
   /// </summary>
@@ -147,15 +147,15 @@ class SmPolicyContextData {
   /// <summary>
   ///
   /// </summary>
-  AccessType getAccessType() const;
-  void setAccessType(AccessType const& value);
+  oai::model::common::AccessType getAccessType() const;
+  void setAccessType(oai::model::common::AccessType const& value);
   bool accessTypeIsSet() const;
   void unsetAccessType();
   /// <summary>
   ///
   /// </summary>
-  RatType getRatType() const;
-  void setRatType(RatType const& value);
+  oai::model::common::RatType getRatType() const;
+  void setRatType(oai::model::common::RatType const& value);
   bool ratTypeIsSet() const;
   void unsetRatType();
   /// <summary>
@@ -168,15 +168,15 @@ class SmPolicyContextData {
   /// <summary>
   ///
   /// </summary>
-  PlmnIdNid getServingNetwork() const;
-  void setServingNetwork(PlmnIdNid const& value);
+  oai::model::common::PlmnIdNid getServingNetwork() const;
+  void setServingNetwork(oai::model::common::PlmnIdNid const& value);
   bool servingNetworkIsSet() const;
   void unsetServingNetwork();
   /// <summary>
   ///
   /// </summary>
-  UserLocation getUserLocationInfo() const;
-  void setUserLocationInfo(UserLocation const& value);
+  oai::model::common::UserLocation getUserLocationInfo() const;
+  void setUserLocationInfo(oai::model::common::UserLocation const& value);
   bool userLocationInfoIsSet() const;
   void unsetUserLocationInfo();
   /// <summary>
@@ -203,8 +203,8 @@ class SmPolicyContextData {
   /// <summary>
   ///
   /// </summary>
-  Ipv6Prefix getIpv6AddressPrefix() const;
-  void setIpv6AddressPrefix(Ipv6Prefix const& value);
+  oai::model::common::Ipv6Prefix getIpv6AddressPrefix() const;
+  void setIpv6AddressPrefix(oai::model::common::Ipv6Prefix const& value);
   bool ipv6AddressPrefixIsSet() const;
   void unsetIpv6AddressPrefix();
   /// <summary>
@@ -217,8 +217,8 @@ class SmPolicyContextData {
   /// <summary>
   ///
   /// </summary>
-  Ambr getSubsSessAmbr() const;
-  void setSubsSessAmbr(Ambr const& value);
+  oai::model::common::Ambr getSubsSessAmbr() const;
+  void setSubsSessAmbr(oai::model::common::Ambr const& value);
   bool subsSessAmbrIsSet() const;
   void unsetSubsSessAmbr();
   /// <summary>
@@ -231,8 +231,8 @@ class SmPolicyContextData {
   /// <summary>
   ///
   /// </summary>
-  SubscribedDefaultQos getSubsDefQos() const;
-  void setSubsDefQos(SubscribedDefaultQos const& value);
+  oai::model::common::SubscribedDefaultQos getSubsDefQos() const;
+  void setSubsDefQos(oai::model::common::SubscribedDefaultQos const& value);
   bool subsDefQosIsSet() const;
   void unsetSubsDefQos();
   /// <summary>
@@ -277,15 +277,15 @@ class SmPolicyContextData {
   /// <summary>
   ///
   /// </summary>
-  TraceData getTraceReq() const;
-  void setTraceReq(TraceData const& value);
+  oai::model::common::TraceData getTraceReq() const;
+  void setTraceReq(oai::model::common::TraceData const& value);
   bool traceReqIsSet() const;
   void unsetTraceReq();
   /// <summary>
   ///
   /// </summary>
-  Snssai getSliceInfo() const;
-  void setSliceInfo(Snssai const& value);
+  oai::model::common::Snssai getSliceInfo() const;
+  void setSliceInfo(oai::model::common::Snssai const& value);
   /// <summary>
   ///
   /// </summary>
@@ -331,8 +331,8 @@ class SmPolicyContextData {
   /// <summary>
   ///
   /// </summary>
-  AtsssCapability getAtsssCapab() const;
-  void setAtsssCapab(AtsssCapability const& value);
+  oai::model::common::AtsssCapability getAtsssCapab() const;
+  void setAtsssCapab(oai::model::common::AtsssCapability const& value);
   bool atsssCapabIsSet() const;
   void unsetAtsssCapab();
 
@@ -352,7 +352,7 @@ class SmPolicyContextData {
   bool m_InterGrpIdsIsSet;
   int32_t m_PduSessionId;
 
-  PduSessionType m_PduSessionType;
+  oai::model::common::PduSessionType m_PduSessionType;
 
   std::string m_Chargingcharacteristics;
   bool m_ChargingcharacteristicsIsSet;
@@ -362,15 +362,15 @@ class SmPolicyContextData {
   bool m_DnnSelModeIsSet;
   std::string m_NotificationUri;
 
-  AccessType m_AccessType;
+  oai::model::common::AccessType m_AccessType;
   bool m_AccessTypeIsSet;
-  RatType m_RatType;
+  oai::model::common::RatType m_RatType;
   bool m_RatTypeIsSet;
   AdditionalAccessInfo m_AddAccessInfo;
   bool m_AddAccessInfoIsSet;
-  PlmnIdNid m_ServingNetwork;
+  oai::model::common::PlmnIdNid m_ServingNetwork;
   bool m_ServingNetworkIsSet;
-  UserLocation m_UserLocationInfo;
+  oai::model::common::UserLocation m_UserLocationInfo;
   bool m_UserLocationInfoIsSet;
   std::string m_UeTimeZone;
   bool m_UeTimeZoneIsSet;
@@ -378,15 +378,15 @@ class SmPolicyContextData {
   bool m_PeiIsSet;
   std::string m_Ipv4Address;
   bool m_Ipv4AddressIsSet;
-  Ipv6Prefix m_Ipv6AddressPrefix;
+  oai::model::common::Ipv6Prefix m_Ipv6AddressPrefix;
   bool m_Ipv6AddressPrefixIsSet;
   std::string m_IpDomain;
   bool m_IpDomainIsSet;
-  Ambr m_SubsSessAmbr;
+  oai::model::common::Ambr m_SubsSessAmbr;
   bool m_SubsSessAmbrIsSet;
   std::string m_AuthProfIndex;
   bool m_AuthProfIndexIsSet;
-  SubscribedDefaultQos m_SubsDefQos;
+  oai::model::common::SubscribedDefaultQos m_SubsDefQos;
   bool m_SubsDefQosIsSet;
   int32_t m_NumOfPackFilter;
   bool m_NumOfPackFilterIsSet;
@@ -398,9 +398,9 @@ class SmPolicyContextData {
   bool m_r_3gppPsDataOffStatusIsSet;
   bool m_RefQosIndication;
   bool m_RefQosIndicationIsSet;
-  TraceData m_TraceReq;
+  oai::model::common::TraceData m_TraceReq;
   bool m_TraceReqIsSet;
-  Snssai m_SliceInfo;
+  oai::model::common::Snssai m_SliceInfo;
 
   QosFlowUsage m_QosFlowUsage;
   bool m_QosFlowUsageIsSet;
@@ -414,7 +414,7 @@ class SmPolicyContextData {
   bool m_RecoveryTimeIsSet;
   MaPduIndication m_MaPduInd;
   bool m_MaPduIndIsSet;
-  AtsssCapability m_AtsssCapab;
+  oai::model::common::AtsssCapability m_AtsssCapab;
   bool m_AtsssCapabIsSet;
 };
 

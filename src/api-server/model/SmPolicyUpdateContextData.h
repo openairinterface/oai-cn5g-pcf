@@ -106,15 +106,15 @@ class SmPolicyUpdateContextData {
   /// <summary>
   ///
   /// </summary>
-  AccessType getAccessType() const;
-  void setAccessType(AccessType const& value);
+  oai::model::common::AccessType getAccessType() const;
+  void setAccessType(oai::model::common::AccessType const& value);
   bool accessTypeIsSet() const;
   void unsetAccessType();
   /// <summary>
   ///
   /// </summary>
-  RatType getRatType() const;
-  void setRatType(RatType const& value);
+  oai::model::common::RatType getRatType() const;
+  void setRatType(oai::model::common::RatType const& value);
   bool ratTypeIsSet() const;
   void unsetRatType();
   /// <summary>
@@ -134,15 +134,15 @@ class SmPolicyUpdateContextData {
   /// <summary>
   ///
   /// </summary>
-  PlmnIdNid getServingNetwork() const;
-  void setServingNetwork(PlmnIdNid const& value);
+  oai::model::common::PlmnIdNid getServingNetwork() const;
+  void setServingNetwork(oai::model::common::PlmnIdNid const& value);
   bool servingNetworkIsSet() const;
   void unsetServingNetwork();
   /// <summary>
   ///
   /// </summary>
-  UserLocation getUserLocationInfo() const;
-  void setUserLocationInfo(UserLocation const& value);
+  oai::model::common::UserLocation getUserLocationInfo() const;
+  void setUserLocationInfo(oai::model::common::UserLocation const& value);
   bool userLocationInfoIsSet() const;
   void unsetUserLocationInfo();
   /// <summary>
@@ -176,29 +176,29 @@ class SmPolicyUpdateContextData {
   /// <summary>
   ///
   /// </summary>
-  Ipv6Prefix getIpv6AddressPrefix() const;
-  void setIpv6AddressPrefix(Ipv6Prefix const& value);
+  oai::model::common::Ipv6Prefix getIpv6AddressPrefix() const;
+  void setIpv6AddressPrefix(oai::model::common::Ipv6Prefix const& value);
   bool ipv6AddressPrefixIsSet() const;
   void unsetIpv6AddressPrefix();
   /// <summary>
   ///
   /// </summary>
-  Ipv6Prefix getRelIpv6AddressPrefix() const;
-  void setRelIpv6AddressPrefix(Ipv6Prefix const& value);
+  oai::model::common::Ipv6Prefix getRelIpv6AddressPrefix() const;
+  void setRelIpv6AddressPrefix(oai::model::common::Ipv6Prefix const& value);
   bool relIpv6AddressPrefixIsSet() const;
   void unsetRelIpv6AddressPrefix();
   /// <summary>
   ///
   /// </summary>
-  Ipv6Prefix getAddIpv6AddrPrefixes() const;
-  void setAddIpv6AddrPrefixes(Ipv6Prefix const& value);
+  oai::model::common::Ipv6Prefix getAddIpv6AddrPrefixes() const;
+  void setAddIpv6AddrPrefixes(oai::model::common::Ipv6Prefix const& value);
   bool addIpv6AddrPrefixesIsSet() const;
   void unsetAddIpv6AddrPrefixes();
   /// <summary>
   ///
   /// </summary>
-  Ipv6Prefix getAddRelIpv6AddrPrefixes() const;
-  void setAddRelIpv6AddrPrefixes(Ipv6Prefix const& value);
+  oai::model::common::Ipv6Prefix getAddRelIpv6AddrPrefixes() const;
+  void setAddRelIpv6AddrPrefixes(oai::model::common::Ipv6Prefix const& value);
   bool addRelIpv6AddrPrefixesIsSet() const;
   void unsetAddRelIpv6AddrPrefixes();
   /// <summary>
@@ -218,8 +218,8 @@ class SmPolicyUpdateContextData {
   /// <summary>
   ///
   /// </summary>
-  Ambr getSubsSessAmbr() const;
-  void setSubsSessAmbr(Ambr const& value);
+  oai::model::common::Ambr getSubsSessAmbr() const;
+  void setSubsSessAmbr(oai::model::common::Ambr const& value);
   bool subsSessAmbrIsSet() const;
   void unsetSubsSessAmbr();
   /// <summary>
@@ -232,8 +232,8 @@ class SmPolicyUpdateContextData {
   /// <summary>
   ///
   /// </summary>
-  SubscribedDefaultQos getSubsDefQos() const;
-  void setSubsDefQos(SubscribedDefaultQos const& value);
+  oai::model::common::SubscribedDefaultQos getSubsDefQos() const;
+  void setSubsDefQos(oai::model::common::SubscribedDefaultQos const& value);
   bool subsDefQosIsSet() const;
   void unsetSubsDefQos();
   /// <summary>
@@ -304,8 +304,10 @@ class SmPolicyUpdateContextData {
   /// <summary>
   /// Reports the changes of presence reporting area.
   /// </summary>
-  std::map<std::string, PresenceInfo> getRepPraInfos() const;
-  void setRepPraInfos(std::map<std::string, PresenceInfo> const& value);
+  std::map<std::string, oai::model::common::PresenceInfo> getRepPraInfos()
+      const;
+  void setRepPraInfos(
+      std::map<std::string, oai::model::common::PresenceInfo> const& value);
   bool repPraInfosIsSet() const;
   void unsetRepPraInfos();
   /// <summary>
@@ -348,8 +350,8 @@ class SmPolicyUpdateContextData {
   /// <summary>
   ///
   /// </summary>
-  TraceData getTraceReq() const;
-  void setTraceReq(TraceData const& value);
+  oai::model::common::TraceData getTraceReq() const;
+  void setTraceReq(oai::model::common::TraceData const& value);
   bool traceReqIsSet() const;
   void unsetTraceReq();
   /// <summary>
@@ -362,8 +364,8 @@ class SmPolicyUpdateContextData {
   /// <summary>
   ///
   /// </summary>
-  AtsssCapability getAtsssCapab() const;
-  void setAtsssCapab(AtsssCapability const& value);
+  oai::model::common::AtsssCapability getAtsssCapab() const;
+  void setAtsssCapab(oai::model::common::AtsssCapability const& value);
   bool atsssCapabIsSet() const;
   void unsetAtsssCapab();
   /// <summary>
@@ -404,17 +406,17 @@ class SmPolicyUpdateContextData {
   bool m_RepPolicyCtrlReqTriggersIsSet;
   std::vector<AccNetChId> m_AccNetChIds;
   bool m_AccNetChIdsIsSet;
-  AccessType m_AccessType;
+  oai::model::common::AccessType m_AccessType;
   bool m_AccessTypeIsSet;
-  RatType m_RatType;
+  oai::model::common::RatType m_RatType;
   bool m_RatTypeIsSet;
   AdditionalAccessInfo m_AddAccessInfo;
   bool m_AddAccessInfoIsSet;
   AdditionalAccessInfo m_RelAccessInfo;
   bool m_RelAccessInfoIsSet;
-  PlmnIdNid m_ServingNetwork;
+  oai::model::common::PlmnIdNid m_ServingNetwork;
   bool m_ServingNetworkIsSet;
-  UserLocation m_UserLocationInfo;
+  oai::model::common::UserLocation m_UserLocationInfo;
   bool m_UserLocationInfoIsSet;
   std::string m_UeTimeZone;
   bool m_UeTimeZoneIsSet;
@@ -424,23 +426,23 @@ class SmPolicyUpdateContextData {
   bool m_Ipv4AddressIsSet;
   std::string m_IpDomain;
   bool m_IpDomainIsSet;
-  Ipv6Prefix m_Ipv6AddressPrefix;
+  oai::model::common::Ipv6Prefix m_Ipv6AddressPrefix;
   bool m_Ipv6AddressPrefixIsSet;
-  Ipv6Prefix m_RelIpv6AddressPrefix;
+  oai::model::common::Ipv6Prefix m_RelIpv6AddressPrefix;
   bool m_RelIpv6AddressPrefixIsSet;
-  Ipv6Prefix m_AddIpv6AddrPrefixes;
+  oai::model::common::Ipv6Prefix m_AddIpv6AddrPrefixes;
   bool m_AddIpv6AddrPrefixesIsSet;
-  Ipv6Prefix m_AddRelIpv6AddrPrefixes;
+  oai::model::common::Ipv6Prefix m_AddRelIpv6AddrPrefixes;
   bool m_AddRelIpv6AddrPrefixesIsSet;
   std::string m_RelUeMac;
   bool m_RelUeMacIsSet;
   std::string m_UeMac;
   bool m_UeMacIsSet;
-  Ambr m_SubsSessAmbr;
+  oai::model::common::Ambr m_SubsSessAmbr;
   bool m_SubsSessAmbrIsSet;
   std::string m_AuthProfIndex;
   bool m_AuthProfIndexIsSet;
-  SubscribedDefaultQos m_SubsDefQos;
+  oai::model::common::SubscribedDefaultQos m_SubsDefQos;
   bool m_SubsDefQosIsSet;
   int32_t m_NumOfPackFilter;
   bool m_NumOfPackFilterIsSet;
@@ -460,7 +462,7 @@ class SmPolicyUpdateContextData {
   bool m_QosMonReportsIsSet;
   std::string m_UserLocationInfoTime;
   bool m_UserLocationInfoTimeIsSet;
-  std::map<std::string, PresenceInfo> m_RepPraInfos;
+  std::map<std::string, oai::model::common::PresenceInfo> m_RepPraInfos;
   bool m_RepPraInfosIsSet;
   UeInitiatedResourceRequest m_UeInitResReq;
   bool m_UeInitResReqIsSet;
@@ -472,11 +474,11 @@ class SmPolicyUpdateContextData {
   bool m_CreditManageStatusIsSet;
   ServingNfIdentity m_ServNfId;
   bool m_ServNfIdIsSet;
-  TraceData m_TraceReq;
+  oai::model::common::TraceData m_TraceReq;
   bool m_TraceReqIsSet;
   MaPduIndication m_MaPduInd;
   bool m_MaPduIndIsSet;
-  AtsssCapability m_AtsssCapab;
+  oai::model::common::AtsssCapability m_AtsssCapab;
   bool m_AtsssCapabIsSet;
   TsnBridgeInfo m_TsnBridgeInfo;
   bool m_TsnBridgeInfoIsSet;

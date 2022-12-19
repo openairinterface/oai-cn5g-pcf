@@ -20,6 +20,8 @@ namespace oai {
 namespace pcf {
 namespace model {
 
+using namespace oai::model::common;
+
 ConditionData::ConditionData() {
   m_CondId                = "";
   m_ActivationTime        = "";

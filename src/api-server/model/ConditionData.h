@@ -82,15 +82,15 @@ class ConditionData {
   /// <summary>
   ///
   /// </summary>
-  AccessType getAccessType() const;
-  void setAccessType(AccessType const& value);
+  oai::model::common::AccessType getAccessType() const;
+  void setAccessType(oai::model::common::AccessType const& value);
   bool accessTypeIsSet() const;
   void unsetAccessType();
   /// <summary>
   ///
   /// </summary>
-  RatType getRatType() const;
-  void setRatType(RatType const& value);
+  oai::model::common::RatType getRatType() const;
+  void setRatType(oai::model::common::RatType const& value);
   bool ratTypeIsSet() const;
   void unsetRatType();
 
@@ -104,9 +104,9 @@ class ConditionData {
   bool m_ActivationTimeIsSet;
   std::string m_DeactivationTime;
   bool m_DeactivationTimeIsSet;
-  AccessType m_AccessType;
+  oai::model::common::AccessType m_AccessType;
   bool m_AccessTypeIsSet;
-  RatType m_RatType;
+  oai::model::common::RatType m_RatType;
   bool m_RatTypeIsSet;
 };
 

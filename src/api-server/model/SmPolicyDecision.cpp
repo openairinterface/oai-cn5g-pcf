@@ -20,6 +20,8 @@ namespace oai {
 namespace pcf {
 namespace model {
 
+using namespace oai::model::common;
+
 SmPolicyDecision::SmPolicyDecision() {
   m_SessRulesIsSet             = false;
   m_PccRulesIsSet              = false;

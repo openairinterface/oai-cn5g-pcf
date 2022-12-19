@@ -20,6 +20,8 @@ namespace oai {
 namespace pcf {
 namespace model {
 
+using namespace oai::model::common;
+
 TrafficControlData::TrafficControlData() {
   m_TcId                        = "";
   m_FlowStatusIsSet             = false;
