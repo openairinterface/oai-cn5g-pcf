@@ -146,4 +146,4 @@ HEALTHCHECK --interval=10s \
     CMD /openair-pcf/bin/healthcheck.sh
 
 ENTRYPOINT ["/openair-pcf/bin/entrypoint.sh"]
-CMD ["/openair-pcf/bin/oai_pcf", "-c", "/openair-pcf/etc/pcf.conf", "-o"]
+CMD ["/openair-pcf/bin/oai_pcf", "-c", "/openair-pcf/etc/conf.yaml", "-o"]

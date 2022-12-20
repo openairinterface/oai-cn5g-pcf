@@ -126,7 +126,7 @@ RUN ldconfig && \
 # The configuration folder will be flat
 WORKDIR /openair-pcf/etc
 COPY --from=oai-pcf-builder \
-    /openair-pcf/etc/pcf.conf \
+    /openair-pcf/etc/conf.yaml \
     ./
 
 WORKDIR /openair-pcf
@@ -139,4 +139,4 @@ HEALTHCHECK --interval=10s \
     CMD /openair-pcf/bin/healthcheck.sh
 
 ENTRYPOINT ["/bin/bash","/openair-pcf/bin/entrypoint.sh"]
-CMD ["/openair-pcf/bin/oai_pcf", "-c", "/openair-pcf/etc/pcf.conf", "-o"]
+CMD ["/openair-pcf/bin/oai_pcf", "-c", "/openair-pcf/etc/conf.yaml", "-o"]
