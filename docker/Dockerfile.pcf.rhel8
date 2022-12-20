@@ -132,7 +132,7 @@ RUN ldconfig && \
 # The configuration folder will be flat
 WORKDIR /openair-pcf/etc
 COPY --from=oai-pcf-builder \
-    /openair-pcf/etc/pcf.conf \
+    /openair-pcf/etc/conf.yaml \
     ./
 
 WORKDIR /openair-pcf
