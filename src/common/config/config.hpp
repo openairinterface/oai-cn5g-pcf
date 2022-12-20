@@ -137,6 +137,7 @@ class config : public config_iface {
       const std::string& nf_name, bool log_stdout, bool log_rot_file) {
     logger::logger_registry::register_logger(
         nf_name, LOGGER_NAME, log_stdout, log_rot_file);
+    m_nf_name = nf_name;
   }
 
   void set_configuration(
@@ -181,6 +182,8 @@ class config : public config_iface {
   std::vector<std::string> m_mandatory_keys;
 
   mutable std::shared_mutex m_config_mutex;
+
+  std::string m_nf_name;
 };
 
 }  // namespace oai::config
