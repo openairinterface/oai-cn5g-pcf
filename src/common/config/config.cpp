@@ -52,16 +52,18 @@ bool config::validate() const {
   for (const auto& key : m_mandatory_keys) {
     const auto it = m_config.find(key);
     if (it == m_config.end()) {
-      logger::logger_registry::get_logger(LOGGER_NAME).error(
-          "Mandatory configuration %s does not exist in configuration", key);
+      logger::logger_registry::get_logger(LOGGER_NAME)
+          .error(
+              "Mandatory configuration %s does not exist in configuration",
+              key);
       success = false;
     }
   }
 
   for (const auto& conf : m_config) {
     if (!conf.second->validate()) {
-      logger::logger_registry::get_logger(LOGGER_NAME).error(
-          "Validation of %s not successful", conf.first);
+      logger::logger_registry::get_logger(LOGGER_NAME)
+          .error("Validation of %s not successful", conf.first);
       success = false;
     }
   }
@@ -79,7 +81,6 @@ std::string config::to_string() const {
   std::string others_out;
 
   for (const auto& conf : m_config) {
-
     std::string val = fmt::format(
         BASE_FORMATTER, "-", conf.first, COLUMN_WIDTH,
         conf.second->to_string("  "));
@@ -98,8 +99,10 @@ std::string config::to_string() const {
         sbi_out.append(val);
         break;
       case config_type_e::INVALID:
-        logger::logger_registry::get_logger(LOGGER_NAME).error(
-            "General error in configuration. Invalid type of: %s", conf.first);
+        logger::logger_registry::get_logger(LOGGER_NAME)
+            .error(
+                "General error in configuration. Invalid type of: %s",
+                conf.first);
         others_out.append(val);
         break;
     }
@@ -133,9 +136,18 @@ bool config::get_support_feature(const std::string& name) const {
   return get<option_config_value>(name).value;
 }
 
-const network_interface& config::get_network_interface(
+const sbi_interface& config::get_sbi_interface(const std::string& name) const {
+  return get<sbi_interface>(name);
+}
+
+const local_interface& config::get_local_interface(
     const std::string& name) const {
-  return get<network_interface>(name);
+  return get<local_interface>(name);
+}
+
+const local_sbi_interface& config::get_local_sbi_interface(
+    const std::string& name) const {
+  return get<local_sbi_interface>(name);
 }
 
 template<typename T>

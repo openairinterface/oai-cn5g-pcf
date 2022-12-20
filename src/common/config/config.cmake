@@ -44,7 +44,7 @@ target_sources(${NF_TARGET_LIB} PRIVATE
 endif()
 
 ## CONFIG used in NF_TARGET_API (API library)
-#target_include_directories(${NF_TARGET_API_LIB} PUBLIC ${CONFIG_DIR})
-#target_sources(${NF_TARGET_API_LIB} PRIVATE
-#        ${CONFIG_SRC_FILES}
-#        )
+target_include_directories(${NF_TARGET_API_LIB} PUBLIC ${CONFIG_DIR})
+target_sources(${NF_TARGET_API_LIB} PRIVATE
+        ${CONFIG_SRC_FILES}
+        )

@@ -39,9 +39,9 @@
 
 namespace oai::config {
 
-const int COLUMN_WIDTH = 20;
+const int COLUMN_WIDTH           = 20;
 const std::string BASE_FORMATTER = " {} {:.<{}}: {}\n";
-const std::string LOGGER_NAME = "config ";
+const std::string LOGGER_NAME    = "config ";
 
 class config_iface {
  public:
@@ -51,10 +51,12 @@ class config_iface {
    * @param name name of the configuration
    * @param val value of the configuration
    */
-  virtual void set_configuration(const std::string& name, std::unique_ptr<config_type> val) = 0;
+  virtual void set_configuration(
+      const std::string& name, std::unique_ptr<config_type> val) = 0;
 
   /**
-   * Set a configuration of any type with name to be mandatory, used for validation
+   * Set a configuration of any type with name to be mandatory, used for
+   * validation
    * @param name name of the configuration
    */
   virtual void set_configuration_mandatory(const std::string& name) = 0;
@@ -73,45 +75,72 @@ class config_iface {
    */
   [[nodiscard]] virtual std::string to_string() const = 0;
 
-  // The get method is not defined here, as we cannot have virtual template members
-  // Annoying that I cannot have a virtual template method just called "get"
+  // The get method is not defined here, as we cannot have virtual template
+  // members Annoying that I cannot have a virtual template method just called
+  // "get"
   /**
    * Get a string base configuration
    * @throws std::invalid_argument when name does not exist in configuration
    * @param name of the configuration
+   * @return value
    */
-  [[nodiscard]] virtual const std::string& get_base_conf_val(const std::string& name) const = 0;
+  [[nodiscard]] virtual const std::string& get_base_conf_val(
+      const std::string& name) const = 0;
 
   /**
    * Get a boolean configuration
    * @throws std::invalid_argument when name does not exist in configuration
    * @param name of the configuration
+   * @return value
    */
-  [[nodiscard]] virtual bool get_support_feature(const std::string& name) const = 0;
+  [[nodiscard]] virtual bool get_support_feature(
+      const std::string& name) const = 0;
 
   /**
-   * Get a network interface configuration
+   * Get a SBI interface configuration
    * @throws std::invalid_argument when name does not exist in configuration
    * @param name of the configuration
+   * @return value
    */
-  [[nodiscard]] virtual const network_interface& get_network_interface(const std::string& name) const = 0 ;
+  [[nodiscard]] virtual const sbi_interface& get_sbi_interface(
+      const std::string& name) const = 0;
+
+  /**
+   * Get a local SBI interface configuration
+   * @throws std::invalid_argument when name does not exist in configuration
+   * @param name of the configuration
+   * @return value
+   */
+  [[nodiscard]] virtual const local_sbi_interface& get_local_sbi_interface(
+      const std::string& name) const = 0;
+
+  /**
+   * Get a local interface configuration
+   * @throws std::invalid_argument when name does not exist in configuration
+   * @param name of the configuration
+   * @return value
+   */
+  [[nodiscard]] virtual const local_interface& get_local_interface(
+      const std::string& name) const = 0;
 
   /**
    * Display the to_string method to the config logger
    */
   virtual void display() const = 0;
 
+  virtual ~config_iface() = default;
 };
 
-class config : public config_iface{
-
+class config : public config_iface {
  public:
-
-  explicit config(bool log_stdout, bool log_rot_file) {
-    logger::logger_registry::register_logger(PACKAGE_NAME, LOGGER_NAME, log_stdout, log_rot_file);
+  explicit config(
+      const std::string& nf_name, bool log_stdout, bool log_rot_file) {
+    logger::logger_registry::register_logger(
+        nf_name, LOGGER_NAME, log_stdout, log_rot_file);
   }
 
-  void set_configuration(const std::string& name, std::unique_ptr<config_type> val) override;
+  void set_configuration(
+      const std::string& name, std::unique_ptr<config_type> val) override;
 
   void set_configuration_mandatory(const std::string& name) override;
 
@@ -129,16 +158,24 @@ class config : public config_iface{
   template<typename T>
   [[nodiscard]] const T& get(const std::string& name) const;
 
-  [[nodiscard]] const std::string& get_base_conf_val(const std::string& name) const override;
+  [[nodiscard]] const std::string& get_base_conf_val(
+      const std::string& name) const override;
 
-  [[nodiscard]] bool get_support_feature(const std::string& name) const override;
+  [[nodiscard]] bool get_support_feature(
+      const std::string& name) const override;
 
-  [[nodiscard]] const network_interface& get_network_interface(const std::string& name) const override;
+  [[nodiscard]] const sbi_interface& get_sbi_interface(
+      const std::string& name) const override;
+
+  [[nodiscard]] const local_interface& get_local_interface(
+      const std::string& name) const override;
+
+  [[nodiscard]] const local_sbi_interface& get_local_sbi_interface(
+      const std::string& name) const override;
 
   void display() const override;
 
  private:
-
   std::map<std::string, std::unique_ptr<config_type>> m_config;
 
   std::vector<std::string> m_mandatory_keys;
@@ -146,5 +183,4 @@ class config : public config_iface{
   mutable std::shared_mutex m_config_mutex;
 };
 
-
-}
+}  // namespace oai::config

@@ -38,15 +38,23 @@ namespace oai::config {
 
 const std::vector<std::string> allowed_api_versions{"v1", "v2"};
 
+const std::string URL_REGEX = "http://.*:[0-9]*";
+
 // Only used for pretty-printing
 enum class config_type_e { STRING, OPTION, SBI, LOCAL, INVALID };
 
 class config_type {
  public:
   [[nodiscard]] virtual std::string to_string(
-      const std::string& indent) const                        = 0;
-  [[nodiscard]] virtual bool validate() const                 = 0;
+      const std::string& indent) const = 0;
+
+  [[nodiscard]] virtual bool validate() = 0;
+
   [[nodiscard]] virtual config_type_e get_config_type() const = 0;
+
+  [[nodiscard]] virtual bool is_set() const = 0;
+
+  static bool matches_regex(const std::string& value, const std::string& regex);
 
   virtual ~config_type() = default;
 };
@@ -57,11 +65,13 @@ class string_config_value : public config_type {
   std::string regex;
 
   [[nodiscard]] std::string to_string(const std::string& indent) const override;
-  [[nodiscard]] bool validate() const override;
+  [[nodiscard]] bool validate() override;
   [[nodiscard]] config_type_e get_config_type() const override;
+  [[nodiscard]] bool is_set() const override;
 
  private:
   config_type_e type = config_type_e::STRING;
+  bool set           = false;
 };
 
 class option_config_value : public config_type {
@@ -69,11 +79,13 @@ class option_config_value : public config_type {
   bool value = false;
 
   [[nodiscard]] std::string to_string(const std::string& indent) const override;
-  [[nodiscard]] bool validate() const override;
+  [[nodiscard]] bool validate() override;
   [[nodiscard]] config_type_e get_config_type() const override;
+  [[nodiscard]] bool is_set() const override;
 
  private:
   config_type_e type = config_type_e::OPTION;
+  bool set           = false;
 };
 
 class network_interface : public config_type {
@@ -86,39 +98,53 @@ class sbi_interface : public network_interface {
   std::string api_version;
   std::string url;
 
-  [[nodiscard]] bool validate() const override;
+  [[nodiscard]] bool validate() override;
   [[nodiscard]] std::string to_string(const std::string& indent) const override;
   [[nodiscard]] config_type_e get_config_type() const override;
+  [[nodiscard]] bool is_set() const override;
 
  private:
   config_type_e type = config_type_e::SBI;
+  bool set           = false;
 };
 
 class local_interface : public network_interface {
  public:
-  std::string iface_name;
-  in_addr addr4;
-  in6_addr addr6;
-  unsigned int mtu;
-  uint16_t port;
+  std::string if_name{};
+  in_addr addr4{};
+  in6_addr addr6{};
+  unsigned int mtu{};
+  uint16_t port{};
 
-  [[nodiscard]] bool validate() const override;
+  [[nodiscard]] bool validate() override;
   [[nodiscard]] std::string to_string(const std::string& indent) const override;
   [[nodiscard]] config_type_e get_config_type() const override;
+  [[nodiscard]] bool is_set() const override;
 
  private:
   config_type_e type = config_type_e::LOCAL;
+  bool set           = false;
 };
 
 class local_sbi_interface : public local_interface {
  public:
   std::string api_version;
+  bool use_http2 = false;
 
-  [[nodiscard]] bool validate() const override;
+  [[nodiscard]] bool validate() override;
   [[nodiscard]] std::string to_string(const std::string& indent) const override;
+  [[nodiscard]] bool is_set() const override;
 
  private:
   config_type_e type = config_type_e::LOCAL;
+  bool set           = false;
+};
+
+class factory {
+ public:
+  static option_config_value get_option_config(bool val);
+
+  static string_config_value get_string_config(const std::string& val);
 };
 
 }  // namespace oai::config

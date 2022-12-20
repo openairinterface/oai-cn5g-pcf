@@ -28,18 +28,38 @@
 */
 
 #include "config_types.hpp"
-#include "fmt/format.h"
 #include "config.hpp"
 #include "conversions.hpp"
-#include "algorithm"
 #include "logger_base.hpp"
+#include "if.hpp"
+#include "common_defs.h"
+
+#include <fmt/format.h>
+#include <algorithm>
+#include <regex>
+#include <string>
 
 using namespace oai::config;
 
 const std::string INNER_LIST_ELEM = "+";
 
-bool sbi_interface::validate() const {
-  // TODO validation
+bool config_type::matches_regex(
+    const std::string& value, const std::string& regex) {
+  std::regex re(regex);
+
+  if (!std::regex_match(value, re)) {
+    logger::logger_registry::get_logger(LOGGER_NAME)
+        .error("%s does not follow regex specification: %s", value, regex);
+    return false;
+  }
+  return true;
+}
+
+bool sbi_interface::validate() {
+  if (!matches_regex(url, URL_REGEX)) {
+    return false;
+  }
+  set = true;
   return true;
 }
 
@@ -59,8 +79,26 @@ config_type_e sbi_interface::get_config_type() const {
   return type;
 }
 
-bool local_interface::validate() const {
-  // TODO validation
+bool sbi_interface::is_set() const {
+  return set;
+}
+
+bool local_interface::validate() {
+  unsigned int _mtu{};
+  in_addr _addr4{};
+  in_addr _netmask{};
+  if (get_inet_addr_infos_from_iface(if_name, _addr4, _netmask, _mtu) ==
+      RETURNerror) {
+    logger::logger_registry::get_logger(LOGGER_NAME)
+        .error(
+            "Error in reading configuration from network interface %s",
+            if_name);
+    return false;
+  }
+  mtu   = _mtu;
+  addr4 = _addr4;
+
+  set = true;
   return true;
 }
 
@@ -73,15 +111,15 @@ std::string local_interface::to_string(const std::string& indent) const {
 
   out.append(indent).append(fmt::format(
       BASE_FORMATTER, INNER_LIST_ELEM, "IPv4 Address ", inner_width, ip4));
-  if (!ip6.empty()) {
+  if (ip6 != "::") {
     out.append(indent).append(fmt::format(
-        BASE_FORMATTER, INNER_LIST_ELEM, "IPv6 Address", inner_width, ip4));
+        BASE_FORMATTER, INNER_LIST_ELEM, "IPv6 Address", inner_width, ip6));
   }
   out.append(indent).append(
       fmt::format(BASE_FORMATTER, INNER_LIST_ELEM, "MTU", inner_width, mtu));
   out.append(indent).append(fmt::format(
       BASE_FORMATTER, INNER_LIST_ELEM, "Interface name: ", inner_width,
-      iface_name));
+      if_name));
   out.append(indent).append(
       fmt::format(BASE_FORMATTER, INNER_LIST_ELEM, "Port", inner_width, port));
 
@@ -92,11 +130,16 @@ config_type_e local_interface::get_config_type() const {
   return type;
 }
 
-bool local_sbi_interface::validate() const {
+bool local_interface::is_set() const {
+  return set;
+}
+
+bool local_sbi_interface::validate() {
   bool sbi_validate = validate_sbi_api_version(api_version);
   if (!sbi_validate) {
     return false;
   }
+  set = true;
   return local_interface::validate();
 }
 
@@ -106,7 +149,18 @@ std::string local_sbi_interface::to_string(const std::string& indent) const {
   out.append(indent).append(fmt::format(
       BASE_FORMATTER, INNER_LIST_ELEM, "API Version", inner_width,
       api_version));
+
+  std::string http_version = use_http2 ? "2" : "1";
+
+  out.append(indent).append(fmt::format(
+      BASE_FORMATTER, INNER_LIST_ELEM, "HTTP Version", inner_width,
+      http_version));
+
   return out;
+}
+
+bool local_sbi_interface::is_set() const {
+  return set;
 }
 
 bool network_interface::validate_sbi_api_version(const std::string& v) {
@@ -125,12 +179,17 @@ std::string string_config_value::to_string(const std::string&) const {
   return out.append(value);
 }
 
-bool string_config_value::validate() const {
-  return false;
+bool string_config_value::validate() {
+  set = true;
+  return true;
 }
 
 config_type_e string_config_value::get_config_type() const {
   return type;
+}
+
+bool string_config_value::is_set() const {
+  return set;
 }
 
 std::string option_config_value::to_string(const std::string&) const {
@@ -138,10 +197,27 @@ std::string option_config_value::to_string(const std::string&) const {
   return val;
 }
 
-bool option_config_value::validate() const {
+bool option_config_value::validate() {
+  set = true;
   return true;
 }
 
 config_type_e option_config_value::get_config_type() const {
   return type;
+}
+
+bool option_config_value::is_set() const {
+  return set;
+}
+
+option_config_value factory::get_option_config(bool val) {
+  option_config_value v;
+  v.value = val;
+  return v;
+}
+
+string_config_value factory::get_string_config(const std::string& val) {
+  string_config_value v;
+  v.value = val;
+  return v;
 }

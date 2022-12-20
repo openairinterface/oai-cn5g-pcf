@@ -99,8 +99,8 @@ struct convert<oai::config::local_interface> {
     if (!node["name"] || !node["port"]) {
       return false;
     }
-    val.port       = node["port"].as<uint16_t>();
-    val.iface_name = node["name"].as<std::string>();
+    val.port    = node["port"].as<uint16_t>();
+    val.if_name = node["name"].as<std::string>();
     return true;
   }
 };
@@ -109,14 +109,18 @@ template<>
 struct convert<oai::config::local_sbi_interface> {
   static bool decode(const Node& node, oai::config::local_sbi_interface& val) {
     auto iface = node.as<oai::config::local_interface>();
-    if (!node["api_version"]) {
+    if (!node["api_version"] || !node["http_version"]) {
       return false;
     }
 
-    val.port        = iface.port;
-    val.iface_name  = iface.iface_name;
-    val.api_version = node["api_version"].as<std::string>();
+    val.port          = iface.port;
+    val.if_name       = iface.if_name;
+    val.api_version   = node["api_version"].as<std::string>();
+    auto http_version = node["http_version"].as<std::string>();
 
+    if (http_version == "2") {
+      val.use_http2 = true;
+    }
     return true;
   }
 };

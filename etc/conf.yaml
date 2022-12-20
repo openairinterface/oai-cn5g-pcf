@@ -21,34 +21,43 @@
 
 ##### Base configuration #####
 
-# Name of the component, used towards NRF. Valid values: any string
+# Name of the component, used towards NRF. Valid values: any string, DEFAULT="PCF"
 name: "PCF"
-# Directories where policy configuration is stored
+# Directories where policy configuration is stored, absolute path
 pcc_rules_directory: "/openair-pcf/policies/pcc_rules"
 traffic_rules_directory: "/openair-pcf/policies/traffic_rules"
 policy_decisions_directory: "/openair-pcf/policies/policy_decisions"
 
 ##### Options to enable/disable #####
-# If "yes": Register to NRF
+# If "on": Register to NRF, DEFAULT= off
 register_nrf: on
-# If "yes": Send only HTTP/2 requests
+# If "on": Send only HTTP/2 requests, DEFAULT=off
 use_http2: off
 
 ##### Local interface #####
-# Local SBI interface, you can choose any key, but it must be unique
+# Local SBI interface
 ## name: Name of the NIC to read the IP address from
 ## Port: unsigned int between 0-65,535
+## http_version: Allowed values: "1", "2"
 ## api_version: Allowed values: "v1", "v2", used to create the 3GPP API version for the SBI URL
 local_sbi_interface:
   name: "eth0"
   port: 80
+  http_version: 1
+  api_version: "v1"
+
+# Local HTTP2 SBI interface, optional. When configured, HTTP2 server is used
+local_sbi_interface_http2:
+  name: "eth0"
+  port: 8080
+  http_version: 2
   api_version: "v1"
 
 ##### Next hop interfaces #####
 
-# Next hop SBI interfaces, you can choose any key, but it must be unique
-## url: has to follow this scheme: http://<name>:<port>/
+# Next hop SBI interfaces
+## url: has to follow this scheme: http://<name>:<port>
 ## api_version: Allowed values: "v1", "v2", used to create the 3GPP API version for the SBI URL
 nrf:
-  url: "http://oai-nrf:80/"
+  url: "http://oai-nrf:80"
   api_version: "v1"
