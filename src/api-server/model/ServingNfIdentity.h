@@ -70,8 +70,8 @@ class ServingNfIdentity {
   /// <summary>
   ///
   /// </summary>
-  Guami getGuami() const;
-  void setGuami(Guami const& value);
+  oai::model::common::Guami getGuami() const;
+  void setGuami(oai::model::common::Guami const& value);
   bool guamiIsSet() const;
   void unsetGuami();
   /// <summary>
@@ -88,7 +88,7 @@ class ServingNfIdentity {
  protected:
   std::string m_ServNfInstId;
   bool m_ServNfInstIdIsSet;
-  Guami m_Guami;
+  oai::model::common::Guami m_Guami;
   bool m_GuamiIsSet;
   AnGwAddress m_AnGwAddr;
   bool m_AnGwAddrIsSet;

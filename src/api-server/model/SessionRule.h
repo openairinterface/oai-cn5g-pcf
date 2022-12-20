@@ -63,8 +63,8 @@ class SessionRule {
   /// <summary>
   ///
   /// </summary>
-  Ambr getAuthSessAmbr() const;
-  void setAuthSessAmbr(Ambr const& value);
+  oai::model::common::Ambr getAuthSessAmbr() const;
+  void setAuthSessAmbr(oai::model::common::Ambr const& value);
   bool authSessAmbrIsSet() const;
   void unsetAuthSessAmbr();
   /// <summary>
@@ -108,7 +108,7 @@ class SessionRule {
   friend void from_json(const nlohmann::json& j, SessionRule& o);
 
  protected:
-  Ambr m_AuthSessAmbr;
+  oai::model::common::Ambr m_AuthSessAmbr;
   bool m_AuthSessAmbrIsSet;
   AuthorizedDefaultQos m_AuthDefQos;
   bool m_AuthDefQosIsSet;

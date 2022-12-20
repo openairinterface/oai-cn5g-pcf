@@ -62,13 +62,13 @@ class AdditionalAccessInfo {
   /// <summary>
   ///
   /// </summary>
-  AccessType getAccessType() const;
-  void setAccessType(AccessType const& value);
+  oai::model::common::AccessType getAccessType() const;
+  void setAccessType(oai::model::common::AccessType const& value);
   /// <summary>
   ///
   /// </summary>
-  RatType getRatType() const;
-  void setRatType(RatType const& value);
+  oai::model::common::RatType getRatType() const;
+  void setRatType(oai::model::common::RatType const& value);
   bool ratTypeIsSet() const;
   void unsetRatType();
 
@@ -76,9 +76,9 @@ class AdditionalAccessInfo {
   friend void from_json(const nlohmann::json& j, AdditionalAccessInfo& o);
 
  protected:
-  AccessType m_AccessType;
+  oai::model::common::AccessType m_AccessType;
 
-  RatType m_RatType;
+  oai::model::common::RatType m_RatType;
   bool m_RatTypeIsSet;
 };
 

@@ -34,6 +34,7 @@
 
 using namespace oai::pcf::app::sm_policy;
 using namespace oai::pcf::model;
+using namespace oai::model::common;
 
 void policy_storage::set_default_decision(const SmPolicyDecision& decision) {
   std::shared_ptr<policy_decision> desc =

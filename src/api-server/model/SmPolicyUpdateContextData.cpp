@@ -20,6 +20,8 @@ namespace oai {
 namespace pcf {
 namespace model {
 
+using namespace oai::model::common;
+
 SmPolicyUpdateContextData::SmPolicyUpdateContextData() {
   m_RepPolicyCtrlReqTriggersIsSet = false;
   m_AccNetChIdsIsSet              = false;

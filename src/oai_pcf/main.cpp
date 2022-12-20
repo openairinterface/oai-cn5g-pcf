@@ -84,6 +84,7 @@ int main(int argc, char** argv) {
       "pcf", oai::utils::options::getlogStdout(),
       oai::utils::options::getlogRotFilelog());
 
+  std::signal(SIGTERM, signal_handler_sigint);
   std::signal(SIGINT, signal_handler_sigint);
 
   pcf_cfg = std::make_unique<pcf_config>(

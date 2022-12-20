@@ -214,8 +214,9 @@ class SmPolicyDecision {
   /// <summary>
   /// Map of PRA information.
   /// </summary>
-  std::map<std::string, PresenceInfoRm> getPraInfos() const;
-  void setPraInfos(std::map<std::string, PresenceInfoRm> const& value);
+  std::map<std::string, oai::model::common::PresenceInfoRm> getPraInfos() const;
+  void setPraInfos(
+      std::map<std::string, oai::model::common::PresenceInfoRm> const& value);
   bool praInfosIsSet() const;
   void unsetPraInfos();
   /// <summary>
@@ -309,7 +310,7 @@ class SmPolicyDecision {
   bool m_LastReqRuleDataIsSet;
   RequestedUsageData m_LastReqUsageData;
   bool m_LastReqUsageDataIsSet;
-  std::map<std::string, PresenceInfoRm> m_PraInfos;
+  std::map<std::string, oai::model::common::PresenceInfoRm> m_PraInfos;
   bool m_PraInfosIsSet;
   int32_t m_Ipv4Index;
   bool m_Ipv4IndexIsSet;

@@ -56,7 +56,7 @@ class policy_storage {
   void notify_subscribers(const std::shared_ptr<policy_decision>& decision);
 
   std::unordered_map<
-      oai::pcf::model::Snssai,
+      oai::model::common::Snssai,
       std::shared_ptr<oai::pcf::app::sm_policy::slice_policy_decision>,
       oai::pcf::app::sm_policy::snssai_hasher>
       m_slice_policy_decisions;
@@ -92,7 +92,7 @@ class policy_storage {
       const oai::pcf::model::SmPolicyDecision& decision);
 
   void insert_slice_decision(
-      const oai::pcf::model::Snssai&,
+      const oai::model::common::Snssai&,
       const oai::pcf::model::SmPolicyDecision& decision);
 
   void set_default_decision(const oai::pcf::model::SmPolicyDecision& decision);

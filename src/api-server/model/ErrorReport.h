@@ -64,8 +64,8 @@ class ErrorReport {
   /// <summary>
   ///
   /// </summary>
-  ProblemDetails getError() const;
-  void setError(ProblemDetails const& value);
+  oai::model::common::ProblemDetails getError() const;
+  void setError(oai::model::common::ProblemDetails const& value);
   bool errorIsSet() const;
   void unsetError();
   /// <summary>
@@ -87,7 +87,7 @@ class ErrorReport {
   friend void from_json(const nlohmann::json& j, ErrorReport& o);
 
  protected:
-  ProblemDetails m_Error;
+  oai::model::common::ProblemDetails m_Error;
   bool m_ErrorIsSet;
   std::vector<RuleReport> m_RuleReports;
   bool m_RuleReportsIsSet;

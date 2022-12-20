@@ -102,8 +102,8 @@ class QosData {
   /// <summary>
   ///
   /// </summary>
-  Arp getArp() const;
-  void setArp(Arp const& value);
+  oai::model::common::Arp getArp() const;
+  void setArp(oai::model::common::Arp const& value);
   bool arpIsSet() const;
   void unsetArp();
   /// <summary>
@@ -206,7 +206,7 @@ class QosData {
   bool m_GbrUlIsSet;
   std::string m_GbrDl;
   bool m_GbrDlIsSet;
-  Arp m_Arp;
+  oai::model::common::Arp m_Arp;
   bool m_ArpIsSet;
   bool m_Qnc;
   bool m_QncIsSet;

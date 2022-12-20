@@ -33,6 +33,7 @@
 using namespace oai::pcf::model;
 using namespace oai::pcf::app::sm_policy;
 using namespace oai::pcf::app;
+using namespace oai::model::common;
 
 status_code slice_policy_decision::decide(
     const SmPolicyContextData& context,

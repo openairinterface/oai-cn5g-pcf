@@ -20,6 +20,8 @@ namespace oai {
 namespace pcf {
 namespace model {
 
+using namespace oai::model::common;
+
 ErrorReport::ErrorReport() {
   m_ErrorIsSet           = false;
   m_RuleReportsIsSet     = false;

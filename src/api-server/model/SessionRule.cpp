@@ -20,6 +20,8 @@ namespace oai {
 namespace pcf {
 namespace model {
 
+using namespace oai::model::common;
+
 SessionRule::SessionRule() {
   m_AuthSessAmbrIsSet = false;
   m_AuthDefQosIsSet   = false;
