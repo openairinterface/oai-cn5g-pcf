@@ -246,7 +246,6 @@ add_boolean_option( LOG_OAI                         False    "Thread safe loggin
 # or cmake provide a generic interface to pkg-config that widely used
 ###################################
 
-pkg_search_module(CONFIG REQUIRED libconfig++)
 include_directories(${CONFIG_INCLUDE_DIRS})
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
@@ -295,4 +294,4 @@ IF(STATIC_LINKING)
 ENDIF(STATIC_LINKING)
 
 target_link_libraries (pcf ${ASAN}  -Wl,--start-group PCF PCF_API ${CRYPTO_LIBRARIES} -lnghttp2_asio -lboost_system -lboost_thread -lssl -lcrypto -lfmt -lspdlog dl -Wl,--end-group
-pthread m rt config++ event boost_system -lboost_filesystem pistache curl -lyaml-cpp)
+pthread m rt event boost_system -lboost_filesystem pistache curl -lyaml-cpp)

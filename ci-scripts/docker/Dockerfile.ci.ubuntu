@@ -63,7 +63,6 @@ RUN apt-get update && \
 # Ubuntu 20 --> libasan5
 # Ubuntu 22 --> libasan6
       libasan? \
-      libconfig++9v5 \
 # Ubuntu 18 --> boost62/65 -> will remove both
 # Ubuntu 20 --> boost67/71 -> will remove 67
 # Ubuntu 22 --> boost74
