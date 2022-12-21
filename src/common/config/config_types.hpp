@@ -41,7 +41,7 @@ const std::vector<std::string> allowed_api_versions{"v1", "v2"};
 const std::string URL_REGEX = "http://.*:[0-9]*";
 
 // Only used for pretty-printing
-enum class config_type_e { STRING, OPTION, SBI, LOCAL, INVALID };
+enum class config_type_e { string, option, sbi, local, invalid };
 
 class config_type {
  public:
@@ -52,11 +52,14 @@ class config_type {
 
   [[nodiscard]] virtual config_type_e get_config_type() const = 0;
 
-  [[nodiscard]] virtual bool is_set() const = 0;
+  [[nodiscard]] virtual bool is_set() const;
 
   static bool matches_regex(const std::string& value, const std::string& regex);
 
   virtual ~config_type() = default;
+
+ protected:
+  bool m_set = false;
 };
 
 class string_config_value : public config_type {
@@ -67,11 +70,6 @@ class string_config_value : public config_type {
   [[nodiscard]] std::string to_string(const std::string& indent) const override;
   [[nodiscard]] bool validate() override;
   [[nodiscard]] config_type_e get_config_type() const override;
-  [[nodiscard]] bool is_set() const override;
-
- private:
-  config_type_e type = config_type_e::STRING;
-  bool set           = false;
 };
 
 class option_config_value : public config_type {
@@ -81,11 +79,6 @@ class option_config_value : public config_type {
   [[nodiscard]] std::string to_string(const std::string& indent) const override;
   [[nodiscard]] bool validate() override;
   [[nodiscard]] config_type_e get_config_type() const override;
-  [[nodiscard]] bool is_set() const override;
-
- private:
-  config_type_e type = config_type_e::OPTION;
-  bool set           = false;
 };
 
 class network_interface : public config_type {
@@ -101,11 +94,6 @@ class sbi_interface : public network_interface {
   [[nodiscard]] bool validate() override;
   [[nodiscard]] std::string to_string(const std::string& indent) const override;
   [[nodiscard]] config_type_e get_config_type() const override;
-  [[nodiscard]] bool is_set() const override;
-
- private:
-  config_type_e type = config_type_e::SBI;
-  bool set           = false;
 };
 
 class local_interface : public network_interface {
@@ -119,11 +107,6 @@ class local_interface : public network_interface {
   [[nodiscard]] bool validate() override;
   [[nodiscard]] std::string to_string(const std::string& indent) const override;
   [[nodiscard]] config_type_e get_config_type() const override;
-  [[nodiscard]] bool is_set() const override;
-
- private:
-  config_type_e type = config_type_e::LOCAL;
-  bool set           = false;
 };
 
 class local_sbi_interface : public local_interface {
@@ -133,11 +116,6 @@ class local_sbi_interface : public local_interface {
 
   [[nodiscard]] bool validate() override;
   [[nodiscard]] std::string to_string(const std::string& indent) const override;
-  [[nodiscard]] bool is_set() const override;
-
- private:
-  config_type_e type = config_type_e::LOCAL;
-  bool set           = false;
 };
 
 class factory {

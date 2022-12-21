@@ -86,25 +86,30 @@ std::string config::to_string() const {
         conf.second->to_string("  "));
 
     switch (conf.second->get_config_type()) {
-      case config_type_e::LOCAL:
+      case config_type_e::local:
         local_iface_out.append(val);
         break;
-      case config_type_e::STRING:
+      case config_type_e::string:
         base_conf_out.append(val);
         break;
-      case config_type_e::OPTION:
+      case config_type_e::option:
         support_features_out.append(val);
         break;
-      case config_type_e::SBI:
+      case config_type_e::sbi:
         sbi_out.append(val);
         break;
-      case config_type_e::INVALID:
+      case config_type_e::invalid:
         logger::logger_registry::get_logger(LOGGER_NAME)
             .error(
                 "General error in configuration. Invalid type of: %s",
                 conf.first);
         others_out.append(val);
         break;
+      default:
+        logger::logger_registry::get_logger(LOGGER_NAME)
+            .warn(
+                "%s unhandled value %d", __PRETTY_FUNCTION__,
+                static_cast<int>(conf.second->get_config_type()));
     }
   }
 

@@ -55,11 +55,19 @@ bool config_type::matches_regex(
   return true;
 }
 
+bool config_type::is_set() const {
+  return m_set;
+}
+
+config_type_e config_type::get_config_type() const {
+  return config_type_e::invalid;
+}
+
 bool sbi_interface::validate() {
   if (!matches_regex(url, URL_REGEX)) {
     return false;
   }
-  set = true;
+  m_set = true;
   return true;
 }
 
@@ -76,11 +84,7 @@ std::string sbi_interface::to_string(const std::string& indent) const {
 }
 
 config_type_e sbi_interface::get_config_type() const {
-  return type;
-}
-
-bool sbi_interface::is_set() const {
-  return set;
+  return config_type_e::sbi;
 }
 
 bool local_interface::validate() {
@@ -98,7 +102,7 @@ bool local_interface::validate() {
   mtu   = _mtu;
   addr4 = _addr4;
 
-  set = true;
+  m_set = true;
   return true;
 }
 
@@ -127,11 +131,7 @@ std::string local_interface::to_string(const std::string& indent) const {
 }
 
 config_type_e local_interface::get_config_type() const {
-  return type;
-}
-
-bool local_interface::is_set() const {
-  return set;
+  return config_type_e::local;
 }
 
 bool local_sbi_interface::validate() {
@@ -139,7 +139,7 @@ bool local_sbi_interface::validate() {
   if (!sbi_validate) {
     return false;
   }
-  set = true;
+  m_set = true;
   return local_interface::validate();
 }
 
@@ -159,10 +159,6 @@ std::string local_sbi_interface::to_string(const std::string& indent) const {
   return out;
 }
 
-bool local_sbi_interface::is_set() const {
-  return set;
-}
-
 bool network_interface::validate_sbi_api_version(const std::string& v) {
   auto it =
       std::find(allowed_api_versions.begin(), allowed_api_versions.end(), v);
@@ -180,16 +176,12 @@ std::string string_config_value::to_string(const std::string&) const {
 }
 
 bool string_config_value::validate() {
-  set = true;
+  m_set = true;
   return true;
 }
 
 config_type_e string_config_value::get_config_type() const {
-  return type;
-}
-
-bool string_config_value::is_set() const {
-  return set;
+  return config_type_e::string;
 }
 
 std::string option_config_value::to_string(const std::string&) const {
@@ -198,16 +190,11 @@ std::string option_config_value::to_string(const std::string&) const {
 }
 
 bool option_config_value::validate() {
-  set = true;
   return true;
 }
 
 config_type_e option_config_value::get_config_type() const {
-  return type;
-}
-
-bool option_config_value::is_set() const {
-  return set;
+  return config_type_e::option;
 }
 
 option_config_value factory::get_option_config(bool val) {
