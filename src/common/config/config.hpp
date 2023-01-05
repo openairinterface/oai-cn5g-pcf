@@ -46,7 +46,7 @@ const std::string LOGGER_NAME    = "config ";
 class config_iface {
  public:
   /**
-   * Set a string configuration, adds if not existing or overrides if exists
+   * Sets a string configuration, adds if not existing or overrides if exists
    * Takes ownership of configuration, becomes null after call to this function
    * @param name name of the configuration
    * @param val value of the configuration
@@ -55,14 +55,14 @@ class config_iface {
       const std::string& name, std::unique_ptr<config_type> val) = 0;
 
   /**
-   * Set a configuration of any type with name to be mandatory, used for
+   * Sets a configuration of any type with name to be mandatory, used for
    * validation
    * @param name name of the configuration
    */
   virtual void set_configuration_mandatory(const std::string& name) = 0;
 
   /**
-   * Validate the configuration:
+   * Validates the configuration:
    *  - All configurations set as mandatory must be present
    *  - All present configurations must pass their type-specific validation
    * @return True if validation passed, false otherwise
@@ -79,7 +79,7 @@ class config_iface {
   // members Annoying that I cannot have a virtual template method just called
   // "get"
   /**
-   * Get a string base configuration
+   * Gets a string base configuration
    * @throws std::invalid_argument when name does not exist in configuration
    * @param name of the configuration
    * @return value
@@ -88,7 +88,7 @@ class config_iface {
       const std::string& name) const = 0;
 
   /**
-   * Get a boolean configuration
+   * Gets a boolean configuration
    * @throws std::invalid_argument when name does not exist in configuration
    * @param name of the configuration
    * @return value
@@ -97,7 +97,7 @@ class config_iface {
       const std::string& name) const = 0;
 
   /**
-   * Get a SBI interface configuration
+   * Gets a SBI interface configuration
    * @throws std::invalid_argument when name does not exist in configuration
    * @param name of the configuration
    * @return value
@@ -106,7 +106,7 @@ class config_iface {
       const std::string& name) const = 0;
 
   /**
-   * Get a local SBI interface configuration
+   * Gets a local SBI interface configuration
    * @throws std::invalid_argument when name does not exist in configuration
    * @param name of the configuration
    * @return value
@@ -115,7 +115,7 @@ class config_iface {
       const std::string& name) const = 0;
 
   /**
-   * Get a local interface configuration
+   * Gets a local interface configuration
    * @throws std::invalid_argument when name does not exist in configuration
    * @param name of the configuration
    * @return value
@@ -124,7 +124,7 @@ class config_iface {
       const std::string& name) const = 0;
 
   /**
-   * Display the to_string method to the config logger
+   * Displays the to_string method to the config logger
    */
   virtual void display() const = 0;
 
@@ -150,7 +150,7 @@ class config : public config_iface {
   [[nodiscard]] std::string to_string() const override;
 
   /**
-   * Get configuration of type T, must be derived from conf_type
+   * Gets configuration of type T, must be derived from conf_type
    * @tparam T sub_type of conf_type
    * @param name of the configuration
    * @throws std::invalid_argument when name does not exist in configuration
