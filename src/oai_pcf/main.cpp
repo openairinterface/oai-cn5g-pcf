@@ -104,10 +104,10 @@ int main(int argc, char** argv) {
   // PCF application layer
   pcf_app_inst = std::make_unique<pcf_app>(ev);
 
-  std::string v4_address = conv::toString(pcf_cfg->sbi.addr4);
+  std::string v4_address = conv::toString(pcf_cfg->sbi.get_addr4());
 
   // PCF Pistache API server (HTTP1)
-  Pistache::Address addr(v4_address, Pistache::Port(pcf_cfg->sbi.port));
+  Pistache::Address addr(v4_address, Pistache::Port(pcf_cfg->sbi.get_port()));
   PCFApiServer test(addr, pcf_app_inst);
 
   pcf_api_server_1 = std::make_unique<PCFApiServer>(addr, pcf_app_inst);
@@ -117,7 +117,7 @@ int main(int argc, char** argv) {
   if (pcf_cfg->sbi_http2.is_set()) {
     // PCF NGHTTP API server (HTTP2)
     pcf_api_server_2 = std::make_unique<pcf_http2_server>(
-        v4_address, pcf_cfg->sbi_http2.port, pcf_app_inst);
+        v4_address, pcf_cfg->sbi_http2.get_port(), pcf_app_inst);
     std::thread pcf_http2_manager(
         &pcf_http2_server::start, pcf_api_server_2.get());
     pcf_http2_manager.join();

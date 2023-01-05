@@ -134,11 +134,11 @@ std::string config::to_string() const {
 }
 
 const std::string& config::get_base_conf_val(const std::string& name) const {
-  return get<string_config_value>(name).value;
+  return get<string_config_value>(name).get_value();
 }
 
 bool config::get_support_feature(const std::string& name) const {
-  return get<option_config_value>(name).value;
+  return get<option_config_value>(name).get_value();
 }
 
 const sbi_interface& config::get_sbi_interface(const std::string& name) const {

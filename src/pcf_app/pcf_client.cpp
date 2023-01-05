@@ -107,7 +107,7 @@ http_status_code_e pcf_client::do_request(
   curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
   curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, NF_CURL_TIMEOUT_MS);
   curl_easy_setopt(curl, CURLOPT_TCP_KEEPALIVE, 1);
-  curl_easy_setopt(curl, CURLOPT_INTERFACE, pcf_cfg->sbi.if_name.c_str());
+  curl_easy_setopt(curl, CURLOPT_INTERFACE, pcf_cfg->sbi.get_if_name().c_str());
 
   if (pcf_cfg->pcf_features.use_http2) {
     curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);

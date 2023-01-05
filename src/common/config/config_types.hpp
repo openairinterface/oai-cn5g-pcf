@@ -44,6 +44,8 @@ const std::string URL_REGEX = "http://.*:[0-9]*";
 enum class config_type_e { string, option, sbi, local, invalid };
 
 class config_type {
+  friend class yaml_file_iface;
+
  public:
   /**
    * Returns a string representation of the config. The indent is prepended at
@@ -89,22 +91,34 @@ class config_type {
 };
 
 class string_config_value : public config_type {
- public:
-  std::string value;
-  std::string regex;
+  friend class factory;
+  friend class yaml_file_iface;
 
+ private:
+  std::string m_value;
+  std::string m_regex;
+
+ public:
   [[nodiscard]] std::string to_string(const std::string& indent) const override;
   [[nodiscard]] bool validate() override;
   [[nodiscard]] config_type_e get_config_type() const override;
+
+  [[nodiscard]] const std::string& get_value() const;
 };
 
 class option_config_value : public config_type {
- public:
-  bool value = false;
+  friend class factory;
+  friend class yaml_file_iface;
 
+ private:
+  bool m_value = false;
+
+ public:
   [[nodiscard]] std::string to_string(const std::string& indent) const override;
   [[nodiscard]] bool validate() override;
   [[nodiscard]] config_type_e get_config_type() const override;
+
+  [[nodiscard]] bool get_value() const;
 };
 
 class network_interface : public config_type {
@@ -113,35 +127,56 @@ class network_interface : public config_type {
 };
 
 class sbi_interface : public network_interface {
- public:
-  std::string api_version;
-  std::string url;
+  friend class yaml_file_iface;
 
+ private:
+  std::string m_api_version;
+  std::string m_url;
+
+ public:
   [[nodiscard]] bool validate() override;
   [[nodiscard]] std::string to_string(const std::string& indent) const override;
   [[nodiscard]] config_type_e get_config_type() const override;
+
+  [[nodiscard]] const std::string& get_api_version() const;
+  [[nodiscard]] const std::string& get_url() const;
 };
 
 class local_interface : public network_interface {
- public:
-  std::string if_name{};
-  in_addr addr4{};
-  in6_addr addr6{};
-  unsigned int mtu{};
-  uint16_t port{};
+  friend class yaml_file_iface;
 
+ private:
+  std::string m_if_name{};
+  in_addr m_addr4{};
+  in6_addr m_addr6{};
+  unsigned int m_mtu{};
+  uint16_t m_port{};
+
+ public:
   [[nodiscard]] bool validate() override;
   [[nodiscard]] std::string to_string(const std::string& indent) const override;
   [[nodiscard]] config_type_e get_config_type() const override;
+
+  [[nodiscard]] const std::string& get_if_name() const;
+  [[nodiscard]] const in_addr& get_addr4() const;
+  [[nodiscard]] const in6_addr& get_addr6() const;
+  [[nodiscard]] unsigned int get_mtu() const;
+  [[nodiscard]] uint16_t get_port() const;
 };
 
 class local_sbi_interface : public local_interface {
- public:
-  std::string api_version;
-  bool use_http2 = false;
+  friend class yaml_file_iface;
 
+ private:
+  std::string m_api_version;
+  bool m_use_http2 = false;
+
+ public:
   [[nodiscard]] bool validate() override;
   [[nodiscard]] std::string to_string(const std::string& indent) const override;
+
+  [[nodiscard]] const std::string& get_api_version() const;
+  [[nodiscard]] bool use_http2() const;
 };
 
 class factory {

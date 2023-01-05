@@ -47,6 +47,18 @@ class yaml_file_iface {
    */
   virtual void read_from_file(
       const std::string& file_path, config_iface& config) = 0;
+
+ protected:
+  static bool from_yaml(
+      const YAML::Node& node, oai::config::option_config_value& val);
+  static bool from_yaml(
+      const YAML::Node& node, oai::config::string_config_value& val);
+  static bool from_yaml(
+      const YAML::Node& node, oai::config::sbi_interface& val);
+  static bool from_yaml(
+      const YAML::Node& node, oai::config::local_interface& val);
+  static bool from_yaml(
+      const YAML::Node& node, oai::config::local_sbi_interface& val);
 };
 
 class yaml_file : public yaml_file_iface {
@@ -63,66 +75,3 @@ class yaml_file : public yaml_file_iface {
 };
 
 }  // namespace oai::config
-
-namespace YAML {
-template<>
-struct convert<oai::config::option_config_value> {
-  static bool decode(const Node& node, oai::config::option_config_value& val) {
-    val.value = node.as<bool>();
-    return true;
-  }
-};
-
-template<>
-struct convert<oai::config::string_config_value> {
-  static bool decode(const Node& node, oai::config::string_config_value& val) {
-    val.value = node.as<std::string>();
-    return true;
-  }
-};
-
-template<>
-struct convert<oai::config::sbi_interface> {
-  static bool decode(const Node& node, oai::config::sbi_interface& val) {
-    if (!node["url"] || !node["api_version"]) {
-      return false;
-    }
-    val.api_version = node["api_version"].as<std::string>();
-    val.url         = node["url"].as<std::string>();
-    return true;
-  }
-};
-
-template<>
-struct convert<oai::config::local_interface> {
-  static bool decode(const Node& node, oai::config::local_interface& val) {
-    if (!node["name"] || !node["port"]) {
-      return false;
-    }
-    val.port    = node["port"].as<uint16_t>();
-    val.if_name = node["name"].as<std::string>();
-    return true;
-  }
-};
-
-template<>
-struct convert<oai::config::local_sbi_interface> {
-  static bool decode(const Node& node, oai::config::local_sbi_interface& val) {
-    auto iface = node.as<oai::config::local_interface>();
-    if (!node["api_version"] || !node["http_version"]) {
-      return false;
-    }
-
-    val.port          = iface.port;
-    val.if_name       = iface.if_name;
-    val.api_version   = node["api_version"].as<std::string>();
-    auto http_version = node["http_version"].as<std::string>();
-
-    if (http_version == "2") {
-      val.use_http2 = true;
-    }
-    return true;
-  }
-};
-
-}  // namespace YAML

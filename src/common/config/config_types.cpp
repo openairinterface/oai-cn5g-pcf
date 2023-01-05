@@ -64,7 +64,7 @@ config_type_e config_type::get_config_type() const {
 }
 
 bool sbi_interface::validate() {
-  if (!matches_regex(url, URL_REGEX)) {
+  if (!matches_regex(m_url, URL_REGEX)) {
     return false;
   }
   m_set = true;
@@ -80,10 +80,10 @@ std::string sbi_interface::to_string(const std::string& indent) const {
 
   out.append("SBI Interface\n");
   out.append(indent).append(
-      fmt::format(BASE_FORMATTER, INNER_LIST_ELEM, "URL", inner_width, url));
+      fmt::format(BASE_FORMATTER, INNER_LIST_ELEM, "URL", inner_width, m_url));
   out.append(indent).append(fmt::format(
       BASE_FORMATTER, INNER_LIST_ELEM, "API Version", inner_width,
-      api_version));
+      m_api_version));
   return out;
 }
 
@@ -91,20 +91,28 @@ config_type_e sbi_interface::get_config_type() const {
   return config_type_e::sbi;
 }
 
+const std::string& sbi_interface::get_api_version() const {
+  return m_api_version;
+}
+
+const std::string& sbi_interface::get_url() const {
+  return m_url;
+}
+
 bool local_interface::validate() {
   unsigned int _mtu{};
   in_addr _addr4{};
   in_addr _netmask{};
-  if (get_inet_addr_infos_from_iface(if_name, _addr4, _netmask, _mtu) ==
+  if (get_inet_addr_infos_from_iface(m_if_name, _addr4, _netmask, _mtu) ==
       RETURNerror) {
     logger::logger_registry::get_logger(LOGGER_NAME)
         .error(
             "Error in reading configuration from network interface %s",
-            if_name);
+            m_if_name);
     return false;
   }
-  mtu   = _mtu;
-  addr4 = _addr4;
+  m_mtu   = _mtu;
+  m_addr4 = _addr4;
 
   m_set = true;
   return true;
@@ -118,8 +126,8 @@ std::string local_interface::to_string(const std::string& indent) const {
   }
 
   out.append("Local Interface\n");
-  std::string ip4 = conv::toString(addr4);
-  std::string ip6 = conv::toString(addr6);
+  std::string ip4 = conv::toString(m_addr4);
+  std::string ip6 = conv::toString(m_addr6);
 
   out.append(indent).append(fmt::format(
       BASE_FORMATTER, INNER_LIST_ELEM, "IPv4 Address ", inner_width, ip4));
@@ -128,12 +136,12 @@ std::string local_interface::to_string(const std::string& indent) const {
         BASE_FORMATTER, INNER_LIST_ELEM, "IPv6 Address", inner_width, ip6));
   }
   out.append(indent).append(
-      fmt::format(BASE_FORMATTER, INNER_LIST_ELEM, "MTU", inner_width, mtu));
+      fmt::format(BASE_FORMATTER, INNER_LIST_ELEM, "MTU", inner_width, m_mtu));
   out.append(indent).append(fmt::format(
       BASE_FORMATTER, INNER_LIST_ELEM, "Interface name: ", inner_width,
-      if_name));
-  out.append(indent).append(
-      fmt::format(BASE_FORMATTER, INNER_LIST_ELEM, "Port", inner_width, port));
+      m_if_name));
+  out.append(indent).append(fmt::format(
+      BASE_FORMATTER, INNER_LIST_ELEM, "Port", inner_width, m_port));
 
   return out;
 }
@@ -142,8 +150,28 @@ config_type_e local_interface::get_config_type() const {
   return config_type_e::local;
 }
 
+const std::string& local_interface::get_if_name() const {
+  return m_if_name;
+}
+
+const in_addr& local_interface::get_addr4() const {
+  return m_addr4;
+}
+
+const in6_addr& local_interface::get_addr6() const {
+  return m_addr6;
+}
+
+unsigned int local_interface::get_mtu() const {
+  return m_mtu;
+}
+
+uint16_t local_interface::get_port() const {
+  return m_port;
+}
+
 bool local_sbi_interface::validate() {
-  bool sbi_validate = validate_sbi_api_version(api_version);
+  bool sbi_validate = validate_sbi_api_version(m_api_version);
   if (!sbi_validate) {
     return false;
   }
@@ -159,15 +187,23 @@ std::string local_sbi_interface::to_string(const std::string& indent) const {
   std::string out = local_interface::to_string(indent);
   out.append(indent).append(fmt::format(
       BASE_FORMATTER, INNER_LIST_ELEM, "API Version", inner_width,
-      api_version));
+      m_api_version));
 
-  std::string http_version = use_http2 ? "2" : "1";
+  std::string http_version = m_use_http2 ? "2" : "1";
 
   out.append(indent).append(fmt::format(
       BASE_FORMATTER, INNER_LIST_ELEM, "HTTP Version", inner_width,
       http_version));
 
   return out;
+}
+
+const std::string& local_sbi_interface::get_api_version() const {
+  return m_api_version;
+}
+
+bool local_sbi_interface::use_http2() const {
+  return m_use_http2;
 }
 
 bool network_interface::validate_sbi_api_version(const std::string& v) {
@@ -183,7 +219,7 @@ bool network_interface::validate_sbi_api_version(const std::string& v) {
 
 std::string string_config_value::to_string(const std::string&) const {
   std::string out;
-  return out.append(value);
+  return out.append(m_value);
 }
 
 bool string_config_value::validate() {
@@ -195,8 +231,12 @@ config_type_e string_config_value::get_config_type() const {
   return config_type_e::string;
 }
 
+const std::string& string_config_value::get_value() const {
+  return m_value;
+}
+
 std::string option_config_value::to_string(const std::string&) const {
-  std::string val = value ? "Yes" : "No";
+  std::string val = m_value ? "Yes" : "No";
   return val;
 }
 
@@ -209,14 +249,18 @@ config_type_e option_config_value::get_config_type() const {
   return config_type_e::option;
 }
 
+bool option_config_value::get_value() const {
+  return m_value;
+}
+
 option_config_value factory::get_option_config(bool val) {
   option_config_value v;
-  v.value = val;
+  v.m_value = val;
   return v;
 }
 
 string_config_value factory::get_string_config(const std::string& val) {
   string_config_value v;
-  v.value = val;
+  v.m_value = val;
   return v;
 }
