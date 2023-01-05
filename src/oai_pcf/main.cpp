@@ -93,6 +93,7 @@ int main(int argc, char** argv) {
       oai::utils::options::getlogRotFilelog());
   if (!pcf_cfg->init()) {
     pcf_cfg->display();
+    Logger::system().error("Reading the configuration failed. Exiting.");
     return 1;
   }
   pcf_cfg->display();
