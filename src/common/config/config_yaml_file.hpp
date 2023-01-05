@@ -47,18 +47,6 @@ class yaml_file_iface {
    */
   virtual void read_from_file(
       const std::string& file_path, config_iface& config) = 0;
-
- protected:
-  static bool from_yaml(
-      const YAML::Node& node, oai::config::option_config_value& val);
-  static bool from_yaml(
-      const YAML::Node& node, oai::config::string_config_value& val);
-  static bool from_yaml(
-      const YAML::Node& node, oai::config::sbi_interface& val);
-  static bool from_yaml(
-      const YAML::Node& node, oai::config::local_interface& val);
-  static bool from_yaml(
-      const YAML::Node& node, oai::config::local_sbi_interface& val);
 };
 
 class yaml_file : public yaml_file_iface {

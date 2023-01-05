@@ -71,6 +71,11 @@ bool sbi_interface::validate() {
   return true;
 }
 
+sbi_interface::sbi_interface(YAML::Node const& node) {
+  m_api_version = node["api_version"].as<std::string>();
+  m_url         = node["url"].as<std::string>();
+}
+
 std::string sbi_interface::to_string(const std::string& indent) const {
   std::string out;
   unsigned int inner_width = COLUMN_WIDTH;
@@ -97,6 +102,11 @@ const std::string& sbi_interface::get_api_version() const {
 
 const std::string& sbi_interface::get_url() const {
   return m_url;
+}
+
+local_interface::local_interface(YAML::Node const& node) {
+  m_port    = node["port"].as<uint16_t>();
+  m_if_name = node["name"].as<std::string>();
 }
 
 bool local_interface::validate() {
@@ -170,6 +180,18 @@ uint16_t local_interface::get_port() const {
   return m_port;
 }
 
+local_sbi_interface::local_sbi_interface(YAML::Node const& node) {
+  auto iface = local_interface{node};
+  m_port        = iface.m_port;
+  m_if_name     = iface.m_if_name;
+  m_api_version = node["api_version"].as<std::string>();
+  auto http_version = node["http_version"].as<std::string>();
+
+  if (http_version == "2") {
+    m_use_http2 = true;
+  }
+}
+
 bool local_sbi_interface::validate() {
   bool sbi_validate = validate_sbi_api_version(m_api_version);
   if (!sbi_validate) {
@@ -217,6 +239,10 @@ bool network_interface::validate_sbi_api_version(const std::string& v) {
   return true;
 }
 
+string_config_value::string_config_value(YAML::Node const& node) {
+  m_value = node.as<std::string>();
+}
+
 std::string string_config_value::to_string(const std::string&) const {
   std::string out;
   return out.append(m_value);
@@ -233,6 +259,10 @@ config_type_e string_config_value::get_config_type() const {
 
 const std::string& string_config_value::get_value() const {
   return m_value;
+}
+
+option_config_value::option_config_value(YAML::Node const& node) {
+  m_value = node.as<bool>();
 }
 
 std::string option_config_value::to_string(const std::string&) const {
