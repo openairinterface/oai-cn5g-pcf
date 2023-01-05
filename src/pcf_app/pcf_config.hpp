@@ -76,7 +76,7 @@ class pcf_config {
   };
 
   /**
-   * Initialize the configuration, sets mandatory values for validation, sets
+   * Initializes the configuration, sets mandatory values for validation, sets
    * default values, reads YAML configuration file and validates the
    * configuration
    * @return True on success
