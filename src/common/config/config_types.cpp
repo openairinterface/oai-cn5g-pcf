@@ -147,7 +147,6 @@ bool local_sbi_interface::validate() {
   if (!sbi_validate) {
     return false;
   }
-  m_set = true;
   return local_interface::validate();
 }
 
@@ -202,6 +201,7 @@ std::string option_config_value::to_string(const std::string&) const {
 }
 
 bool option_config_value::validate() {
+  m_set = true;
   return true;
 }
 
