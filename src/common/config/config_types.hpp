@@ -46,7 +46,8 @@ enum class config_type_e { string, option, sbi, local, invalid };
 class config_type {
  public:
   /**
-   * Returns a string representation of the config. The indent is prepended at each line
+   * Returns a string representation of the config. The indent is prepended at
+   * each line
    * @param indent to be prepended
    * @return string representation
    */
@@ -54,7 +55,8 @@ class config_type {
       const std::string& indent) const = 0;
 
   /**
-   * Validates the configuration and marks the configuration as set if successful
+   * Validates the configuration and marks the configuration as set if
+   * successful
    * @return true if validation successful, false otherwise
    */
   [[nodiscard]] virtual bool validate() = 0;
@@ -66,8 +68,8 @@ class config_type {
   [[nodiscard]] virtual config_type_e get_config_type() const = 0;
 
   /**
-   * Checks if the configuration is set. Configuration is not set if it has not been
-   * validated.
+   * Checks if the configuration is set. Configuration is not set if it has not
+   * been validated.
    * @return true if set, false otherwise
    */
   [[nodiscard]] virtual bool is_set() const;

@@ -73,7 +73,11 @@ bool sbi_interface::validate() {
 
 std::string sbi_interface::to_string(const std::string& indent) const {
   std::string out;
-  unsigned int inner_width = COLUMN_WIDTH - indent.length();
+  unsigned int inner_width = COLUMN_WIDTH;
+  if (indent.length() < COLUMN_WIDTH) {
+    inner_width = COLUMN_WIDTH - indent.length();
+  }
+
   out.append("SBI Interface\n");
   out.append(indent).append(
       fmt::format(BASE_FORMATTER, INNER_LIST_ELEM, "URL", inner_width, url));
@@ -108,7 +112,11 @@ bool local_interface::validate() {
 
 std::string local_interface::to_string(const std::string& indent) const {
   std::string out;
-  unsigned int inner_width = COLUMN_WIDTH - indent.length();
+  unsigned int inner_width = COLUMN_WIDTH;
+  if (indent.length() < COLUMN_WIDTH) {
+    inner_width = COLUMN_WIDTH - indent.length();
+  }
+
   out.append("Local Interface\n");
   std::string ip4 = conv::toString(addr4);
   std::string ip6 = conv::toString(addr6);
@@ -144,8 +152,12 @@ bool local_sbi_interface::validate() {
 }
 
 std::string local_sbi_interface::to_string(const std::string& indent) const {
-  unsigned int inner_width = COLUMN_WIDTH - indent.length();
-  std::string out          = local_interface::to_string(indent);
+  unsigned int inner_width = 0;
+  if (indent.length() < COLUMN_WIDTH) {
+    inner_width = COLUMN_WIDTH - indent.length();
+  }
+
+  std::string out = local_interface::to_string(indent);
   out.append(indent).append(fmt::format(
       BASE_FORMATTER, INNER_LIST_ELEM, "API Version", inner_width,
       api_version));
