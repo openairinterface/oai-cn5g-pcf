@@ -33,6 +33,7 @@
 #include <netinet/in.h>
 #include <vector>
 #include <memory>
+#include <yaml-cpp/yaml.h>
 
 namespace oai::config {
 
@@ -92,13 +93,15 @@ class config_type {
 
 class string_config_value : public config_type {
   friend class factory;
-  friend class yaml_file_iface;
 
  private:
   std::string m_value;
   std::string m_regex;
 
  public:
+  explicit string_config_value(YAML::Node const&);
+  string_config_value() = default;
+
   [[nodiscard]] std::string to_string(const std::string& indent) const override;
   [[nodiscard]] bool validate() override;
   [[nodiscard]] config_type_e get_config_type() const override;
@@ -108,12 +111,14 @@ class string_config_value : public config_type {
 
 class option_config_value : public config_type {
   friend class factory;
-  friend class yaml_file_iface;
 
  private:
   bool m_value = false;
 
  public:
+  explicit option_config_value(YAML::Node const&);
+  option_config_value() = default;
+
   [[nodiscard]] std::string to_string(const std::string& indent) const override;
   [[nodiscard]] bool validate() override;
   [[nodiscard]] config_type_e get_config_type() const override;
@@ -127,13 +132,14 @@ class network_interface : public config_type {
 };
 
 class sbi_interface : public network_interface {
-  friend class yaml_file_iface;
-
  private:
   std::string m_api_version;
   std::string m_url;
 
  public:
+  explicit sbi_interface(YAML::Node const&);
+  sbi_interface() = default;
+
   [[nodiscard]] bool validate() override;
   [[nodiscard]] std::string to_string(const std::string& indent) const override;
   [[nodiscard]] config_type_e get_config_type() const override;
@@ -143,7 +149,7 @@ class sbi_interface : public network_interface {
 };
 
 class local_interface : public network_interface {
-  friend class yaml_file_iface;
+  friend class local_sbi_interface;
 
  private:
   std::string m_if_name{};
@@ -153,6 +159,9 @@ class local_interface : public network_interface {
   uint16_t m_port{};
 
  public:
+  explicit local_interface(YAML::Node const&);
+  local_interface() = default;
+
   [[nodiscard]] bool validate() override;
   [[nodiscard]] std::string to_string(const std::string& indent) const override;
   [[nodiscard]] config_type_e get_config_type() const override;
@@ -165,13 +174,14 @@ class local_interface : public network_interface {
 };
 
 class local_sbi_interface : public local_interface {
-  friend class yaml_file_iface;
-
  private:
   std::string m_api_version;
   bool m_use_http2 = false;
 
  public:
+  explicit local_sbi_interface(YAML::Node const&);
+  local_sbi_interface() = default;
+
   [[nodiscard]] bool validate() override;
   [[nodiscard]] std::string to_string(const std::string& indent) const override;
 
