@@ -32,10 +32,10 @@ include_directories(${SRC_TOP_DIR}/pcf_app/sm_policy/)
 add_library (PCF STATIC
   pcf_app.cpp
   pcf_nrf.cpp
-  pcf_client.cpp 
+  pcf_client.cpp
   pcf_config.cpp
   pcf_profile.cpp
-  pcf_event.cpp 
+  pcf_event.cpp
   pcf_sm_policy_control.cpp
   task_manager.cpp
   sm_policy/individual_sm_association.cpp
@@ -48,7 +48,7 @@ add_library (PCF STATIC
   )
 
 ## Common modules
-include(${SRC_TOP_DIR}/common/logger/logger.cmake)
+include(${SRC_TOP_DIR}/oai-cn5g-common-src/logger/logger.cmake)
 include(${SRC_TOP_DIR}/common/utils/utils.cmake)
 
 include(${BUILD_TOP_DIR}/pcf/used_common_files.cmake)
