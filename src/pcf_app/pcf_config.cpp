@@ -34,16 +34,17 @@ using namespace oai::config;
 
 bool oai::pcf::config::pcf_config::init() {
   // Default configuration
-  std::unique_ptr<config_type> use_http2 =
-      std::make_unique<option_config_value>(
-          factory::get_option_config(USE_HTTP2_DEFAULT_VALUE));
+  std::unique_ptr<config_type> client_http_version =
+      std::make_unique<uint8_config_value>(
+          factory::get_uint8_config(CLIENT_HTTP2_VERSION_DEFAULT_VALUE));
   std::unique_ptr<config_type> register_nrf =
       std::make_unique<option_config_value>(
           factory::get_option_config(REGISTER_NRF_DEFAULT_VALUE));
   std::unique_ptr<config_type> pcf_name = std::make_unique<string_config_value>(
       factory::get_string_config(NAME_DEFAULT_VALUE));
 
-  m_cfg->set_configuration(PCF_CONFIG_STRING_USE_HTTP2, std::move(use_http2));
+  m_cfg->set_configuration(
+      PCF_CONFIG_STRING_CLIENT_HTTP_VERSION, std::move(client_http_version));
   m_cfg->set_configuration(
       PCF_CONFIG_STRING_REGISTER_NRF, std::move(register_nrf));
   m_cfg->set_configuration(PCF_CONFIG_STRING_NAME, std::move(pcf_name));
@@ -64,6 +65,7 @@ bool oai::pcf::config::pcf_config::init() {
   if (m_cfg->get_support_feature(PCF_CONFIG_STRING_REGISTER_NRF)) {
     m_cfg->set_configuration_mandatory(PCF_CONFIG_STRING_NRF);
   }
+  set_validation_constraints();
 
   bool validated = m_cfg->validate();
   if (!validated) {
@@ -77,11 +79,6 @@ bool oai::pcf::config::pcf_config::init() {
 
 void oai::pcf::config::pcf_config::set_direct_variables() {
   sbi = m_cfg->get_local_sbi_interface(PCF_CONFIG_STRING_SBI_IFACE);
-  try {
-    sbi_http2 =
-        m_cfg->get_local_sbi_interface(PCF_CONFIG_STRING_SBI_IFACE_HTTP2);
-  } catch (std::invalid_argument&) {
-  }
 
   nrf_addr       = m_cfg->get_sbi_interface(PCF_CONFIG_STRING_NRF);
   pcc_rules_path = m_cfg->get_base_conf_val(PCF_CONFIG_STRING_PCC_RULES_DIR);
@@ -92,10 +89,22 @@ void oai::pcf::config::pcf_config::set_direct_variables() {
 
   pcf_features.register_nrf =
       m_cfg->get_support_feature(PCF_CONFIG_STRING_REGISTER_NRF);
-  pcf_features.use_http2 =
-      m_cfg->get_support_feature(PCF_CONFIG_STRING_USE_HTTP2);
+  pcf_features.client_http_version =
+      m_cfg->get_uint8_conf_val(PCF_CONFIG_STRING_CLIENT_HTTP_VERSION);
 }
 
 void oai::pcf::config::pcf_config::display() {
   m_cfg->display();
+}
+
+void oai::pcf::config::pcf_config::set_validation_constraints() {
+  std::unique_ptr<uint8_config_value> http_client_version_ptr =
+      std::make_unique<uint8_config_value>(
+          m_cfg->get_uint8_conf(PCF_CONFIG_STRING_CLIENT_HTTP_VERSION));
+  http_client_version_ptr->set_validation_max_value(2);
+  http_client_version_ptr->set_validation_min_value(1);
+
+  m_cfg->set_configuration(
+      PCF_CONFIG_STRING_CLIENT_HTTP_VERSION,
+      std::move(http_client_version_ptr));
 }

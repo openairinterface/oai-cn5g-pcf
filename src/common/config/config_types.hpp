@@ -42,7 +42,7 @@ const std::vector<std::string> allowed_api_versions{"v1", "v2"};
 const std::string URL_REGEX = "http://.*:[0-9]*";
 
 // Only used for pretty-printing
-enum class config_type_e { string, option, sbi, local, invalid };
+enum class config_type_e { string, option, sbi, local, invalid, uint8 };
 
 class config_type {
   friend class yaml_file_iface;
@@ -126,6 +126,27 @@ class option_config_value : public config_type {
   [[nodiscard]] bool get_value() const;
 };
 
+class uint8_config_value : public config_type {
+  friend class factory;
+
+ private:
+  uint8_t m_value     = 0;
+  uint8_t m_min_value = 0;
+  uint8_t m_max_value = UINT8_MAX;
+
+ public:
+  explicit uint8_config_value(YAML::Node const&);
+  uint8_config_value() = default;
+
+  [[nodiscard]] std::string to_string(const std::string& indent) const override;
+  [[nodiscard]] bool validate() override;
+  [[nodiscard]] config_type_e get_config_type() const override;
+
+  [[nodiscard]] uint8_t get_value() const;
+  void set_validation_min_value(uint8_t val);
+  void set_validation_max_value(uint8_t val);
+};
+
 class network_interface : public config_type {
  public:
   static bool validate_sbi_api_version(const std::string& v);
@@ -175,8 +196,9 @@ class local_interface : public network_interface {
 
 class local_sbi_interface : public local_interface {
  private:
-  std::string m_api_version;
-  bool m_use_http2 = false;
+  std::string m_api_version{};
+  uint8_t m_http_version = 1;
+  uint16_t m_port_http2{};
 
  public:
   explicit local_sbi_interface(YAML::Node const&);
@@ -186,7 +208,8 @@ class local_sbi_interface : public local_interface {
   [[nodiscard]] std::string to_string(const std::string& indent) const override;
 
   [[nodiscard]] const std::string& get_api_version() const;
-  [[nodiscard]] bool use_http2() const;
+  [[nodiscard]] uint8_t http_version() const;
+  [[nodiscard]] uint16_t get_port_http2() const;
 };
 
 class factory {
@@ -194,6 +217,8 @@ class factory {
   static option_config_value get_option_config(bool val);
 
   static string_config_value get_string_config(const std::string& val);
+
+  static uint8_config_value get_uint8_config(uint8_t val);
 };
 
 }  // namespace oai::config

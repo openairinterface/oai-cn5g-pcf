@@ -25,7 +25,7 @@ import socket
 import os
 import sys
 
-CONFIG_FILE = str(os.getenv('CONFIG_FILE','/openair-pcf/etc/pcf.conf'))
+CONFIG_FILE = str(os.getenv('CONFIG_FILE','/openair-pcf/etc/conf.yaml'))
 MOUNT_CONFIG = str(os.getenv('MOUNT_CONFIG','no')).lower()
 
 def resolve(hostname):

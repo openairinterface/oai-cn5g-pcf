@@ -73,7 +73,11 @@ bool sbi_interface::validate() {
 
 sbi_interface::sbi_interface(YAML::Node const& node) {
   m_api_version = node["api_version"].as<std::string>();
-  m_url         = node["url"].as<std::string>();
+  // this is easily adaptable to HTTPS, just add a flag, and we change the URL
+  m_url.append("http://")
+      .append(node["host"].as<std::string>())
+      .append(":")
+      .append(node["port"].as<std::string>());
 }
 
 std::string sbi_interface::to_string(const std::string& indent) const {
@@ -181,15 +185,11 @@ uint16_t local_interface::get_port() const {
 }
 
 local_sbi_interface::local_sbi_interface(YAML::Node const& node) {
-  auto iface        = local_interface{node};
-  m_port            = iface.m_port;
-  m_if_name         = iface.m_if_name;
-  m_api_version     = node["api_version"].as<std::string>();
-  auto http_version = node["http_version"].as<std::string>();
-
-  if (http_version == "2") {
-    m_use_http2 = true;
-  }
+  m_if_name      = node["name"].as<std::string>();
+  m_port         = node["port_http"].as<uint16_t>();
+  m_port_http2   = node["port_http2"].as<uint16_t>();
+  m_api_version  = node["api_version"].as<std::string>();
+  m_http_version = node["http_version"].as<uint8_t>();
 }
 
 bool local_sbi_interface::validate() {
@@ -197,6 +197,13 @@ bool local_sbi_interface::validate() {
   if (!sbi_validate) {
     return false;
   }
+
+  if (m_http_version < 1 || m_http_version > 2) {
+    logger::logger_registry::get_logger(LOGGER_NAME)
+        .error("Wrong HTTP version: %u. Should be 1 or 2", m_http_version);
+    return false;
+  }
+
   return local_interface::validate();
 }
 
@@ -211,11 +218,9 @@ std::string local_sbi_interface::to_string(const std::string& indent) const {
       BASE_FORMATTER, INNER_LIST_ELEM, "API Version", inner_width,
       m_api_version));
 
-  std::string http_version = m_use_http2 ? "2" : "1";
-
   out.append(indent).append(fmt::format(
       BASE_FORMATTER, INNER_LIST_ELEM, "HTTP Version", inner_width,
-      http_version));
+      m_http_version));
 
   return out;
 }
@@ -224,8 +229,12 @@ const std::string& local_sbi_interface::get_api_version() const {
   return m_api_version;
 }
 
-bool local_sbi_interface::use_http2() const {
-  return m_use_http2;
+uint8_t local_sbi_interface::http_version() const {
+  return m_http_version;
+}
+
+uint16_t local_sbi_interface::get_port_http2() const {
+  return m_port_http2;
 }
 
 bool network_interface::validate_sbi_api_version(const std::string& v) {
@@ -281,6 +290,48 @@ config_type_e option_config_value::get_config_type() const {
 
 bool option_config_value::get_value() const {
   return m_value;
+}
+
+uint8_config_value factory::get_uint8_config(uint8_t val) {
+  uint8_config_value v;
+  v.m_value = val;
+  return v;
+}
+
+uint8_config_value::uint8_config_value(const YAML::Node& node) {
+  m_value = node.as<uint8_t>();
+}
+
+std::string uint8_config_value::to_string(const std::string&) const {
+  return std::to_string(m_value);
+}
+
+bool uint8_config_value::validate() {
+  if (m_value < m_min_value || m_value > m_max_value) {
+    logger::logger_registry::get_logger(LOGGER_NAME)
+        .error(
+            "Value should be in [%u, %u], but it is: %u", m_min_value,
+            m_max_value, m_value);
+    return false;
+  }
+  m_set = true;
+  return true;
+}
+
+config_type_e uint8_config_value::get_config_type() const {
+  return config_type_e::uint8;
+}
+
+uint8_t uint8_config_value::get_value() const {
+  return m_value;
+}
+
+void uint8_config_value::set_validation_min_value(uint8_t val) {
+  m_min_value = val;
+}
+
+void uint8_config_value::set_validation_max_value(uint8_t val) {
+  m_max_value = val;
 }
 
 option_config_value factory::get_option_config(bool val) {

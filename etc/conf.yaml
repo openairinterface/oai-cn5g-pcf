@@ -22,42 +22,38 @@
 ##### Base configuration #####
 
 # Name of the component, used towards NRF. Valid values: any string, DEFAULT="PCF"
-name: "PCF"
+name: "{{ env["PCF_NAME"] }}"
 # Directories where policy configuration is stored, absolute path
-pcc_rules_directory: "/openair-pcf/policies/pcc_rules"
-traffic_rules_directory: "/openair-pcf/policies/traffic_rules"
-policy_decisions_directory: "/openair-pcf/policies/policy_decisions"
+pcc_rules_directory: "{{ env["PCC_RULES_DIR"] }}"
+traffic_rules_directory: "{{ env["TRAFFIC_RULES_DIR"] }}"
+policy_decisions_directory: "{{ env["POLICY_DECISIONS_DIR"] }}"
 
 ##### Options to enable/disable #####
 # If "on": Register to NRF, DEFAULT= off
-register_nrf: on
-# If "on": Send only HTTP/2 requests, DEFAULT=off
-use_http2: off
+register_nrf: {{ env["REGISTER_NRF"] if "REGISTER_NRF" in env.keys() else 'no' }}
+# If "2": Send only HTTP/2 requests, DEFAULT=1 (HTTP1)
+client_http_version: {{ env["CLIENT_HTTP_VERSION"] if "CLIENT_HTTP_VERSION" in env.keys() else '1' }}
 
 ##### Local interface #####
 # Local SBI interface
 ## name: Name of the NIC to read the IP address from
-## Port: unsigned int between 0-65,535
+## port_http: unsigned int between 1-65535 for HTTP1 port
+## port_http2: unsigned int between 1-65535 for HTTP2 port
 ## http_version: Allowed values: "1", "2"
 ## api_version: Allowed values: "v1", "v2", used to create the 3GPP API version for the SBI URL
 local_sbi_interface:
-  name: "eth0"
-  port: 80
-  http_version: 1
-  api_version: "v1"
-
-# Local HTTP2 SBI interface, optional. When configured, HTTP2 server is used
-local_sbi_interface_http2:
-  name: "eth0"
-  port: 8080
-  http_version: 2
-  api_version: "v1"
+  name: "{{ env["SBI_IF_NAME"] }}"
+  port_http: {{ env["SBI_PORT_HTTP1"] if "SBI_PORT_HTTP1" in env.keys() else '80' }}
+  port_http2: {{ env["SBI_PORT_HTTP2"] if "SBI_PORT_HTTP2" in env.keys() else '8080' }}
+  http_version: {{ env["SBI_HTTP_VERSION"] if "SBI_HTTP_VERSION" in env.keys() else '1' }}
+  api_version: "{{ env["SBI_API_VERSION"] if "SBI_API_VERSION"in env.keys() else 'v2' }}"
 
 ##### Next hop interfaces #####
 
 # Next hop SBI interfaces
-## url: has to follow this scheme: http://<name>:<port>
+## host: IPv4 address or hostname
 ## api_version: Allowed values: "v1", "v2", used to create the 3GPP API version for the SBI URL
 nrf:
-  url: "http://oai-nrf:80"
-  api_version: "v1"
+  host: "{{ env["NRF_HOST"] if "NRF_HOST"in env.keys() else 'oai-nrf' }}"
+  port: {{ env["NRF_PORT"] if "NRF_PORT" in env.keys() else '80' }}
+  api_version: "{{ env["NRF_API_VERSION"] if "NRF_API_VERSION" in env.keys() else 'v1' }}"

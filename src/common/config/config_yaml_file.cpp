@@ -40,7 +40,10 @@ void oai::config::yaml_file::read_from_file(
       bool success;
       auto key = elem.first.as<std::string>();
       if (elem.second.IsScalar()) {
-        success = convert_type<option_config_value>(key, elem.second, config);
+        success = convert_type<uint8_config_value>(key, elem.second, config);
+        if (!success) {
+          success = convert_type<option_config_value>(key, elem.second, config);
+        }
         if (!success) {
           success = convert_type<string_config_value>(key, elem.second, config);
         }

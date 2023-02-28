@@ -33,32 +33,29 @@
 
 namespace oai::pcf::config {
 
-const std::string NAME_DEFAULT_VALUE  = "PCF";
-const bool REGISTER_NRF_DEFAULT_VALUE = false;
-const bool USE_HTTP2_DEFAULT_VALUE    = false;
+const std::string NAME_DEFAULT_VALUE             = "PCF";
+const bool REGISTER_NRF_DEFAULT_VALUE            = false;
+const uint8_t CLIENT_HTTP2_VERSION_DEFAULT_VALUE = 1;
 
-const std::string PCF_CONFIG_STRING_REGISTER_NRF  = "register_nrf";
-const std::string PCF_CONFIG_STRING_USE_HTTP2     = "use_http2";
-const std::string PCF_CONFIG_STRING_NAME          = "name";
-const std::string PCF_CONFIG_STRING_PCC_RULES_DIR = "pcc_rules_directory";
+const std::string PCF_CONFIG_STRING_REGISTER_NRF        = "register_nrf";
+const std::string PCF_CONFIG_STRING_CLIENT_HTTP_VERSION = "client_http_version";
+const std::string PCF_CONFIG_STRING_NAME                = "name";
+const std::string PCF_CONFIG_STRING_PCC_RULES_DIR       = "pcc_rules_directory";
 const std::string PCF_CONFIG_STRING_POLICY_DECISIONS_DIR =
     "policy_decisions_directory";
 const std::string PCF_CONFIG_STRING_TRAFFIC_RULES_DIR =
     "traffic_rules_directory";
 const std::string PCF_CONFIG_STRING_SBI_IFACE = "local_sbi_interface";
-const std::string PCF_CONFIG_STRING_SBI_IFACE_HTTP2 =
-    "local_sbi_interface_http2";
-const std::string PCF_CONFIG_STRING_NRF = "nrf";
+const std::string PCF_CONFIG_STRING_NRF       = "nrf";
 
 struct support_features {
   bool register_nrf;
-  bool use_http2;
+  uint8_t client_http_version;
 };
 
 class pcf_config {
  public:
   oai::config::local_sbi_interface sbi;
-  oai::config::local_sbi_interface sbi_http2;
   std::string pcc_rules_path;
   std::string policy_decisions_path;
   std::string traffic_rules_path;
@@ -90,5 +87,7 @@ class pcf_config {
   std::string m_config_path;
 
   void set_direct_variables();
+
+  void set_validation_constraints();
 };
 }  // namespace oai::pcf::config

@@ -90,6 +90,7 @@ std::string config::to_string() const {
         local_iface_out.append(val);
         break;
       case config_type_e::string:
+      case config_type_e::uint8:
         base_conf_out.append(val);
         break;
       case config_type_e::option:
@@ -153,6 +154,15 @@ const local_interface& config::get_local_interface(
 const local_sbi_interface& config::get_local_sbi_interface(
     const std::string& name) const {
   return get<local_sbi_interface>(name);
+}
+
+uint8_t config::get_uint8_conf_val(const std::string& name) const {
+  return get_uint8_conf(name).get_value();
+}
+
+const uint8_config_value& config::get_uint8_conf(
+    const std::string& name) const {
+  return get<uint8_config_value>(name);
 }
 
 template<typename T>

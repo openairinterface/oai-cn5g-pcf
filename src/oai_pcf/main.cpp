@@ -114,10 +114,10 @@ int main(int argc, char** argv) {
   pcf_api_server_1->init(2);
   std::thread pcf_http1_manager(&PCFApiServer::start, pcf_api_server_1.get());
 
-  if (pcf_cfg->sbi_http2.is_set()) {
+  if (pcf_cfg->sbi.http_version() == 2) {
     // PCF NGHTTP API server (HTTP2)
     pcf_api_server_2 = std::make_unique<pcf_http2_server>(
-        v4_address, pcf_cfg->sbi_http2.get_port(), pcf_app_inst);
+        v4_address, pcf_cfg->sbi.get_port_http2(), pcf_app_inst);
     std::thread pcf_http2_manager(
         &pcf_http2_server::start, pcf_api_server_2.get());
     pcf_http2_manager.join();

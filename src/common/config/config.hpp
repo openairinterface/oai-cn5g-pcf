@@ -124,6 +124,24 @@ class config_iface {
       const std::string& name) const = 0;
 
   /**
+   * Gets a uint8 configuration value
+   * @throws std::invalid_argument when name does not exist in configuration
+   * @param name of the configuration
+   * @return value
+   */
+  [[nodiscard]] virtual uint8_t get_uint8_conf_val(
+      const std::string& name) const = 0;
+
+  /**
+   * Gets a uint8 configuration
+   * @throws std::invalid_argument when name does not exist in configuration
+   * @param name of the configuration
+   * @return value
+   */
+  [[nodiscard]] virtual const uint8_config_value& get_uint8_conf(
+      const std::string& name) const = 0;
+
+  /**
    * Displays the to_string method to the config logger
    */
   virtual void display() const = 0;
@@ -172,6 +190,12 @@ class config : public config_iface {
       const std::string& name) const override;
 
   [[nodiscard]] const local_sbi_interface& get_local_sbi_interface(
+      const std::string& name) const override;
+
+  [[nodiscard]] uint8_t get_uint8_conf_val(
+      const std::string& name) const override;
+
+  [[nodiscard]] const uint8_config_value& get_uint8_conf(
       const std::string& name) const override;
 
   void display() const override;
