@@ -475,7 +475,15 @@ class HtmlReport():
 				base_image = False
 				with open(cwd + '/archives/' + logFileName, 'r') as logfile:
 					for line in logfile:
+						# old method
 						result = re.search('FROM oai-pcf-base:latest', line)
+						if result is not None:
+							base_image = True
+						# new method --> buildx may cache this stage
+						result = re.search('^#([0-9]+).* RUN ./build_frf --install-deps', line)
+						if result is not None:
+							build_stage_id = result.group(1)
+						result = re.search(f'^#{build_stage_id} CACHED', line)
 						if result is not None:
 							base_image = True
 						result = re.search(section_start_pattern, line)
@@ -699,8 +707,8 @@ class HtmlReport():
 		for variant in variants:
 			logFileName = 'pcf_' + variant + '_image_build.log'
 			if os.path.isfile(cwd + '/archives/' + logFileName):
-				section_start_pattern = 'FROM .* as oai-pcf$'
-				section_end_pattern = 'WORKDIR /openair-pcf/etc'
+				section_start_pattern = 'COPY --from=oai-pcf-builder */openair-pcf/build/pcf/build/oai_pcf'
+				section_end_pattern = 'COPY --from=oai-pcf-builder /openair-pcf/etc/pcf.conf '
 				section_status = False
 				status = False
 				noPbInLDD = True
@@ -755,7 +763,7 @@ class HtmlReport():
 			if os.path.isfile(cwd + '/archives/' + logFileName):
 				section_start_pattern = 'WORKDIR /openair-pcf/etc'
 				if variant == 'docker':
-					section_end_pattern = 'Successfully tagged oai-pcf'
+					section_end_pattern = 'naming to docker.io/library/oai-pcf:'
 				else:
 					section_end_pattern = 'COMMIT oai-pcf:'
 				section_status = False
@@ -806,27 +814,26 @@ class HtmlReport():
 			if os.path.isfile(cwd + '/archives/' + logFileName):
 				if nfType == 'PCF':
 					if variant == 'docker':
-						section_start_pattern = 'Successfully tagged oai-pcf'
+						section_start_pattern = 'naming to docker.io/library/oai-pcf:'
 						section_end_pattern = 'OAI-PCF DOCKER IMAGE BUILD'
 					else:
 						section_start_pattern = 'COMMIT oai-pcf:'
 						section_end_pattern = 'OAI-PCF PODMAN RHEL8 IMAGE BUILD'
 				section_status = False
 				status = False
+				imageTag = 'notAcorrectTagForTheMoment'
 				with open(cwd + '/archives/' + logFileName, 'r') as logfile:
 					for line in logfile:
-						result = re.search(section_start_pattern, line)
+						result = re.search(f'{section_start_pattern}([0-9a-zA-Z\-\_\.]+)', line)
 						if result is not None:
 							section_status = True
+							imageTag = result.group(1)
 						result = re.search(section_end_pattern, line)
 						if result is not None:
 							section_status = False
 						if section_status:
 							if nfType == 'PCF':
-								if self.git_pull_request:
-									result = re.search('oai-pcf *ci-tmp', line)
-								else:
-									result = re.search('oai-pcf *develop', line)
+								result = re.search(f'oai-pcf *{imageTag}', line)
 							if result is not None and not status:
 								result = re.search('ago  *([0-9A-Z ]+)', line)
 								if result is not None:
