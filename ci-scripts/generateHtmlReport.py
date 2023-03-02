@@ -473,6 +473,7 @@ class HtmlReport():
 				nghttp2_build_start = False
 				nghttp2_build_status = False
 				base_image = False
+				build_stage_id = 'NotAcorrectBuildStageId'
 				with open(cwd + '/archives/' + logFileName, 'r') as logfile:
 					for line in logfile:
 						# old method
@@ -480,7 +481,7 @@ class HtmlReport():
 						if result is not None:
 							base_image = True
 						# new method --> buildx may cache this stage
-						result = re.search('^#([0-9]+).* RUN ./build_frf --install-deps', line)
+						result = re.search('^#([0-9]+).* RUN ./build_pcf --install-deps', line)
 						if result is not None:
 							build_stage_id = result.group(1)
 						result = re.search(f'^#{build_stage_id} CACHED', line)
@@ -708,7 +709,7 @@ class HtmlReport():
 			logFileName = 'pcf_' + variant + '_image_build.log'
 			if os.path.isfile(cwd + '/archives/' + logFileName):
 				section_start_pattern = 'COPY --from=oai-pcf-builder */openair-pcf/build/pcf/build/oai_pcf'
-				section_end_pattern = 'COPY --from=oai-pcf-builder /openair-pcf/etc/pcf.conf '
+				section_end_pattern = 'COPY --from=oai-pcf-builder */openair-pcf/etc/pcf.conf '
 				section_status = False
 				status = False
 				noPbInLDD = True
