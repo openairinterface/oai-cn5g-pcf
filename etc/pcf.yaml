@@ -22,7 +22,7 @@
 ##### Base configuration #####
 
 # Name of the component, used towards NRF. Valid values: any string, DEFAULT="PCF"
-name: "{{ env["PCF_NAME"] }}"
+name: "{{ env["PCF_NAME"] if "PCF_NAME" in env.keys() else 'OAI-PCF' }}"
 # Directories where policy configuration is stored, absolute path
 pcc_rules_directory: "{{ env["PCC_RULES_DIR"] }}"
 traffic_rules_directory: "{{ env["TRAFFIC_RULES_DIR"] }}"
@@ -46,7 +46,7 @@ local_sbi_interface:
   port_http: {{ env["SBI_PORT_HTTP1"] if "SBI_PORT_HTTP1" in env.keys() else '80' }}
   port_http2: {{ env["SBI_PORT_HTTP2"] if "SBI_PORT_HTTP2" in env.keys() else '8080' }}
   http_version: {{ env["SBI_HTTP_VERSION"] if "SBI_HTTP_VERSION" in env.keys() else '1' }}
-  api_version: "{{ env["SBI_API_VERSION"] if "SBI_API_VERSION"in env.keys() else 'v2' }}"
+  api_version: "{{ env["SBI_API_VERSION"] if "SBI_API_VERSION" in env.keys() else 'v2' }}"
 
 ##### Next hop interfaces #####
 
