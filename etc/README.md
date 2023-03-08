@@ -35,7 +35,7 @@ export SBI_IF_NAME=eth0
 export SBI_PORT_HTTP1=80
 export SBI_PORT_HTTP2=8080
 export SBI_HTTP_VERSION=1
-export SBI_API_VERSION=v2
+export SBI_API_VERSION=v1
 
 export NRF_HOST=oai-nrf
 export NRF_PORT=80
@@ -80,7 +80,7 @@ The allowed values for each field are described in the `pcf.yaml` file.
 | SBI_PORT_HTTP1   | Optional             |                   80 |
 | SBI_PORT_HTTP2   | Optional             |                 8080 |
 | SBI_HTTP_VERSION | Optional             |                    1 |
-| SBI_API_VERSION  | Optional             |                   v2 |
+| SBI_API_VERSION  | Optional             |                   v1 |
 
 
 ### Next Hop SBI Interfaces
