@@ -92,7 +92,6 @@ RUN apt-get update && \
 # Ubuntu 20 --> libasan5
 # Ubuntu 22 --> libasan6
 #      libasan? \
-      libconfig++9v5 \
 # Ubuntu 18 --> boost62/65 -> will remove both
 # Ubuntu 20 --> boost67/71 -> will remove 67
 # Ubuntu 22 --> boost74
@@ -137,7 +136,7 @@ RUN ldconfig && \
 # The configuration folder will be flat
 WORKDIR /openair-pcf/etc
 COPY --from=oai-pcf-builder \
-    /openair-pcf/etc/pcf.conf \
+    /openair-pcf/etc/pcf.yaml \
     ./
 
 WORKDIR /openair-pcf
@@ -150,4 +149,4 @@ HEALTHCHECK --interval=10s \
     CMD /openair-pcf/bin/healthcheck.sh
 
 ENTRYPOINT ["python3","/openair-pcf/bin/entrypoint.py"]
-CMD ["/openair-pcf/bin/oai_pcf", "-c", "/openair-pcf/etc/pcf.conf", "-o"]
+CMD ["/openair-pcf/bin/oai_pcf", "-c", "/openair-pcf/etc/pcf.yaml", "-o"]

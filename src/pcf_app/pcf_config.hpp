@@ -21,138 +21,73 @@
 
 /*! \file pcf_config.hpp
  \brief
- \author  Rohan Kharade
- \company Openairinterface Software Allianse
+ \author  Rohan Kharade, Stefan Spettel
+ \company OpenAirInterface Software Alliance
  \date 2022
  \email: rohan.kharade@openairinterface.org
 */
 
-#ifndef FILE_PCF_CONFIG_HPP_SEEN
-#define FILE_PCF_CONFIG_HPP_SEEN
+#pragma once
 
-#include "3gpp_29.510.h"
-#include "logger.hpp"
-#include <libconfig.h++>
-#include <mutex>
-#include <netinet/in.h>
-#include <nlohmann/json.hpp>
-#include <stdbool.h>
-#include <stdint.h>
-#include <string>
-#include <unistd.h>
-
-// using namespace oai::pcf::model;
-
-#define PCF_CONFIG_STRING_PCF_CONFIG "PCF"
-#define PCF_CONFIG_STRING_FQDN "FQDN"
-#define PCF_CONFIG_STRING_PCF_SLICE_CONFIG "PCF_SLICE_CONFIG"
-#define PCF_CONFIG_STRING_INTERFACES "INTERFACES"
-#define PCF_CONFIG_STRING_INTERFACE_NAME "INTERFACE_NAME"
-#define PCF_CONFIG_STRING_IPV4_ADDRESS "IPV4_ADDRESS"
-#define PCF_CONFIG_STRING_SBI_PORT_HTTP1 "HTTP1_PORT"
-#define PCF_CONFIG_STRING_SBI_PORT_HTTP2 "HTTP2_PORT"
-#define PCF_CONFIG_STRING_SBI_INTERFACE "SBI"
-#define PCF_CONFIG_STRING_API_VERSION "API_VERSION"
-
-#define PCF_CONFIG_STRING_NETWORK_IPV4 "NETWORK_IPV4"
-#define PCF_CONFIG_STRING_NETWORK_IPV6 "NETWORK_IPV6"
-#define PCF_CONFIG_STRING_ADDRESS_PREFIX_DELIMITER "/"
-#define PCF_CONFIG_STRING_ITTI_TASKS "ITTI_TASKS"
-#define PCF_CONFIG_STRING_ITTI_TIMER_SCHED_PARAMS "ITTI_TIMER_SCHED_PARAMS"
-#define PCF_CONFIG_STRING_SBI_SCHED_PARAMS "SBI_SCHED_PARAMS"
-
-#define PCF_CONFIG_STRING_SUPPORT_FEATURES "SUPPORT_FEATURES"
-#define PCF_CONFIG_STRING_SUPPORT_FEATURES_REGISTER_NRF "REGISTER_NRF"
-#define PCF_CONFIG_STRING_NRF "NRF"
-#define PCF_CONFIG_STRING_NRF_IPV4_ADDRESS "IPV4_ADDRESS"
-#define PCF_CONFIG_STRING_NRF_PORT "PORT"
-#define PCF_CONFIG_STRING_NRF_HTTP_VERSION "HTTP_VERSION"
-#define PCF_CONFIG_STRING_SUPPORT_FEATURES_USE_HTTP2 "USE_HTTP2"
-#define PCF_CONFIG_STRING_SUPPORT_FEATURES_USE_FQDN_DNS "USE_FQDN"
-
-#define PCF_CONFIG_STRING_PCC_RULES_DIRECTORY "PCC_RULES_DIRECTORY"
-#define PCF_CONFIG_STRING_POLICY_DECISIONS_DIRECTORY                           \
-  "POLICY_DECISIONS_DIRECTORY"
-#define PCF_CONFIG_STRING_TRAFFIC_RULES_DIRECTORY "TRAFFIC_RULES_DIRECTORY"
+#include "config.hpp"
 
 namespace oai::pcf::config {
 
-typedef struct interface_cfg_s {
-  std::string if_name;
-  struct in_addr addr4;
-  struct in_addr network4;
-  struct in6_addr addr6;
-  unsigned int mtu;
-  unsigned int http1_port;
-  unsigned int http2_port;
-} interface_cfg_t;
+const std::string NAME_DEFAULT_VALUE             = "PCF";
+const bool REGISTER_NRF_DEFAULT_VALUE            = false;
+const uint8_t CLIENT_HTTP2_VERSION_DEFAULT_VALUE = 1;
+
+const std::string PCF_CONFIG_STRING_REGISTER_NRF        = "register_nrf";
+const std::string PCF_CONFIG_STRING_CLIENT_HTTP_VERSION = "client_http_version";
+const std::string PCF_CONFIG_STRING_NAME                = "name";
+const std::string PCF_CONFIG_STRING_PCC_RULES_DIR       = "pcc_rules_directory";
+const std::string PCF_CONFIG_STRING_POLICY_DECISIONS_DIR =
+    "policy_decisions_directory";
+const std::string PCF_CONFIG_STRING_TRAFFIC_RULES_DIR =
+    "traffic_rules_directory";
+const std::string PCF_CONFIG_STRING_SBI_IFACE = "local_sbi_interface";
+const std::string PCF_CONFIG_STRING_NRF       = "nrf";
+
+struct support_features {
+  bool register_nrf;
+  uint8_t client_http_version;
+};
 
 class pcf_config {
- protected:
- private:
-  int load_interface(const libconfig::Setting& if_cfg, interface_cfg_t& cfg);
-  int check_directory(
-      const libconfig::Setting& pcf_cfg, const std::string& path_config,
-      std::string& path);
-
  public:
-  /* Reader/writer lock for this configuration */
-  std::mutex m_rw_lock;
-  std::string pid_dir;
-  unsigned int instance;
-  std::string fqdn;
-  interface_cfg_t sbi;
-  std::string sbi_api_version;
-
-  std::string gateway;
-
+  oai::config::local_sbi_interface sbi;
   std::string pcc_rules_path;
   std::string policy_decisions_path;
   std::string traffic_rules_path;
 
-  struct {
-    bool register_nrf;
-    bool use_fqdn;
-    bool use_http2;
+  oai::config::sbi_interface nrf_addr;
 
-    struct {
-      struct in_addr ipv4_addr;
-      unsigned int port;
-      unsigned int http_version;
-      std::string api_version;
-      std::string fqdn;
-    } nrf_addr;
-  } pcf_features;
+  support_features pcf_features;
 
-  struct {
-    struct in_addr ipv4_addr;
-    unsigned int port;
-    unsigned int http_version;
-    std::string api_version;
-    std::string fqdn;
-  } nrf_addr;
-
-  // struct {
-  //   struct in_addr ipv4_addr;
-  //   unsigned int port;
-  //   unsigned int http_version;
-  //   std::string api_version;
-  //   std::string fqdn;
-  // } smf_addr;
-
-  pcf_config() : m_rw_lock(), pid_dir(), instance(0) {
-    sbi.http1_port = 8080;
-    sbi.http2_port = 80;
+  explicit pcf_config(
+      const std::string& config_path, bool log_stdout, bool log_rot_file)
+      : pcf_features() {
+    m_cfg =
+        std::make_unique<oai::config::config>("pcf", log_stdout, log_rot_file);
+    m_config_path = config_path;
   };
 
-  void lock() { m_rw_lock.lock(); };
-  void unlock() { m_rw_lock.unlock(); };
-  int load(const std::string& config_file);
-  int execute();
+  /**
+   * Initializes the configuration, sets mandatory values for validation, sets
+   * default values, reads YAML configuration file and validates the
+   * configuration
+   * @return True on success
+   */
+  bool init();
+
   void display();
 
-  static bool parse_config();
+ private:
+  std::unique_ptr<oai::config::config_iface> m_cfg;
+  std::string m_config_path;
+
+  void set_direct_variables();
+
+  void set_validation_constraints();
 };
 }  // namespace oai::pcf::config
-
-#endif /* FILE_PCF_CONFIG_HPP_SEEN */

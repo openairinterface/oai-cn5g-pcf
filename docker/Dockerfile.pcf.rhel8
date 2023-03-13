@@ -100,8 +100,7 @@ RUN rm -f /etc/rhsm-host && \
       libicu \
       boost \
       libevent \
-      findutils \
-      libconfig && \
+      findutils && \
     pip3 install jinja2 && \
     microdnf clean all -y && \
     rm -rf /var/cache/yum /var/cache/dnf && \
@@ -136,7 +135,7 @@ RUN ldconfig && \
 # The configuration folder will be flat
 WORKDIR /openair-pcf/etc
 COPY --from=oai-pcf-builder \
-    /openair-pcf/etc/pcf.conf \
+    /openair-pcf/etc/pcf.yaml \
     ./
 
 WORKDIR /openair-pcf
@@ -150,4 +149,4 @@ HEALTHCHECK --interval=10s \
     CMD /openair-pcf/bin/healthcheck.sh
 
 ENTRYPOINT ["python3", "/openair-pcf/bin/entrypoint.py"]
-CMD ["/openair-pcf/bin/oai_pcf", "-c", "/openair-pcf/etc/pcf.conf", "-o"]
+CMD ["/openair-pcf/bin/oai_pcf", "-c", "/openair-pcf/etc/pcf.yaml", "-o"]

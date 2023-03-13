@@ -435,13 +435,13 @@ check_install_pcf_deps() {
         $SUDO $INSTALLER install $OPTION software-properties-common
         $SUDO add-apt-repository ppa:mhier/libboost-latest --yes
         $SUDO $INSTALLER update
-        specific_packages="libconfig++-dev libasio-dev libboost-all-dev libasan4"
+        specific_packages="libasio-dev libboost-all-dev libasan4"
         ;;
       "ubuntu20.04")
-        specific_packages="libconfig++-dev libasio-dev libboost-all-dev libasan5"
+        specific_packages="libasio-dev libboost-all-dev libasan5"
         ;;
       "ubuntu22.04")
-        specific_packages="libconfig++-dev libasio-dev libboost-all-dev libasan6"
+        specific_packages="libasio-dev libboost-all-dev libasan6"
         ;;
     esac
     # removed libspdlog-dev
@@ -465,7 +465,6 @@ check_install_pcf_deps() {
       libasan?"
   elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
     PACKAGE_LIST="\
-      libconfig-devel \
       gmp-devel \
       libidn-devel \
       openssl-devel \
