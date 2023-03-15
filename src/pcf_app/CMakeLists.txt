@@ -49,7 +49,7 @@ add_library (PCF STATIC
 
 ## Common modules
 include(${SRC_TOP_DIR}/oai-cn5g-common-src/logger/logger.cmake)
+include(${SRC_TOP_DIR}/oai-cn5g-common-src/config/config.cmake)
 include(${SRC_TOP_DIR}/common/utils/utils.cmake)
-include(${SRC_TOP_DIR}/common/config/config.cmake)
 
 include(${BUILD_TOP_DIR}/pcf/used_common_files.cmake)
