@@ -33,9 +33,8 @@ endif()
 set (BUILD_TOP_DIR   ${OPENAIRCN_DIR}/build)
 set (SRC_TOP_DIR     ${OPENAIRCN_DIR}/src)
 
-set (NF_TARGET_LIB       PCF)
 set (NF_TARGET           pcf)
-set (NF_TARGET_API_LIB   PCF_API)
+set (MOUNTED_COMMON      oai-cn5g-common-src)
 
 project (OpenAirInterface)
 

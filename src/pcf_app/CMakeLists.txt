@@ -28,6 +28,8 @@ include_directories(${SRC_TOP_DIR}/api-server/impl)
 include_directories(${SRC_TOP_DIR}/api-server/model)
 include_directories(${SRC_TOP_DIR}/api-server/)
 include_directories(${SRC_TOP_DIR}/pcf_app/sm_policy/)
+include_directories(${SRC_TOP_DIR}/${MOUNTED_COMMON}/logger)
+include_directories(${SRC_TOP_DIR}/${MOUNTED_COMMON}/config)
 
 add_library (PCF STATIC
   pcf_app.cpp
@@ -48,8 +50,6 @@ add_library (PCF STATIC
   )
 
 ## Common modules
-include(${SRC_TOP_DIR}/oai-cn5g-common-src/logger/logger.cmake)
-include(${SRC_TOP_DIR}/oai-cn5g-common-src/config/config.cmake)
 include(${SRC_TOP_DIR}/common/utils/utils.cmake)
 
 include(${BUILD_TOP_DIR}/pcf/used_common_files.cmake)
