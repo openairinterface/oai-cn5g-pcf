@@ -28,6 +28,8 @@ include_directories(${PCF_API_SERVER_DIR}/)
 include_directories(${SRC_TOP_DIR}/pcf_app)
 include_directories(${SRC_TOP_DIR}/common)
 include_directories(${SRC_TOP_DIR}/common/utils)
+include_directories(${SRC_TOP_DIR}/${MOUNTED_COMMON}/logger)
+include_directories(${SRC_TOP_DIR}/${MOUNTED_COMMON}/config)
 
 file(GLOB PCF_API_SERVER_src_files
     ${PCF_API_SERVER_DIR}/pcf-api-server.cpp
