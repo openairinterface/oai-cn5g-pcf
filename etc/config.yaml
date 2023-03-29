@@ -59,7 +59,6 @@ nfs:
     host: oai-amf
     sbi:
       port_http1: 80
-      port_http2: 8080
       api_version: v1
       interface_name: eth0
     n1:
@@ -69,7 +68,6 @@ nfs:
     host: oai-smf
     sbi:
       port_http1: 80
-      port_http2: 8080
       api_version: v1
       interface_name: eth0
     n4:
@@ -79,42 +77,36 @@ nfs:
     host: oai-udm
     sbi:
       port_http1: 80
-      port_http2: 8080
       api_version: v1
       interface_name: eth0
   udr:
     host: oai-udr
     sbi:
       port_http1: 80
-      port_http2: 8080
       api_version: v1
       interface_name: eth0
   ausf:
     host: oai-ausf
     sbi:
       port_http1: 80
-      port_http2: 8080
       api_version: v1
       interface_name: eth0
   pcf:
     host: oai-pcf
     sbi:
       port_http1: 80
-      port_http2: 8080
       api_version: v1
       interface_name: eth0
   nrf:
     host: oai-nrf
     sbi:
       port_http1: 80
-      port_http2: 8080
       api_version: v1
       interface_name: eth0
   nssf:
     host: oai-nssf
     sbi:
       port_http1: 80
-      port_http2: 8080
       api_version: v1
       interface_name: eth0
 
@@ -227,3 +219,8 @@ local_subscription_infos:
       arp_preempt_vulnerability: "NOT_PREEMPTABLE"
       session_ambr_ul: "1000Mbps"
       session_ambr_dl: "1000Mbps"
+
+local_policy:
+  policy_decisions_path: /openair-pcf/policies/policy_decisions
+  pcc_rules_path: /openair-pcf/policies/pcc_rules
+  traffic_rules_path: /openair-pcf/policies/traffic_rules

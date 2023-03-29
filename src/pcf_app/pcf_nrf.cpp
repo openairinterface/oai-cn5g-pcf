@@ -58,9 +58,9 @@ pcf_nrf::pcf_nrf(pcf_event& ev) : m_event_sub(ev) {
 
 //------------------------------------------------------------------------------
 void pcf_nrf::generate_nrf_api_url() {
-  m_nrf_url = pcf_cfg->nrf_addr.get_url();
+  m_nrf_url = pcf_cfg->nrf().get_sbi().get_url();
   m_nrf_url.append(NNRF_NFM_BASE)
-      .append(pcf_cfg->nrf_addr.get_api_version())
+      .append(pcf_cfg->nrf().get_sbi().get_api_version())
       .append(NNRF_DISC_INSTANCES)
       .append(m_pcf_instance_id);
 }
@@ -76,14 +76,14 @@ void pcf_nrf::generate_pcf_profile() {
   m_nf_instance_profile.set_nf_heartBeat_timer(50);
   m_nf_instance_profile.set_nf_priority(1);
   m_nf_instance_profile.set_nf_capacity(100);
-  m_nf_instance_profile.add_nf_ipv4_addresses(pcf_cfg->sbi.get_addr4());
+  m_nf_instance_profile.add_nf_ipv4_addresses(pcf_cfg->local().get_sbi().get_addr4());
 
   // NF services
   nf_service_t nf_service        = {};
   nf_service.service_instance_id = SM_POLICY_API_NAME;
   nf_service.service_name        = SM_POLICY_API_NAME;
   nf_service_version_t version   = {};
-  version.api_version_in_uri     = pcf_cfg->sbi.get_api_version();
+  version.api_version_in_uri     = pcf_cfg->local().get_sbi().get_api_version();
   version.api_full_version       = "1.0.0";  // TODO: to be updated
   nf_service.versions.push_back(version);
   nf_service.scheme            = "http";
@@ -91,9 +91,9 @@ void pcf_nrf::generate_pcf_profile() {
   // IP Endpoint
   ip_endpoint_t endpoint = {};
   // TODO: use only one IP address from cfg for now
-  endpoint.ipv4_address = pcf_cfg->sbi.get_addr4();
+  endpoint.ipv4_address = pcf_cfg->local().get_sbi().get_addr4();
   endpoint.transport    = "TCP";
-  endpoint.port         = pcf_cfg->sbi.get_port();
+  endpoint.port         = pcf_cfg->local().get_sbi().get_port();
   nf_service.ip_endpoints.push_back(endpoint);
 
   m_nf_instance_profile.add_nf_service(nf_service);

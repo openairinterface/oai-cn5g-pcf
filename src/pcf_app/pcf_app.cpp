@@ -59,7 +59,7 @@ pcf_app::pcf_app(pcf_event& ev) : m_event_sub(ev) {
   }
 
   // Register to NRF
-  if (pcf_cfg->pcf_features.register_nrf) {
+  if (pcf_cfg->register_nrf()) {
     m_pcf_nrf_inst = std::make_unique<pcf_nrf>(ev);
     m_pcf_nrf_inst->register_to_nrf();
     Logger::pcf_app().info("NRF TASK Created ");

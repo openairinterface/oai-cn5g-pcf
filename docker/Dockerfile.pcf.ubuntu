@@ -70,11 +70,7 @@ COPY . /openair-pcf
 WORKDIR /openair-pcf/build/scripts
 RUN ./build_pcf --clean --Verbose --build-type Release --jobs && \
     ldd /openair-pcf/build/pcf/build/pcf && \
-    mv /openair-pcf/build/pcf/build/pcf /openair-pcf/build/pcf/build/oai_pcf && \
-    # Adapting the entrypoint to PCF NF
-    sed -i -e "s@openair-nf-root-folder@openair-pcf@g" \
-           -e "s@nf-config-file@pcf.yaml@g" \
-           ../build-common/docker-scripts/entrypoint.py
+    mv /openair-pcf/build/pcf/build/pcf /openair-pcf/build/pcf/build/oai_pcf
 
 #---------------------------------------------------------------------
 # TARGET IMAGE
@@ -116,7 +112,6 @@ RUN apt-get update && \
 WORKDIR /openair-pcf/bin
 COPY --from=oai-pcf-builder \
     /openair-pcf/build/pcf/build/oai_pcf \
-    /openair-pcf/build/build-common/docker-scripts/entrypoint.py \
     /openair-pcf/scripts/healthcheck.sh \
     ./
 
@@ -141,7 +136,7 @@ RUN ldconfig && \
 # The configuration folder will be flat
 WORKDIR /openair-pcf/etc
 COPY --from=oai-pcf-builder \
-    /openair-pcf/etc/pcf.yaml \
+    /openair-pcf/etc/config.yaml \
     ./
 
 WORKDIR /openair-pcf
@@ -153,5 +148,4 @@ HEALTHCHECK --interval=10s \
             --retries=6 \
     CMD /openair-pcf/bin/healthcheck.sh
 
-ENTRYPOINT ["python3","/openair-pcf/bin/entrypoint.py"]
-CMD ["/openair-pcf/bin/oai_pcf", "-c", "/openair-pcf/etc/pcf.yaml", "-o"]
+CMD ["/openair-pcf/bin/oai_pcf", "-c", "/openair-pcf/etc/config.yaml", "-o"]
