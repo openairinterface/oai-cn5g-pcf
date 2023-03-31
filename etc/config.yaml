@@ -30,27 +30,27 @@
 
 # Log level for all the NFs
 log_level:
-  general: info
-  amf: info
-  smf: info
+  general: debug
+  amf: debug
+  smf: debug
   nrf: debug
-  pcf: warn
-  udr: error
-  udm: info
-  ausf: info
-  nssf: info
+  pcf: debug
+  udr: debug
+  udm: debug
+  ausf: debug
+  nssf: debug
 
 # If you enable registration, the other NFs will use the NRF discovery mechanism
 register_nf:
-  general: yes
-  amf: yes
-  smf: yes
-  nrf: yes
-  pcf: yes
-  udr: yes
-  udm: yes
-  ausf: yes
-  nssf: yes
+  general: no
+  amf: no
+  smf: no
+  nrf: no
+  pcf: no
+  udr: no
+  udm: no
+  ausf: no
+  nssf: no
 
 ############## SBI Interfaces
 ### Each NF takes its local SBI interfaces and remote interfaces from here, unless it gets them using NRF discovery mechanisms
