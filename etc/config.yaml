@@ -155,6 +155,7 @@ amf:
     - "NEA2"
 
 smf:
+  ue_mtu: 1500
   support_features:
     use_local_subscription_info: no # Use infos from local_subscription_info or from UDM
     use_local_pcc_rules: yes # Use infos from local_pcc_rules or from PCF
@@ -180,7 +181,6 @@ smf:
   ims:
     pcscf_ipv4: "127.0.0.1"
     pcscf_ipv6: "fe80::7915:f408:1787:db8b"
-  ue_mtu: 1500
 
 ## DNN configuration
 dnns:
