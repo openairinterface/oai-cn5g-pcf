@@ -220,7 +220,8 @@ local_subscription_infos:
       session_ambr_ul: "1000Mbps"
       session_ambr_dl: "1000Mbps"
 
-local_policy:
-  policy_decisions_path: /openair-pcf/policies/policy_decisions
-  pcc_rules_path: /openair-pcf/policies/pcc_rules
-  traffic_rules_path: /openair-pcf/policies/traffic_rules
+pcf:
+  local_policy:
+    policy_decisions_path: /openair-pcf/policies/policy_decisions
+    pcc_rules_path: /openair-pcf/policies/pcc_rules
+    traffic_rules_path: /openair-pcf/policies/traffic_rules
