@@ -51,7 +51,7 @@ RUN git config --global https.postBuffer 123289600 && \
 # Copying source code
 WORKDIR /openair-pcf
 COPY ./build/scripts /openair-pcf/build/scripts/
-COPY ./build/build-common /openair-pcf/build/build-common/
+COPY ./build/common-build /openair-pcf/build/common-build/
 COPY ./build/pcf/CMakeLists.txt /openair-pcf/build/pcf/CMakeLists.txt
 COPY ./build/cmake_modules /openair-pcf/build/cmake_modules/
 
@@ -74,7 +74,7 @@ RUN ./build_pcf --clean --Verbose --build-type Release --jobs && \
     # Adapting the entrypoint to PCF NF
     sed -i -e "s@openair-nf-root-folder@openair-pcf@g" \
            -e "s@nf-config-file@pcf.yaml@g" \
-           ../build-common/docker-scripts/entrypoint.py
+           ../common-build/docker-scripts/entrypoint.py
 
 #---------------------------------------------------------------------
 # TARGET IMAGE
@@ -116,7 +116,7 @@ RUN apt-get update && \
 WORKDIR /openair-pcf/bin
 COPY --from=oai-pcf-builder \
     /openair-pcf/build/pcf/build/oai_pcf \
-    /openair-pcf/build/build-common/docker-scripts/entrypoint.py \
+    /openair-pcf/build/common-build/docker-scripts/entrypoint.py \
     /openair-pcf/scripts/healthcheck.sh \
     ./
 

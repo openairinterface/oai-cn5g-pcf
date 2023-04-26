@@ -71,7 +71,7 @@ RUN ldconfig && \
     # Adapting the entrypoint to PCF NF
     sed -i -e "s@openair-nf-root-folder@openair-pcf@g" \
            -e "s@nf-config-file@pcf.yaml@g" \
-           ../build-common/docker-scripts/entrypoint.py && \
+           ../common-build/docker-scripts/entrypoint.py && \
     # Remove entitlements and Subscription Manager configs
     rm -rf /etc/pki/entitlement && \
     rm -rf /etc/rhsm
@@ -116,7 +116,7 @@ RUN rm -f /etc/rhsm-host && \
 WORKDIR /openair-pcf/bin
 COPY --from=oai-pcf-builder \
     /openair-pcf/build/pcf/build/oai_pcf \
-    /openair-pcf/build/build-common/docker-scripts/entrypoint.py \
+    /openair-pcf/build/common-build/docker-scripts/entrypoint.py \
     /openair-pcf/scripts/healthcheck.sh \
     ./
 

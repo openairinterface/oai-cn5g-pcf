@@ -50,8 +50,7 @@ INSTALL_DIR=/usr/local/bin
 ################################
 # include helper functions
 ################################
-source $THIS_SCRIPT_PATH/build_helper.pcf
-
+source ${THIS_SCRIPT_PATH}/build_helper.pcf
 
 function help()
 {
@@ -91,7 +90,9 @@ function main()
       -b | --build-type)
         list_include_item "Debug Release RelWithDebInfo MinSizeRel" $2
         [[ $? -ne 0 ]] && echo_error "Build type $2 not recognized" && return $?
+        echo ${cmake_args}
         cmake_args="$cmake_args -DCMAKE_BUILD_TYPE=$2"
+        echo ${cmake_args}
         list_include_item "Debug" $2
         [[ $? -ne 0 ]] && debug=1
         shift 2;
