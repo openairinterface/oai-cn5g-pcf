@@ -34,6 +34,8 @@
 #include "SmPolicyDecision.h"
 #include "SMPoliciesCollectionApi.h"
 #include "logger.hpp"
+#include "api_defs.h"
+#include "pcf_config.hpp"
 
 namespace oai::pcf::api {
 
@@ -59,9 +61,8 @@ api_response sm_policies_collection_api_handler::create_sm_policy(
 
   switch (res) {
     case status_code::CREATED:
-      http_code = http_status_code_e::HTTP_STATUS_CODE_201_CREATED;
-      location =
-          m_address + SM_POLICIES_API_BASE + "/sm-policies/" + association_id;
+      http_code    = http_status_code_e::HTTP_STATUS_CODE_201_CREATED;
+      location     = m_address + sm_policies::get_route() + association_id;
       content_type = "application/json";
       break;
 

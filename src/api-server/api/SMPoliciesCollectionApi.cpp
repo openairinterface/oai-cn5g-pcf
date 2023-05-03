@@ -12,6 +12,8 @@
  */
 
 #include "SMPoliciesCollectionApi.h"
+#include "api_defs.h"
+#include "pcf_config.hpp"
 
 namespace oai {
 namespace pcf {
@@ -32,7 +34,7 @@ void SMPoliciesCollectionApi::setupRoutes() {
   using namespace Pistache::Rest;
 
   Routes::Post(
-      *router, SM_POLICIES_API_BASE + "/sm-policies",
+      *router, sm_policies::get_route(),
       Routes::bind(&SMPoliciesCollectionApi::create_sm_policy_handler, this));
 
   // Default handler, called when a route is not found

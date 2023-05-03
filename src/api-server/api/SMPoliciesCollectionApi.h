@@ -39,8 +39,6 @@ namespace api {
 using namespace oai::model::common::helpers;
 using namespace oai::pcf::model;
 
-static const std::string SM_POLICIES_API_BASE = "/npcf-smpolicycontrol/v1"; ;
-
 class SMPoliciesCollectionApi {
  public:
   explicit SMPoliciesCollectionApi(

@@ -35,6 +35,7 @@ include_directories(${SRC_TOP_DIR}/${MOUNTED_COMMON}/config)
 file(GLOB PCF_API_SERVER_src_files
     ${PCF_API_SERVER_DIR}/pcf-api-server.cpp
     ${PCF_API_SERVER_DIR}/pcf-http2-server.cpp
+    ${PCF_API_SERVER_DIR}/api_defs.cpp
     ${PCF_API_SERVER_DIR}/model/*.cpp
     ${PCF_API_SERVER_DIR}/api/*.cpp
     ${PCF_API_SERVER_DIR}/impl/*.cpp
