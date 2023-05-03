@@ -21,14 +21,13 @@
 
 /*! \file pcf_http2-server.h
  \brief
- \author  Rohan Kharade
+ \author  Rohan Kharade, Stefan Spettel
  \company Openairinterface Software Allianse
  \date 2022
  \email: rohan.kharade@openairinterface.org
  */
 
-#ifndef FILE_PCF_HTTP2_SERVER_SEEN
-#define FILE_PCF_HTTP2_SERVER_SEEN
+#pragma once
 
 #include "conversions.hpp"
 #include "pcf.h"
@@ -38,16 +37,28 @@
 #include <nghttp2/asio_http2_server.h>
 #include "IndividualSMPolicyDocumentApiImpl.h"
 #include "SMPoliciesCollectionApiImpl.h"
+#include "sm_policies_collection_api_handler.h"
+#include "individual_sm_policy_document_api_handler.h"
+
+namespace oai::pcf::api {
 
 class pcf_http2_server {
  public:
   pcf_http2_server(
       const std::string& addr, uint32_t port,
       const std::unique_ptr<oai::pcf::app::pcf_app>& pcf_app_inst)
-      : m_address(addr),
-        m_port(port),
-        server(),
-        smpc_service(pcf_app_inst->get_pcf_smpc_service()){};
+      : m_address(addr), m_port(port), server() {
+    // TODO hardcode http string, how to handle https
+    std::string address = "http://" + addr + ":" + std::to_string(port);
+
+    m_collection_api_handler =
+        std::make_shared<sm_policies_collection_api_handler>(
+            pcf_app_inst->get_pcf_smpc_service(), address);
+
+    m_individual_api_handler =
+        std::make_shared<individual_sm_policy_document_api_handler>(
+            pcf_app_inst->get_pcf_smpc_service());
+  };
 
   void start();
   void init(size_t /* thr */) {}
@@ -63,7 +74,20 @@ class pcf_http2_server {
 
   nghttp2::asio_http2::server::http2 server;
 
-  std::shared_ptr<oai::pcf::app::pcf_smpc> smpc_service;
+  std::shared_ptr<sm_policies_collection_api_handler> m_collection_api_handler;
+  std::shared_ptr<individual_sm_policy_document_api_handler>
+      m_individual_api_handler;
+
+  static void handle_method_not_exists(
+      const nghttp2::asio_http2::server::response& response,
+      const nghttp2::asio_http2::server::request& request);
+
+  static void handle_parsing_error(
+      const nghttp2::asio_http2::server::response& response,
+      const std::exception& ex);
+
+  static nghttp2::asio_http2::header_map convert_headers(
+      const api_response& response);
 };
 
-#endif
+}  // namespace oai::pcf::api

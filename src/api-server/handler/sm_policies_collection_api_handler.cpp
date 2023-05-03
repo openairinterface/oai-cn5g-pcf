@@ -61,8 +61,8 @@ api_response sm_policies_collection_api_handler::create_sm_policy(
 
   switch (res) {
     case status_code::CREATED:
-      http_code    = http_status_code_e::HTTP_STATUS_CODE_201_CREATED;
-      location     = m_address + sm_policies::get_route() + association_id;
+      http_code = http_status_code_e::HTTP_STATUS_CODE_201_CREATED;
+      location  = m_address + sm_policies::get_route() + "/" + association_id;
       content_type = "application/json";
       break;
 
@@ -100,7 +100,8 @@ api_response sm_policies_collection_api_handler::create_sm_policy(
   }
   response.headers.add<Pistache::Http::Header::ContentType>(
       Pistache::Http::Mime::MediaType(content_type));
-  response.body = json_data.dump();
+  response.body        = json_data.dump();
+  response.status_code = http_code;
   return response;
 }
 

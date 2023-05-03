@@ -69,7 +69,7 @@ void setUpUnixSignals(std::vector<int> quitSignals) {
 }
 #endif
 
-// using namespace oai::pcf::api;
+using namespace oai::pcf::api;
 
 void PCFApiServer::init(size_t thr) {
   auto opts = Pistache::Http::Endpoint::options().threads(thr);
@@ -87,6 +87,7 @@ void PCFApiServer::start() {
   m_httpEndpoint->setHandler(m_router->handler());
   m_httpEndpoint->serve();
 }
+
 void PCFApiServer::shutdown() {
   m_httpEndpoint->shutdown();
   m_smPoliciesCollectionApi = nullptr;
