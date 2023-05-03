@@ -39,14 +39,14 @@ namespace api {
 using namespace oai::model::common::helpers;
 using namespace oai::pcf::model;
 
+static const std::string SM_POLICIES_API_BASE = "/npcf-smpolicycontrol/v1"; ;
+
 class SMPoliciesCollectionApi {
  public:
   explicit SMPoliciesCollectionApi(
       const std::shared_ptr<Pistache::Rest::Router>& rtr);
   virtual ~SMPoliciesCollectionApi() = default;
   void init();
-
-  static const std::string base;
 
  private:
   void setupRoutes();

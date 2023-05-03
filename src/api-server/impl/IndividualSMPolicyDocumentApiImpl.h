@@ -17,8 +17,7 @@
  *
  */
 
-#ifndef INDIVIDUAL_SM_POLICY_DOCUMENT_API_IMPL_H_
-#define INDIVIDUAL_SM_POLICY_DOCUMENT_API_IMPL_H_
+#pragma once
 
 #include <pistache/endpoint.h>
 #include <pistache/http.h>
@@ -36,10 +35,9 @@
 #include <string>
 
 #include "pcf_app.hpp"
+#include "individual_sm_policy_document_api_handler.h"
 
-namespace oai {
-namespace pcf {
-namespace api {
+namespace oai::pcf::api {
 
 using namespace oai::pcf::model;
 using namespace pcf;
@@ -49,28 +47,25 @@ class IndividualSMPolicyDocumentApiImpl
  public:
   explicit IndividualSMPolicyDocumentApiImpl(
       const std::shared_ptr<Pistache::Rest::Router>& rtr,
-      const std::shared_ptr<pcf::app::pcf_smpc> smpc_service,
-      std::string m_address);
+      const std::shared_ptr<pcf::app::pcf_smpc>& smpc_service,
+      const std::string& m_address);
   ~IndividualSMPolicyDocumentApiImpl() override = default;
 
   void delete_sm_policy(
       const std::string& smPolicyId,
       const SmPolicyDeleteData& smPolicyDeleteData,
-      Pistache::Http::ResponseWriter& response);
+      Pistache::Http::ResponseWriter& response) override;
   void get_sm_policy(
-      const std::string& smPolicyId, Pistache::Http::ResponseWriter& response);
+      const std::string& smPolicyId,
+      Pistache::Http::ResponseWriter& response) override;
   void update_sm_policy(
       const std::string& smPolicyId,
       const SmPolicyUpdateContextData& smPolicyUpdateContextData,
-      Pistache::Http::ResponseWriter& response);
+      Pistache::Http::ResponseWriter& response) override;
 
  private:
   std::string m_address;
-  std::shared_ptr<app::pcf_smpc> m_smpc_service;
+  std::shared_ptr<individual_sm_policy_document_api_handler> m_api_handler;
 };
 
-}  // namespace api
-}  // namespace pcf
-}  // namespace oai
-
-#endif
+}  // namespace oai::pcf::api

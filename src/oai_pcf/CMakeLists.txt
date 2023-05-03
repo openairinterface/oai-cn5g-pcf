@@ -278,6 +278,7 @@ include_directories(${SRC_TOP_DIR}/api-server)
 include_directories(${SRC_TOP_DIR}/api-server/api)
 include_directories(${SRC_TOP_DIR}/api-server/impl)
 include_directories(${SRC_TOP_DIR}/api-server/model)
+include_directories(${SRC_TOP_DIR}/api-server/handler)
 
 add_executable(pcf
   ${SRC_TOP_DIR}/oai_pcf/main.cpp

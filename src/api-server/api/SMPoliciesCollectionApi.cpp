@@ -20,8 +20,6 @@ namespace api {
 using namespace oai::model::common::helpers;
 using namespace oai::pcf::model;
 
-const std::string SMPoliciesCollectionApi::base = "/npcf-smpolicycontrol/v1";
-
 SMPoliciesCollectionApi::SMPoliciesCollectionApi(
     const std::shared_ptr<Pistache::Rest::Router>& rtr)
     : router(rtr) {}
@@ -34,7 +32,7 @@ void SMPoliciesCollectionApi::setupRoutes() {
   using namespace Pistache::Rest;
 
   Routes::Post(
-      *router, base + "/sm-policies",
+      *router, SM_POLICIES_API_BASE + "/sm-policies",
       Routes::bind(&SMPoliciesCollectionApi::create_sm_policy_handler, this));
 
   // Default handler, called when a route is not found
