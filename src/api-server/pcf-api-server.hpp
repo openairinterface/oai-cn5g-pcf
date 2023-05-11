@@ -31,8 +31,7 @@
  *      contact@openairinterface.org
  */
 
-#ifndef FILE_PCF_API_SERVER_SEEN
-#define FILE_PCF_API_SERVER_SEEN
+#pragma once
 
 //#include "IndividualSMPolicyDocumentApi.h"
 
@@ -49,6 +48,8 @@
 #include "pcf_app.hpp"
 #include "SMPoliciesCollectionApiImpl.h"
 #include "IndividualSMPolicyDocumentApiImpl.h"
+
+namespace oai::pcf::api {
 
 class PCFApiServer {
  public:
@@ -84,5 +85,4 @@ class PCFApiServer {
   std::shared_ptr<oai::pcf::api::IndividualSMPolicyDocumentApiImpl>
       m_individualSmPolicyDocumentApi;
 };
-
-#endif
+}  // namespace oai::pcf::api

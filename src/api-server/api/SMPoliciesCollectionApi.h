@@ -46,8 +46,6 @@ class SMPoliciesCollectionApi {
   virtual ~SMPoliciesCollectionApi() = default;
   void init();
 
-  static const std::string base;
-
  private:
   void setupRoutes();
 
