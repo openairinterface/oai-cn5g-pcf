@@ -117,6 +117,6 @@ class IndividualSMPolicyDocumentApi {
       Pistache::Http::ResponseWriter& response) = 0;
 };
 
-}  // namespace oai
+}  // namespace oai::pcf::api
 
 #endif /* IndividualSMPolicyDocumentApi_H_ */

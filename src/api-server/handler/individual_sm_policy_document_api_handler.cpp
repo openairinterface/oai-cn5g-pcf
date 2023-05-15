@@ -30,7 +30,6 @@
 #include "individual_sm_policy_document_api_handler.h"
 #include "ProblemDetails.h"
 
-
 namespace oai::pcf::api {
 
 using namespace oai::pcf::model;
@@ -118,7 +117,7 @@ api_response individual_sm_policy_document_api_handler::get_sm_policy(
     to_json(json_data, problem_details);
   }
   response.status_code = http_code;
-  response.body = json_data.dump();
+  response.body        = json_data.dump();
   response.headers.add<Pistache::Http::Header::ContentType>(
       Pistache::Http::Mime::MediaType(content_type));
 
@@ -131,7 +130,7 @@ api_response individual_sm_policy_document_api_handler::update_sm_policy(
   api_response response;
   ProblemDetails problem_details;
   std::string problem_description;
-  std::string content_type        = "application/problem+json";
+  std::string content_type = "application/problem+json";
   nlohmann::json json_data;
   http_status_code_e http_code;
 
@@ -177,8 +176,8 @@ api_response individual_sm_policy_document_api_handler::update_sm_policy(
 
   response.headers.add<Pistache::Http::Header::ContentType>(
       Pistache::Http::Mime::MediaType(content_type));
-  response.body = json_data.dump();
+  response.body        = json_data.dump();
   response.status_code = http_code;
   return response;
 }
-}
+}  // namespace oai::pcf::api

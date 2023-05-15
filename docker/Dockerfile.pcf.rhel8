@@ -127,9 +127,7 @@ COPY --from=oai-pcf-builder \
     /usr/local/lib/libnghttp2_asio.so.1 \
     /usr/local/lib64/libspdlog.so \
     /usr/local/lib64/libfmt.so \
-# libyaml-cpp is installed via epel-8
-# and epel-8 cannot be installed on ubi-minimal
-    /lib64/libyaml-cpp.so.0.6 \
+    /usr/local/lib64/libyaml-cpp.so.0.* \
     /usr/lib64/
 
 RUN ldconfig && \

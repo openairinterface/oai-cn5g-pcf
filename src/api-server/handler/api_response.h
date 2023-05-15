@@ -42,4 +42,4 @@ struct api_response {
   std::string body;
 };
 
-}
+}  // namespace oai::pcf::api

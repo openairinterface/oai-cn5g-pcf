@@ -31,7 +31,7 @@
 #---------------------------------------------------------------------
 # BASE IMAGE
 #---------------------------------------------------------------------
-ARG BASE_IMAGE=ubuntu:bionic
+ARG BASE_IMAGE=ubuntu:focal
 FROM $BASE_IMAGE as oai-pcf-base
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -104,10 +104,6 @@ RUN apt-get update && \
       libcurl?-gnutls \
       librtmp1 \
       libpsl5 \
-# Ubuntu 18 --> won't install anything
-# Ubuntu 20 --> libyaml-cpp 0.6
-# Ubuntu 22 --> libyaml-cpp 0.7
-      libyaml-cpp0.? \
   && rm -rf /var/lib/apt/lists/* \
        /lib/x86_64-linux-gnu/libboost_system.so.1.6*.0 \
        /lib/x86_64-linux-gnu/ibboost_filesystem.so.1.6*.0
