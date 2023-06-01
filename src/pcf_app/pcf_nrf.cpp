@@ -34,6 +34,7 @@
 #include "pcf_config.hpp"
 #include "pcf_client.hpp"
 #include "Snssai.h"
+#include "api_defs.h"
 
 #include <boost/uuid/random_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
@@ -80,8 +81,8 @@ void pcf_nrf::generate_pcf_profile() {
 
   // NF services
   nf_service_t nf_service        = {};
-  nf_service.service_instance_id = SM_POLICY_API_NAME;
-  nf_service.service_name        = SM_POLICY_API_NAME;
+  nf_service.service_instance_id = oai::pcf::api::sm_policies::API_NAME;
+  nf_service.service_name        = oai::pcf::api::sm_policies::API_NAME;
   nf_service_version_t version   = {};
   version.api_version_in_uri     = pcf_cfg->local().get_sbi().get_api_version();
   version.api_full_version       = "1.0.0";  // TODO: to be updated

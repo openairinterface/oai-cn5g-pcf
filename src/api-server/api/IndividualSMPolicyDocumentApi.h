@@ -33,9 +33,7 @@
 #include "SmPolicyUpdateContextData.h"
 #include <string>
 
-namespace oai {
-namespace pcf {
-namespace api {
+namespace oai::pcf::api {
 
 using namespace oai::pcf::model;
 
@@ -45,8 +43,6 @@ class IndividualSMPolicyDocumentApi {
       const std::shared_ptr<Pistache::Rest::Router>& rtr);
   virtual ~IndividualSMPolicyDocumentApi() = default;
   void init();
-
-  static const std::string base;
 
  private:
   void setupRoutes();
@@ -121,8 +117,6 @@ class IndividualSMPolicyDocumentApi {
       Pistache::Http::ResponseWriter& response) = 0;
 };
 
-}  // namespace api
-}  // namespace pcf
-}  // namespace oai
+}  // namespace oai::pcf::api
 
 #endif /* IndividualSMPolicyDocumentApi_H_ */

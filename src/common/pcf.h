@@ -151,6 +151,4 @@ typedef struct nf_service_s {
 #define AMF_NUMBER_RETRIES 3
 #define UDM_NUMBER_RETRIES 3
 
-#define SM_POLICY_API_NAME "npcf-smpolicycontrol";
-
 #endif

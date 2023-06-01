@@ -17,27 +17,25 @@
  *
  */
 
-#ifndef SM_POLICIES_COLLECTION_API_IMPL_H_
-#define SM_POLICIES_COLLECTION_API_IMPL_H_
+#pragma once
 
 #include <pistache/endpoint.h>
 #include <pistache/http.h>
 #include <pistache/router.h>
 #include <memory>
 #include <optional>
+#include <string>
 
 #include <SMPoliciesCollectionApi.h>
 
 #include "ProblemDetails.h"
 #include "SmPolicyContextData.h"
 #include "SmPolicyDecision.h"
-#include <string>
 
 #include "pcf_sm_policy_control.hpp"
+#include "sm_policies_collection_api_handler.h"
 
-namespace oai {
-namespace pcf {
-namespace api {
+namespace oai::pcf::api {
 
 using namespace oai::pcf::model;
 using namespace pcf;
@@ -47,20 +45,16 @@ class SMPoliciesCollectionApiImpl
  public:
   explicit SMPoliciesCollectionApiImpl(
       const std::shared_ptr<Pistache::Rest::Router>& rtr,
-      const std::shared_ptr<app::pcf_smpc> smpc_service, std::string address);
+      const std::shared_ptr<app::pcf_smpc>& smpc_service,
+      const std::string& address);
   ~SMPoliciesCollectionApiImpl() override = default;
 
   void create_sm_policy(
       const SmPolicyContextData& smPolicyContextData,
-      Pistache::Http::ResponseWriter& response);
+      Pistache::Http::ResponseWriter& response) override;
 
  private:
-  std::string m_address;
-  std::shared_ptr<app::pcf_smpc> smpc_service;
+  std::shared_ptr<sm_policies_collection_api_handler> m_api_handler;
 };
 
-}  // namespace api
-}  // namespace pcf
-}  // namespace oai
-
-#endif
+}  // namespace oai::pcf::api

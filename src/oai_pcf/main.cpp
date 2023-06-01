@@ -32,6 +32,7 @@ using namespace std;
 using namespace oai::pcf::app;
 using namespace oai::pcf::config;
 using namespace oai::utils;
+using namespace oai::pcf::api;
 
 using namespace oai::config;
 

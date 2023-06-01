@@ -13,16 +13,13 @@
 
 #include "IndividualSMPolicyDocumentApi.h"
 #include "Helpers.h"
+#include "api_defs.h"
+#include "pcf_config.hpp"
 
-namespace oai {
-namespace pcf {
-namespace api {
+namespace oai::pcf::api {
 
 using namespace oai::model::common::helpers;
 using namespace oai::pcf::model;
-
-const std::string IndividualSMPolicyDocumentApi::base =
-    "/npcf-smpolicycontrol/v1";
 
 IndividualSMPolicyDocumentApi::IndividualSMPolicyDocumentApi(
     const std::shared_ptr<Pistache::Rest::Router>& rtr)
@@ -34,17 +31,16 @@ void IndividualSMPolicyDocumentApi::init() {
 
 void IndividualSMPolicyDocumentApi::setupRoutes() {
   using namespace Pistache::Rest;
-
   Routes::Post(
-      *router, base + "/sm-policies/:smPolicyId/delete",
+      *router, sm_policies::get_route() + "/:smPolicyId/delete",
       Routes::bind(
           &IndividualSMPolicyDocumentApi::delete_sm_policy_handler, this));
   Routes::Get(
-      *router, base + "/sm-policies/:smPolicyId",
+      *router, sm_policies::get_route() + "/:smPolicyId",
       Routes::bind(
           &IndividualSMPolicyDocumentApi::get_sm_policy_handler, this));
   Routes::Post(
-      *router, base + "/sm-policies/:smPolicyId/update",
+      *router, sm_policies::get_route() + "/:smPolicyId/update",
       Routes::bind(
           &IndividualSMPolicyDocumentApi::update_sm_policy_handler, this));
 
@@ -183,6 +179,4 @@ void IndividualSMPolicyDocumentApi::
       Pistache::Http::Code::Not_Found, "The requested method does not exist");
 }
 
-}  // namespace api
-}  // namespace pcf
-}  // namespace oai
+}  // namespace oai::pcf::api
