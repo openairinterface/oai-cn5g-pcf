@@ -77,7 +77,8 @@ void pcf_nrf::generate_pcf_profile() {
   m_nf_instance_profile.set_nf_heartBeat_timer(50);
   m_nf_instance_profile.set_nf_priority(1);
   m_nf_instance_profile.set_nf_capacity(100);
-  m_nf_instance_profile.add_nf_ipv4_addresses(pcf_cfg->local().get_sbi().get_addr4());
+  m_nf_instance_profile.add_nf_ipv4_addresses(
+      pcf_cfg->local().get_sbi().get_addr4());
 
   // NF services
   nf_service_t nf_service        = {};

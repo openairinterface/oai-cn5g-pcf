@@ -105,10 +105,12 @@ int main(int argc, char** argv) {
   // PCF application layer
   pcf_app_inst = std::make_unique<pcf_app>(ev);
 
-  std::string v4_address = conv::toString(pcf_cfg->local().get_sbi().get_addr4());
+  std::string v4_address =
+      conv::toString(pcf_cfg->local().get_sbi().get_addr4());
 
   // PCF Pistache API server (HTTP1)
-  Pistache::Address addr(v4_address, Pistache::Port(pcf_cfg->local().get_sbi().get_port_http1()));
+  Pistache::Address addr(
+      v4_address, Pistache::Port(pcf_cfg->local().get_sbi().get_port_http1()));
   PCFApiServer test(addr, pcf_app_inst);
 
   pcf_api_server_1 = std::make_unique<PCFApiServer>(addr, pcf_app_inst);
