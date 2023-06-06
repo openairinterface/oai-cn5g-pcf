@@ -41,7 +41,7 @@
 #include <stdexcept>
 
 using namespace oai::pcf::app;
-using namespace oai::pcf::config;
+using namespace oai::config::pcf;
 using namespace oai::model::common;
 using namespace boost::placeholders;
 using namespace std;
@@ -59,9 +59,10 @@ pcf_nrf::pcf_nrf(pcf_event& ev) : m_event_sub(ev) {
 
 //------------------------------------------------------------------------------
 void pcf_nrf::generate_nrf_api_url() {
-  m_nrf_url = pcf_cfg->nrf().get_sbi().get_url();
+  m_nrf_url = pcf_cfg->get_nf(config::NRF_CONFIG_NAME)->get_sbi().get_url();
   m_nrf_url.append(NNRF_NFM_BASE)
-      .append(pcf_cfg->nrf().get_sbi().get_api_version())
+      .append(
+          pcf_cfg->get_nf(config::NRF_CONFIG_NAME)->get_sbi().get_api_version())
       .append(NNRF_DISC_INSTANCES)
       .append(m_pcf_instance_id);
 }

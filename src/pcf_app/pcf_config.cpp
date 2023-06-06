@@ -19,25 +19,43 @@
  *      contact@openairinterface.org
  */
 
-/*! \file api_defs.h
+/*! \file pcf_config_types.cpp
  \brief
  \author  Stefan Spettel
  \company phine.tech
  \date 2023
  \email: stefan.spettel@phine.tech
- */
-
-#include "api_defs.h"
+*/
 
 #include "pcf_config.hpp"
 
-extern std::unique_ptr<oai::config::pcf::pcf_config> pcf_cfg;
+oai::config::pcf::pcf_config::pcf_config(
+    const std::string& config_path, bool log_stdout, bool log_rot_file)
+    : config(
+          config_path, oai::config::PCF_CONFIG_NAME, log_stdout, log_rot_file) {
+  m_used_sbi_values    = {oai::config::PCF_CONFIG_NAME,
+                       oai::config::NRF_CONFIG_NAME};
+  m_used_config_values = {
+      oai::config::LOG_LEVEL_CONFIG_NAME, oai::config::REGISTER_NF_CONFIG_NAME,
+      oai::config::NF_LIST_CONFIG_NAME, oai::config::PCF_CONFIG_NAME};
 
-namespace oai::pcf::api {
+  auto pcf = std::make_shared<pcf_config_type>(
+      PCF_CONFIG_NAME, "oai-pcf",
+      sbi_interface("SBI", "oai-pcf", 80, 0, "v1", "eth0"),
+      policy_config(
+          DEFAULT_POLICY_DECISIONS_PATH, DEFAULT_PCC_RULES_PATH,
+          DEFAULT_TRAFFIC_RULES_PATH));
 
-std::string sm_policies::get_route() {
-  return API_BASE + pcf_cfg->local().get_sbi().get_api_version() +
-         sm_policies::CREATE_ROUTE;
+  auto nrf = std::make_shared<nf>(
+      NRF_CONFIG_NAME, "oai-nrf",
+      sbi_interface("SBI", "oai-nrf", 80, 0, "v1", ""));
+
+  add_nf(PCF_CONFIG_NAME, pcf);
+  add_nf(NRF_CONFIG_NAME, nrf);
 }
 
-}  // namespace oai::pcf::api
+const oai::config::pcf::policy_config&
+oai::config::pcf::pcf_config::get_pcf_policy() const {
+  return std::dynamic_pointer_cast<pcf_config_type>(get_local())
+      ->get_policy_config();
+}

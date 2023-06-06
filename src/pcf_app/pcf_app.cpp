@@ -35,7 +35,7 @@
 #include <stdexcept>
 
 using namespace oai::pcf::app;
-using namespace oai::pcf::config;
+using namespace oai::config::pcf;
 using namespace oai::pcf::model;
 
 using namespace std;
