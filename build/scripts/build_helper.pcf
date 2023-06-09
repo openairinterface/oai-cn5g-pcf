@@ -99,15 +99,6 @@ check_install_pcf_deps() {
   # Libraries
   if [[ $OS_DISTRO == "ubuntu" ]]; then
     case "$(get_distribution_release)" in
-      "ubuntu18.04")
-        # Currently Ubuntu18.04 has boost 1.65 as the latest
-        # We need at least 1.66
-        # PPA has 1.67
-        $SUDO $INSTALLER install $OPTION software-properties-common
-        $SUDO add-apt-repository ppa:mhier/libboost-latest --yes
-        $SUDO $INSTALLER update
-        specific_packages="libasio-dev libboost-all-dev libasan4"
-        ;;
       "ubuntu20.04")
         specific_packages="libasio-dev libboost-all-dev libasan5"
         ;;
@@ -156,18 +147,6 @@ check_install_pcf_deps() {
   fi
   echo "Install distro libs"
   $SUDO $INSTALLER install $OPTION $PACKAGE_LIST
-
-  # fix issue with libboost in U18 for a bare metal deployment
-  if [[ $OS_DISTRO == "ubuntu" ]]; then
-    case "$(get_distribution_release)" in
-      "ubuntu18.04")
-        $SUDO $INSTALLER remove $OPTION libboost1.65-dev || true
-        $SUDO $INSTALLER autoremove $OPTION || true
-        $SUDO $INSTALLER install $OPTION libboost1.67-dev
-        ;;
-    esac
-  fi
-
   ret=$?;[[ $ret -ne 0 ]] && return $ret
   echo "distro libs installation complete"
 
@@ -190,10 +169,6 @@ check_install_pcf_deps() {
   # To be sure, let's install from source all the time for the moment
   if [[ $OS_DISTRO == "ubuntu" ]]; then
     case "$(get_distribution_release)" in
-      "ubuntu18.04")
-        install_libyaml_cpp_from_git $1 $2
-        ret=$?;[[ $ret -ne 0 ]] && return $ret
-        ;;
       "ubuntu20.04")
         # definitely, 0.6.2 as PPA installed is not enough
         install_libyaml_cpp_from_git $1 $2
