@@ -37,18 +37,19 @@ oai::config::pcf::pcf_config::pcf_config(
                        oai::config::NRF_CONFIG_NAME};
   m_used_config_values = {
       oai::config::LOG_LEVEL_CONFIG_NAME, oai::config::REGISTER_NF_CONFIG_NAME,
-      oai::config::NF_LIST_CONFIG_NAME, oai::config::PCF_CONFIG_NAME};
+      oai::config::NF_LIST_CONFIG_NAME, oai::config::PCF_CONFIG_NAME,
+      oai::config::NF_CONFIG_HTTP_NAME};
 
   auto pcf = std::make_shared<pcf_config_type>(
       PCF_CONFIG_NAME, "oai-pcf",
-      sbi_interface("SBI", "oai-pcf", 80, 0, "v1", "eth0"),
+      sbi_interface("SBI", "oai-pcf", 80, "v1", "eth0"),
       policy_config(
           DEFAULT_POLICY_DECISIONS_PATH, DEFAULT_PCC_RULES_PATH,
           DEFAULT_TRAFFIC_RULES_PATH));
 
   auto nrf = std::make_shared<nf>(
       NRF_CONFIG_NAME, "oai-nrf",
-      sbi_interface("SBI", "oai-nrf", 80, 0, "v1", ""));
+      sbi_interface("SBI", "oai-nrf", 80, "v1", ""));
 
   add_nf(PCF_CONFIG_NAME, pcf);
   add_nf(NRF_CONFIG_NAME, nrf);

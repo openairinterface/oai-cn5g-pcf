@@ -111,10 +111,7 @@ http_status_code_e pcf_client::do_request(
       curl, CURLOPT_INTERFACE,
       pcf_cfg->local().get_sbi().get_if_name().c_str());
 
-  // TODO refactor, we know that target is NRF, but it should be done based on
-  // sbi config
-
-  if (pcf_cfg->get_nf(config::NRF_CONFIG_NAME)->get_sbi().use_http2()) {
+  if (pcf_cfg->get_http_version() == 2) {
     curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
     // we use a self-signed test server, skip verification during debugging
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);

@@ -108,25 +108,23 @@ int main(int argc, char** argv) {
   std::string v4_address =
       conv::toString(pcf_cfg->local().get_sbi().get_addr4());
 
-  // PCF Pistache API server (HTTP1)
-  Pistache::Address addr(
-      v4_address, Pistache::Port(pcf_cfg->local().get_sbi().get_port_http1()));
-  PCFApiServer test(addr, pcf_app_inst);
+  if (pcf_cfg->get_http_version() == 1) {
+    // PCF Pistache API server (HTTP1)
+    Pistache::Address addr(
+        v4_address, Pistache::Port(pcf_cfg->local().get_sbi().get_port()));
 
-  pcf_api_server_1 = std::make_unique<PCFApiServer>(addr, pcf_app_inst);
-  pcf_api_server_1->init(2);
-  std::thread pcf_http1_manager(&PCFApiServer::start, pcf_api_server_1.get());
-
-  if (pcf_cfg->local().get_sbi().use_http2()) {
+    pcf_api_server_1 = std::make_unique<PCFApiServer>(addr, pcf_app_inst);
+    pcf_api_server_1->init(2);
+    std::thread pcf_http1_manager(&PCFApiServer::start, pcf_api_server_1.get());
+    pcf_http1_manager.join();
+  } else if (pcf_cfg->get_http_version() == 2) {
     // PCF NGHTTP API server (HTTP2)
     pcf_api_server_2 = std::make_unique<pcf_http2_server>(
-        v4_address, pcf_cfg->local().get_sbi().get_port_http2(), pcf_app_inst);
+        v4_address, pcf_cfg->local().get_sbi().get_port(), pcf_app_inst);
     std::thread pcf_http2_manager(
         &pcf_http2_server::start, pcf_api_server_2.get());
     pcf_http2_manager.join();
   }
-
-  pcf_http1_manager.join();
 
   Logger::pcf_app().info("HTTP servers successfully stopped. Exiting");
 
