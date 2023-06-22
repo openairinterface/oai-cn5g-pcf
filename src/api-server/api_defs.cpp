@@ -31,12 +31,13 @@
 
 #include "pcf_config.hpp"
 
-extern std::unique_ptr<oai::pcf::config::pcf_config> pcf_cfg;
+extern std::unique_ptr<oai::config::pcf::pcf_config> pcf_cfg;
 
 namespace oai::pcf::api {
 
 std::string sm_policies::get_route() {
-  return API_BASE + pcf_cfg->sbi.get_api_version() + sm_policies::CREATE_ROUTE;
+  return API_BASE + pcf_cfg->local().get_sbi().get_api_version() +
+         sm_policies::CREATE_ROUTE;
 }
 
 }  // namespace oai::pcf::api

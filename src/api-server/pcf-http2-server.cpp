@@ -44,7 +44,7 @@
 using namespace nghttp2::asio_http2;
 using namespace nghttp2::asio_http2::server;
 using namespace oai::pcf::model;
-using namespace oai::pcf::config;
+using namespace oai::config::pcf;
 using namespace oai::pcf::api;
 
 extern std::unique_ptr<pcf_config> pcf_cfg;

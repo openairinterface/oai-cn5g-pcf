@@ -32,10 +32,11 @@ include_directories(${SRC_TOP_DIR}/${MOUNTED_COMMON}/logger)
 include_directories(${SRC_TOP_DIR}/${MOUNTED_COMMON}/config)
 
 add_library (PCF STATIC
+  pcf_config_types.cpp
+  pcf_config.cpp
   pcf_app.cpp
   pcf_nrf.cpp
   pcf_client.cpp
-  pcf_config.cpp
   pcf_profile.cpp
   pcf_event.cpp
   pcf_sm_policy_control.cpp
