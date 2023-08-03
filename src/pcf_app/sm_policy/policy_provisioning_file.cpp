@@ -209,6 +209,8 @@ void policy_provisioning_file::replace_json_string_with_int(nlohmann::json& j) {
     if (elem.value().is_primitive()) {
       try {
         std::string e = elem.value();
+        if (e == "true") j[elem.key()] = true;
+        if (e == "false") j[elem.key()] = false;
         int val       = std::stoi(e);
         j[elem.key()] = val;  // replace with int
       } catch (std::invalid_argument& ex) {
