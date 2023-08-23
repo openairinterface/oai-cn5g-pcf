@@ -29,4 +29,6 @@ target_sources(${NF_TARGET} PRIVATE
         ${UTILS_DIR}/string.cpp
         ${UTILS_DIR}/fqdn.cpp
         ${UTILS_DIR}/if.cpp
+        ${UTILS_DIR}/nf_launch.cpp
+        ${UTILS_DIR}/options.cpp
         )
