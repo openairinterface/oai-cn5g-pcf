@@ -242,7 +242,7 @@ std::map<std::string, T> policy_provisioning_file::convert_yaml_to_model(
               "Error while parsing rule %s: %s", elem.key(),
               stream.str().c_str());
         }
-      } catch (nlohmann::json::exception& e) {
+      } catch (std::exception& e) {
         Logger::pcf_app().warn(
             "Error while parsing rule %s: %s", elem.key(), e.what());
       }
