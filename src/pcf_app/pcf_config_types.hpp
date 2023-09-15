@@ -37,11 +37,13 @@ class policy_config : public config_type {
   string_config_value m_pcc_rules_path;
   string_config_value m_policy_decisions_path;
   string_config_value m_traffic_rules_path;
+  string_config_value m_qos_data_path;
 
  public:
   explicit policy_config(
       const std::string& policy_decisions_path,
-      const std::string& pcc_rules_path, const std::string& traffic_rules_path);
+      const std::string& pcc_rules_path, const std::string& traffic_rules_path,
+      const std::string& qos_data_path);
 
   void from_yaml(const YAML::Node& node) override;
 
@@ -49,6 +51,7 @@ class policy_config : public config_type {
   [[nodiscard]] const std::string& get_pcc_rules_path() const;
   [[nodiscard]] const std::string& get_policy_decisions_path() const;
   [[nodiscard]] const std::string& get_traffic_rules_path() const;
+  [[nodiscard]] const std::string& get_qos_data_path() const;
 };
 
 class pcf_config_type : public nf {

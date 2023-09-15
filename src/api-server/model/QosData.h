@@ -31,6 +31,9 @@ namespace model {
 ///
 /// </summary>
 class QosData {
+  const std::string BANDWIDTH_VALIDATION_REGEX =
+      R"(^\d+(\.\d+)? (bps|Kbps|Mbps|Gbps|Tbps)$)";
+
  public:
   QosData();
   virtual ~QosData() = default;
