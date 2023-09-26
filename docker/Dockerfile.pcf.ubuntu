@@ -31,7 +31,7 @@
 #---------------------------------------------------------------------
 # BASE IMAGE
 #---------------------------------------------------------------------
-ARG BASE_IMAGE=ubuntu:focal
+ARG BASE_IMAGE=ubuntu:jammy
 FROM $BASE_IMAGE as oai-pcf-base
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -84,10 +84,14 @@ ENV TZ=Europe/Paris
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get upgrade --yes && \
     DEBIAN_FRONTEND=noninteractive apt-get install --yes \
+# Debug Tools that are not mandatory
+      tzdata \
       psmisc \
       net-tools \
-      tzdata \
+      tcpdump \
+      iputils-ping \
       bc \
+# Mandatory packages for the NF to run
       openssl \
 # Ubuntu 20 --> libasan5
 # Ubuntu 22 --> libasan6
