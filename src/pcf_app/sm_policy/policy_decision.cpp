@@ -32,7 +32,7 @@
 #include "logger.hpp"
 #include <sstream>
 
-using namespace oai::pcf::model;
+using namespace oai::model::pcf;
 using namespace oai::pcf::app::sm_policy;
 using namespace oai::pcf::app;
 
@@ -142,8 +142,7 @@ status_code policy_decision::handle_rat_type_change(
 status_code policy_decision::redecide(
     SmPolicyContextData& original_context,
     const SmPolicyUpdateContextData& update_data,
-    oai::pcf::model::SmPolicyDecision& new_decision,
-    std::string& problem_details) {
+    SmPolicyDecision& new_decision, std::string& problem_details) {
   status_code status = status_code::OK;
   // that is not very beautiful, but that is how the API is designed
   // (TS 29.512 4.2.4.2)

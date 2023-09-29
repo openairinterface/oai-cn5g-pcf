@@ -45,7 +45,7 @@ namespace oai::pcf::app::sm_policy {
 class dnn_policy_decision : public oai::pcf::app::sm_policy::policy_decision {
  public:
   explicit dnn_policy_decision(
-      const std::string& dnn, const oai::pcf::model::SmPolicyDecision& decision)
+      const std::string& dnn, const oai::model::pcf::SmPolicyDecision& decision)
       : policy_decision(decision) {
     m_dnn = dnn;
   }
@@ -62,8 +62,8 @@ class dnn_policy_decision : public oai::pcf::app::sm_policy::policy_decision {
    * success
    */
   [[nodiscard]] oai::pcf::app::sm_policy::status_code decide(
-      const oai::pcf::model::SmPolicyContextData& context,
-      oai::pcf::model::SmPolicyDecision& decision) const override;
+      const oai::model::pcf::SmPolicyContextData& context,
+      oai::model::pcf::SmPolicyDecision& decision) const override;
 
   /**
    * @brief Get the dnn object

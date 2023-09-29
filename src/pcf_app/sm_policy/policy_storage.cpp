@@ -33,7 +33,7 @@
 #include <sstream>
 
 using namespace oai::pcf::app::sm_policy;
-using namespace oai::pcf::model;
+using namespace oai::model::pcf;
 using namespace oai::model::common;
 
 void policy_storage::set_default_decision(const SmPolicyDecision& decision) {
@@ -79,18 +79,9 @@ void policy_storage::insert_slice_decision(
   slice_decision_lock.unlock();
   notify_subscribers(desc);
 }
-/**
- * @brief Finds a policy based on the existing supi, dnn, slice and default
- * policies in that order.
- *
- * @param context  The policy context containing supi or dnn or snssai
- * @param chosen_decision
- * decision base class
- * @return pointer to the object implementing the chosen, null in case no
- * decision can be found
- */
+
 std::shared_ptr<policy_decision> policy_storage::find_policy(
-    const oai::pcf::model::SmPolicyContextData& context) {
+    const SmPolicyContextData& context) {
   std::string msg_base = "SM Policy request from SUPI:";
   std::string supi     = context.getSupi();
 

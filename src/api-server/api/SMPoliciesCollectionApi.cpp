@@ -20,7 +20,7 @@ namespace pcf {
 namespace api {
 
 using namespace oai::model::common::helpers;
-using namespace oai::pcf::model;
+using namespace oai::model::pcf;
 
 SMPoliciesCollectionApi::SMPoliciesCollectionApi(
     const std::shared_ptr<Pistache::Rest::Router>& rtr)

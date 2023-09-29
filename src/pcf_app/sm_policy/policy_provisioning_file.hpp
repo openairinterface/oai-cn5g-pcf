@@ -53,10 +53,10 @@ class policy_provisioning_file {
   static bool read_all_files_in_dir(
       const std::string& dir_path, std::vector<YAML::Node>& yaml_output);
 
-  static oai::pcf::model::SmPolicyDecision decision_from_rules(
+  static oai::model::pcf::SmPolicyDecision decision_from_rules(
       const YAML::Node& node,
-      const std::map<std::string, oai::pcf::model::PccRule>& pcc_rules,
-      const std::map<std::string, oai::pcf::model::TrafficControlData>&
+      const std::map<std::string, oai::model::pcf::PccRule>& pcc_rules,
+      const std::map<std::string, oai::model::pcf::TrafficControlData>&
           traffic_control);
 
   template<class T>

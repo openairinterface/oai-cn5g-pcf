@@ -43,7 +43,7 @@ namespace oai::pcf::app::sm_policy {
  */
 class policy_decision {
  public:
-  explicit policy_decision(const oai::pcf::model::SmPolicyDecision& decision) {
+  explicit policy_decision(const oai::model::pcf::SmPolicyDecision& decision) {
     m_decision = decision;
   }
 
@@ -61,8 +61,8 @@ class policy_decision {
    * success
    */
   [[nodiscard]] virtual oai::pcf::app::sm_policy::status_code decide(
-      const oai::pcf::model::SmPolicyContextData& context,
-      oai::pcf::model::SmPolicyDecision& decision) const;
+      const oai::model::pcf::SmPolicyContextData& context,
+      oai::model::pcf::SmPolicyDecision& decision) const;
 
   /**
    * @brief Redecides based on the original context, original decision and
@@ -80,40 +80,40 @@ class policy_decision {
    * update
    */
   [[nodiscard]] virtual oai::pcf::app::sm_policy::status_code redecide(
-      oai::pcf::model::SmPolicyContextData& original_context,
-      const oai::pcf::model::SmPolicyUpdateContextData& update_data,
-      oai::pcf::model::SmPolicyDecision& new_decision,
+      oai::model::pcf::SmPolicyContextData& original_context,
+      const oai::model::pcf::SmPolicyUpdateContextData& update_data,
+      oai::model::pcf::SmPolicyDecision& new_decision,
       std::string& problem_details);
 
   virtual ~policy_decision() = default;
 
-  [[nodiscard]] virtual const oai::pcf::model::SmPolicyDecision&
+  [[nodiscard]] virtual const oai::model::pcf::SmPolicyDecision&
   get_sm_policy_decision() const;
 
   [[nodiscard]] virtual std::string to_string() const;
 
  protected:
   oai::pcf::app::sm_policy::status_code handle_plmn_change(
-      oai::pcf::model::SmPolicyContextData& orig_context,
-      const oai::pcf::model::SmPolicyUpdateContextData& update,
+      oai::model::pcf::SmPolicyContextData& orig_context,
+      const oai::model::pcf::SmPolicyUpdateContextData& update,
       std::string& problem_details);
 
   oai::pcf::app::sm_policy::status_code handle_access_type_change(
-      oai::pcf::model::SmPolicyContextData& orig_context,
-      const oai::pcf::model::SmPolicyUpdateContextData& update,
+      oai::model::pcf::SmPolicyContextData& orig_context,
+      const oai::model::pcf::SmPolicyUpdateContextData& update,
       std::string& problem_details);
 
   oai::pcf::app::sm_policy::status_code handle_ip_address_change(
-      oai::pcf::model::SmPolicyContextData& orig_context,
-      const oai::pcf::model::SmPolicyUpdateContextData& update,
+      oai::model::pcf::SmPolicyContextData& orig_context,
+      const oai::model::pcf::SmPolicyUpdateContextData& update,
       std::string& problem_details);
 
   oai::pcf::app::sm_policy::status_code handle_rat_type_change(
-      oai::pcf::model::SmPolicyContextData& orig_context,
-      const oai::pcf::model::SmPolicyUpdateContextData& update,
+      oai::model::pcf::SmPolicyContextData& orig_context,
+      const oai::model::pcf::SmPolicyUpdateContextData& update,
       std::string& problem_details);
 
-  oai::pcf::model::SmPolicyDecision m_decision;
+  oai::model::pcf::SmPolicyDecision m_decision;
 };
 }  // namespace oai::pcf::app::sm_policy
 

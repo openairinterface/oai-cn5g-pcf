@@ -46,7 +46,7 @@ class supi_policy_decision : public oai::pcf::app::sm_policy::policy_decision {
  public:
   explicit supi_policy_decision(
       const std::string& supi,
-      const oai::pcf::model::SmPolicyDecision& decision)
+      const oai::model::pcf::SmPolicyDecision& decision)
       : policy_decision(decision) {
     m_supi = supi;
   }
@@ -63,8 +63,8 @@ class supi_policy_decision : public oai::pcf::app::sm_policy::policy_decision {
    * success
    */
   [[nodiscard]] oai::pcf::app::sm_policy::status_code decide(
-      const oai::pcf::model::SmPolicyContextData& context,
-      oai::pcf::model::SmPolicyDecision& decision) const override;
+      const oai::model::pcf::SmPolicyContextData& context,
+      oai::model::pcf::SmPolicyDecision& decision) const override;
 
   /**
    * @brief Get the supi object
