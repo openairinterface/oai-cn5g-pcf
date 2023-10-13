@@ -68,7 +68,6 @@ list(APPEND USED_COMMON_MODEL_SRC_FILES
         ${COMMON_MODEL_DIR}/AccessTypeRm.cpp
         ${COMMON_MODEL_DIR}/Ambr.cpp
         ${COMMON_MODEL_DIR}/Arp.cpp
-        ${COMMON_MODEL_DIR}/Arp.cpp
         ${COMMON_MODEL_DIR}/AtsssCapability.cpp
         ${COMMON_MODEL_DIR}/DnaiChangeType_anyOf.cpp
         ${COMMON_MODEL_DIR}/DnaiChangeType.cpp
@@ -107,16 +106,13 @@ list(APPEND USED_PCF_MODEL_SRC_FILES
         ${PCF_MODEL_DIR}/SmPolicyContextData.cpp
         ${PCF_MODEL_DIR}/AccNetChId.cpp
         ${PCF_MODEL_DIR}/AccNetChargingAddress.cpp
-        ${PCF_MODEL_DIR}/DnnSelectionMode.cpp
-        ${PCF_MODEL_DIR}/DnnSelectionMode_anyOf.cpp
         ${PCF_MODEL_DIR}/AdditionalAccessInfo.cpp
-        ${PCF_MODEL_DIR}/VplmnQos.cpp
         ${PCF_MODEL_DIR}/ServingNfIdentity.cpp
         ${PCF_MODEL_DIR}/AnGwAddress.cpp
         ${PCF_MODEL_DIR}/MaPduIndication.cpp
         ${PCF_MODEL_DIR}/MaPduIndication_anyOf.cpp
-        ${PCF_MODEL_DIR}/AtsssCapability.cpp
-        ${PCF_MODEL_DIR}/AtsssCapability_anyOf.cpp
+        ${PCF_MODEL_DIR}/PcfAtsssCapability.cpp
+        ${PCF_MODEL_DIR}/PcfAtsssCapability_anyOf.cpp
         # SmPolicyUpateContextData
         ${PCF_MODEL_DIR}/SmPolicyUpdateContextData.cpp
         ${PCF_MODEL_DIR}/UeInitiatedResourceRequest.cpp
@@ -212,7 +208,15 @@ list(APPEND USED_PCF_MODEL_SRC_FILES
         ${PCF_MODEL_DIR}/ReportingFrequency_anyOf.cpp
         )
 
-message("list of files is ${USED_PCF_MODEL_SRC_FILES}")
+include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/model/smf/smf_model.cmake)
+
+list(APPEND USED_SMF_MODEL_SRC_FILES
+        ${SMF_MODEL_DIR}/DnnSelectionMode.cpp
+        ${SMF_MODEL_DIR}/DnnSelectionMode_anyOf.cpp
+        ${SMF_MODEL_DIR}/VplmnQos.cpp
+        )
+
+include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/model/smf/smf_model.cmake)
 
 # finally, we have to include common_model.cmake (has to be last
 include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/model/common_model/common_model.cmake)
