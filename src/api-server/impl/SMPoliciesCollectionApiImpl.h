@@ -37,7 +37,7 @@
 
 namespace oai::pcf::api {
 
-using namespace oai::pcf::model;
+using namespace oai::model::pcf;
 using namespace pcf;
 
 class SMPoliciesCollectionApiImpl

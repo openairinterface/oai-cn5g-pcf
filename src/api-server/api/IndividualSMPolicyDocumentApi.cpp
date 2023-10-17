@@ -19,7 +19,7 @@
 namespace oai::pcf::api {
 
 using namespace oai::model::common::helpers;
-using namespace oai::pcf::model;
+using namespace oai::model::pcf;
 
 IndividualSMPolicyDocumentApi::IndividualSMPolicyDocumentApi(
     const std::shared_ptr<Pistache::Rest::Router>& rtr)

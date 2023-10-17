@@ -32,7 +32,7 @@
 
 namespace oai::pcf::api {
 
-using namespace oai::pcf::model;
+using namespace oai::model::pcf;
 using namespace oai::model::common;
 using namespace oai::pcf::app::sm_policy;
 

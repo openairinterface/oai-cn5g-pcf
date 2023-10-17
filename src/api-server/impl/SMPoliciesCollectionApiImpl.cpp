@@ -17,7 +17,7 @@
 
 namespace oai::pcf::api {
 
-using namespace oai::pcf::model;
+using namespace oai::model::pcf;
 using namespace oai::pcf::app;
 using namespace oai::pcf::app::sm_policy;
 using namespace oai::model::common;

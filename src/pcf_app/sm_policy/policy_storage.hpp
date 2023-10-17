@@ -85,20 +85,30 @@ class policy_storage {
   // TODO methods to update and delete policies
   void insert_supi_decision(
       const std::string& supi,
-      const oai::pcf::model::SmPolicyDecision& decision);
+      const oai::model::pcf::SmPolicyDecision& decision);
 
   void insert_dnn_decision(
       const std::string& dnn,
-      const oai::pcf::model::SmPolicyDecision& decision);
+      const oai::model::pcf::SmPolicyDecision& decision);
 
   void insert_slice_decision(
       const oai::model::common::Snssai&,
-      const oai::pcf::model::SmPolicyDecision& decision);
+      const oai::model::pcf::SmPolicyDecision& decision);
 
-  void set_default_decision(const oai::pcf::model::SmPolicyDecision& decision);
+  void set_default_decision(const oai::model::pcf::SmPolicyDecision& decision);
 
+  /**
+   * @brief Finds a policy based on the existing supi, dnn, slice and default
+   * policies in that order.
+   *
+   * @param context  The policy context containing supi or dnn or snssai
+   * @param chosen_decision
+   * decision base class
+   * @return pointer to the object implementing the chosen, null in case no
+   * decision can be found
+   */
   std::shared_ptr<policy_decision> find_policy(
-      const oai::pcf::model::SmPolicyContextData& context);
+      const oai::model::pcf::SmPolicyContextData& context);
 
   /**
    * @brief Calls the callback when any of the policies have been updated

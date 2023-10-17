@@ -73,8 +73,8 @@ class pcf_smpc {
    * @return sm_policy::status_code
    */
   sm_policy::status_code create_sm_policy_handler(
-      const oai::pcf::model::SmPolicyContextData& context,
-      oai::pcf::model::SmPolicyDecision& decision, std::string& association_id,
+      const oai::model::pcf::SmPolicyContextData& context,
+      oai::model::pcf::SmPolicyDecision& decision, std::string& association_id,
       std::string& problem_details);
 
   /**
@@ -89,7 +89,7 @@ class pcf_smpc {
    */
   sm_policy::status_code delete_sm_policy_handler(
       const std::string& id,
-      const oai::pcf::model::SmPolicyDeleteData& delete_data,
+      const oai::model::pcf::SmPolicyDeleteData& delete_data,
       std::string& problem_details);
 
   /**
@@ -104,7 +104,7 @@ class pcf_smpc {
    * @return sm_policy::status_code
    */
   sm_policy::status_code get_sm_policy_handler(
-      const std::string& id, oai::pcf::model::SmPolicyControl& control,
+      const std::string& id, oai::model::pcf::SmPolicyControl& control,
       std::string& problem_details);
 
   /**
@@ -120,8 +120,8 @@ class pcf_smpc {
    */
   sm_policy::status_code update_sm_policy_handler(
       const std::string& id,
-      const oai::pcf::model::SmPolicyUpdateContextData& update_context,
-      oai::pcf::model::SmPolicyDecision& decision,
+      const oai::model::pcf::SmPolicyUpdateContextData& update_context,
+      oai::model::pcf::SmPolicyDecision& decision,
       std::string& problem_details);
 
  private:

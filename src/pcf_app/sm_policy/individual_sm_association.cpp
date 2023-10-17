@@ -29,7 +29,7 @@
 
 #include "individual_sm_association.hpp"
 
-using namespace oai::pcf::model;
+using namespace oai::model::pcf;
 using namespace oai::pcf::app::sm_policy;
 
 const SmPolicyContextData&
@@ -55,6 +55,6 @@ individual_sm_association::redecide_policy(
 }
 
 oai::pcf::app::sm_policy::status_code individual_sm_association::decide_policy(
-    oai::pcf::model::SmPolicyDecision& decision) {
+    SmPolicyDecision& decision) {
   return m_decision.decide(m_context, decision);
 }

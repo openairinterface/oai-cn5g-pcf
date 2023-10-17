@@ -30,13 +30,13 @@
 #include "dnn_policy_decision.hpp"
 #include <sstream>
 
-using namespace oai::pcf::model;
+using namespace oai::model::pcf;
 using namespace oai::pcf::app::sm_policy;
 using namespace oai::pcf::app;
 
 status_code dnn_policy_decision::decide(
     const SmPolicyContextData& context,
-    oai::pcf::model::SmPolicyDecision& decision) const {
+    oai::model::pcf::SmPolicyDecision& decision) const {
   if (context.getDnn() != m_dnn) {
     return status_code::CONTEXT_DENIED;
   }
