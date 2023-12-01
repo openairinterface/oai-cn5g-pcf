@@ -1,5 +1,19 @@
 # RELEASE NOTES: #
 
+## v2.0.0 -- December 2023 ##
+
+* Features
+  - Support YAML configuration file
+    * Yaml validation default value
+* Fixes
+  - Handling boolean values in yaml parsing for policies
+* Tech debt
+  - Moved common models to the shared common submodule
+  - Moved PCF Models to the shared common submodule
+  - Switching to clang-format-12
+  - Published image on Docker-Hub is using now Ubuntu-22 as base image
+    * Ubuntu-18 is no longer supported
+
 ## v1.5.1 -- May 2023 ##
 
 * Add HTTP/2 support
