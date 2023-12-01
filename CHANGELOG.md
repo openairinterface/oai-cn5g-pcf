@@ -8,7 +8,7 @@
 * Fixes
   - Handling boolean values in yaml parsing for policies
 * Tech debt
-  - Moved common models to the shared common submodule
+  - Updated common models to 3GPP TS 29.571 Release 16.13.0 and moved them to the shared common submodule
   - Moved PCF Models to the shared common submodule
   - Switching to clang-format-12
   - Published image on Docker-Hub is using now Ubuntu-22 as base image
