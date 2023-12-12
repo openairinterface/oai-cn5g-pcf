@@ -10,15 +10,17 @@ At the moment, it contains the following network elements:
 
 * Access and Mobility Management Function (**AMF**)
 * Authentication Server Management Function (**AUSF**)
+* Location Management Function (**LMF**)
+* Network Exposure Function (**NEF**)
+* Network Slicing Selection Function (**NSSF**)
 * Network Repository Function (**NRF**)
+* Network Data Analytics Function (**NWDAF**)
+* Policy Control Function (**PCF**)
 * Session Management Function (**SMF**)
 * Unified Data Management (**UDM**)
 * Unified Data Repository (**UDR**)
-* User Plane Function (**UPF**)
-* Network Slicing Selection Function (**NSSF**)
-* Network Data Analytics Function (**NWDAF**)
 * Unstructured Data Storage Function (**UDSF**)
-* Policy Control Function (**PCF**)
+* User Plane Function (**UPF**)
 
 Each has its own repository: this repository (`oai-cn5g-pcf`) is meant for PCF.
 
