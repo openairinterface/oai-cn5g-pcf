@@ -30,13 +30,12 @@
 #include "supi_policy_decision.hpp"
 #include <sstream>
 
-using namespace oai::pcf::model;
+using namespace oai::model::pcf;
 using namespace oai::pcf::app::sm_policy;
 using namespace oai::pcf::app;
 
 status_code supi_policy_decision::decide(
-    const SmPolicyContextData& context,
-    oai::pcf::model::SmPolicyDecision& decision) const {
+    const SmPolicyContextData& context, SmPolicyDecision& decision) const {
   if (context.getSupi() != m_supi) {
     return status_code::CONTEXT_DENIED;
   }

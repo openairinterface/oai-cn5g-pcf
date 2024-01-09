@@ -41,7 +41,7 @@ namespace oai::pcf::app::sm_policy {
 class individual_sm_association {
  public:
   explicit individual_sm_association(
-      const oai::pcf::model::SmPolicyContextData& context,
+      const oai::model::pcf::SmPolicyContextData& context,
       const oai::pcf::app::sm_policy::policy_decision& decision,
       const std::string& id)
       : m_decision(decision) {
@@ -51,24 +51,24 @@ class individual_sm_association {
 
   virtual ~individual_sm_association() = default;
 
-  [[nodiscard]] virtual const oai::pcf::model::SmPolicyContextData&
+  [[nodiscard]] virtual const oai::model::pcf::SmPolicyContextData&
   get_sm_policy_context_data() const;
 
-  [[nodiscard]] virtual const oai::pcf::model::SmPolicyDecision&
+  [[nodiscard]] virtual const oai::model::pcf::SmPolicyDecision&
   get_sm_policy_decision_dto() const;
 
   [[nodiscard]] virtual oai::pcf::app::sm_policy::status_code redecide_policy(
-      const oai::pcf::model::SmPolicyUpdateContextData& update_data,
-      oai::pcf::model::SmPolicyDecision& new_decision,
+      const oai::model::pcf::SmPolicyUpdateContextData& update_data,
+      oai::model::pcf::SmPolicyDecision& new_decision,
       std::string& problem_details);
 
   [[nodiscard]] virtual oai::pcf::app::sm_policy::status_code decide_policy(
-      oai::pcf::model::SmPolicyDecision& decision);
+      oai::model::pcf::SmPolicyDecision& decision);
 
   [[nodiscard]] virtual std::string get_id() const;
 
  private:
-  oai::pcf::model::SmPolicyContextData m_context;
+  oai::model::pcf::SmPolicyContextData m_context;
   oai::pcf::app::sm_policy::policy_decision m_decision;
   std::string m_id;
 };

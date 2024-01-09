@@ -1,5 +1,21 @@
 # RELEASE NOTES: #
 
+## v2.0.0 -- December 2023 ##
+
+* Features
+  - Support YAML configuration file
+    * Yaml validation default value
+  - Add support for traffic steering rules
+  - Add support for redirection rules
+* Fixes
+  - Handling boolean values in yaml parsing for policies
+* Tech debt
+  - Updated common models to 3GPP TS 29.571 Release 16.13.0 and moved them to the shared common submodule
+  - Updated PCF models to Release 16.17.0 and moved them to the shared common submodule
+  - Switching to clang-format-12
+  - Published image on Docker-Hub is using now Ubuntu-22 as base image
+    * Ubuntu-18 is no longer supported
+
 ## v1.5.1 -- May 2023 ##
 
 * Add HTTP/2 support

@@ -49,7 +49,7 @@
 using namespace oai::pcf::app;
 using namespace oai::pcf::app::sm_policy;
 using namespace oai::config::pcf;
-using namespace oai::pcf::model;
+using namespace oai::model::pcf;
 
 using namespace std;
 
@@ -126,7 +126,7 @@ sm_policy::status_code pcf_smpc::delete_sm_policy_handler(
 
 //------------------------------------------------------------------------------
 sm_policy::status_code pcf_smpc::get_sm_policy_handler(
-    const std::string& id, oai::pcf::model::SmPolicyControl& control,
+    const std::string& id, SmPolicyControl& control,
     std::string& problem_details) {
   std::shared_lock lock_associations(m_associations_mutex);
   auto iter = m_associations.find(id);

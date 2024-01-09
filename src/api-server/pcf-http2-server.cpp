@@ -43,7 +43,7 @@
 
 using namespace nghttp2::asio_http2;
 using namespace nghttp2::asio_http2::server;
-using namespace oai::pcf::model;
+using namespace oai::model::pcf;
 using namespace oai::config::pcf;
 using namespace oai::pcf::api;
 

@@ -42,7 +42,7 @@
 using namespace oai::pcf::app;
 using namespace oai::config::pcf;
 using namespace oai::pcf::app::sm_policy;
-using namespace oai::pcf::model;
+using namespace oai::model::pcf;
 using namespace boost::filesystem;
 using namespace oai::model::common;
 

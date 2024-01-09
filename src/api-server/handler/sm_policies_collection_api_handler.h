@@ -52,7 +52,7 @@ class sm_policies_collection_api_handler {
    * @return api_response with SmPolicyDecision
    */
   api_response create_sm_policy(
-      const model::SmPolicyContextData& sm_policy_context_data);
+      const oai::model::pcf::SmPolicyContextData& sm_policy_context_data);
 
  private:
   std::string m_address;

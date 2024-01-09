@@ -37,7 +37,7 @@ namespace pcf {
 namespace api {
 
 using namespace oai::model::common::helpers;
-using namespace oai::pcf::model;
+using namespace oai::model::pcf;
 
 class SMPoliciesCollectionApi {
  public:
@@ -84,7 +84,7 @@ class SMPoliciesCollectionApi {
   /// </remarks>
   /// <param name="smPolicyContextData"></param>
   virtual void create_sm_policy(
-      const oai::pcf::model::SmPolicyContextData& smPolicyContextData,
+      const oai::model::pcf::SmPolicyContextData& smPolicyContextData,
       Pistache::Http::ResponseWriter& response) = 0;
 };
 
