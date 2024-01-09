@@ -69,10 +69,6 @@ class policy_provisioning_file {
       const std::map<std::string, T>& map, std::vector<std::string>& ids,
       const std::string& error_msg_type, const std::string& pcc_id);
 
-  template<class T>
-  static std::map<std::string, T> extract_existing_ids(
-      const std::map<std::string, T>& map, const std::vector<std::string>& ids);
-
   std::shared_ptr<oai::pcf::app::sm_policy::policy_storage> m_policy_storage;
 };
 }  // namespace oai::pcf::app::sm_policy

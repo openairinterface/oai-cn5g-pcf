@@ -270,19 +270,6 @@ void policy_provisioning_file::remove_ids_not_in_map(
   }
 }
 
-template<class T>
-std::map<std::string, T> policy_provisioning_file::extract_existing_ids(
-    const std::map<std::string, T>& map, const std::vector<std::string>& ids) {
-  std::map<std::string, T> used_elements;
-  for (const auto& id : ids) {
-    auto found = map.find(id);
-    if (found != map.end()) {
-      used_elements.insert(std::make_pair(id, found->second));
-    }
-  }
-  return used_elements;
-}
-
 bool policy_provisioning_file::read_all_files_in_dir(
     const std::string& dir_path, std::vector<YAML::Node>& yaml_output) {
   if (!exists(dir_path)) {
