@@ -57,13 +57,17 @@ class policy_provisioning_file {
       const YAML::Node& node,
       const std::map<std::string, oai::model::pcf::PccRule>& pcc_rules,
       const std::map<std::string, oai::model::pcf::TrafficControlData>&
-          traffic_control);
+          traffic_control,
+      const std::map<std::string, oai::model::pcf::QosData>& qos_data);
 
   template<class T>
   static std::map<std::string, T> convert_yaml_to_model(
       const std::vector<YAML::Node>& nodes);
 
-  static void replace_json_string_with_int(nlohmann::json& j);
+  template<class T>
+  static void remove_ids_not_in_map(
+      const std::map<std::string, T>& map, std::vector<std::string>& ids,
+      const std::string& error_msg_type, const std::string& pcc_id);
 
   std::shared_ptr<oai::pcf::app::sm_policy::policy_storage> m_policy_storage;
 };

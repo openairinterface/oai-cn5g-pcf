@@ -37,6 +37,7 @@
 #include "pcf_config.hpp"
 #include "logger.hpp"
 #include "Snssai.h"
+#include "conv.hpp"
 
 using namespace oai::pcf::app;
 using namespace oai::config::pcf;
@@ -52,6 +53,7 @@ bool policy_provisioning_file::read_all_policy_files() {
   std::vector<YAML::Node> traffic_controls;
   std::vector<YAML::Node> pcc_rules;
   std::vector<YAML::Node> policy_decisions;
+  std::vector<YAML::Node> qos_data;
 
   if (!read_all_files_in_dir(
           pcf_cfg->get_pcf_policy().get_traffic_rules_path(),
@@ -70,13 +72,21 @@ bool policy_provisioning_file::read_all_policy_files() {
         "Could not load mandatory policy decisions configuration");
     return false;
   }
+  if (!read_all_files_in_dir(
+          pcf_cfg->get_pcf_policy().get_qos_data_path(), qos_data)) {
+    Logger::pcf_app().warn("Could not load QoS Data files");
+  }
 
   auto traffic_control_objects =
       convert_yaml_to_model<TrafficControlData>(traffic_controls);
   auto pcc_rule_objects = convert_yaml_to_model<PccRule>(pcc_rules);
+  auto qos_data_objects = convert_yaml_to_model<QosData>(qos_data);
 
   if (traffic_control_objects.empty()) {
     Logger::pcf_app().warn("No traffic control descriptions are loaded");
+  }
+  if (qos_data_objects.empty()) {
+    Logger::pcf_app().warn("No QoS data descriptions are loaded");
   }
   if (pcc_rule_objects.empty()) {
     Logger::pcf_app().warn("No mandatory PCC rules are loaded");
@@ -84,36 +94,33 @@ bool policy_provisioning_file::read_all_policy_files() {
   }
 
   // we need to manually adjust the IDs of the PCC rules and traffic controls
-  for (auto traffic : traffic_control_objects) {
+  for (auto& traffic : traffic_control_objects) {
     traffic.second.setTcId(traffic.first);
-    traffic_control_objects[traffic.first] = traffic.second;
   }
-  for (auto pcc : pcc_rule_objects) {
+  for (auto& qos : qos_data_objects) {
+    qos.second.setQosId(qos.first);
+  }
+  for (auto& pcc : pcc_rule_objects) {
     pcc.second.setPccRuleId(pcc.first);
 
-    // check if traffic control data exists
-    auto reftc      = pcc.second.getRefTcData();
-    auto traffic_it = reftc.begin();
-    while (traffic_it != reftc.end()) {
-      auto traffic_exists = traffic_control_objects.find(*traffic_it);
-      if (traffic_exists == traffic_control_objects.end()) {
-        Logger::pcf_app().warn(
-            "You have referenced Traffic Control ID %s in PCC Rule %s, but it "
-            "does not exist. It is removed from this PCC rule",
-            (*traffic_it).c_str(), pcc.first.c_str());
-        traffic_it = reftc.erase(traffic_it);
-      } else {
-        ++traffic_it;
-      }
-    }
+    auto reftc = pcc.second.getRefTcData();
+    remove_ids_not_in_map<TrafficControlData>(
+        traffic_control_objects, reftc, "Traffic Rules", pcc.first);
+
+    auto refqos = pcc.second.getRefQosData();
+    remove_ids_not_in_map<QosData>(
+        qos_data_objects, refqos, "QoS Data", pcc.first);
+
     pcc.second.setRefTcData(reftc);
+    pcc.second.setRefQosData(refqos);
   }
 
   // Now parse the decisions (manually as it is not a model)
   for (auto node : policy_decisions) {
     for (auto it = node.begin(); it != node.end(); ++it) {
       SmPolicyDecision decision = decision_from_rules(
-          it->second, pcc_rule_objects, traffic_control_objects);
+          it->second, pcc_rule_objects, traffic_control_objects,
+          qos_data_objects);
       if (!decision.pccRulesIsSet()) {
         Logger::pcf_app().warn(
             "Decision %s could not be parsed. It is ignored",
@@ -156,7 +163,8 @@ bool policy_provisioning_file::read_all_policy_files() {
 
 SmPolicyDecision policy_provisioning_file::decision_from_rules(
     const YAML::Node& node, const std::map<std::string, PccRule>& pcc_rules,
-    const std::map<std::string, TrafficControlData>& traffic_control) {
+    const std::map<std::string, TrafficControlData>& traffic_control,
+    const std::map<std::string, QosData>& qos_data) {
   SmPolicyDecision decision = {};
 
   std::map<std::string, PccRule> used_rules;
@@ -187,7 +195,9 @@ SmPolicyDecision policy_provisioning_file::decision_from_rules(
     return {};
   }
   std::map<std::string, TrafficControlData> used_traffic_control;
-  // now add the TrafficControlDescriptions
+  std::map<std::string, QosData> used_qos_data;
+
+  // now add the TrafficControlDescriptions and QosData
   for (const auto& rule : used_rules) {
     for (const auto& traffic : rule.second.getRefTcData()) {
       auto found = traffic_control.find(traffic);
@@ -195,61 +205,69 @@ SmPolicyDecision policy_provisioning_file::decision_from_rules(
         used_traffic_control.insert(std::make_pair(traffic, found->second));
       }
     }
+    for (const auto& qos : rule.second.getRefQosData()) {
+      auto found = qos_data.find(qos);
+      if (found != qos_data.end()) {
+        used_qos_data.insert(std::make_pair(qos, found->second));
+      }
+    }
   }
   if (!used_rules.empty()) {
     decision.setPccRules(used_rules);
     decision.setTraffContDecs(used_traffic_control);
+    decision.setQosDecs(used_qos_data);
     return decision;
   }
   return {};
-}
-
-void policy_provisioning_file::replace_json_string_with_int(nlohmann::json& j) {
-  for (const auto& elem : j.items()) {
-    if (elem.value().is_primitive()) {
-      try {
-        std::string e = elem.value();
-        if (e == "true") j[elem.key()] = true;
-        if (e == "false") j[elem.key()] = false;
-        int val       = std::stoi(e);
-        j[elem.key()] = val;  // replace with int
-      } catch (std::invalid_argument& ex) {
-      }
-    } else {
-      replace_json_string_with_int(elem.value());
-    }
-  }
 }
 
 template<class T>
 std::map<std::string, T> policy_provisioning_file::convert_yaml_to_model(
     const std::vector<YAML::Node>& nodes) {
   std::map<std::string, T> objects_map;
-  // here we convert YAML to json so we can use the already existing JSON parser
-  // https://stackoverflow.com/questions/43902941/emitting-json-with-yaml-cpp
   for (const auto& node : nodes) {
-    YAML::Emitter emitter;
-    emitter << YAML::DoubleQuoted << YAML::Flow << YAML::BeginSeq << node;
-    std::string json_string(emitter.c_str() + 1);
-    nlohmann::json j = nlohmann::json::parse(json_string);
-    // this is a bit hacky but the problem is that YAML emits ints as strings
-    replace_json_string_with_int(j);
+    auto j = oai::utils::conversions::yaml_to_json(node);
 
     for (const auto& elem : j.items()) {
       T obj;
-      from_json(elem.value(), obj);
-      std::stringstream stream;
-      if (obj.validate(stream)) {
-        objects_map.insert(std::make_pair(elem.key(), obj));
-        Logger::pcf_app().debug(
-            "Rule %s successfully parsed.", elem.key().c_str());
-      } else {
+      try {
+        from_json(elem.value(), obj);
+        std::stringstream stream;
+        if (obj.validate(stream)) {
+          objects_map.insert(std::make_pair(elem.key(), obj));
+          Logger::pcf_app().debug(
+              "Rule %s successfully parsed.", elem.key().c_str());
+        } else {
+          Logger::pcf_app().warn(
+              "Error while parsing rule %s: %s", elem.key(),
+              stream.str().c_str());
+        }
+      } catch (std::exception& e) {
         Logger::pcf_app().warn(
-            "Error while parsing rules: %s", stream.str().c_str());
+            "Error while parsing rule %s: %s", elem.key(), e.what());
       }
     }
   }
   return objects_map;
+}
+
+template<class T>
+void policy_provisioning_file::remove_ids_not_in_map(
+    const std::map<std::string, T>& map, std::vector<std::string>& ids,
+    const std::string& error_msg_type, const std::string& pcc_id) {
+  auto it = ids.begin();
+  while (it != ids.end()) {
+    auto traffic_exists = map.find(*it);
+    if (traffic_exists == map.end()) {
+      Logger::pcf_app().warn(
+          "You have referenced %s ID %s in PCC Rule %s, but it "
+          "does not exist. It is removed from this PCC rule",
+          error_msg_type, *it, pcc_id);
+      it = ids.erase(it);
+    } else {
+      ++it;
+    }
+  }
 }
 
 bool policy_provisioning_file::read_all_files_in_dir(

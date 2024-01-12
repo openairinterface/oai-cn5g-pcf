@@ -37,14 +37,15 @@ using namespace oai::config::pcf;
 
 policy_config::policy_config(
     const std::string& policy_decisions_path, const std::string& pcc_rules_path,
-    const std::string& traffic_rules_path) {
+    const std::string& traffic_rules_path, const std::string& qos_data_path) {
   m_config_name = "Policy";
   m_traffic_rules_path =
       string_config_value("Traffic Rules", traffic_rules_path);
   m_pcc_rules_path = string_config_value("PCC Rules", pcc_rules_path);
   m_policy_decisions_path =
       string_config_value("Policy Decisions", policy_decisions_path);
-  m_set = true;
+  m_qos_data_path = string_config_value("QoS Data", qos_data_path);
+  m_set           = true;
 }
 
 void policy_config::from_yaml(const YAML::Node& node) {
@@ -57,23 +58,31 @@ void policy_config::from_yaml(const YAML::Node& node) {
   if (node["traffic_rules_path"]) {
     m_traffic_rules_path.from_yaml(node["traffic_rules_path"]);
   }
+  if (node["qos_data_path"]) {
+    m_qos_data_path.from_yaml(node["qos_data_path"]);
+  }
 }
 
 std::string policy_config::to_string(const std::string& indent) const {
   if (!m_set) return "";
   std::string out;
-  unsigned int inner_width = get_inner_width(indent.length());
-  out.append(m_config_name).append("\n");
+  std::string title_fmt = get_title_formatter(0);
+  std::string value_fmt = get_value_formatter(1);
+
+  out.append(indent).append(fmt::format(title_fmt, m_config_name));
   out.append(indent).append(fmt::format(
-      BASE_FORMATTER, OUTER_LIST_ELEM,
-      m_policy_decisions_path.get_config_name(), inner_width,
+      value_fmt, m_policy_decisions_path.get_config_name(),
       m_policy_decisions_path.get_value()));
   out.append(indent).append(fmt::format(
-      BASE_FORMATTER, OUTER_LIST_ELEM, m_pcc_rules_path.get_config_name(),
-      inner_width, m_pcc_rules_path.get_value()));
+      value_fmt, m_pcc_rules_path.get_config_name(),
+      m_pcc_rules_path.get_value()));
   out.append(indent).append(fmt::format(
-      BASE_FORMATTER, OUTER_LIST_ELEM, m_traffic_rules_path.get_config_name(),
-      inner_width, m_traffic_rules_path.get_value()));
+      value_fmt, m_traffic_rules_path.get_config_name(),
+      m_traffic_rules_path.get_value()));
+  out.append(indent).append(fmt::format(
+      value_fmt, m_qos_data_path.get_config_name(),
+      m_qos_data_path.get_value()));
+
   return out;
 }
 
@@ -87,6 +96,10 @@ const std::string& policy_config::get_policy_decisions_path() const {
 
 const std::string& policy_config::get_traffic_rules_path() const {
   return m_traffic_rules_path.get_value();
+}
+
+const std::string& policy_config::get_qos_data_path() const {
+  return m_qos_data_path.get_value();
 }
 
 pcf_config_type::pcf_config_type(
