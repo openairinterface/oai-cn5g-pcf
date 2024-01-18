@@ -157,12 +157,12 @@ pipeline {
                   if ("MERGE".equals(env.gitlabActionType)) {
                     dockerBuildOptions = ''
                   }
-                  sh "docker buildx build ${dockerBuildOptions} --target oai-pcf --tag oai-pcf:${pcf_tag} --file docker/Dockerfile.pcf.ubuntu . > archives/pcf_docker_image_build.log 2>&1"
+                  sh "docker buildx build ${dockerBuildOptions} --target oai-pcf --tag oai-pcf:${pcf_tag} --file docker/Dockerfile.pcf.ubuntu . > archives/pcf_ubuntu_image_build.log 2>&1"
                   // Putting a place holder to try out on the flattening of image.
                   // If not satisfactory, we can remove it.
                   sh "python3 ./ci-scripts/flatten_image.py --tag oai-pcf:${pcf_tag}"
                   sh "docker image prune --force"
-                  sh "docker image ls | egrep --color=never 'pcf|REPOSITORY' >> archives/pcf_docker_image_build.log"
+                  sh "docker image ls | egrep --color=never 'pcf|REPOSITORY' >> archives/pcf_ubuntu_image_build.log"
                   // Pushing to local private registry for testing purpose
                   sh "docker login -u oaicicd -p oaicicd ${PrivateRegistryURL}"
                   sh "docker image tag oai-pcf:${pcf_tag} ${PrivateRegistryURL}/oai-pcf:${pcf_tag}"
