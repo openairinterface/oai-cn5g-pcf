@@ -345,6 +345,36 @@ pipeline {
             }
           }
         }
+        // Home-made RAN emulator
+        stage ('Robot-Test') {
+          steps {
+            script {
+              gitlabCommitStatus(name: "Robot-Test") {
+                localStatus = build job: 'OAI-CN5G-RobotTest',
+                  parameters: [
+                    string(name: 'PCF_TAG', value: String.valueOf(pcf_tag)),
+                    string(name: 'PCF_BRANCH', value: String.valueOf(pcf_branch))
+                  ], propagate: false
+                localResult = localStatus.getResult()
+
+                if (localStatus.resultIsBetterOrEqualTo('SUCCESS')) {
+                  echo "Robot-Test is OK"
+                } else {
+                  error "Robot-Test is is KO"
+                }
+              }
+            }
+          }
+          post {
+            always {
+              script {
+                copyArtifacts(projectName: 'OAI-CN5G-RobotTest',
+                              filter: '*.html',
+                              selector: lastCompleted())
+              }
+            }
+          }
+        }
       }
     }
     // We are only publishing the Ubuntu image to Docker-Hub
