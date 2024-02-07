@@ -21,19 +21,18 @@
 #---------------------------------------------------------------------
 #
 # Dockerfile for the Open-Air-Interface PCF service
-#   Valid for Rocky Linux 8.7+
+#   Valid for Rocky Linux 9.+
 #
 #---------------------------------------------------------------------
 
 #---------------------------------------------------------------------
 # BUILDER IMAGE
 #---------------------------------------------------------------------
-FROM docker.io/rockylinux:8 AS oai-pcf-builder
+FROM docker.io/rockylinux:9 AS oai-pcf-builder
 
 ENV IS_DOCKERFILE=1
 
 RUN dnf install 'dnf-command(config-manager)' -y && \
-    dnf config-manager --set-enabled powertools && \
     dnf install epel-release -y && crb enable && \
     dnf update -y && \
     # here just to display the current version
@@ -69,7 +68,7 @@ FROM mikefarah/yq:latest as yq-source
 #---------------------------------------------------------------------
 # TARGET IMAGE
 #---------------------------------------------------------------------
-FROM docker.io/rockylinux:8-minimal as oai-pcf
+FROM docker.io/rockylinux:9-minimal as oai-pcf
 ENV TZ=Europe/Paris
 
 # We install some debug tools for the moment in addition of mandatory libraries
@@ -116,7 +115,7 @@ RUN ldconfig && \
 # The configuration folder will be flat
 WORKDIR /openair-pcf/etc
 COPY --from=oai-pcf-builder \
-    /openair-pcf/etc/pcf.yaml \
+    /openair-pcf/etc/config.yaml \
     ./
 
 WORKDIR /openair-pcf
@@ -129,4 +128,4 @@ HEALTHCHECK --interval=10s \
             --retries=6 \
     CMD /openair-pcf/bin/healthcheck.sh
 
-CMD ["/openair-pcf/bin/oai_pcf", "-c", "/openair-pcf/etc/pcf.yaml", "-o"]
+CMD ["/openair-pcf/bin/oai_pcf", "-c", "/openair-pcf/etc/config.yaml", "-o"]
