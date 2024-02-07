@@ -137,7 +137,6 @@ check_install_pcf_deps() {
       check \
       nettle-devel \
       libcurl-devel \
-      python2 \
       pkgconfig \
       ninja-build \
       boost-devel \
