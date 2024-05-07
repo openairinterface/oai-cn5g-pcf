@@ -71,6 +71,7 @@ class pcf_http2_server {
   util::uint_generator<uint32_t> m_promise_id_generator;
   std::string m_address;
   uint32_t m_port;
+  bool running_server;
 
   nghttp2::asio_http2::server::http2 server;
 

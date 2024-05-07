@@ -53,7 +53,7 @@ extern std::unique_ptr<pcf_config> pcf_cfg;
 void pcf_http2_server::start() {
   boost::system::error_code ec;
 
-  Logger::pcf_sbi().info("HTTP2 server started");
+  Logger::pcf_sbi().info("HTTP2 server being started");
   std::string nfId           = {};
   std::string subscriptionID = {};
 
@@ -168,13 +168,21 @@ void pcf_http2_server::start() {
     return;
   });
 
+  running_server = true;
   if (server.listen_and_serve(ec, m_address, std::to_string(m_port))) {
     Logger::pcf_sbi().error("HTTP Server error: %s", ec.message());
   }
+  running_server = false;
+  Logger::pcf_sbi().info("HTTP2 server fully stopped");
 }
 
 void pcf_http2_server::stop() {
   server.stop();
+  while (running_server) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  }
+  Logger::pcf_sbi().info("HTTP2 server should be fully stopped");
+  std::this_thread::sleep_for(std::chrono::milliseconds(50));
 }
 
 void pcf_http2_server::handle_method_not_exists(
