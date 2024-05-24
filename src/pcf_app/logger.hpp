@@ -46,7 +46,9 @@ class Logger {
     oai::logger::logger_registry::register_logger(
         name, SYSTEM, log_stdout, log_rot_file);
   }
-
+  static void set_level(spdlog::level::level_enum level) {
+    oai::logger::logger_registry::set_level(level);
+  }
   static const oai::logger::printf_logger& pcf_app() {
     return oai::logger::logger_registry::get_logger(PCF_APP);
   }

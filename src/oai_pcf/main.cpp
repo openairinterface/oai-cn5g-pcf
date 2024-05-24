@@ -36,20 +36,19 @@ using namespace oai::pcf::api;
 
 using namespace oai::config;
 
-std::unique_ptr<pcf_app> pcf_app_inst;
-// TODO Stefan: I am not happy with these global variables
-// We could make a singleton getInstance in config
-// or we handle everything in smf_app init and have a reference to config there
-std::unique_ptr<pcf_config> pcf_cfg;
-std::unique_ptr<PCFApiServer> pcf_api_server_1;
-std::unique_ptr<pcf_http2_server> pcf_api_server_2;
+std::unique_ptr<pcf_app> pcf_app_inst              = nullptr;
+std::unique_ptr<pcf_config> pcf_cfg                = nullptr;
+std::unique_ptr<PCFApiServer> pcf_api_server_1     = nullptr;
+std::unique_ptr<pcf_http2_server> pcf_api_server_2 = nullptr;
 
 //------------------------------------------------------------------------------
-void signal_handler_sigint(int) {
-  std::cout << "Caught SIGINT signal " << std::endl;
-  Logger::system().startup("exiting");
-  std::cout << "Shutting down HTTP servers..." << std::endl;
+void signal_handler_sigint(int s) {
+  // Setting log level arbitrarly to debug to show the whole
+  // shutdown procedure in the logs even in case of off-logging
+  Logger::set_level(spdlog::level::debug);
+  Logger::system().info("Exiting: caught signal %d", s);
 
+  Logger::system().debug("Shutting down HTTP servers...");
   if (pcf_api_server_1) {
     pcf_api_server_1->shutdown();
   }
@@ -61,10 +60,16 @@ void signal_handler_sigint(int) {
   }
   // TODO exit is not always clean, check again after complete refactor
   // Ensure that objects are destructed before static libraries (e.g. Logger)
+  Logger::system().debug("Freeing Allocated memory...");
   pcf_api_server_1 = nullptr;
   pcf_api_server_2 = nullptr;
   pcf_app_inst     = nullptr;
   pcf_cfg          = nullptr;
+
+  Logger::system().debug("PCF APP memory done");
+  Logger::system().debug("Freeing allocated memory done");
+  Logger::system().info("Bye.");
+  exit(0);
 }
 
 //------------------------------------------------------------------------------
