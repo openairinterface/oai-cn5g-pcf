@@ -36,10 +36,7 @@ using namespace oai::pcf::api;
 
 using namespace oai::config;
 
-std::unique_ptr<pcf_app> pcf_app_inst = nullptr;
-// TODO Stefan: I am not happy with these global variables
-// We could make a singleton getInstance in config
-// or we handle everything in smf_app init and have a reference to config there
+std::unique_ptr<pcf_app> pcf_app_inst              = nullptr;
 std::unique_ptr<pcf_config> pcf_cfg                = nullptr;
 std::unique_ptr<PCFApiServer> pcf_api_server_1     = nullptr;
 std::unique_ptr<pcf_http2_server> pcf_api_server_2 = nullptr;
