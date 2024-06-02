@@ -41,6 +41,7 @@
 
 #include "logger.hpp"
 #include "pcf.h"
+#include "3gpp_23.003.h"
 
 // namespace oai {
 // namespace pcf {

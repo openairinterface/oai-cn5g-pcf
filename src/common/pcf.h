@@ -22,7 +22,6 @@
 #ifndef FILE_PCF_SEEN
 #define FILE_PCF_SEEN
 
-#include "3gpp_29.571.h"
 #include <nlohmann/json.hpp>
 #include <netinet/in.h>
 #include <arpa/inet.h>

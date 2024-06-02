@@ -29,7 +29,6 @@
 
 #pragma once
 
-#include "common_root_types.h"
 #include <boost/atomic.hpp>
 #include <string>
 
@@ -37,7 +36,6 @@
 #include "pcf.h"
 #include "pcf_profile.hpp"
 #include "pcf_event.hpp"
-#include "3gpp_29.510.h"
 #include "PatchItem.h"
 #include "pcf_sm_policy_control.hpp"
 #include "sm_policy/policy_storage.hpp"

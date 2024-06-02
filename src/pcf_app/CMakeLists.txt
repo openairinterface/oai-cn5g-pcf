@@ -27,8 +27,16 @@ include_directories(${SRC_TOP_DIR}/api-server/api)
 include_directories(${SRC_TOP_DIR}/api-server/impl)
 include_directories(${SRC_TOP_DIR}/api-server/)
 include_directories(${SRC_TOP_DIR}/pcf_app/sm_policy/)
-include_directories(${SRC_TOP_DIR}/${MOUNTED_COMMON}/logger)
-include_directories(${SRC_TOP_DIR}/${MOUNTED_COMMON}/config)
+
+## Common modules
+include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/common/common.cmake)
+include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/utils/utils.cmake)
+include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/logger/logger.cmake)
+include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/config/config.cmake)
+include(${SRC_TOP_DIR}/common/utils/utils.cmake)
+
+
+include(${BUILD_TOP_DIR}/pcf/used_common_files.cmake)
 
 add_library (PCF STATIC
   pcf_config_types.cpp
@@ -48,8 +56,3 @@ add_library (PCF STATIC
   sm_policy/policy_storage.cpp
   sm_policy/policy_provisioning_file.cpp
   )
-
-## Common modules
-include(${SRC_TOP_DIR}/common/utils/utils.cmake)
-
-include(${BUILD_TOP_DIR}/pcf/used_common_files.cmake)

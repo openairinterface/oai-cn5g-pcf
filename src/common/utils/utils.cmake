@@ -21,14 +21,9 @@
 
 SET(UTILS_DIR ${SRC_TOP_DIR}/common/utils)
 
-## Logger used in NF_TARGET (main)
-## TODO for now only use utils actually used by PCF
 target_include_directories(${NF_TARGET} PUBLIC ${UTILS_DIR})
 target_sources(${NF_TARGET} PRIVATE
-        ${UTILS_DIR}/conversions.cpp
-        ${UTILS_DIR}/string.cpp
         ${UTILS_DIR}/fqdn.cpp
-        ${UTILS_DIR}/if.cpp
         ${UTILS_DIR}/nf_launch.cpp
         ${UTILS_DIR}/options.cpp
         )

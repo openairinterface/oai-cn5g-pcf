@@ -22,12 +22,12 @@
 #include "options.hpp"
 #include "pistache/http.h"
 #include "nf_launch.hpp"
+#include "conversions.hpp"
 
 #include <iostream>
 #include <csignal>
 #include <thread>
 
-using namespace util;
 using namespace std;
 using namespace oai::pcf::app;
 using namespace oai::config::pcf;
@@ -111,7 +111,7 @@ int main(int argc, char** argv) {
   pcf_app_inst = std::make_unique<pcf_app>(ev);
 
   std::string v4_address =
-      conv::toString(pcf_cfg->local().get_sbi().get_addr4());
+      oai::utils::conv::toString(pcf_cfg->local().get_sbi().get_addr4());
 
   if (pcf_cfg->get_http_version() == 1) {
     // PCF Pistache API server (HTTP1)
