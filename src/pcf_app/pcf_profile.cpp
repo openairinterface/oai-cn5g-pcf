@@ -35,8 +35,8 @@
 #include "string.hpp"
 
 using namespace std;
-// using namespace pcf;
 using namespace oai::pcf::app;
+using namespace oai::common::sbi;
 
 //------------------------------------------------------------------------------
 void nf_profile::set_nf_instance_id(const std::string& instance_id) {
@@ -534,7 +534,7 @@ void pcf_profile::from_json(const nlohmann::json& data) {
     if (info.find("supiRanges") != info.end()) {
       nlohmann::json supi_ranges = data["pcfInfo"]["supiRanges"];
       for (auto d : supi_ranges) {
-        supi_range_pcf_info_item_t supi;
+        supi_range_info_item_t supi;
         supi.supi_range.start   = d["start"];
         supi.supi_range.end     = d["end"];
         supi.supi_range.pattern = d["pattern"];
@@ -544,7 +544,7 @@ void pcf_profile::from_json(const nlohmann::json& data) {
     if (info.find("gpsiRanges") != info.end()) {
       nlohmann::json gpsi_ranges = data["pcfInfo"]["gpsiRanges"];
       for (auto d : gpsi_ranges) {
-        identity_range_pcf_info_item_t gpsi;
+        identity_range_info_item_t gpsi;
         gpsi.identity_range.start   = d["start"];
         gpsi.identity_range.end     = d["end"];
         gpsi.identity_range.pattern = d["pattern"];

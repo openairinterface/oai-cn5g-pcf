@@ -33,15 +33,16 @@
 #include <string>
 
 #include "3gpp_29.500.h"
-#include "pcf.h"
 #include "pcf_profile.hpp"
 #include "pcf_event.hpp"
 #include "PatchItem.h"
-#include "pcf_client.hpp"
+#include "sbi_helper.hpp"
 
 namespace oai::pcf::app {
 
 class pcf_nrf {
+  const uint32_t HEART_BEAT_TIMER = 10;
+
  public:
   explicit pcf_nrf(pcf_event& ev);
   pcf_nrf(pcf_nrf const&) = delete;
@@ -68,7 +69,6 @@ class pcf_nrf {
   void deregister_to_nrf();
 
  private:
-  std::unique_ptr<oai::pcf::app::pcf_client> m_pcf_client_inst;
   pcf_profile m_nf_instance_profile;  // PCF profile
   std::string m_pcf_instance_id;      // PCF instance id
   // for Event Handling
@@ -76,23 +76,6 @@ class pcf_nrf {
   bs2::connection m_task_connection;
   std::string m_nrf_url;
 
-  /*
-   * Get pcf API Root
-   * @param [std::string& ] api_root: pcf's API Root
-   * @return void
-   */
-
-  /**
-   * Generate PCF API root based on the configuration and stores it in nrf_url
-   * @return Generated API root
-   */
-  void generate_nrf_api_url();
-
-  /*
-   * Generate an SMF profile for this instance
-   * @param [void]
-   * @return void
-   */
   /**
    * Generate PCF profile and stores it in nf_instance_profile
    */

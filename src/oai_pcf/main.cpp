@@ -23,6 +23,7 @@
 #include "pistache/http.h"
 #include "nf_launch.hpp"
 #include "conversions.hpp"
+#include "http_client.hpp"
 
 #include <iostream>
 #include <csignal>
@@ -36,10 +37,11 @@ using namespace oai::pcf::api;
 
 using namespace oai::config;
 
-std::unique_ptr<pcf_app> pcf_app_inst              = nullptr;
-std::unique_ptr<pcf_config> pcf_cfg                = nullptr;
-std::unique_ptr<PCFApiServer> pcf_api_server_1     = nullptr;
-std::unique_ptr<pcf_http2_server> pcf_api_server_2 = nullptr;
+std::unique_ptr<pcf_app> pcf_app_inst                    = nullptr;
+std::unique_ptr<pcf_config> pcf_cfg                      = nullptr;
+std::unique_ptr<PCFApiServer> pcf_api_server_1           = nullptr;
+std::unique_ptr<pcf_http2_server> pcf_api_server_2       = nullptr;
+std::shared_ptr<oai::http::http_client> http_client_inst = nullptr;
 
 //------------------------------------------------------------------------------
 void signal_handler_sigint(int s) {
@@ -103,6 +105,11 @@ int main(int argc, char** argv) {
     return 1;
   }
   pcf_cfg->display();
+
+  // HTTP Client
+  http_client_inst = oai::http::http_client::create_instance(
+      Logger::pcf_client(), oai::common::sbi::kNfDefaultHttpRequestTimeout,
+      pcf_cfg->local().get_sbi().get_if_name(), pcf_cfg->get_http_version());
 
   // Event subsystem
   pcf_event ev;

@@ -46,6 +46,7 @@ using namespace nghttp2::asio_http2::server;
 using namespace oai::model::pcf;
 using namespace oai::config::pcf;
 using namespace oai::pcf::api;
+using namespace oai::common::sbi;
 
 extern std::unique_ptr<pcf_config> pcf_cfg;
 
@@ -190,16 +191,14 @@ void pcf_http2_server::handle_method_not_exists(
   Logger::pcf_sbi().warn(
       "Invalid route/method called: %s : %s", request.method(),
       request.uri().path);
-  response.write_head(static_cast<unsigned int>(
-      http_status_code_e::HTTP_STATUS_CODE_404_NOT_FOUND));
+  response.write_head(static_cast<unsigned int>(http_status_code::NOT_FOUND));
   response.end("The requested method does not exist");
 }
 
 void pcf_http2_server::handle_parsing_error(
     const response& response, const std::exception& ex) {
   Logger::pcf_sbi().warn("Parsing error: %s", ex.what());
-  response.write_head(static_cast<unsigned int>(
-      http_status_code_e::HTTP_STATUS_CODE_400_BAD_REQUEST));
+  response.write_head(static_cast<unsigned int>(http_status_code::BAD_REQUEST));
   // for security reasons it is better to not give the internal exception to the
   // user, we can also decide to change that
   response.end("Could not parse JSON data");

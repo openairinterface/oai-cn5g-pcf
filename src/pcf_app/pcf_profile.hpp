@@ -40,11 +40,9 @@
 #include <vector>
 
 #include "logger.hpp"
-#include "pcf.h"
 #include "3gpp_23.003.h"
+#include "3gpp_29.510.h"
 
-// namespace oai {
-// namespace pcf {
 namespace oai::pcf::app {
 
 using namespace std;
@@ -372,21 +370,21 @@ class pcf_profile : public nf_profile {
    * @param [std::vector<nf_service_t> &] n: nf_service
    * @return void
    */
-  void set_nf_services(const std::vector<nf_service_t>& n);
+  void set_nf_services(const std::vector<oai::common::sbi::nf_service_t>& n);
 
   /*
    * Add nf service
    * @param [snssai_t &] n: nf service
    * @return void
    */
-  void add_nf_service(const nf_service_t& n);
+  void add_nf_service(const oai::common::sbi::nf_service_t& n);
 
   /*
    * Get NF services
    * @param [std::vector<snssai_t> &] n: store instance's nf services
    * @return void:
    */
-  void get_nf_services(std::vector<nf_service_t>& n) const;
+  void get_nf_services(std::vector<oai::common::sbi::nf_service_t>& n) const;
 
   /*
    * Set custom info
@@ -407,7 +405,7 @@ class pcf_profile : public nf_profile {
    * @param [pcf_info_t &] s: pcf info
    * @return void
    */
-  void set_pcf_info(const pcf_info_t& s);
+  void set_pcf_info(const oai::common::sbi::pcf_info_t& s);
 
   /*
    * Add an snssai_pcf_info_item to the pcf info
@@ -421,7 +419,7 @@ class pcf_profile : public nf_profile {
    * @param [pcf_info_t &] s: store instance's pcf info
    * @return void:
    */
-  void get_pcf_info(pcf_info_t& s) const;
+  void get_pcf_info(oai::common::sbi::pcf_info_t& s) const;
 
   /*
    * Print related-information for NF profile
@@ -452,13 +450,11 @@ class pcf_profile : public nf_profile {
   void handle_heartbeart_timeout(uint64_t ms);
 
  protected:
-  std::vector<nf_service_t> nf_services;
+  std::vector<oai::common::sbi::nf_service_t> nf_services;
   nlohmann::json custom_info;  // store extra json data
-  pcf_info_t pcf_info;
+  oai::common::sbi::pcf_info_t pcf_info;
 };
 
-// }  // namespace app
 }  // namespace oai::pcf::app
-// }  // namespace oai
 
 #endif

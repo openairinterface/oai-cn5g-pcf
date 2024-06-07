@@ -37,7 +37,7 @@
 namespace oai::pcf::api {
 
 struct api_response {
-  http_status_code_e status_code;
+  uint16_t status_code;
   Pistache::Http::Header::Collection headers;
   std::string body;
 };

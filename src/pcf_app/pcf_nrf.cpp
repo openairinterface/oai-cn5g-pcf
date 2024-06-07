@@ -28,17 +28,17 @@
  */
 
 #include "pcf_nrf.hpp"
-#include "conversions.hpp"
 #include "logger.hpp"
 #include "3gpp_29.500.h"
+#include "3gpp_29.510.h"
 #include "pcf_config.hpp"
-#include "pcf_client.hpp"
 #include "Snssai.h"
 #include "api_defs.h"
+#include "http_client.hpp"
+#include "sbi_helper.hpp"
 
 #include <boost/uuid/random_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
-#include <stdexcept>
 
 using namespace oai::pcf::app;
 using namespace oai::config::pcf;
@@ -47,24 +47,19 @@ using namespace boost::placeholders;
 using namespace std;
 
 extern std::unique_ptr<pcf_config> pcf_cfg;
+extern std::shared_ptr<oai::http::http_client> http_client_inst;
 
 //------------------------------------------------------------------------------
 pcf_nrf::pcf_nrf(pcf_event& ev) : m_event_sub(ev) {
   m_pcf_instance_id = to_string(boost::uuids::random_generator()());
-  generate_nrf_api_url();
   generate_pcf_profile();
+  nf_addr_t nf_addr;
+  nf_addr.api_version =
+      pcf_cfg->get_nf(config::NRF_CONFIG_NAME)->get_sbi().get_api_version();
+  nf_addr.uri_root =
+      pcf_cfg->get_nf(config::NRF_CONFIG_NAME)->get_sbi().get_url();
 
-  m_pcf_client_inst = std::make_unique<pcf_client>();
-}
-
-//------------------------------------------------------------------------------
-void pcf_nrf::generate_nrf_api_url() {
-  m_nrf_url = pcf_cfg->get_nf(config::NRF_CONFIG_NAME)->get_sbi().get_url();
-  m_nrf_url.append(NNRF_NFM_BASE)
-      .append(
-          pcf_cfg->get_nf(config::NRF_CONFIG_NAME)->get_sbi().get_api_version())
-      .append(NNRF_DISC_INSTANCES)
-      .append(m_pcf_instance_id);
+  sbi_helper::get_nrf_nf_instance_uri(nf_addr, m_pcf_instance_id, m_nrf_url);
 }
 
 //---------------------------------------------------------------------------------------------
@@ -108,12 +103,12 @@ void pcf_nrf::generate_pcf_profile() {
   pcf_info_item.dnn_list.emplace_back("oai");
   pcf_info_item.dnn_list.emplace_back("oai.ipv4");
   pcf_info_item.dnn_list.emplace_back("ims");
-  supi_range_pcf_info_item_t supi_ranges;
+  supi_range_info_item_t supi_ranges;
   supi_ranges.supi_range.start   = "208950000000031";
   supi_ranges.supi_range.pattern = "^imsi-20895[31-131]{10}$";
   supi_ranges.supi_range.end     = "208950000000131";
   pcf_info_item.supi_ranges.push_back(supi_ranges);
-  identity_range_pcf_info_item_t gpsi_ranges;
+  identity_range_info_item_t gpsi_ranges;
   gpsi_ranges.identity_range.start   = "752740000";
   gpsi_ranges.identity_range.pattern = "^gpsi-75274[0-9]{4}$";
   gpsi_ranges.identity_range.end     = "752749999";
@@ -129,17 +124,15 @@ void pcf_nrf::register_to_nrf() {
   nlohmann::json body;
   m_nf_instance_profile.to_json(body);
 
-  std::string resp_body;
-  std::string resp_headers;
-
   Logger::pcf_sbi().info("Sending NF registration request");
-  http_status_code_e res = m_pcf_client_inst->send_put(
-      m_nrf_url, body.dump(), resp_body, resp_headers);
+  auto request = http_client_inst->prepare_json_request(m_nrf_url, body.dump());
+  auto http_response =
+      http_client_inst->send_http_request(method_e::PUT, request);
 
-  if (res == http_status_code_e::HTTP_STATUS_CODE_201_CREATED ||
-      res == http_status_code_e::HTTP_STATUS_CODE_200_OK) {
+  if (http_response.status_code == http_status_code::CREATED ||
+      http_response.status_code == http_status_code::OK) {
     try {
-      if (resp_body.find("REGISTERED") != 0) {
+      if (http_response.body.find("REGISTERED") != 0) {
         start_event_nf_heartbeat(m_nrf_url);
       }
       Logger::pcf_sbi().debug("NF registration successful");
@@ -149,7 +142,7 @@ void pcf_nrf::register_to_nrf() {
   } else {
     Logger::pcf_sbi().warn(
         "NF registration failed: Wrong response code: %d",
-        static_cast<int>(res));
+        http_response.status_code);
   }
 }
 //------------------------------------------------------------------------------
@@ -166,8 +159,7 @@ void pcf_nrf::start_event_nf_heartbeat(std::string& /* remoteURI */) {
 }
 
 //---------------------------------------------------------------------------------------------
-void pcf_nrf::trigger_nf_heartbeat_procedure(uint64_t ms) {
-  _unused(ms);
+void pcf_nrf::trigger_nf_heartbeat_procedure(uint64_t /* ms */) {
   PatchItem patch_item = {};
   std::vector<PatchItem> patch_items;
   PatchOperation op;
@@ -178,24 +170,22 @@ void pcf_nrf::trigger_nf_heartbeat_procedure(uint64_t ms) {
   patch_items.push_back(patch_item);
   Logger::pcf_sbi().info("Sending NF heartbeat request");
 
-  std::string body_response;
-  std::string response_headers;
-
   nlohmann::json j;
   to_json(j, patch_item);
 
-  http_status_code_e res = m_pcf_client_inst->send_patch(
-      m_nrf_url, j.dump(), body_response, response_headers);
+  auto request = http_client_inst->prepare_json_request(m_nrf_url, j.dump());
+  auto http_response =
+      http_client_inst->send_http_request(method_e::PATCH, request);
 
-  if (res == http_status_code_e::HTTP_STATUS_CODE_200_OK ||
-      res == http_status_code_e::HTTP_STATUS_CODE_204_NO_CONTENT) {
+  if (http_response.status_code == http_status_code::OK ||
+      http_response.status_code == http_status_code::NO_CONTENT) {
     Logger::pcf_sbi().debug("NF heartbeat request successful");
   } else {
     // TODO what should we do in this case?
     // We disconnect, but we dont trigger anything else
     Logger::pcf_sbi().warn(
         "NF heartbeat request failed. Wrong response code %d",
-        static_cast<int>(res));
+        http_response.status_code);
     m_task_connection.disconnect();
   }
 }
@@ -211,14 +201,16 @@ void pcf_nrf::deregister_to_nrf() {
 
   Logger::pcf_sbi().info("Sending NF de-registration request");
 
-  http_status_code_e res =
-      m_pcf_client_inst->send_delete(m_nrf_url, body_response, response_header);
+  http::request req;
+  req.uri = m_nrf_url;
+  auto http_response =
+      http_client_inst->send_http_request(method_e::DELETE, req);
 
-  if (res == http_status_code_e::HTTP_STATUS_CODE_204_NO_CONTENT) {
+  if (http_response.status_code == http_status_code::NO_CONTENT) {
     Logger::pcf_sbi().info("NF Deregistration successful");
   } else {
     Logger::pcf_sbi().warn(
         "NF Deregistration failed! Wrong response code: %d",
-        static_cast<int>(res));
+        http_response.status_code);
   }
 }

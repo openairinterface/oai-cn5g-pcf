@@ -33,7 +33,6 @@
 #include <string>
 
 #include "3gpp_29.500.h"
-#include "pcf.h"
 #include "pcf_profile.hpp"
 #include "pcf_event.hpp"
 #include "PatchItem.h"

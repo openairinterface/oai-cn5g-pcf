@@ -29,6 +29,7 @@ include_directories(${SRC_TOP_DIR}/api-server/)
 include_directories(${SRC_TOP_DIR}/pcf_app/sm_policy/)
 
 ## Common modules
+include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/http/http.cmake)
 include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/common/common.cmake)
 include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/utils/utils.cmake)
 include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/logger/logger.cmake)
@@ -43,7 +44,6 @@ add_library (PCF STATIC
   pcf_config.cpp
   pcf_app.cpp
   pcf_nrf.cpp
-  pcf_client.cpp
   pcf_profile.cpp
   pcf_event.cpp
   pcf_sm_policy_control.cpp
