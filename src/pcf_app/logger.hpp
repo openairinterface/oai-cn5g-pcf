@@ -52,6 +52,10 @@ class Logger {
         name, SYSTEM, log_stdout, log_rot_file);
   }
 
+  static bool should_log(spdlog::level::level_enum level) {
+    return oai::logger::logger_registry::should_log(level);
+  }
+
   static void set_level(spdlog::level::level_enum level) {
     oai::logger::logger_registry::set_level(level);
   }

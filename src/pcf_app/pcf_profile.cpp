@@ -374,7 +374,7 @@ void pcf_profile::display() const {
     Logger::pcf_app().debug("    SNSSAI:");
   }
   for (auto s : snssais) {
-    Logger::pcf_app().debug("        SST, SD: %d, %d", s.sst, s.sd);
+    Logger::pcf_app().debug(s.to_model_snssai().to_string(4));
   }
 
   // IPv4 Addresses
