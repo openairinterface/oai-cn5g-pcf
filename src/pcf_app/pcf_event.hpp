@@ -33,7 +33,6 @@
 #include <boost/signals2.hpp>
 namespace bs2 = boost::signals2;
 
-#include "pcf.h"
 #include "pcf_event_sig.hpp"
 #include "task_manager.hpp"
 

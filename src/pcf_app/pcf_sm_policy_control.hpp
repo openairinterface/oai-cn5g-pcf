@@ -125,7 +125,7 @@ class pcf_smpc {
       std::string& problem_details);
 
  private:
-  util::uint_generator<uint32_t> m_association_id_generator;
+  oai::utils::uint_generator<uint32_t> m_association_id_generator;
 
   std::unordered_map<
       std::string, oai::pcf::app::sm_policy::individual_sm_association>

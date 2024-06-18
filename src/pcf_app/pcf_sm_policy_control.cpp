@@ -28,21 +28,13 @@
  */
 
 #include "pcf_sm_policy_control.hpp"
-#include "conversions.hpp"
 #include "logger.hpp"
-#include "pcf.h"
 #include "pcf_config.hpp"
-#include "pcf_client.hpp"
-#include "Snssai.h"
-#include "TrafficControlData.h"
 #include "sm_policy/policy_decision.hpp"
 
-#include <boost/uuid/random_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
-#include <stdexcept>
 #include <unordered_map>
 #include <map>
-#include <shared_mutex>
 #include <memory>
 #include <string>
 

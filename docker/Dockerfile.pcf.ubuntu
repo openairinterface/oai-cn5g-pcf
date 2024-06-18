@@ -119,6 +119,7 @@ COPY --from=oai-pcf-builder \
     /usr/local/lib/libnghttp2.so.14 \
     /usr/local/lib/libnghttp2_asio.so.1 \
     /usr/local/lib/libyaml-cpp.so.0.? \
+    /usr/local/lib/libcpr.so.1 \
     /usr/local/lib/libspdlog.so \
     /usr/local/lib/libfmt.so \
     ./
