@@ -19,30 +19,40 @@
  *      contact@openairinterface.org
  */
 
-/*! \file api_defs.h
+/*! \file pcscf_restoration_indication_api_handler.h
  \brief
- \author  Stefan Spettel
- \company phine.tech
- \date 2023
- \email: stefan.spettel@phine.tech
+ \author  Tariro Mukute
+ \company University of Cape Town
+ \date 2024
+ \email: mkttar001@myuct.ac.za
  */
 
-#include "api_defs.h"
+#pragma once
 
-#include "pcf_config.hpp"
-
-extern std::unique_ptr<oai::config::pcf::pcf_config> pcf_cfg;
+#include "3gpp_29.500.h"
+#include "api_response.h"
+#include "pcf_sm_policy_control.hpp"
+#include "SmPolicyDeleteData.h"
+#include "SmPolicyUpdateContextData.h"
 
 namespace oai::pcf::api {
 
-std::string sm_policies::get_route() {
-  return API_BASE + pcf_cfg->local().get_sbi().get_api_version() +
-         sm_policies::CREATE_ROUTE;
-}
+class pcscf_restoration_indication_api_handler {
+ public:
+  explicit pcscf_restoration_indication_api_handler(
+      const std::shared_ptr<oai::pcf::app::pcf_pa>& pcf_pa) {
+    m_pa_service = pcf_pa;
+  }
+  /**
+   * Indicates P-CSCF restoration
+   * @param pcscf_restoration_request_data
+   * @return api_response
+   */
+  api_response pcscf_restoration(
+      const oai::model::pcf::PcscfRestorationRequestData& pcscf_restoration_request_data);
 
-std::string app_sessions::get_route() {
-  return API_BASE + pcf_cfg->local().get_sbi().get_api_version() +
-         app_sessions::CREATE_ROUTE;
-}
+ private:
+  std::shared_ptr<oai::pcf::app::pcf_pa> m_pa_service;
+};
 
 }  // namespace oai::pcf::api

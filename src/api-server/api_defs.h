@@ -40,4 +40,13 @@ class sm_policies {
   static std::string get_route();
 };
 
+class app_sessions {
+ public:
+  static inline const std::string API_NAME     = "npcf-policyauthorization";
+  static inline const std::string API_BASE     = "/" + API_NAME + "/";
+  static inline const std::string CREATE_ROUTE = "/app-sessions";
+
+  static std::string get_route();
+};
+
 }  // namespace oai::pcf::api

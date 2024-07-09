@@ -19,30 +19,48 @@
  *      contact@openairinterface.org
  */
 
-/*! \file api_defs.h
+/*! \file events_subscription_document_api_handler.h
  \brief
- \author  Stefan Spettel
- \company phine.tech
- \date 2023
- \email: stefan.spettel@phine.tech
+ \author  Tariro Mukute
+ \company University of Cape Town
+ \date 2024
+ \email: mkttar001@myuct.ac.za
  */
 
-#include "api_defs.h"
+#pragma once
 
-#include "pcf_config.hpp"
-
-extern std::unique_ptr<oai::config::pcf::pcf_config> pcf_cfg;
+#include "3gpp_29.500.h"
+#include "api_response.h"
+#include "pcf_policy_authorization.hpp"
 
 namespace oai::pcf::api {
 
-std::string sm_policies::get_route() {
-  return API_BASE + pcf_cfg->local().get_sbi().get_api_version() +
-         sm_policies::CREATE_ROUTE;
-}
+class events_subscription_document_api_handler {
+ public:
+  explicit events_subscription_document_api_handler(
+      const std::shared_ptr<oai::pcf::app::pcf_pa>& pcf_pa) {
+    m_pa_service = pcf_pa;
+  }
+  /**
+   * Delete Events Subscription based on ID
+   * @param app_session_id
+   * @return api_response
+   */
+  api_response delete_events_subsc(
+      const std::string& app_session_id);
 
-std::string app_sessions::get_route() {
-  return API_BASE + pcf_cfg->local().get_sbi().get_api_version() +
-         app_sessions::CREATE_ROUTE;
-}
+  /**
+   * Creates or modifies an Events Subscription subresource
+   * @param app_session_id
+   * @param events_subsc_req_data
+   * @return api_response
+   */
+  api_response update_events_subsc(
+      const std::string& app_session_id,
+      const oai::model::pcf::EventsSubscReqData& events_subsc_req_data);
+
+ private:
+  std::shared_ptr<oai::pcf::app::pcf_pa> m_pa_service;
+};
 
 }  // namespace oai::pcf::api

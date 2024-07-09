@@ -19,30 +19,36 @@
  *      contact@openairinterface.org
  */
 
-/*! \file api_defs.h
+/*! \file pcscf_restoration_indication_api_handler.cpp
  \brief
- \author  Stefan Spettel
- \company phine.tech
- \date 2023
- \email: stefan.spettel@phine.tech
+ \author  Tariro Mukute
+ \company University of Cape Town
+ \date 2024
+ \email: mkttar001@myuct.ac.za
  */
 
-#include "api_defs.h"
-
-#include "pcf_config.hpp"
-
-extern std::unique_ptr<oai::config::pcf::pcf_config> pcf_cfg;
+#include "pcscf_restoration_indication_api_handler.h"
 
 namespace oai::pcf::api {
 
-std::string sm_policies::get_route() {
-  return API_BASE + pcf_cfg->local().get_sbi().get_api_version() +
-         sm_policies::CREATE_ROUTE;
-}
+using namespace oai::model::pcf;
+using namespace oai::model::common;
+using namespace oai::common::sbi;
+using namespace oai::pcf::app::sm_policy;
 
-std::string app_sessions::get_route() {
-  return API_BASE + pcf_cfg->local().get_sbi().get_api_version() +
-         app_sessions::CREATE_ROUTE;
+api_response pcscf_restoration_indication_api_handler::pcscf_restoration(
+    const PcscfRestorationRequestData& pcscf_restoration_request_data) {
+  api_response response;
+
+  nlohmann::json json_data;
+
+  json_data["error"] = "API endpoint not implemented";
+
+  response.headers.add<Pistache::Http::Header::ContentType>(
+      Pistache::Http::Mime::MediaType(content_type));
+  response.body        = json_data.dump();
+  response.status_code = http_status_code::NOT_FOUND;;
+  return response;
 }
 
 }  // namespace oai::pcf::api

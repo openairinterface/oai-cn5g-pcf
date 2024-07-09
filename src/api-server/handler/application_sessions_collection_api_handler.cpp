@@ -1,0 +1,70 @@
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this
+ * file except in compliance with the License. You may obtain a copy of the
+ * License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
+
+/*! \file application_sessions_collection_api_handler.cpp
+ \brief
+ \author  Tariro Mukute
+ \company University of Cape Town
+ \date 2024
+ \email: mkttar001@myuct.ac.za
+ */
+
+#include "application_sessions_collection_api_handler.h"
+
+namespace oai::pcf::api {
+
+using namespace oai::model::pcf;
+using namespace oai::model::common;
+using namespace oai::common::sbi;
+using namespace oai::pcf::app::sm_policy;
+
+api_response application_sessions_collection_api_handler::post_app_sessions(
+    const AppSessionContext& app_session_context) {
+  api_response response;
+
+  ProblemDetails problem_details;
+  std::string problem_description;
+  std::string content_type = "application/problem+json";
+  nlohmann::json json_data;
+  uint16_t http_code;
+
+  // XXX
+
+  status_code res = m_pa_service->post_app_sessions_handler(app_session_context, problem_description);
+
+  problem_details.setDetail(problem_description);
+
+  // XXX
+
+  if (res == status_code::OK) {
+    to_json(json_data, decision_update);
+  } else {
+    to_json(json_data, problem_details);
+  }
+
+  response.headers.add<Pistache::Http::Header::ContentType>(
+      Pistache::Http::Mime::MediaType(content_type));
+  response.body        = json_data.dump();
+  response.status_code = http_code;
+  return response;
+}
+
+}  // namespace oai::pcf::api
