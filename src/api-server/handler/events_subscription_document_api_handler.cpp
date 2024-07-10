@@ -34,7 +34,7 @@ namespace oai::pcf::api {
 using namespace oai::model::pcf;
 using namespace oai::model::common;
 using namespace oai::common::sbi;
-using namespace oai::pcf::app::sm_policy;
+using namespace oai::pcf::app::policy_auth;
 
 api_response events_subscription_document_api_handler::delete_events_subsc(
     const std::string& app_session_id) {

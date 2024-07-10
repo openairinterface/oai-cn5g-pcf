@@ -34,7 +34,7 @@ namespace oai::pcf::api {
 using namespace oai::model::pcf;
 using namespace oai::model::common;
 using namespace oai::common::sbi;
-using namespace oai::pcf::app::sm_policy;
+using namespace oai::pcf::app::policy_auth;
 
 api_response application_sessions_collection_api_handler::post_app_sessions(
     const AppSessionContext& app_session_context) {
@@ -46,19 +46,27 @@ api_response application_sessions_collection_api_handler::post_app_sessions(
   nlohmann::json json_data;
   uint16_t http_code;
 
-  // XXX
-
   status_code res = m_pa_service->post_app_sessions_handler(app_session_context, problem_description);
 
   problem_details.setDetail(problem_description);
 
-  // XXX
+  switch (res) {
+    case status_code::OK:
+      content_type = "application/json";
+      http_code    = http_status_code::OK;
+      break;
+    default:
+      problem_details.setCause("INTERNAL_ERROR");
+      http_code = http_status_code::INTERNAL_SERVER_ERROR;
+  }
 
   if (res == status_code::OK) {
-    // Add success message/model to json_data
+    to_json(json_data, app_session_context);
   } else {
     to_json(json_data, problem_details);
   }
+
+  // TODO: set Location header
 
   response.headers.add<Pistache::Http::Header::ContentType>(
       Pistache::Http::Mime::MediaType(content_type));

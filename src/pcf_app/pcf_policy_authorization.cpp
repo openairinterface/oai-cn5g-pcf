@@ -30,7 +30,6 @@
 #include "pcf_policy_authorization.hpp"
 #include "logger.hpp"
 #include "pcf_config.hpp"
-#include "sm_policy/policy_decision.hpp"
 
 #include <boost/uuid/uuid_io.hpp>
 #include <unordered_map>
@@ -39,7 +38,7 @@
 #include <string>
 
 using namespace oai::pcf::app;
-using namespace oai::pcf::app::sm_policy;
+using namespace oai::pcf::app::policy_auth;
 using namespace oai::config::pcf;
 using namespace oai::model::pcf;
 
@@ -59,6 +58,17 @@ status_code pcf_pa::post_app_sessions_handler(
   return status_code::NOT_FOUND;
 }
 
+//------------------------------------------------------------------------------
+policy_auth::status_code pcf_pa::mod_app_session_handler(
+        const std::string& app_session_id,
+        const oai::model::pcf::AppSessionContextUpdateDataPatch& app_session_context_update_data_patch,
+        const oai::model::pcf::AppSessionContext& context,
+        std::string& problem_details) {
+  
+  Logger::pcf_app().warn("App session, but not implemented!");
+
+  return status_code::NOT_FOUND;
+}
 
 //------------------------------------------------------------------------------
 pcf_pa::~pcf_pa() {
