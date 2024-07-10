@@ -13,6 +13,7 @@
 
 #include "PCSCFRestorationIndicationApi.h"
 #include "Helpers.h"
+#include "api_defs.h"
 
 namespace oai::pcf::api {
 
@@ -21,7 +22,7 @@ using namespace oai::model::pcf;
 
 PCSCFRestorationIndicationApi::PCSCFRestorationIndicationApi(
     const std::shared_ptr<Pistache::Rest::Router>& rtr)
-    : ApiBase(rtr) {}
+  : ApiBase(rtr) {}
 
 void PCSCFRestorationIndicationApi::init() {
   setupRoutes();

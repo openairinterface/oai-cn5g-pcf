@@ -48,7 +48,8 @@ class IndividualApplicationSessionContextDocumentApiImpl
           IndividualApplicationSessionContextDocumentApi {
  public:
   explicit IndividualApplicationSessionContextDocumentApiImpl(
-      const std::shared_ptr<Pistache::Rest::Router>& rtr);
+      const std::shared_ptr<Pistache::Rest::Router>& rtr,
+      const std::shared_ptr<pcf_pa>& pa_service, const std::string&);
   ~IndividualApplicationSessionContextDocumentApiImpl() override = default;
 
   void delete_app_session(

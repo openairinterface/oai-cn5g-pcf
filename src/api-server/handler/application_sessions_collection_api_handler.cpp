@@ -28,7 +28,7 @@
  */
 
 #include "application_sessions_collection_api_handler.h"
-
+#include "ProblemDetails.h"
 namespace oai::pcf::api {
 
 using namespace oai::model::pcf;
@@ -55,7 +55,7 @@ api_response application_sessions_collection_api_handler::post_app_sessions(
   // XXX
 
   if (res == status_code::OK) {
-    to_json(json_data, decision_update);
+    // Add success message/model to json_data
   } else {
     to_json(json_data, problem_details);
   }

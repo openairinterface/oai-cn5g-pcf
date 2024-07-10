@@ -35,15 +35,9 @@
 #include <shared_mutex>
 #include <memory>
 
-#include "SmPolicyContextData.h"
-#include "SmPolicyDecision.h"
-#include "SmPolicyDeleteData.h"
-#include "SmPolicyControl.h"
-#include "SmPolicyUpdateContextData.h"
-#include "sm_policy/pcf_pa_status_code.hpp"
-#include "sm_policy/individual_sm_association.hpp"
+#include "AppSessionContext.h"
+#include "sm_policy/pcf_smpc_status_code.hpp"
 #include "uint_generator.hpp"
-#include "sm_policy/policy_storage.hpp"
 
 namespace oai::pcf::app {
 
@@ -53,9 +47,7 @@ namespace oai::pcf::app {
  */
 class pcf_pa {
  public:
-  explicit pcf_pa(
-      const std::shared_ptr<oai::pcf::app::sm_policy::policy_storage>&
-          policy_storage);
+  explicit pcf_pa();
   pcf_pa(pcf_pa const&) = delete;
   void operator=(pcf_pa const&) = delete;
 

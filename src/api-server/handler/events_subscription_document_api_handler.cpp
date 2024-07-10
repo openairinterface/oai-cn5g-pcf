@@ -39,6 +39,7 @@ using namespace oai::pcf::app::sm_policy;
 api_response events_subscription_document_api_handler::delete_events_subsc(
     const std::string& app_session_id) {
   api_response response;
+  std::string content_type = "application/problem+json";
 
   nlohmann::json json_data;
 
@@ -55,6 +56,7 @@ api_response events_subscription_document_api_handler::update_events_subsc(
     const std::string& app_session_id,
     const EventsSubscReqData& events_subsc_req_data) {
   api_response response;
+  std::string content_type = "application/problem+json";
 
   nlohmann::json json_data;
 

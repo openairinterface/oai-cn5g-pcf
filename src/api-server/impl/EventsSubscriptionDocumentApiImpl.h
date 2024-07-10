@@ -45,7 +45,8 @@ class EventsSubscriptionDocumentApiImpl
     : public oai::pcf::api::EventsSubscriptionDocumentApi {
  public:
   explicit EventsSubscriptionDocumentApiImpl(
-      const std::shared_ptr<Pistache::Rest::Router>& rtr);
+      const std::shared_ptr<Pistache::Rest::Router>& rtr,
+      const std::shared_ptr<pcf_pa>& pa_service, const std::string&);
   ~EventsSubscriptionDocumentApiImpl() override = default;
 
   void delete_events_subsc(

@@ -40,6 +40,7 @@ api_response individual_application_session_context_document_api_handler::delete
     const std::string& app_session_id,
     const EventsSubscReqData& events_subsc_req_data) {
   api_response response;
+  std::string content_type = "application/problem+json";
 
   nlohmann::json json_data;
 
@@ -55,6 +56,7 @@ api_response individual_application_session_context_document_api_handler::delete
 api_response individual_application_session_context_document_api_handler::get_app_session(
     const std::string& app_session_id) {
   api_response response;
+  std::string content_type = "application/problem+json";
 
   nlohmann::json json_data;
 
@@ -71,6 +73,7 @@ api_response individual_application_session_context_document_api_handler::mod_ap
     const std::string& app_session_id,
     const AppSessionContextUpdateDataPatch& app_session_context_update_data_patch) {
   api_response response;
+  std::string content_type = "application/problem+json";
 
   nlohmann::json json_data;
 

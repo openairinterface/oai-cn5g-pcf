@@ -22,7 +22,7 @@
 #include <pistache/router.h>
 #include <memory>
 
-namespace org::openapitools::server::api {
+namespace oai::pcf::api {
 
 class ApiBase {
  public:
@@ -35,6 +35,6 @@ class ApiBase {
   const std::shared_ptr<Pistache::Rest::Router> router;
 };
 
-}  // namespace org::openapitools::server::api
+}  // namespace oai::pcf::api
 
 #endif /* ApiBase_H_ */

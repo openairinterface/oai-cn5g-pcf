@@ -29,7 +29,8 @@
 
 #pragma once
 
-#include "3gpp_29.500.h"
+#include "AppSessionContext.h"
+#include "Ambr.h"
 #include "api_response.h"
 #include "pcf_policy_authorization.hpp"
 

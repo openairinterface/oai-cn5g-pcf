@@ -47,7 +47,7 @@ void IndividualApplicationSessionContextDocumentApiImpl::mod_app_session(
     const AppSessionContextUpdateDataPatch& appSessionContextUpdateDataPatch,
     Pistache::Http::ResponseWriter& response) {
   api_response resp =
-      m_api_handler->mod_app_session(appSessionContextUpdateDataPatch);
+      m_api_handler->mod_app_session(appSessionId, appSessionContextUpdateDataPatch);
   response.headers() = resp.headers;
   response.send(Pistache::Http::Code(resp.status_code), resp.body);
 }

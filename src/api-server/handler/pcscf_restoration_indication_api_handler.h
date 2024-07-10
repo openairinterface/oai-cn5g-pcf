@@ -29,11 +29,11 @@
 
 #pragma once
 
-#include "3gpp_29.500.h"
+#include "PcscfRestorationRequestData.h"
 #include "api_response.h"
-#include "pcf_sm_policy_control.hpp"
+#include "pcf_policy_authorization.hpp"
 #include "SmPolicyDeleteData.h"
-#include "SmPolicyUpdateContextData.h"
+// #include "SmPolicyUpdateContextData.h"
 
 namespace oai::pcf::api {
 

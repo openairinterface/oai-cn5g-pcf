@@ -33,6 +33,11 @@
 #include "ProblemDetails.h"
 #include <string>
 
+// #include "SmPolicyControl.h"
+// #include "SmPolicyDecision.h"
+// #include "SmPolicyDeleteData.h"
+// #include "SmPolicyUpdateContextData.h"
+
 #include "pcf_app.hpp"
 #include "application_sessions_collection_api_handler.h"
 
@@ -45,7 +50,8 @@ class ApplicationSessionsCollectionApiImpl
     : public oai::pcf::api::ApplicationSessionsCollectionApi {
  public:
   explicit ApplicationSessionsCollectionApiImpl(
-      const std::shared_ptr<Pistache::Rest::Router>& rtr);
+      const std::shared_ptr<Pistache::Rest::Router>& rtr,
+      const std::shared_ptr<pcf_pa>& pa_service, const std::string&);
   ~ApplicationSessionsCollectionApiImpl() override = default;
 
   void post_app_sessions(

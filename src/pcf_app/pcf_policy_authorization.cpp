@@ -27,7 +27,7 @@
  \email: mkttar001@myuct.ac.za
  */
 
-#include "pcf_sm_policy_control.hpp"
+#include "pcf_policy_authorization.hpp"
 #include "logger.hpp"
 #include "pcf_config.hpp"
 #include "sm_policy/policy_decision.hpp"
@@ -46,9 +46,7 @@ using namespace oai::model::pcf;
 using namespace std;
 
 //------------------------------------------------------------------------------
-pcf_pa::pcf_pa(
-    const std::shared_ptr<oai::pcf::app::sm_policy::policy_storage>&
-        policy_storage) {
+pcf_pa::pcf_pa() {
 }
 
 //------------------------------------------------------------------------------

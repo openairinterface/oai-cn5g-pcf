@@ -39,6 +39,7 @@ using namespace oai::pcf::app::sm_policy;
 api_response pcscf_restoration_indication_api_handler::pcscf_restoration(
     const PcscfRestorationRequestData& pcscf_restoration_request_data) {
   api_response response;
+  std::string content_type = "application/problem+json";
 
   nlohmann::json json_data;
 

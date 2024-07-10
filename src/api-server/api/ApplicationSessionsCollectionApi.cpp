@@ -13,6 +13,7 @@
 
 #include "ApplicationSessionsCollectionApi.h"
 #include "Helpers.h"
+#include "api_defs.h"
 
 namespace oai::pcf::api {
 

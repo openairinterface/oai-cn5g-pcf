@@ -44,7 +44,8 @@ class PCSCFRestorationIndicationApiImpl
     : public oai::pcf::api::PCSCFRestorationIndicationApi {
  public:
   explicit PCSCFRestorationIndicationApiImpl(
-      const std::shared_ptr<Pistache::Rest::Router>& rtr);
+      const std::shared_ptr<Pistache::Rest::Router>& rtr,
+      const std::shared_ptr<pcf_pa>& pa_service, const std::string&);
   ~PCSCFRestorationIndicationApiImpl() override = default;
 
   void pcscf_restoration(
