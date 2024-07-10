@@ -30,10 +30,9 @@ ApplicationSessionsCollectionApiImpl::ApplicationSessionsCollectionApiImpl(
 void ApplicationSessionsCollectionApiImpl::post_app_sessions(
     const AppSessionContext& appSessionContext,
     Pistache::Http::ResponseWriter& response) {
-  api_response resp =
-      m_api_handler->post_app_sessions(appSessionContext);
+  api_response resp  = m_api_handler->post_app_sessions(appSessionContext);
   response.headers() = resp.headers;
   response.send(Pistache::Http::Code(resp.status_code), resp.body);
 }
 
-} // namespace oai::pcf::api
+}  // namespace oai::pcf::api

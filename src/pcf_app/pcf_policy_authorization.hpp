@@ -73,17 +73,18 @@ class pcf_pa {
    * session context, as defined in 3GPP TS 29.514 Chapter 4.2.3
    *
    * @param app_session_id input: context from the request
-   * @param app_session_context_update_data_patch input: context from the request
-   * @param context output: the applications session context that has been updated
-   * provisioning
+   * @param app_session_context_update_data_patch input: context from the
+   * request
+   * @param context output: the applications session context that has been
+   * updated provisioning
    * @return policy_auth::status_code
    */
   policy_auth::status_code mod_app_session_handler(
-        const std::string& app_session_id,
-        const oai::model::pcf::AppSessionContextUpdateDataPatch& app_session_context_update_data_patch,
-        const oai::model::pcf::AppSessionContext& context,
-        std::string& problem_details);
-
+      const std::string& app_session_id,
+      const oai::model::pcf::AppSessionContextUpdateDataPatch&
+          app_session_context_update_data_patch,
+      const oai::model::pcf::AppSessionContext& context,
+      std::string& problem_details);
 };
 }  // namespace oai::pcf::app
 #endif /* FILE_PCF_POLICY_AUTHORIZATION_SEEN */

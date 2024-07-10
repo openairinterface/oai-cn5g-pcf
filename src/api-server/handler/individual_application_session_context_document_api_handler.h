@@ -59,8 +59,7 @@ class individual_application_session_context_document_api_handler {
    * @param events_subsc_req_data
    * @return api_response
    */
-  api_response get_app_session(
-      const std::string& app_session_id);
+  api_response get_app_session(const std::string& app_session_id);
 
   /**
    * Delete Individual Application Session Context based on ID
@@ -70,7 +69,8 @@ class individual_application_session_context_document_api_handler {
    */
   api_response mod_app_session(
       const std::string& app_session_id,
-      const oai::model::pcf::AppSessionContextUpdateDataPatch& app_session_context_update_data_patch);
+      const oai::model::pcf::AppSessionContextUpdateDataPatch&
+          app_session_context_update_data_patch);
 
  private:
   std::shared_ptr<oai::pcf::app::pcf_pa> m_pa_service;

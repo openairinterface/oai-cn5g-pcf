@@ -49,7 +49,8 @@ class pcscf_restoration_indication_api_handler {
    * @return api_response
    */
   api_response pcscf_restoration(
-      const oai::model::pcf::PcscfRestorationRequestData& pcscf_restoration_request_data);
+      const oai::model::pcf::PcscfRestorationRequestData&
+          pcscf_restoration_request_data);
 
  private:
   std::shared_ptr<oai::pcf::app::pcf_pa> m_pa_service;

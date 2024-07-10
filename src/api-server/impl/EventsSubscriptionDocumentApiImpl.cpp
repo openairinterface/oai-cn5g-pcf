@@ -27,8 +27,7 @@ EventsSubscriptionDocumentApiImpl::EventsSubscriptionDocumentApiImpl(
 
 void EventsSubscriptionDocumentApiImpl::delete_events_subsc(
     const std::string& appSessionId, Pistache::Http::ResponseWriter& response) {
-  api_response resp =
-      m_api_handler->delete_events_subsc(appSessionId);
+  api_response resp  = m_api_handler->delete_events_subsc(appSessionId);
   response.headers() = resp.headers;
   response.send(Pistache::Http::Code(resp.status_code), resp.body);
 }
@@ -42,4 +41,4 @@ void EventsSubscriptionDocumentApiImpl::update_events_subsc(
   response.send(Pistache::Http::Code(resp.status_code), resp.body);
 }
 
-} // namespace oai::pcf::api
+}  // namespace oai::pcf::api

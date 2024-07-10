@@ -48,7 +48,8 @@ api_response pcscf_restoration_indication_api_handler::pcscf_restoration(
   response.headers.add<Pistache::Http::Header::ContentType>(
       Pistache::Http::Mime::MediaType(content_type));
   response.body        = json_data.dump();
-  response.status_code = http_status_code::NOT_FOUND;;
+  response.status_code = http_status_code::NOT_FOUND;
+  ;
   return response;
 }
 

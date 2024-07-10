@@ -46,8 +46,7 @@ class events_subscription_document_api_handler {
    * @param app_session_id
    * @return api_response
    */
-  api_response delete_events_subsc(
-      const std::string& app_session_id);
+  api_response delete_events_subsc(const std::string& app_session_id);
 
   /**
    * Creates or modifies an Events Subscription subresource

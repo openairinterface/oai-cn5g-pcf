@@ -22,7 +22,7 @@ using namespace oai::model::pcf;
 
 PCSCFRestorationIndicationApi::PCSCFRestorationIndicationApi(
     const std::shared_ptr<Pistache::Rest::Router>& rtr)
-  : ApiBase(rtr) {}
+    : ApiBase(rtr) {}
 
 void PCSCFRestorationIndicationApi::init() {
   setupRoutes();

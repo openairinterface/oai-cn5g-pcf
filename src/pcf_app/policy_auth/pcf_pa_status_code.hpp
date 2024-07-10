@@ -42,5 +42,5 @@ enum class status_code {
   REQUESTED_SERVICE_NOT_AUTHORIZED,
   OK,
 };
-}  // namespace oai::pcf::app::sm_policy
+}  // namespace oai::pcf::app::policy_auth
 #endif

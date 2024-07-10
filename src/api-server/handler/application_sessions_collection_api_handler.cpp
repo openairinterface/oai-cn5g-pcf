@@ -46,7 +46,8 @@ api_response application_sessions_collection_api_handler::post_app_sessions(
   nlohmann::json json_data;
   uint16_t http_code;
 
-  status_code res = m_pa_service->post_app_sessions_handler(app_session_context, problem_description);
+  status_code res = m_pa_service->post_app_sessions_handler(
+      app_session_context, problem_description);
 
   problem_details.setDetail(problem_description);
 

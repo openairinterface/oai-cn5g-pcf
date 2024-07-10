@@ -56,7 +56,7 @@ class EventsSubscriptionDocumentApiImpl
       const std::string& appSessionId,
       const EventsSubscReqData& eventsSubscReqData,
       Pistache::Http::ResponseWriter& response);
- 
+
  private:
   std::shared_ptr<events_subscription_document_api_handler> m_api_handler;
 };

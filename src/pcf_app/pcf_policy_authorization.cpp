@@ -45,14 +45,11 @@ using namespace oai::model::pcf;
 using namespace std;
 
 //------------------------------------------------------------------------------
-pcf_pa::pcf_pa() {
-}
+pcf_pa::pcf_pa() {}
 
 //------------------------------------------------------------------------------
 status_code pcf_pa::post_app_sessions_handler(
-    const SmPolicyContextData& context,
-    std::string& problem_details) {
-  
+    const SmPolicyContextData& context, std::string& problem_details) {
   Logger::pcf_app().warn("App session, but not implemented!");
 
   return status_code::NOT_FOUND;
@@ -60,11 +57,11 @@ status_code pcf_pa::post_app_sessions_handler(
 
 //------------------------------------------------------------------------------
 policy_auth::status_code pcf_pa::mod_app_session_handler(
-        const std::string& app_session_id,
-        const oai::model::pcf::AppSessionContextUpdateDataPatch& app_session_context_update_data_patch,
-        const oai::model::pcf::AppSessionContext& context,
-        std::string& problem_details) {
-  
+    const std::string& app_session_id,
+    const oai::model::pcf::AppSessionContextUpdateDataPatch&
+        app_session_context_update_data_patch,
+    const oai::model::pcf::AppSessionContext& context,
+    std::string& problem_details) {
   Logger::pcf_app().warn("App session, but not implemented!");
 
   return status_code::NOT_FOUND;

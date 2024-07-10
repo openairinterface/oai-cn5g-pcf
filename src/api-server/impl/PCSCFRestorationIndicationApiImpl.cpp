@@ -34,4 +34,4 @@ void PCSCFRestorationIndicationApiImpl::pcscf_restoration(
   response.send(Pistache::Http::Code(resp.status_code), resp.body);
 }
 
-} // namespace oai::pcf::api
+}  // namespace oai::pcf::api

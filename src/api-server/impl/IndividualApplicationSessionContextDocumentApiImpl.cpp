@@ -22,8 +22,8 @@ IndividualApplicationSessionContextDocumentApiImpl::
         const std::shared_ptr<Pistache::Rest::Router>& rtr,
         const std::shared_ptr<pcf_pa>& pa_service, const std::string&)
     : IndividualApplicationSessionContextDocumentApi(rtr) {
-  m_api_handler =
-      std::make_shared<individual_application_session_context_document_api_handler>(pa_service);
+  m_api_handler = std::make_shared<
+      individual_application_session_context_document_api_handler>(pa_service);
 }
 
 void IndividualApplicationSessionContextDocumentApiImpl::delete_app_session(
@@ -37,8 +37,7 @@ void IndividualApplicationSessionContextDocumentApiImpl::delete_app_session(
 }
 void IndividualApplicationSessionContextDocumentApiImpl::get_app_session(
     const std::string& appSessionId, Pistache::Http::ResponseWriter& response) {
-  api_response resp =
-      m_api_handler->get_app_session(appSessionId);
+  api_response resp  = m_api_handler->get_app_session(appSessionId);
   response.headers() = resp.headers;
   response.send(Pistache::Http::Code(resp.status_code), resp.body);
 }
@@ -46,10 +45,10 @@ void IndividualApplicationSessionContextDocumentApiImpl::mod_app_session(
     const std::string& appSessionId,
     const AppSessionContextUpdateDataPatch& appSessionContextUpdateDataPatch,
     Pistache::Http::ResponseWriter& response) {
-  api_response resp =
-      m_api_handler->mod_app_session(appSessionId, appSessionContextUpdateDataPatch);
+  api_response resp = m_api_handler->mod_app_session(
+      appSessionId, appSessionContextUpdateDataPatch);
   response.headers() = resp.headers;
   response.send(Pistache::Http::Code(resp.status_code), resp.body);
 }
 
-} // namespace oai::pcf::api
+}  // namespace oai::pcf::api

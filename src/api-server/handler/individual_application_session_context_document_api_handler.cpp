@@ -38,7 +38,8 @@ using namespace oai::model::common;
 using namespace oai::common::sbi;
 using namespace oai::pcf::app::policy_auth;
 
-api_response individual_application_session_context_document_api_handler::delete_app_session(
+api_response
+individual_application_session_context_document_api_handler::delete_app_session(
     const std::string& app_session_id,
     const EventsSubscReqData& events_subsc_req_data) {
   api_response response;
@@ -51,11 +52,13 @@ api_response individual_application_session_context_document_api_handler::delete
   response.headers.add<Pistache::Http::Header::ContentType>(
       Pistache::Http::Mime::MediaType(content_type));
   response.body        = json_data.dump();
-  response.status_code = http_status_code::NOT_FOUND;;
+  response.status_code = http_status_code::NOT_FOUND;
+  ;
   return response;
 }
 
-api_response individual_application_session_context_document_api_handler::get_app_session(
+api_response
+individual_application_session_context_document_api_handler::get_app_session(
     const std::string& app_session_id) {
   api_response response;
   std::string content_type = "application/problem+json";
@@ -67,13 +70,16 @@ api_response individual_application_session_context_document_api_handler::get_ap
   response.headers.add<Pistache::Http::Header::ContentType>(
       Pistache::Http::Mime::MediaType(content_type));
   response.body        = json_data.dump();
-  response.status_code = http_status_code::NOT_FOUND;;
+  response.status_code = http_status_code::NOT_FOUND;
+  ;
   return response;
 }
 
-api_response individual_application_session_context_document_api_handler::mod_app_session(
+api_response
+individual_application_session_context_document_api_handler::mod_app_session(
     const std::string& app_session_id,
-    const AppSessionContextUpdateDataPatch& app_session_context_update_data_patch) {
+    const AppSessionContextUpdateDataPatch&
+        app_session_context_update_data_patch) {
   api_response response;
   ProblemDetails problem_details;
   std::string problem_description;
@@ -83,7 +89,9 @@ api_response individual_application_session_context_document_api_handler::mod_ap
 
   // XXX
   AppSessionContext app_session_context;
-  status_code res = m_pa_service->mod_app_session_handler(app_session_id, app_session_context_update_data_patch, app_session_context, problem_description);
+  status_code res = m_pa_service->mod_app_session_handler(
+      app_session_id, app_session_context_update_data_patch,
+      app_session_context, problem_description);
 
   problem_details.setDetail(problem_description);
 

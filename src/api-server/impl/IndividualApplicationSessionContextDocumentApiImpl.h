@@ -44,8 +44,7 @@ namespace oai::pcf::api {
 using namespace oai::model::pcf;
 
 class IndividualApplicationSessionContextDocumentApiImpl
-    : public oai::pcf::api::
-          IndividualApplicationSessionContextDocumentApi {
+    : public oai::pcf::api::IndividualApplicationSessionContextDocumentApi {
  public:
   explicit IndividualApplicationSessionContextDocumentApiImpl(
       const std::shared_ptr<Pistache::Rest::Router>& rtr,
@@ -65,7 +64,8 @@ class IndividualApplicationSessionContextDocumentApiImpl
       Pistache::Http::ResponseWriter& response);
 
  private:
-  std::shared_ptr<individual_application_session_context_document_api_handler> m_api_handler;
+  std::shared_ptr<individual_application_session_context_document_api_handler>
+      m_api_handler;
 };
 
 }  // namespace oai::pcf::api
