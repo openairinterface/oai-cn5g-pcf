@@ -28,6 +28,7 @@
 #include <iostream>
 #include <csignal>
 #include <thread>
+#include <chrono>
 
 using namespace std;
 using namespace oai::pcf::app;
@@ -45,6 +46,7 @@ std::shared_ptr<oai::http::http_client> http_client_inst = nullptr;
 
 //------------------------------------------------------------------------------
 void signal_handler_sigint(int s) {
+  auto shutdown_start = std::chrono::system_clock::now();
   // Setting log level arbitrarly to debug to show the whole
   // shutdown procedure in the logs even in case of off-logging
   Logger::set_level(spdlog::level::debug);
@@ -70,7 +72,9 @@ void signal_handler_sigint(int s) {
 
   Logger::system().debug("PCF APP memory done");
   Logger::system().debug("Freeing allocated memory done");
-  Logger::system().info("Bye.");
+  auto elapsed = std::chrono::system_clock::now() - shutdown_start;
+  auto ms_diff = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed);
+  Logger::system().info("Bye. Shutdown Procedure took %d ms", ms_diff.count());
   exit(0);
 }
 
