@@ -10,6 +10,7 @@
 * Tech Debt
   - Stopping support for RHEL8/Rocky8 in favor of RHEL9/Rocky9
   - HTTP client cpr library refactoring effort
+  - Resynch PCF with common source git-submodule and use utils from there
 
 ## v2.0.0 -- December 2023 ##
 
