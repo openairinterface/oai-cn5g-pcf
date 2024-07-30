@@ -125,6 +125,8 @@ check_install_pcf_deps() {
       libcurl4 \
       net-tools \
       pkg-config \
+      mysql-client \
+      libmysqlclient-dev \
       libasan?"
   elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
     PACKAGE_LIST="\
@@ -139,6 +141,9 @@ check_install_pcf_deps() {
       nettle-devel \
       libcurl-devel \
       pkgconfig \
+      mysql \
+      mysql-devel \
+      mysql-libs \
       ninja-build \
       boost-devel \
       libasan"

@@ -27,6 +27,10 @@ include_directories(${SRC_TOP_DIR}/api-server/api)
 include_directories(${SRC_TOP_DIR}/api-server/impl)
 include_directories(${SRC_TOP_DIR}/api-server/)
 include_directories(${SRC_TOP_DIR}/pcf_app/sm_policy/)
+include_directories(${SRC_TOP_DIR}/api-server/provisioning_api/api)
+include_directories(${SRC_TOP_DIR}/api-server/provisioning_api/impl)
+include_directories(${SRC_TOP_DIR}/api-server/provisioning_api/handler)
+include_directories(${SRC_TOP_DIR}/api-server/provisioning_api/model)
 
 ## Common modules
 include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/http/http.cmake)
@@ -55,4 +59,5 @@ add_library (PCF STATIC
   sm_policy/dnn_policy_decision.cpp
   sm_policy/policy_storage.cpp
   sm_policy/policy_provisioning_file.cpp
+  sm_policy/database/mysql_db.cpp
   )

@@ -285,6 +285,10 @@ include_directories(${SRC_TOP_DIR}/api-server)
 include_directories(${SRC_TOP_DIR}/api-server/api)
 include_directories(${SRC_TOP_DIR}/api-server/impl)
 include_directories(${SRC_TOP_DIR}/api-server/handler)
+include_directories(${SRC_TOP_DIR}/api-server/provisioning_api/api)
+include_directories(${SRC_TOP_DIR}/api-server/provisioning_api/impl)
+include_directories(${SRC_TOP_DIR}/api-server/provisioning_api/handler)
+include_directories(${SRC_TOP_DIR}/api-server/provisioning_api/model)
 
 add_executable(pcf
   ${SRC_TOP_DIR}/oai_pcf/main.cpp
@@ -306,4 +310,4 @@ IF(STATIC_LINKING)
 ENDIF(STATIC_LINKING)
 
 target_link_libraries (pcf ${ASAN}  -Wl,--start-group PCF PCF_API ${CRYPTO_LIBRARIES} -lnghttp2_asio -lboost_system -lboost_thread -lssl -lcrypto -lfmt -lspdlog dl -Wl,--end-group
-pthread m rt event boost_system -lboost_filesystem pistache curl -lyaml-cpp cpr::cpr)
+pthread m rt event boost_system -lboost_filesystem pistache curl -lyaml-cpp cpr::cpr -lmysqlclient)

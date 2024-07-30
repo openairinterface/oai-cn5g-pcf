@@ -46,16 +46,47 @@ extern std::unique_ptr<pcf_config> pcf_cfg;
 pcf_app::pcf_app(pcf_event& ev) : m_event_sub(ev) {
   Logger::pcf_app().startup("Starting...");
 
-  Logger::pcf_app().startup("Reading local Policy configuration...");
-  m_policy_storage = std::make_shared<sm_policy::policy_storage>();
+  if (pcf_cfg->use_db_policy_storage() &&
+      pcf_cfg->get_database_config().is_set()) {
+    if (pcf_cfg->get_database_config().is_set()) {
+      // Use the appropriate DB connector to initialize the connection to the DB
+      if (boost::iequals(
+              pcf_cfg->get_database_config().get_database_type(), "mysql")) {
+        db_connector = std::make_shared<mysql_db>(ev);
+      } else {
+        Logger::pcf_app().error(
+            "PCF currently only supports MySQL for storing policies!");
+        exit(-1);
+      }
 
-  m_provisioning_file =
-      std::make_shared<sm_policy::policy_provisioning_file>(m_policy_storage);
+      Logger::pcf_app().startup("Connect to DB...");
 
-  if (!m_provisioning_file->read_all_policy_files()) {
-    Logger::pcf_app().error(
-        "Cannot read policy configuration from file. Exiting");
-    exit(-1);
+      if (!db_connector->initialize()) {
+        Logger::pcf_app().error("Error when initializing a connection with DB");
+        exit(-1);
+      }
+
+      if (!db_connector->connect(MAX_FIRST_CONNECTION_RETRY)) {
+        Logger::pcf_app().error("Could not establish the connection to the DB");
+        exit(-1);
+      }
+    }
+  } else {
+    if (pcf_cfg->use_db_policy_storage()) {
+      Logger::pcf_app().warn(
+          "DB policy storage activated, bot no DB configured!");
+    }
+    Logger::pcf_app().startup("Reading local Policy configuration...");
+    m_policy_storage = std::make_shared<sm_policy::policy_storage>();
+
+    m_provisioning_file =
+        std::make_shared<sm_policy::policy_provisioning_file>(m_policy_storage);
+
+    if (!m_provisioning_file->read_all_policy_files()) {
+      Logger::pcf_app().error(
+          "Cannot read policy configuration from file. Exiting");
+      exit(-1);
+    }
   }
 
   // Register to NRF
@@ -71,6 +102,7 @@ pcf_app::pcf_app(pcf_event& ev) : m_event_sub(ev) {
 //------------------------------------------------------------------------------
 pcf_app::~pcf_app() {
   Logger::pcf_app().debug("Delete PCF_APP instance...");
+  if (db_connector) db_connector->close_connection();
 }
 
 std::shared_ptr<pcf_smpc> pcf_app::get_pcf_smpc_service() {

@@ -104,13 +104,18 @@ const std::string& policy_config::get_qos_data_path() const {
 
 pcf_config_type::pcf_config_type(
     const std::string& name, const std::string& host, const sbi_interface& sbi,
-    const policy_config& policy)
+    bool use_db_for_policy_storage, const policy_config& policy)
     : nf(name, host, sbi), m_policy_config(policy) {
+  m_use_db_for_policy_storage = option_config_value(
+      "use_db_for_policy_storage", use_db_for_policy_storage);
   m_policy_config.set_config();
 }
 
 void pcf_config_type::from_yaml(const YAML::Node& node) {
   nf::from_yaml(node);
+  if (node["use_db_for_policy_storage"]) {
+    m_use_db_for_policy_storage.from_yaml(node["use_db_for_policy_storage"]);
+  }
   if (node["local_policy"]) {
     m_policy_config.from_yaml(node["local_policy"]);
   }
@@ -118,6 +123,20 @@ void pcf_config_type::from_yaml(const YAML::Node& node) {
 
 std::string pcf_config_type::to_string(const std::string& indent) const {
   std::string out = nf::to_string("");
+  // out.append(m_use_db_for_policy_storage.to_string(indent));
+
+  std::string fmt = get_value_formatter(0);
+  if (!m_use_db_for_policy_storage.get_config_name().empty()) {
+    out.append(indent).append(fmt::format(
+        fmt, m_use_db_for_policy_storage.get_config_name(),
+        m_use_db_for_policy_storage.get_value()));
+    //    out.append(indent)
+    //            .append(fmt::format(
+    //                    BASE_FORMATTER, OUTER_LIST_ELEM,
+    //                    m_use_db_for_policy_storage.get_config_name(),
+    //                    inner_width,
+    //                    m_use_db_for_policy_storage.to_string("")));
+  }
   out.append(m_policy_config.to_string(indent));
 
   return out;
@@ -126,6 +145,10 @@ std::string pcf_config_type::to_string(const std::string& indent) const {
 void pcf_config_type::validate() {
   nf::validate();
   m_policy_config.validate();
+}
+
+bool pcf_config_type::use_db_for_policy_storage() const {
+  return m_use_db_for_policy_storage.get_value();
 }
 
 const policy_config& pcf_config_type::get_policy_config() const {

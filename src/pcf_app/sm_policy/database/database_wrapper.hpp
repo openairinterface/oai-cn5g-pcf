@@ -19,34 +19,41 @@
  *      contact@openairinterface.org
  */
 
-/*! \file pcf_config.hpp
- \brief
- \author  Rohan Kharade, Stefan Spettel
- \company OpenAirInterface Software Alliance
- \date 2022
- \email: rohan.kharade@openairinterface.org
-*/
+#ifndef DATABASE_WRAPPER_HPP
+#define DATABASE_WRAPPER_HPP
 
-#pragma once
+#include <nlohmann/json.hpp>
+#include "database_wrapper_abstraction.hpp"
 
-#include "config.hpp"
-#include "pcf_config_types.hpp"
+#define MAX_FIRST_CONNECTION_RETRY 100
 
-namespace oai::config::pcf {
+namespace oai::pcf::app {
 
-const std::string DEFAULT_PCC_RULES_PATH = "/openair-pcf/policies/pcc_rules";
-const std::string DEFAULT_TRAFFIC_RULES_PATH =
-    "/openair-pcf/policies/traffic_rules";
-const std::string DEFAULT_POLICY_DECISIONS_PATH =
-    "/openair-pcf/policies/policy_decisions";
-const std::string DEFAULT_QOS_DATA_PATH = "/openair-pcf/policies/qos_data";
-
-class pcf_config : public oai::config::config {
+template<class DerivedT>
+class database_wrapper : public database_wrapper_abstraction {
  public:
-  explicit pcf_config(
-      const std::string& config_path, bool log_stdout, bool log_rot_file);
+  database_wrapper(){};
 
-  const policy_config& get_pcf_policy() const;
-  bool use_db_policy_storage() const;
+  virtual ~database_wrapper(){};
+
+  bool initialize() override {
+    Logger::pcf_app().debug("Initialize from database_wrapper");
+    auto derived = static_cast<DerivedT*>(this);
+    return derived->initialize();
+  }
+
+  bool connect(uint32_t num_retries) override {
+    Logger::pcf_app().debug(
+        "Establish the connection to the DB (from database_wrapper)");
+    auto derived = static_cast<DerivedT*>(this);
+    return derived->connect(num_retries);
+  }
+
+  bool close_connection() override {
+    Logger::pcf_app().debug("Initialize from database_wrapper");
+    auto derived = static_cast<DerivedT*>(this);
+    return derived->close_connection();
+  }
 };
-}  // namespace oai::config::pcf
+}  // namespace oai::pcf::app
+#endif  // DATABASE_WRAPPER_HPP

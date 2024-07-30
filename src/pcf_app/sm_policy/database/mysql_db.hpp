@@ -19,34 +19,36 @@
  *      contact@openairinterface.org
  */
 
-/*! \file pcf_config.hpp
- \brief
- \author  Rohan Kharade, Stefan Spettel
- \company OpenAirInterface Software Alliance
- \date 2022
- \email: rohan.kharade@openairinterface.org
-*/
+#ifndef MYSQL_DB_HPP
+#define MYSQL_DB_HPP
 
-#pragma once
+#include <mysql/mysql.h>
+#include <shared_mutex>
 
-#include "config.hpp"
-#include "pcf_config_types.hpp"
+#include "database_wrapper.hpp"
+#include "pcf_event.hpp"
+#include "Snssai.h"
 
-namespace oai::config::pcf {
+namespace oai::pcf::app {
 
-const std::string DEFAULT_PCC_RULES_PATH = "/openair-pcf/policies/pcc_rules";
-const std::string DEFAULT_TRAFFIC_RULES_PATH =
-    "/openair-pcf/policies/traffic_rules";
-const std::string DEFAULT_POLICY_DECISIONS_PATH =
-    "/openair-pcf/policies/policy_decisions";
-const std::string DEFAULT_QOS_DATA_PATH = "/openair-pcf/policies/qos_data";
-
-class pcf_config : public oai::config::config {
+class mysql_db : public database_wrapper<mysql_db> {
  public:
-  explicit pcf_config(
-      const std::string& config_path, bool log_stdout, bool log_rot_file);
+  mysql_db(pcf_event& ev);
 
-  const policy_config& get_pcf_policy() const;
-  bool use_db_policy_storage() const;
+  virtual ~mysql_db();
+
+  bool initialize();
+
+  bool connect(uint32_t num_retries);
+
+  bool close_connection();
+
+ private:
+  MYSQL mysql_connector;
+  bs2::connection db_connection_event;
+  pcf_event& m_event_sub;
+  mutable std::shared_mutex m_db_connection_status;
 };
-}  // namespace oai::config::pcf
+}  // namespace oai::pcf::app
+
+#endif  // MYSQL_DB_HPP

@@ -34,6 +34,7 @@
 static const std::string PCF_APP    = "pcf_app";
 static const std::string PCF_SBI    = "pcf_sbi";
 static const std::string PCF_CLIENT = "pcf_client";
+static const std::string PCF_DB     = "pcf_db";
 static const std::string SYSTEM     = "system ";
 
 class Logger {
@@ -70,6 +71,10 @@ class Logger {
 
   static const oai::logger::printf_logger& pcf_client() {
     return oai::logger::logger_registry::get_logger(PCF_CLIENT);
+  }
+
+  static const oai::logger::printf_logger& pcf_db() {
+    return oai::logger::logger_registry::get_logger(PCF_DB);
   }
 
   static const oai::logger::printf_logger& system() {

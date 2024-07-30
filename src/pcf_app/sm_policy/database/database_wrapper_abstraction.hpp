@@ -19,34 +19,40 @@
  *      contact@openairinterface.org
  */
 
-/*! \file pcf_config.hpp
- \brief
- \author  Rohan Kharade, Stefan Spettel
- \company OpenAirInterface Software Alliance
- \date 2022
- \email: rohan.kharade@openairinterface.org
-*/
+#ifndef DATABASE_WRAPPER_ABSTRACTION_HPP
+#define DATABASE_WRAPPER_ABSTRACTION_HPP
 
-#pragma once
+#include "logger.hpp"
 
-#include "config.hpp"
-#include "pcf_config_types.hpp"
-
-namespace oai::config::pcf {
-
-const std::string DEFAULT_PCC_RULES_PATH = "/openair-pcf/policies/pcc_rules";
-const std::string DEFAULT_TRAFFIC_RULES_PATH =
-    "/openair-pcf/policies/traffic_rules";
-const std::string DEFAULT_POLICY_DECISIONS_PATH =
-    "/openair-pcf/policies/policy_decisions";
-const std::string DEFAULT_QOS_DATA_PATH = "/openair-pcf/policies/qos_data";
-
-class pcf_config : public oai::config::config {
+namespace oai::pcf::app {
+class database_wrapper_abstraction {
  public:
-  explicit pcf_config(
-      const std::string& config_path, bool log_stdout, bool log_rot_file);
+  database_wrapper_abstraction(){};
 
-  const policy_config& get_pcf_policy() const;
-  bool use_db_policy_storage() const;
+  virtual ~database_wrapper_abstraction(){};
+  // virtual std::unique_ptr<database_wrapper_abstraction> clone() const = 0;
+
+  /*
+   * Initialize the DB
+   * @param void
+   * @return true if successful, otherwise return false
+   */
+  virtual bool initialize() = 0;
+
+  /*
+   * Establish the connection between PCF and the DB
+   * @param [uint32_t] num_retries: Number of retires
+   * @return true if successful, otherwise return false
+   */
+  virtual bool connect(uint32_t num_retries) = 0;
+
+  /*
+   * Close the connection established to the DB
+   * @param void
+   * @return true if successful, otherwise return false
+   */
+  virtual bool close_connection() = 0;
 };
-}  // namespace oai::config::pcf
+}  // namespace oai::pcf::app
+
+#endif  // DATABASE_WRAPPER_ABSTRACTION_HPP

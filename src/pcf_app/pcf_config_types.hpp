@@ -56,12 +56,14 @@ class policy_config : public config_type {
 
 class pcf_config_type : public nf {
  private:
+  option_config_value m_use_db_for_policy_storage;
   policy_config m_policy_config;
 
  public:
   explicit pcf_config_type(
       const std::string& name, const std::string& host,
-      const sbi_interface& sbi, const policy_config& policy);
+      const sbi_interface& sbi, bool use_db_for_policy_storage,
+      const policy_config& policy);
 
   void from_yaml(const YAML::Node& node) override;
 
@@ -69,6 +71,7 @@ class pcf_config_type : public nf {
 
   void validate() override;
 
+  [[nodiscard]] bool use_db_for_policy_storage() const;
   [[nodiscard]] const policy_config& get_policy_config() const;
 };
 
