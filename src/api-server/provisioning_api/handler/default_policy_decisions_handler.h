@@ -19,33 +19,39 @@
  *      contact@openairinterface.org
  */
 
-/*! \file api_defs.h
+/*! \file default_policy_decisions_handler.h
  \brief
- \author  Stefan Spettel
+ \author  Lukas Rotheneder
  \company phine.tech
- \date 2023
- \email: stefan.spettel@phine.tech
+ \date 2024
+ \email: lukas.rotheneder@phine.tech
  */
 
 #pragma once
+
 #include <string>
+#include <vector>
+#include "api_response.h"
 
-namespace oai::pcf::api {
-class sm_policies {
+namespace oai::pcf::provisioning::api {
+
+class default_policy_decisions_handler {
  public:
-  static inline const std::string API_NAME     = "npcf-smpolicycontrol";
-  static inline const std::string API_BASE     = "/" + API_NAME + "/";
-  static inline const std::string CREATE_ROUTE = "/sm-policies";
+  /**
+   * get default decision
+   * @return api_response
+   */
+  oai::pcf::api::api_response default_decision_get();
 
-  static std::string get_route();
+  /**
+   * Update default decision
+   * @param stdString
+   * @returnapi_response
+   */
+  oai::pcf::api::api_response default_decision_put(
+      const std::vector<std::string>& pccRules);
+
+ private:
+  std::vector<std::string> m_pccRules;
 };
-
-class policy_decision_provisioning {
- public:
-  static inline const std::string API_NAME = "npcf-provisioning";
-  static inline const std::string API_BASE = "/" + API_NAME + "/";
-
-  static std::string get_provisioning_base();
-};
-
-}  // namespace oai::pcf::api
+}  // namespace oai::pcf::provisioning::api

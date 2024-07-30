@@ -19,33 +19,31 @@
  *      contact@openairinterface.org
  */
 
-/*! \file api_defs.h
+/*! \file qos_rules_handler.h
  \brief
- \author  Stefan Spettel
+ \author  Lukas Rotheneder
  \company phine.tech
- \date 2023
- \email: stefan.spettel@phine.tech
+ \date 2024
+ \email: lukas.rotheneder@phine.tech
  */
 
 #pragma once
+
 #include <string>
+#include <vector>
+#include "api_response.h"
+#include "QosData.h"
 
-namespace oai::pcf::api {
-class sm_policies {
+namespace oai::pcf::provisioning::api {
+
+class qos_data_handler {
  public:
-  static inline const std::string API_NAME     = "npcf-smpolicycontrol";
-  static inline const std::string API_BASE     = "/" + API_NAME + "/";
-  static inline const std::string CREATE_ROUTE = "/sm-policies";
-
-  static std::string get_route();
+  oai::pcf::api::api_response qos_data_get();
+  oai::pcf::api::api_response qos_data_post(
+      const oai::model::pcf::QosData& qosData);
+  oai::pcf::api::api_response qos_data_qos_id_delete(const std::string& qosId);
+  oai::pcf::api::api_response qos_data_qos_id_get(const std::string& qosId);
+  oai::pcf::api::api_response qos_data_qos_id_put(
+      const std::string& qosId, const oai::model::pcf::QosData& qosData);
 };
-
-class policy_decision_provisioning {
- public:
-  static inline const std::string API_NAME = "npcf-provisioning";
-  static inline const std::string API_BASE = "/" + API_NAME + "/";
-
-  static std::string get_provisioning_base();
-};
-
-}  // namespace oai::pcf::api
+}  // namespace oai::pcf::provisioning::api

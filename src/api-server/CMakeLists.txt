@@ -24,6 +24,10 @@ set(PCF_API_SERVER_DIR "${SRC_TOP_DIR}/api-server")
 include_directories(${PCF_API_SERVER_DIR}/api)
 include_directories(${PCF_API_SERVER_DIR}/impl)
 include_directories(${PCF_API_SERVER_DIR}/handler)
+include_directories(${PCF_API_SERVER_DIR}/provisioning_api/api)
+include_directories(${PCF_API_SERVER_DIR}/provisioning_api/impl)
+include_directories(${PCF_API_SERVER_DIR}/provisioning_api/handler)
+include_directories(${PCF_API_SERVER_DIR}/provisioning_api/model)
 include_directories(${PCF_API_SERVER_DIR}/)
 include_directories(${SRC_TOP_DIR}/pcf_app)
 include_directories(${SRC_TOP_DIR}/common)
@@ -43,6 +47,10 @@ file(GLOB PCF_API_SERVER_src_files
     ${PCF_API_SERVER_DIR}/api/*.cpp
     ${PCF_API_SERVER_DIR}/impl/*.cpp
     ${PCF_API_SERVER_DIR}/handler/*.cpp
+    ${PCF_API_SERVER_DIR}/provisioning_api/model/*.cpp
+    ${PCF_API_SERVER_DIR}/provisioning_api/handler/*.cpp
+    ${PCF_API_SERVER_DIR}/provisioning_api/api/*.cpp
+    ${PCF_API_SERVER_DIR}/provisioning_api/impl/*.cpp
 )
  
 add_library(PCF_API STATIC

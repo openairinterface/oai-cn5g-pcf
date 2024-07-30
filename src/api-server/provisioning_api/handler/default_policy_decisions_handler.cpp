@@ -19,33 +19,45 @@
  *      contact@openairinterface.org
  */
 
-/*! \file api_defs.h
+/*! \file default_policy_decisions_handler.cpp
  \brief
- \author  Stefan Spettel
+ \author  Lukas Rotheneder
  \company phine.tech
- \date 2023
- \email: stefan.spettel@phine.tech
+ \date 2024
+ \email: lukas.rotheneder@phine.tech
  */
 
-#pragma once
-#include <string>
+#include "default_policy_decisions_handler.h"
+#include <nlohmann/json.hpp>
 
-namespace oai::pcf::api {
-class sm_policies {
- public:
-  static inline const std::string API_NAME     = "npcf-smpolicycontrol";
-  static inline const std::string API_BASE     = "/" + API_NAME + "/";
-  static inline const std::string CREATE_ROUTE = "/sm-policies";
+namespace oai::pcf::provisioning::api {
 
-  static std::string get_route();
-};
+using namespace oai::pcf::api;
+using namespace oai::common::sbi;
 
-class policy_decision_provisioning {
- public:
-  static inline const std::string API_NAME = "npcf-provisioning";
-  static inline const std::string API_BASE = "/" + API_NAME + "/";
+api_response default_policy_decisions_handler::default_decision_get() {
+  std::string content_type = "application/problem+json";
+  api_response response;
 
-  static std::string get_provisioning_base();
-};
+  nlohmann::json json_data;
+  json_data = m_pccRules;
 
-}  // namespace oai::pcf::api
+  response.headers.add<Pistache::Http::Header::ContentType>(
+      Pistache::Http::Mime::MediaType(content_type));
+  response.body        = json_data.dump();
+  response.status_code = http_status_code::OK;
+
+  return response;
+}
+
+api_response default_policy_decisions_handler::default_decision_put(
+    const std::vector<std::string>& pccRules) {
+  api_response response;
+
+  m_pccRules = pccRules;
+
+  response.status_code = http_status_code::OK;
+
+  return response;
+}
+}  // namespace oai::pcf::provisioning::api

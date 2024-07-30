@@ -40,10 +40,14 @@
 #include "pcf_config.hpp"
 #include "api_defs.h"
 #include "SmPolicyContextData.h"
+#include "PccRule.h"
+#include "QosData.h"
+#include "TrafficControlData.h"
 
 using namespace nghttp2::asio_http2;
 using namespace nghttp2::asio_http2::server;
 using namespace oai::model::pcf;
+using namespace oai::model::common;
 using namespace oai::config::pcf;
 using namespace oai::pcf::api;
 using namespace oai::common::sbi;
@@ -163,6 +167,704 @@ void pcf_http2_server::start() {
         });
       });
 
+  /*******************************************************
+   *           Policy Decision Provisioning API
+   *******************************************************/
+
+  auto provisioning_base =
+      policy_decision_provisioning::get_provisioning_base();
+
+  // Default Policy API
+  server.handle(
+      provisioning_base + "/defaultDecision",
+      [&](const request& request, const response& response) {
+        api_response resp;
+        if (request.method() == "GET") {
+          resp = m_default_policy_decisions_handler->default_decision_get();
+        } else if (request.method() == "PUT") {
+          auto request_body = std::make_shared<std::stringstream>();
+          request.on_data([&, request_body](
+                              const uint8_t* data, std::size_t len) {
+            if (len > 0) {
+              std::copy(
+                  data, data + len,
+                  std::ostream_iterator<uint8_t>(*request_body));
+              return;
+            }
+            try {
+              std::vector<std::string> pccRules;
+              nlohmann::json::parse(request_body->str()).get_to(pccRules);
+              resp = m_default_policy_decisions_handler->default_decision_put(
+                  pccRules);
+            } catch (std::exception& e) {
+              handle_parsing_error(response, e);
+              return;
+            }
+          });
+        } else {
+          handle_method_not_exists(response, request);
+          return;
+        }
+
+        auto h_map = convert_headers(resp);
+        response.write_head(static_cast<unsigned int>(resp.status_code), h_map);
+        response.end(resp.body);
+        return;
+      });
+
+  /**
+   *  DNN Policy Decision
+   */
+  server.handle(
+      provisioning_base + "/dnnPolicyDecision/",
+      [&](const request& request, const response& response) {
+        api_response resp;
+        std::vector<std::string> split_result;
+        boost::split(split_result, request.uri().path, boost::is_any_of("/"));
+        std::string dnn;
+        dnn = split_result[split_result.size() - 1];
+        if (request.method() == "GET") {
+          resp =
+              m_dnn_policy_decisions_handler->dnn_policy_decision_dnn_get(dnn);
+        } else if (request.method() == "DELETE") {
+          resp = m_dnn_policy_decisions_handler->dnn_policy_decision_dnn_delete(
+              dnn);
+        } else if (request.method() == "PUT") {
+          auto request_body = std::make_shared<std::stringstream>();
+          request.on_data([&, request_body](
+                              const uint8_t* data, std::size_t len) {
+            if (len > 0) {
+              std::copy(
+                  data, data + len,
+                  std::ostream_iterator<uint8_t>(*request_body));
+              return;
+            }
+            try {
+              oai::pcf::provisioning::model::DnnPolicyDecision dnnDecision;
+              nlohmann::json::parse(request_body->str()).get_to(dnnDecision);
+              resp =
+                  m_dnn_policy_decisions_handler->dnn_policy_decision_dnn_put(
+                      dnn, dnnDecision);
+            } catch (std::exception& e) {
+              handle_parsing_error(response, e);
+              return;
+            }
+          });
+        } else {
+          handle_method_not_exists(response, request);
+          return;
+        }
+
+        auto h_map = convert_headers(resp);
+        response.write_head(static_cast<unsigned int>(resp.status_code), h_map);
+        response.end(resp.body);
+        return;
+      });
+
+  server.handle(
+      provisioning_base + "/dnnPolicyDecision",
+      [&](const request& request, const response& response) {
+        api_response resp;
+        if (request.method() == "POST") {
+          auto request_body = std::make_shared<std::stringstream>();
+          request.on_data([&, request_body](
+                              const uint8_t* data, std::size_t len) {
+            if (len > 0) {
+              std::copy(
+                  data, data + len,
+                  std::ostream_iterator<uint8_t>(*request_body));
+              return;
+            }
+            try {
+              oai::pcf::provisioning::model::DnnPolicyDecision dnnDecision;
+              nlohmann::json::parse(request_body->str()).get_to(dnnDecision);
+              resp = m_dnn_policy_decisions_handler->dnn_policy_decision_post(
+                  dnnDecision);
+            } catch (std::exception& e) {
+              handle_parsing_error(response, e);
+              return;
+            }
+          });
+        } else {
+          handle_method_not_exists(response, request);
+          return;
+        }
+
+        auto h_map = convert_headers(resp);
+        response.write_head(static_cast<unsigned int>(resp.status_code), h_map);
+        response.end(resp.body);
+        return;
+      });
+
+  server.handle(
+      provisioning_base + "/dnnPolicyDecisions",
+      [&](const request& request, const response& response) {
+        api_response resp;
+        if (request.method() == "GET") {
+          resp = m_dnn_policy_decisions_handler->dnn_policy_decisions_get();
+        } else {
+          handle_method_not_exists(response, request);
+          return;
+        }
+
+        auto h_map = convert_headers(resp);
+        response.write_head(static_cast<unsigned int>(resp.status_code), h_map);
+        response.end(resp.body);
+        return;
+      });
+
+  /**
+   *  Slice Policy Decision
+   */
+  server.handle(
+      provisioning_base + "/slicePolicyDecision",
+      [&](const request& request, const response& response) {
+        api_response resp;
+        if (request.method() == "POST") {
+          auto request_body = std::make_shared<std::stringstream>();
+          request.on_data([&, request_body](
+                              const uint8_t* data, std::size_t len) {
+            if (len > 0) {
+              std::copy(
+                  data, data + len,
+                  std::ostream_iterator<uint8_t>(*request_body));
+              return;
+            }
+            try {
+              oai::pcf::provisioning::model::SlicePolicyDecision sliceDecision;
+              nlohmann::json::parse(request_body->str()).get_to(sliceDecision);
+              resp =
+                  m_slice_policy_decisions_handler->slice_policy_decision_post(
+                      sliceDecision);
+            } catch (std::exception& e) {
+              handle_parsing_error(response, e);
+              return;
+            }
+          });
+        } else {
+          std::string query = request.uri().raw_query;
+          // Parse query parameters sst and sd
+          auto query_params = parse_query(query);
+
+          // Initialize variables to hold the expected parameters
+          int32_t sst = 0;
+          std::string sd;
+
+          // Check and parse the 'sst' parameter
+          if (query_params.find("sst") != query_params.end()) {
+            try {
+              sst = std::stoi(query_params["sst"]);
+            } catch (const std::exception& e) {
+              std::cerr << "Error parsing 'sst': " << e.what() << std::endl;
+              response.write_head(400);
+              response.end("Invalid 'sst' parameter");
+              return;
+            }
+          } else {
+            response.write_head(400);
+            response.end("Missing 'sst' parameter");
+            return;
+          }
+
+          // Check and parse the 'sd' parameter
+          if (query_params.find("sd") != query_params.end()) {
+            sd = query_params["sd"];
+          } else {
+            response.write_head(400);
+            response.end("Missing 'sd' parameter");
+            return;
+          }
+
+          // slice = split_result[split_result.size() - 1];
+          if (request.method() == "GET") {
+            resp = m_slice_policy_decisions_handler->slice_policy_decision_get(
+                sst, sd);
+          } else if (request.method() == "DELETE") {
+            resp =
+                m_slice_policy_decisions_handler->slice_policy_decision_delete(
+                    sst, sd);
+          } else if (request.method() == "PUT") {
+            auto request_body = std::make_shared<std::stringstream>();
+            request.on_data([&, request_body](
+                                const uint8_t* data, std::size_t len) {
+              if (len > 0) {
+                std::copy(
+                    data, data + len,
+                    std::ostream_iterator<uint8_t>(*request_body));
+                return;
+              }
+              try {
+                oai::pcf::provisioning::model::SlicePolicyDecision
+                    sliceDecision;
+                nlohmann::json::parse(request_body->str())
+                    .get_to(sliceDecision);
+                resp =
+                    m_slice_policy_decisions_handler->slice_policy_decision_put(
+                        sst, sd, sliceDecision);
+              } catch (std::exception& e) {
+                handle_parsing_error(response, e);
+                return;
+              }
+            });
+          } else {
+            handle_method_not_exists(response, request);
+            return;
+          }
+        }
+
+        auto h_map = convert_headers(resp);
+        response.write_head(static_cast<unsigned int>(resp.status_code), h_map);
+        response.end(resp.body);
+        return;
+      });
+
+  server.handle(
+      provisioning_base + "/slicePolicyDecisions",
+      [&](const request& request, const response& response) {
+        api_response resp;
+        if (request.method() == "GET") {
+          resp = m_slice_policy_decisions_handler->slice_policy_decisions_get();
+        } else {
+          handle_method_not_exists(response, request);
+          return;
+        }
+
+        auto h_map = convert_headers(resp);
+        response.write_head(static_cast<unsigned int>(resp.status_code), h_map);
+        response.end(resp.body);
+        return;
+      });
+
+  /**
+   *  Supi Policy Decision
+   */
+  server.handle(
+      provisioning_base + "/supiPolicyDecision/",
+      [&](const request& request, const response& response) {
+        api_response resp;
+        std::vector<std::string> split_result;
+        boost::split(split_result, request.uri().path, boost::is_any_of("/"));
+        std::string supi;
+        supi = split_result[split_result.size() - 1];
+        if (request.method() == "GET") {
+          resp = m_supi_policy_decisions_handler->supi_policy_decision_supi_get(
+              supi);
+        } else if (request.method() == "DELETE") {
+          resp =
+              m_supi_policy_decisions_handler->supi_policy_decision_supi_delete(
+                  supi);
+        } else if (request.method() == "PUT") {
+          auto request_body = std::make_shared<std::stringstream>();
+          request.on_data([&, request_body](
+                              const uint8_t* data, std::size_t len) {
+            if (len > 0) {
+              std::copy(
+                  data, data + len,
+                  std::ostream_iterator<uint8_t>(*request_body));
+              return;
+            }
+            try {
+              oai::pcf::provisioning::model::SupiPolicyDecision supiDecision;
+              nlohmann::json::parse(request_body->str()).get_to(supiDecision);
+              resp = m_supi_policy_decisions_handler
+                         ->supi_policy_decision_supi_put(supi, supiDecision);
+            } catch (std::exception& e) {
+              handle_parsing_error(response, e);
+              return;
+            }
+          });
+        } else {
+          handle_method_not_exists(response, request);
+          return;
+        }
+
+        auto h_map = convert_headers(resp);
+        response.write_head(static_cast<unsigned int>(resp.status_code), h_map);
+        response.end(resp.body);
+        return;
+      });
+
+  server.handle(
+      provisioning_base + "/supiPolicyDecision",
+      [&](const request& request, const response& response) {
+        api_response resp;
+        if (request.method() == "POST") {
+          auto request_body = std::make_shared<std::stringstream>();
+          request.on_data([&, request_body](
+                              const uint8_t* data, std::size_t len) {
+            if (len > 0) {
+              std::copy(
+                  data, data + len,
+                  std::ostream_iterator<uint8_t>(*request_body));
+              return;
+            }
+            try {
+              oai::pcf::provisioning::model::SupiPolicyDecision supiDecision;
+              nlohmann::json::parse(request_body->str()).get_to(supiDecision);
+              resp = m_supi_policy_decisions_handler->supi_policy_decision_post(
+                  supiDecision);
+            } catch (std::exception& e) {
+              handle_parsing_error(response, e);
+              return;
+            }
+          });
+        } else {
+          handle_method_not_exists(response, request);
+          return;
+        }
+
+        auto h_map = convert_headers(resp);
+        response.write_head(static_cast<unsigned int>(resp.status_code), h_map);
+        response.end(resp.body);
+        return;
+      });
+
+  server.handle(
+      provisioning_base + "/supiPolicyDecisions",
+      [&](const request& request, const response& response) {
+        api_response resp;
+        if (request.method() == "GET") {
+          auto request_body = std::make_shared<std::stringstream>();
+          request.on_data([&, request_body](
+                              const uint8_t* data, std::size_t len) {
+            if (len > 0) {
+              std::copy(
+                  data, data + len,
+                  std::ostream_iterator<uint8_t>(*request_body));
+              return;
+            }
+            try {
+              resp =
+                  m_supi_policy_decisions_handler->supi_policy_decisions_get();
+            } catch (std::exception& e) {
+              handle_parsing_error(response, e);
+              return;
+            }
+          });
+        } else {
+          handle_method_not_exists(response, request);
+          return;
+        }
+
+        auto h_map = convert_headers(resp);
+        response.write_head(static_cast<unsigned int>(resp.status_code), h_map);
+        response.end(resp.body);
+        return;
+      });
+
+  /**
+   *  PCC Rules
+   */
+  server.handle(
+      provisioning_base + "/pccRule/",
+      [&](const request& request, const response& response) {
+        api_response resp;
+        std::vector<std::string> split_result;
+        boost::split(split_result, request.uri().path, boost::is_any_of("/"));
+        std::string pccRuleId;
+        pccRuleId = split_result[split_result.size() - 1];
+        if (request.method() == "GET") {
+          resp = m_pcc_rules_handler->pcc_rule_pcc_rule_id_get(pccRuleId);
+        } else if (request.method() == "DELETE") {
+          resp = m_pcc_rules_handler->pcc_rule_pcc_rule_id_delete(pccRuleId);
+        } else if (request.method() == "PUT") {
+          auto request_body = std::make_shared<std::stringstream>();
+          request.on_data(
+              [&, request_body](const uint8_t* data, std::size_t len) {
+                if (len > 0) {
+                  std::copy(
+                      data, data + len,
+                      std::ostream_iterator<uint8_t>(*request_body));
+                  return;
+                }
+                try {
+                  PccRule pccRule;
+                  nlohmann::json::parse(request_body->str()).get_to(pccRule);
+                  resp = m_pcc_rules_handler->pcc_rule_pcc_rule_id_put(
+                      pccRuleId, pccRule);
+                } catch (std::exception& e) {
+                  handle_parsing_error(response, e);
+                  return;
+                }
+              });
+        } else {
+          handle_method_not_exists(response, request);
+          return;
+        }
+
+        auto h_map = convert_headers(resp);
+        response.write_head(static_cast<unsigned int>(resp.status_code), h_map);
+        response.end(resp.body);
+        return;
+      });
+
+  server.handle(
+      provisioning_base + "/pccRule",
+      [&](const request& request, const response& response) {
+        api_response resp;
+        if (request.method() == "POST") {
+          auto request_body = std::make_shared<std::stringstream>();
+          request.on_data(
+              [&, request_body](const uint8_t* data, std::size_t len) {
+                if (len > 0) {
+                  std::copy(
+                      data, data + len,
+                      std::ostream_iterator<uint8_t>(*request_body));
+                  return;
+                }
+                try {
+                  PccRule pccRule;
+                  nlohmann::json::parse(request_body->str()).get_to(pccRule);
+                  resp = m_pcc_rules_handler->pcc_rule_post(pccRule);
+                } catch (std::exception& e) {
+                  handle_parsing_error(response, e);
+                  return;
+                }
+              });
+        } else {
+          handle_method_not_exists(response, request);
+          return;
+        }
+
+        auto h_map = convert_headers(resp);
+        response.write_head(static_cast<unsigned int>(resp.status_code), h_map);
+        response.end(resp.body);
+        return;
+      });
+
+  server.handle(
+      provisioning_base + "/pccRules",
+      [&](const request& request, const response& response) {
+        api_response resp;
+        if (request.method() == "GET") {
+          auto request_body = std::make_shared<std::stringstream>();
+          request.on_data(
+              [&, request_body](const uint8_t* data, std::size_t len) {
+                if (len > 0) {
+                  std::copy(
+                      data, data + len,
+                      std::ostream_iterator<uint8_t>(*request_body));
+                  return;
+                }
+                try {
+                  resp = m_pcc_rules_handler->pcc_rules_get();
+                } catch (std::exception& e) {
+                  handle_parsing_error(response, e);
+                  return;
+                }
+              });
+        } else {
+          handle_method_not_exists(response, request);
+          return;
+        }
+
+        auto h_map = convert_headers(resp);
+        response.write_head(static_cast<unsigned int>(resp.status_code), h_map);
+        response.end(resp.body);
+        return;
+      });
+
+  /**
+   *  Qos Data
+   */
+  server.handle(
+      provisioning_base + "/qosData/",
+      [&](const request& request, const response& response) {
+        api_response resp;
+        std::vector<std::string> split_result;
+        boost::split(split_result, request.uri().path, boost::is_any_of("/"));
+        std::string qosDataId;
+        qosDataId = split_result[split_result.size() - 1];
+        if (request.method() == "GET") {
+          resp = m_qos_data_handler->qos_data_qos_id_get(qosDataId);
+        } else if (request.method() == "DELETE") {
+          resp = m_qos_data_handler->qos_data_qos_id_delete(qosDataId);
+        } else if (request.method() == "PUT") {
+          auto request_body = std::make_shared<std::stringstream>();
+          request.on_data([&, request_body](
+                              const uint8_t* data, std::size_t len) {
+            if (len > 0) {
+              std::copy(
+                  data, data + len,
+                  std::ostream_iterator<uint8_t>(*request_body));
+              return;
+            }
+            try {
+              QosData qosData;
+              nlohmann::json::parse(request_body->str()).get_to(qosData);
+              resp =
+                  m_qos_data_handler->qos_data_qos_id_put(qosDataId, qosData);
+            } catch (std::exception& e) {
+              handle_parsing_error(response, e);
+              return;
+            }
+          });
+        } else {
+          handle_method_not_exists(response, request);
+          return;
+        }
+
+        auto h_map = convert_headers(resp);
+        response.write_head(static_cast<unsigned int>(resp.status_code), h_map);
+        response.end(resp.body);
+        return;
+      });
+
+  server.handle(
+      provisioning_base + "/qosData",
+      [&](const request& request, const response& response) {
+        api_response resp;
+        if (request.method() == "POST") {
+          auto request_body = std::make_shared<std::stringstream>();
+          request.on_data(
+              [&, request_body](const uint8_t* data, std::size_t len) {
+                if (len > 0) {
+                  std::copy(
+                      data, data + len,
+                      std::ostream_iterator<uint8_t>(*request_body));
+                  return;
+                }
+                try {
+                  QosData qosData;
+                  nlohmann::json::parse(request_body->str()).get_to(qosData);
+                  resp = m_qos_data_handler->qos_data_post(qosData);
+                } catch (std::exception& e) {
+                  handle_parsing_error(response, e);
+                  return;
+                }
+              });
+        } else if (request.method() == "GET") {
+          auto request_body = std::make_shared<std::stringstream>();
+          request.on_data(
+              [&, request_body](const uint8_t* data, std::size_t len) {
+                if (len > 0) {
+                  std::copy(
+                      data, data + len,
+                      std::ostream_iterator<uint8_t>(*request_body));
+                  return;
+                }
+                try {
+                  resp = m_qos_data_handler->qos_data_get();
+                } catch (std::exception& e) {
+                  handle_parsing_error(response, e);
+                  return;
+                }
+              });
+        } else {
+          handle_method_not_exists(response, request);
+          return;
+        }
+
+        auto h_map = convert_headers(resp);
+        response.write_head(static_cast<unsigned int>(resp.status_code), h_map);
+        response.end(resp.body);
+        return;
+      });
+
+  /**
+   *  Qos Data
+   */
+  server.handle(
+      provisioning_base + "/trafficControlData/",
+      [&](const request& request, const response& response) {
+        api_response resp;
+        std::vector<std::string> split_result;
+        boost::split(split_result, request.uri().path, boost::is_any_of("/"));
+        std::string trafficControlId;
+        trafficControlId = split_result[split_result.size() - 1];
+        if (request.method() == "GET") {
+          resp = m_traffic_control_data_handler->traffic_control_data_tc_id_get(
+              trafficControlId);
+        } else if (request.method() == "DELETE") {
+          resp =
+              m_traffic_control_data_handler->traffic_control_data_tc_id_delete(
+                  trafficControlId);
+        } else if (request.method() == "PUT") {
+          auto request_body = std::make_shared<std::stringstream>();
+          request.on_data(
+              [&, request_body](const uint8_t* data, std::size_t len) {
+                if (len > 0) {
+                  std::copy(
+                      data, data + len,
+                      std::ostream_iterator<uint8_t>(*request_body));
+                  return;
+                }
+                try {
+                  TrafficControlData trafficControlData;
+                  nlohmann::json::parse(request_body->str())
+                      .get_to(trafficControlData);
+                  resp = m_traffic_control_data_handler
+                             ->traffic_control_data_tc_id_put(
+                                 trafficControlId, trafficControlData);
+                } catch (std::exception& e) {
+                  handle_parsing_error(response, e);
+                  return;
+                }
+              });
+        } else {
+          handle_method_not_exists(response, request);
+          return;
+        }
+
+        auto h_map = convert_headers(resp);
+        response.write_head(static_cast<unsigned int>(resp.status_code), h_map);
+        response.end(resp.body);
+        return;
+      });
+
+  server.handle(
+      provisioning_base + "/trafficControlData",
+      [&](const request& request, const response& response) {
+        api_response resp;
+        if (request.method() == "POST") {
+          auto request_body = std::make_shared<std::stringstream>();
+          request.on_data([&, request_body](
+                              const uint8_t* data, std::size_t len) {
+            if (len > 0) {
+              std::copy(
+                  data, data + len,
+                  std::ostream_iterator<uint8_t>(*request_body));
+              return;
+            }
+            try {
+              TrafficControlData trafficControlData;
+              nlohmann::json::parse(request_body->str())
+                  .get_to(trafficControlData);
+              resp = m_traffic_control_data_handler->traffic_control_data_post(
+                  trafficControlData);
+            } catch (std::exception& e) {
+              handle_parsing_error(response, e);
+              return;
+            }
+          });
+        } else if (request.method() == "GET") {
+          auto request_body = std::make_shared<std::stringstream>();
+          request.on_data([&, request_body](
+                              const uint8_t* data, std::size_t len) {
+            if (len > 0) {
+              std::copy(
+                  data, data + len,
+                  std::ostream_iterator<uint8_t>(*request_body));
+              return;
+            }
+            try {
+              resp = m_traffic_control_data_handler->traffic_control_data_get();
+            } catch (std::exception& e) {
+              handle_parsing_error(response, e);
+              return;
+            }
+          });
+        } else {
+          handle_method_not_exists(response, request);
+          return;
+        }
+
+        auto h_map = convert_headers(resp);
+        response.write_head(static_cast<unsigned int>(resp.status_code), h_map);
+        response.end(resp.body);
+        return;
+      });
+
   // Default Route
   server.handle("/", [&](const request& request, const response& response) {
     handle_method_not_exists(response, request);
@@ -212,4 +914,35 @@ header_map pcf_http2_server::convert_headers(const api_response& response) {
     h_map.emplace(hdr->name(), header_value{ss.str(), false});
   }
   return h_map;
+}
+
+std::map<std::string, std::string> pcf_http2_server::parse_query(
+    const std::string& query) {
+  std::map<std::string, std::string> query_map;
+  std::string::size_type start = 0;
+  std::string::size_type end   = 0;
+
+  while ((end = query.find('&', start)) != std::string::npos) {
+    std::string key_value            = query.substr(start, end - start);
+    std::string::size_type delimiter = key_value.find('=');
+
+    if (delimiter != std::string::npos) {
+      std::string key   = key_value.substr(0, delimiter);
+      std::string value = key_value.substr(delimiter + 1);
+      query_map[key]    = value;
+    }
+
+    start = end + 1;
+  }
+
+  // Handle the last key-value pair
+  std::string key_value            = query.substr(start);
+  std::string::size_type delimiter = key_value.find('=');
+  if (delimiter != std::string::npos) {
+    std::string key   = key_value.substr(0, delimiter);
+    std::string value = key_value.substr(delimiter + 1);
+    query_map[key]    = value;
+  }
+
+  return query_map;
 }

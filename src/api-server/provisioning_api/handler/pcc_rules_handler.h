@@ -19,33 +19,33 @@
  *      contact@openairinterface.org
  */
 
-/*! \file api_defs.h
+/*! \file pcc_rules_handler.h
  \brief
- \author  Stefan Spettel
+ \author  Lukas Rotheneder
  \company phine.tech
- \date 2023
- \email: stefan.spettel@phine.tech
+ \date 2024
+ \email: lukas.rotheneder@phine.tech
  */
 
 #pragma once
+
 #include <string>
+#include <vector>
+#include "api_response.h"
+#include "PccRule.h"
 
-namespace oai::pcf::api {
-class sm_policies {
+namespace oai::pcf::provisioning::api {
+
+class pcc_rules_handler {
  public:
-  static inline const std::string API_NAME     = "npcf-smpolicycontrol";
-  static inline const std::string API_BASE     = "/" + API_NAME + "/";
-  static inline const std::string CREATE_ROUTE = "/sm-policies";
-
-  static std::string get_route();
+  oai::pcf::api::api_response pcc_rule_pcc_rule_id_delete(
+      const std::string& pccRuleId);
+  oai::pcf::api::api_response pcc_rule_pcc_rule_id_get(
+      const std::string& pccRuleId);
+  oai::pcf::api::api_response pcc_rule_pcc_rule_id_put(
+      const std::string& pccRuleId, const oai::model::pcf::PccRule& pccRule);
+  oai::pcf::api::api_response pcc_rule_post(
+      const oai::model::pcf::PccRule& pccRule);
+  oai::pcf::api::api_response pcc_rules_get();
 };
-
-class policy_decision_provisioning {
- public:
-  static inline const std::string API_NAME = "npcf-provisioning";
-  static inline const std::string API_BASE = "/" + API_NAME + "/";
-
-  static std::string get_provisioning_base();
-};
-
-}  // namespace oai::pcf::api
+}  // namespace oai::pcf::provisioning::api
