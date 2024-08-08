@@ -43,6 +43,7 @@ RUN dnf install 'dnf-command(config-manager)' -y && \
         diffutils \
         libasan \
         wget \
+        gcc-plugin-devel \
         file && \
     echo "/usr/local/lib" > /etc/ld.so.conf.d/local-lib.conf && \
     echo "/usr/local/lib64" >> /etc/ld.so.conf.d/local-lib.conf
@@ -107,6 +108,11 @@ COPY --from=oai-pcf-builder \
     /usr/local/lib64/libfmt.so \
     /usr/local/lib64/libyaml-cpp.so.0.* \
     /usr/local/lib64/libcpr.so.1 \
+    /usr/lib64/mysql/libmysqlclient.so.21 \
+    /usr/local/lib/libssl-1.1.so \
+    /usr/local/lib/libcrypto-1.1.so \
+    /usr/local/lib/libodb-2.5.0-b.27.so \
+    /usr/local/lib/libodb-mysql-2.5.0-b.27.so \
     /usr/lib64/
 
 RUN ldconfig && \

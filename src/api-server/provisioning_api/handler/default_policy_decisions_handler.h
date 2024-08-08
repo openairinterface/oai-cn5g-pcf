@@ -31,12 +31,15 @@
 
 #include <string>
 #include <vector>
+#include "handler_base.hpp"
 #include "api_response.h"
 
 namespace oai::pcf::provisioning::api {
 
-class default_policy_decisions_handler {
+class default_policy_decisions_handler : public handler_base {
  public:
+  default_policy_decisions_handler();
+
   /**
    * get default decision
    * @return api_response
@@ -50,8 +53,5 @@ class default_policy_decisions_handler {
    */
   oai::pcf::api::api_response default_decision_put(
       const std::vector<std::string>& pccRules);
-
- private:
-  std::vector<std::string> m_pccRules;
 };
 }  // namespace oai::pcf::provisioning::api

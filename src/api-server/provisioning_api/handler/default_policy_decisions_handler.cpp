@@ -28,36 +28,32 @@
  */
 
 #include "default_policy_decisions_handler.h"
+#include "database_wrapper_abstraction.hpp"
 #include <nlohmann/json.hpp>
+
+extern std::unique_ptr<oai::pcf::app::database_wrapper_abstraction>
+    db_connector;
 
 namespace oai::pcf::provisioning::api {
 
 using namespace oai::pcf::api;
 using namespace oai::common::sbi;
 
+default_policy_decisions_handler::default_policy_decisions_handler()
+    : handler_base(db_connector) {}
+
 api_response default_policy_decisions_handler::default_decision_get() {
-  std::string content_type = "application/problem+json";
-  api_response response;
-
-  nlohmann::json json_data;
-  json_data = m_pccRules;
-
-  response.headers.add<Pistache::Http::Header::ContentType>(
-      Pistache::Http::Mime::MediaType(content_type));
-  response.body        = json_data.dump();
-  response.status_code = http_status_code::OK;
-
-  return response;
+  return handle_request_with_error_handling_json_body([&]() -> nlohmann::json {
+    nlohmann::json json_data = db_connector->getDefaultPolicyDecision();
+    return json_data;
+  });
 }
 
 api_response default_policy_decisions_handler::default_decision_put(
     const std::vector<std::string>& pccRules) {
-  api_response response;
-
-  m_pccRules = pccRules;
-
-  response.status_code = http_status_code::OK;
-
-  return response;
+  return handle_request_with_error_handling([&]() -> bool {
+    return db_connector->setDefaultPolicyDecision(pccRules);
+  });
 }
+
 }  // namespace oai::pcf::provisioning::api

@@ -30,6 +30,7 @@ include_directories(${PCF_API_SERVER_DIR}/provisioning_api/handler)
 include_directories(${PCF_API_SERVER_DIR}/provisioning_api/model)
 include_directories(${PCF_API_SERVER_DIR}/)
 include_directories(${SRC_TOP_DIR}/pcf_app)
+include_directories(${SRC_TOP_DIR}/pcf_app/sm_policy/database)
 include_directories(${SRC_TOP_DIR}/common)
 include_directories(${SRC_TOP_DIR}/common/utils)
 include_directories(${SRC_TOP_DIR}/${MOUNTED_COMMON}/logger)
@@ -48,6 +49,7 @@ file(GLOB PCF_API_SERVER_src_files
     ${PCF_API_SERVER_DIR}/impl/*.cpp
     ${PCF_API_SERVER_DIR}/handler/*.cpp
     ${PCF_API_SERVER_DIR}/provisioning_api/model/*.cpp
+    ${PCF_API_SERVER_DIR}/provisioning_api/model/*.cxx
     ${PCF_API_SERVER_DIR}/provisioning_api/handler/*.cpp
     ${PCF_API_SERVER_DIR}/provisioning_api/api/*.cpp
     ${PCF_API_SERVER_DIR}/provisioning_api/impl/*.cpp

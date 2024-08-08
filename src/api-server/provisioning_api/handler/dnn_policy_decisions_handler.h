@@ -33,11 +33,14 @@
 #include <vector>
 #include "api_response.h"
 #include "DnnPolicyDecision.h"
+#include "handler_base.hpp"
 
 namespace oai::pcf::provisioning::api {
 
-class dnn_policy_decisions_handler {
+class dnn_policy_decisions_handler : public handler_base {
  public:
+  dnn_policy_decisions_handler();
+
   /**
    * delete dnn policy decision for dnn
    * @param dnn

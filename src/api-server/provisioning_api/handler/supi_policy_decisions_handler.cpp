@@ -29,26 +29,33 @@
 
 #include "supi_policy_decisions_handler.h"
 #include <nlohmann/json.hpp>
+#include "database_wrapper_abstraction.hpp"
+
+extern std::unique_ptr<oai::pcf::app::database_wrapper_abstraction>
+    db_connector;
 
 namespace oai::pcf::provisioning::api {
 
 using namespace oai::pcf::api;
 using namespace oai::common::sbi;
 
+supi_policy_decisions_handler::supi_policy_decisions_handler()
+    : handler_base(db_connector) {}
+
 oai::pcf::api::api_response
 supi_policy_decisions_handler::supi_policy_decision_supi_get(
     const std::string& supi) {
-  api_response response;
-  response.status_code = http_status_code::NOT_IMPLEMENTED;
-  return response;
+  return handle_request_with_error_handling_json_body([&]() -> nlohmann::json {
+    nlohmann::json json_data = db_connector->getSupiPolicyDecision(supi);
+    return json_data;
+  });
 }
 
 oai::pcf::api::api_response
 supi_policy_decisions_handler::supi_policy_decision_supi_delete(
     const std::string& supi) {
-  api_response response;
-  response.status_code = http_status_code::NOT_IMPLEMENTED;
-  return response;
+  return handle_request_with_error_handling(
+      [&]() -> bool { return db_connector->deleteSupiPolicyDecision(supi); });
 }
 
 oai::pcf::api::api_response
@@ -56,24 +63,32 @@ supi_policy_decisions_handler::supi_policy_decision_supi_put(
     const std::string& supi,
     const oai::pcf::provisioning::model::SupiPolicyDecision&
         supiPolicyDecision) {
-  api_response response;
-  response.status_code = http_status_code::NOT_IMPLEMENTED;
-  return response;
+  if (supi != supiPolicyDecision.getSupi()) {
+    api_response response;
+    response.status_code = http_status_code::BAD_REQUEST;
+    response.body        = "Decision and supi do not match";
+    return response;
+  }
+
+  return handle_request_with_error_handling([&]() -> bool {
+    return db_connector->updateSupiPolicyDecision(supiPolicyDecision);
+  });
 }
 
 oai::pcf::api::api_response
 supi_policy_decisions_handler::supi_policy_decision_post(
     const oai::pcf::provisioning::model::SupiPolicyDecision&
         supiPolicyDecision) {
-  api_response response;
-  response.status_code = http_status_code::NOT_IMPLEMENTED;
-  return response;
+  return handle_request_with_error_handling([&]() -> bool {
+    return db_connector->createSupiPolicyDecision(supiPolicyDecision);
+  });
 }
 
 oai::pcf::api::api_response
 supi_policy_decisions_handler::supi_policy_decisions_get() {
-  api_response response;
-  response.status_code = http_status_code::NOT_IMPLEMENTED;
-  return response;
+  return handle_request_with_error_handling_json_body([&]() -> nlohmann::json {
+    nlohmann::json json_data = db_connector->getAllSupiPolicyDecisions();
+    return json_data;
+  });
 }
 }  // namespace oai::pcf::provisioning::api

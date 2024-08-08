@@ -33,11 +33,14 @@
 #include <vector>
 #include "api_response.h"
 #include "SupiPolicyDecision.h"
+#include "handler_base.hpp"
 
 namespace oai::pcf::provisioning::api {
 
-class supi_policy_decisions_handler {
+class supi_policy_decisions_handler : public handler_base {
  public:
+  supi_policy_decisions_handler();
+
   /**
    * create new supi policy decision
    * @param supiPolicyDecision

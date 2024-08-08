@@ -29,48 +29,64 @@
 
 #include "traffic_control_data_handler.h"
 #include <nlohmann/json.hpp>
+#include "database_wrapper_abstraction.hpp"
+
+extern std::unique_ptr<oai::pcf::app::database_wrapper_abstraction>
+    db_connector;
 
 namespace oai::pcf::provisioning::api {
 
 using namespace oai::pcf::api;
 using namespace oai::common::sbi;
 
+traffic_control_data_handler::traffic_control_data_handler()
+    : handler_base(db_connector) {}
+
 oai::pcf::api::api_response
 traffic_control_data_handler::traffic_control_data_tc_id_delete(
     const std::string& tcId) {
-  api_response response;
-  response.status_code = http_status_code::NOT_IMPLEMENTED;
-  return response;
+  return handle_request_with_error_handling(
+      [&]() -> bool { return db_connector->deleteTrafficControlData(tcId); });
 }
 
 oai::pcf::api::api_response
 traffic_control_data_handler::traffic_control_data_tc_id_put(
     const std::string& tcId,
     const oai::model::pcf::TrafficControlData& trafficControlData) {
-  api_response response;
-  response.status_code = http_status_code::NOT_IMPLEMENTED;
-  return response;
+  if (tcId != trafficControlData.getTcId()) {
+    api_response response;
+    response.status_code = http_status_code::BAD_REQUEST;
+    response.body        = "Traffic control data and Id do not match";
+    return response;
+  }
+
+  return handle_request_with_error_handling([&]() -> bool {
+    return db_connector->updateTrafficControlData(trafficControlData);
+  });
 }
 
 oai::pcf::api::api_response
 traffic_control_data_handler::traffic_control_data_tc_id_get(
     const std::string& tcId) {
-  api_response response;
-  response.status_code = http_status_code::NOT_IMPLEMENTED;
-  return response;
+  return handle_request_with_error_handling_json_body([&]() -> nlohmann::json {
+    nlohmann::json json_data = db_connector->getTrafficControlData(tcId);
+    return json_data;
+  });
 }
 
 oai::pcf::api::api_response
 traffic_control_data_handler::traffic_control_data_post(
     const oai::model::pcf::TrafficControlData& trafficControlData) {
-  api_response response;
-  response.status_code = http_status_code::NOT_IMPLEMENTED;
-  return response;
+  return handle_request_with_error_handling([&]() -> bool {
+    return db_connector->createTrafficControlData(trafficControlData);
+  });
 }
 
 oai::pcf::api::api_response
 traffic_control_data_handler::traffic_control_data_get() {
-  api_response response;
-  return response;
+  return handle_request_with_error_handling_json_body([&]() -> nlohmann::json {
+    nlohmann::json json_data = db_connector->getAllTrafficControlData();
+    return json_data;
+  });
 }
 }  // namespace oai::pcf::provisioning::api

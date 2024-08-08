@@ -28,7 +28,11 @@
  */
 
 #include "slice_policy_decisions_handler.h"
+#include "database_wrapper_abstraction.hpp"
 #include <nlohmann/json.hpp>
+
+extern std::unique_ptr<oai::pcf::app::database_wrapper_abstraction>
+    db_connector;
 
 namespace oai::pcf::provisioning::api {
 
@@ -37,20 +41,48 @@ using namespace oai::common::sbi;
 using namespace oai::pcf::provisioning::model;
 using namespace oai::model::common;
 
+slice_policy_decisions_handler::slice_policy_decisions_handler()
+    : handler_base(db_connector) {}
+
 oai::pcf::api::api_response
 slice_policy_decisions_handler::slice_policy_decision_get(
     const std::optional<int32_t>& sst, const std::optional<std::string>& sd) {
-  api_response response;
-  response.status_code = http_status_code::NOT_IMPLEMENTED;
-  return response;
+  if (sst.has_value()) {
+    Snssai slice(sst.value());
+    if (sd.has_value()) {
+      slice.setSd(sd.value());
+    }
+    return handle_request_with_error_handling([&]() -> bool {
+      return db_connector->deleteSlicePolicyDecision(slice);
+    });
+  } else {
+    api_response response;
+    response.status_code = http_status_code::BAD_REQUEST;
+    response.body        = "SST is mandatory";
+    return response;
+  }
 }
 
 oai::pcf::api::api_response
 slice_policy_decisions_handler::slice_policy_decision_delete(
     const std::optional<int32_t>& sst, const std::optional<std::string>& sd) {
-  api_response response;
-  response.status_code = http_status_code::NOT_IMPLEMENTED;
-  return response;
+  if (sst.has_value()) {
+    Snssai slice(sst.value());
+    if (sd.has_value()) {
+      slice.setSd(sd.value());
+    }
+    return handle_request_with_error_handling_json_body(
+        [&]() -> nlohmann::json {
+          nlohmann::json json_data =
+              db_connector->getSlicePolicyDecision(slice);
+          return json_data;
+        });
+  } else {
+    api_response response;
+    response.status_code = http_status_code::BAD_REQUEST;
+    response.body        = "SST is mandatory";
+    return response;
+  }
 }
 
 oai::pcf::api::api_response
@@ -58,23 +90,42 @@ slice_policy_decisions_handler::slice_policy_decision_put(
     const std::optional<int32_t>& sst, const std::optional<std::string>& sd,
     const oai::pcf::provisioning::model::SlicePolicyDecision&
         slicePolicyDecision) {
-  api_response response;
-  return response;
+  if (sst.has_value()) {
+    Snssai slice(sst.value());
+    if (sd.has_value()) {
+      slice.setSd(sd.value());
+    }
+    if (slice != slicePolicyDecision.getSnssai()) {
+      api_response response;
+      response.status_code = http_status_code::BAD_REQUEST;
+      response.body        = "Decision and slice do not match";
+      return response;
+    }
+    return handle_request_with_error_handling([&]() -> bool {
+      return db_connector->updateSlicePolicyDecision(slicePolicyDecision);
+    });
+  } else {
+    api_response response;
+    response.status_code = http_status_code::BAD_REQUEST;
+    response.body        = "SST is mandatory";
+    return response;
+  }
 }
 
 oai::pcf::api::api_response
 slice_policy_decisions_handler::slice_policy_decision_post(
     const oai::pcf::provisioning::model::SlicePolicyDecision&
         slicePolicyDecision) {
-  api_response response;
-  response.status_code = http_status_code::NOT_IMPLEMENTED;
-  return response;
+  return handle_request_with_error_handling([&]() -> bool {
+    return db_connector->createSlicePolicyDecision(slicePolicyDecision);
+  });
 }
 
 oai::pcf::api::api_response
 slice_policy_decisions_handler::slice_policy_decisions_get() {
-  api_response response;
-  response.status_code = http_status_code::NOT_IMPLEMENTED;
-  return response;
+  return handle_request_with_error_handling_json_body([&]() -> nlohmann::json {
+    nlohmann::json json_data = db_connector->getAllSlicePolicyDecisions();
+    return json_data;
+  });
 }
 }  // namespace oai::pcf::provisioning::api

@@ -67,7 +67,6 @@ class pcf_app {
   // for Event Handling
   pcf_event& m_event_sub;
   bs2::connection m_task_connection;
-  std::shared_ptr<database_wrapper_abstraction> db_connector;
 
   std::shared_ptr<pcf_smpc> m_pcf_smpc_service;
   std::shared_ptr<oai::pcf::app::sm_policy::policy_storage> m_policy_storage;

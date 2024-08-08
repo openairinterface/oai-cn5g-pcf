@@ -50,6 +50,8 @@ class Logger {
     oai::logger::logger_registry::register_logger(
         name, LOGGER_COMMON, log_stdout, log_rot_file);
     oai::logger::logger_registry::register_logger(
+        name, PCF_DB, log_stdout, log_rot_file);
+    oai::logger::logger_registry::register_logger(
         name, SYSTEM, log_stdout, log_rot_file);
   }
 

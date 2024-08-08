@@ -31,6 +31,8 @@
 #include "pcf_nrf.hpp"
 #include "logger.hpp"
 #include "pcf_config.hpp"
+#include "SupiPolicyDecision.h"
+#include "QosData.h"
 
 #include <stdexcept>
 
@@ -38,9 +40,9 @@ using namespace oai::pcf::app;
 using namespace oai::config::pcf;
 using namespace oai::model::pcf;
 
-using namespace std;
-
+using namespace std
 extern std::unique_ptr<pcf_config> pcf_cfg;
+extern std::unique_ptr<database_wrapper_abstraction> db_connector;
 
 //------------------------------------------------------------------------------
 pcf_app::pcf_app(pcf_event& ev) : m_event_sub(ev) {
@@ -52,7 +54,7 @@ pcf_app::pcf_app(pcf_event& ev) : m_event_sub(ev) {
       // Use the appropriate DB connector to initialize the connection to the DB
       if (boost::iequals(
               pcf_cfg->get_database_config().get_database_type(), "mysql")) {
-        db_connector = std::make_shared<mysql_db>(ev);
+        db_connector = std::make_unique<mysql_db>();
       } else {
         Logger::pcf_app().error(
             "PCF currently only supports MySQL for storing policies!");
@@ -60,12 +62,6 @@ pcf_app::pcf_app(pcf_event& ev) : m_event_sub(ev) {
       }
 
       Logger::pcf_app().startup("Connect to DB...");
-
-      if (!db_connector->initialize()) {
-        Logger::pcf_app().error("Error when initializing a connection with DB");
-        exit(-1);
-      }
-
       if (!db_connector->connect(MAX_FIRST_CONNECTION_RETRY)) {
         Logger::pcf_app().error("Could not establish the connection to the DB");
         exit(-1);
@@ -102,7 +98,7 @@ pcf_app::pcf_app(pcf_event& ev) : m_event_sub(ev) {
 //------------------------------------------------------------------------------
 pcf_app::~pcf_app() {
   Logger::pcf_app().debug("Delete PCF_APP instance...");
-  if (db_connector) db_connector->close_connection();
+  /*if (db_connector) db_connector->close_connection();*/
 }
 
 std::shared_ptr<pcf_smpc> pcf_app::get_pcf_smpc_service() {

@@ -102,6 +102,10 @@ RUN apt-get update && \
       libcurl?-gnutls \
       librtmp1 \
       libpsl5 \
+# Ubuntu 20 --> gcc-9-plugin-dev
+# Ubuntu 22 --> gcc-11-plugin-dev
+      gcc-?-plugin-dev \
+      libmysqlclient2? \
   && rm -rf /var/lib/apt/lists/*
 
 # Copying executable and generated libraries
@@ -122,6 +126,11 @@ COPY --from=oai-pcf-builder \
     /usr/local/lib/libcpr.so.1 \
     /usr/local/lib/libspdlog.so \
     /usr/local/lib/libfmt.so \
+    /usr/local/lib/libmysqlclient-21.so \
+    /usr/local/lib/libssl-1.1.so \
+    /usr/local/lib/libcrypto-1.1.so \
+    /usr/local/lib/libodb-2.5.0-b.27.so \
+    /usr/local/lib/libodb-mysql-2.5.0-b.27.so \
     ./
 
 RUN ldconfig && \

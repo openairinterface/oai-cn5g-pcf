@@ -38,11 +38,12 @@ using namespace oai::pcf::api;
 
 using namespace oai::config;
 
-std::unique_ptr<pcf_app> pcf_app_inst                    = nullptr;
-std::unique_ptr<pcf_config> pcf_cfg                      = nullptr;
-std::unique_ptr<PCFApiServer> pcf_api_server_1           = nullptr;
-std::unique_ptr<pcf_http2_server> pcf_api_server_2       = nullptr;
-std::shared_ptr<oai::http::http_client> http_client_inst = nullptr;
+std::unique_ptr<pcf_app> pcf_app_inst                      = nullptr;
+std::unique_ptr<pcf_config> pcf_cfg                        = nullptr;
+std::unique_ptr<PCFApiServer> pcf_api_server_1             = nullptr;
+std::unique_ptr<pcf_http2_server> pcf_api_server_2         = nullptr;
+std::shared_ptr<oai::http::http_client> http_client_inst   = nullptr;
+std::unique_ptr<database_wrapper_abstraction> db_connector = nullptr;
 
 //------------------------------------------------------------------------------
 void signal_handler_sigint(int s) {

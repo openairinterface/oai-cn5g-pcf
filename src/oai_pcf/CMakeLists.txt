@@ -217,6 +217,14 @@ endif()
 add_definitions("-DPACKAGE_VERSION=\"Branch: ${GIT_BRANCH} Abrev. Hash: ${GIT_COMMIT_HASH} Date: ${GIT_COMMIT_DATE}\"")
 add_definitions("-DPACKAGE_BUGREPORT=\"openaircn-user@lists.eurecom.fr\"")
 
+################################################################
+# ODB
+################################################################
+#include_directories(${ODB_INCLUDE_DIRS})
+#include_directories(${ODBMySQL_INCLUDE_DIRS})
+
+
+
 ###############################################################################
 # Include CMake modules to find other library
 ###############################################################################
@@ -276,6 +284,7 @@ ADD_SUBDIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/../../src/api-server ${CMAKE_CURREN
 add_definitions("-DPACKAGE_NAME=\"PCF\"")
 
 include_directories(${SRC_TOP_DIR}/pcf_app)
+include_directories(${SRC_TOP_DIR}/pcf_app/sm_policy/database)
 include_directories(${SRC_TOP_DIR}/oai_pcf)
 include_directories(${SRC_TOP_DIR}/common)
 include_directories(${SRC_TOP_DIR}/common/msg)
@@ -300,7 +309,11 @@ include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/http/http.cmake)
 include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/logger/logger.cmake)
 include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/config/config.cmake)
 include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/utils/utils.cmake)
+include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/model/pcf/pcf_model.cmake)
+include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/model/common_model/common_model.cmake)
 include_directories(${SRC_TOP_DIR}/${MOUNTED_COMMON}/utils)
+include_directories(${SRC_TOP_DIR}/${MOUNTED_COMMON}/model/pcf)
+include_directories(${SRC_TOP_DIR}/${MOUNTED_COMMON}/model/common_model)
 
 IF(STATIC_LINKING)
     SET(CMAKE_EXE_LINKER_FLAGS "-static")
@@ -310,4 +323,5 @@ IF(STATIC_LINKING)
 ENDIF(STATIC_LINKING)
 
 target_link_libraries (pcf ${ASAN}  -Wl,--start-group PCF PCF_API ${CRYPTO_LIBRARIES} -lnghttp2_asio -lboost_system -lboost_thread -lssl -lcrypto -lfmt -lspdlog dl -Wl,--end-group
-pthread m rt event boost_system -lboost_filesystem pistache curl -lyaml-cpp cpr::cpr -lmysqlclient)
+pthread m rt event boost_system -lboost_filesystem pistache curl -lyaml-cpp cpr::cpr -lodb -lodb-mysql -lmysqlclient odb odb-mysql)
+## ${ODB_LIBRARIES} ${ODBMySQL_LIBRARIES}

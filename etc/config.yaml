@@ -33,7 +33,7 @@ log_level:
 register_nf:
   general: yes
 
-http_version: 2
+http_version: 1
 
 ############## SBI Interfaces
 ### Each NF takes its local SBI interfaces and remote interfaces from here, unless it gets them using NRF discovery mechanisms
@@ -93,7 +93,7 @@ nfs:
       api_version: v1
       interface_name: eth0
 
-#### Common for UDR and AMF
+#### Common for UDR and AMF and PCF
 database:
   host: mysql
   user: test
@@ -206,10 +206,11 @@ dnns:
     ipv4_pool: "14.1.1.2 - 14.1.1.253"
 
 pcf:
+  use_db_for_policy_storage: yes # Use db instead of yaml, enables dynamic pcc rule creation via API
   local_policy:
-    policy_decisions_path: /openair-pcf/policies/policy_decisions
-    pcc_rules_path: /openair-pcf/policies/pcc_rules
-    traffic_rules_path: /openair-pcf/policies/traffic_rules
+    policy_decisions_path: /tmp/pcf/etc/policies/policy_decisions #/openair-pcf/policies/policy_decisions
+    pcc_rules_path: /tmp/pcf/etc/policies/pcc_rules
+    traffic_rules_path: /tmp/pcf/etc/policies/traffic_rules
 
 nssf:
   slice_config_path: /openair-nssf/etc/nssf_slice_config.yaml
