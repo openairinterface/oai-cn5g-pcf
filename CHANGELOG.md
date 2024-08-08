@@ -1,5 +1,17 @@
 # RELEASE NOTES: #
 
+## v2.1.0 -- August 2024 ##
+
+* Features
+  - Add possibility to read QoS values from file
+* Fixes
+  - Fix HTTP/2 server shutdown
+  - Use new FlowDirection fix
+* Tech Debt
+  - Stopping support for RHEL8/Rocky8 in favor of RHEL9/Rocky9
+  - HTTP client cpr library refactoring effort
+  - Resynch PCF with common source git-submodule and use utils from there
+
 ## v2.0.0 -- December 2023 ##
 
 * Features
