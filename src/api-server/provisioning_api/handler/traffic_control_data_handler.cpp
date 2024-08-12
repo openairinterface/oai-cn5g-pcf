@@ -39,9 +39,6 @@ namespace oai::pcf::provisioning::api {
 using namespace oai::pcf::api;
 using namespace oai::common::sbi;
 
-traffic_control_data_handler::traffic_control_data_handler()
-    : handler_base(db_connector) {}
-
 oai::pcf::api::api_response
 traffic_control_data_handler::traffic_control_data_tc_id_delete(
     const std::string& tcId) {

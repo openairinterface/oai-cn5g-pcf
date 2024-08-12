@@ -39,9 +39,6 @@ namespace oai::pcf::provisioning::api {
 using namespace oai::pcf::api;
 using namespace oai::common::sbi;
 
-default_policy_decisions_handler::default_policy_decisions_handler()
-    : handler_base(db_connector) {}
-
 api_response default_policy_decisions_handler::default_decision_get() {
   return handle_request_with_error_handling_json_body([&]() -> nlohmann::json {
     nlohmann::json json_data = db_connector->getDefaultPolicyDecision();

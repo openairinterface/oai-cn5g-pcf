@@ -39,7 +39,6 @@ namespace oai::pcf::provisioning::api {
 
 class traffic_control_data_handler : public handler_base {
  public:
-  traffic_control_data_handler();
 
   /**
    *

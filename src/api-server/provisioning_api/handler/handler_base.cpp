@@ -30,21 +30,20 @@
 #include "handler_base.hpp"
 #include "database_wrapper.hpp"
 
+extern std::unique_ptr<oai::pcf::app::database_wrapper_abstraction>
+    db_connector;
+
 namespace oai::pcf::provisioning::api {
 
 using namespace oai::pcf::app;
 using namespace oai::common::sbi;
-
-handler_base::handler_base(
-    std::unique_ptr<database_wrapper_abstraction>& db_connector)
-    : db_connector_(db_connector) {}
 
 oai::pcf::api::api_response handler_base::handle_request_with_error_handling(
     std::function<bool()> db_operation) {
   oai::pcf::api::api_response response;
 
   try {
-    if (db_connector_) {
+    if (db_connector) {
       if (db_operation()) {
         response.status_code = http_status_code::OK;
       } else {
@@ -73,7 +72,7 @@ handler_base::handle_request_with_error_handling_json_body(
   oai::pcf::api::api_response response;
 
   try {
-    if (db_connector_) {
+    if (db_connector) {
       nlohmann::json json_data = db_operation();
       response.headers.add<Pistache::Http::Header::ContentType>(
           Pistache::Http::Mime::MediaType("application/json"));

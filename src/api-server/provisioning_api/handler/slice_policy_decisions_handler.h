@@ -40,8 +40,6 @@ namespace oai::pcf::provisioning::api {
 
 class slice_policy_decisions_handler : public handler_base {
  public:
-  slice_policy_decisions_handler();
-
   /**
    * delete policy decision for slice
    * @param sst

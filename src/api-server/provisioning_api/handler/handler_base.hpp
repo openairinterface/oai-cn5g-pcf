@@ -39,16 +39,11 @@ namespace oai::pcf::provisioning::api {
 
 class handler_base {
  public:
-  handler_base(std::unique_ptr<oai::pcf::app::database_wrapper_abstraction>&
-                   db_connector);
-
  protected:
   oai::pcf::api::api_response handle_request_with_error_handling(
       std::function<bool()> db_operation);
   oai::pcf::api::api_response handle_request_with_error_handling_json_body(
       std::function<nlohmann::json()> db_operation);
-
-  std::unique_ptr<oai::pcf::app::database_wrapper_abstraction>& db_connector_;
 };
 
 }  // namespace oai::pcf::provisioning::api

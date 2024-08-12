@@ -39,9 +39,6 @@ namespace oai::pcf::provisioning::api {
 using namespace oai::pcf::api;
 using namespace oai::common::sbi;
 
-dnn_policy_decisions_handler::dnn_policy_decisions_handler()
-    : handler_base(db_connector) {}
-
 oai::pcf::api::api_response
 dnn_policy_decisions_handler::dnn_policy_decision_dnn_delete(
     const std::string& dnn) {

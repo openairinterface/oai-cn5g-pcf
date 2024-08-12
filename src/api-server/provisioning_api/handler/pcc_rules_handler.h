@@ -39,7 +39,6 @@ namespace oai::pcf::provisioning::api {
 
 class pcc_rules_handler : public handler_base {
  public:
-  pcc_rules_handler();
 
   /**
    *

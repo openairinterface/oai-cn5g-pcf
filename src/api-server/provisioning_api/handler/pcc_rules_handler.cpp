@@ -39,8 +39,6 @@ namespace oai::pcf::provisioning::api {
 using namespace oai::pcf::api;
 using namespace oai::common::sbi;
 
-pcc_rules_handler::pcc_rules_handler() : handler_base(db_connector) {}
-
 oai::pcf::api::api_response pcc_rules_handler::pcc_rule_pcc_rule_id_delete(
     const std::string& pccRuleId) {
   return handle_request_with_error_handling(

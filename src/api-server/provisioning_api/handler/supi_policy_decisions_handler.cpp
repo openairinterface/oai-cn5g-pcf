@@ -39,9 +39,6 @@ namespace oai::pcf::provisioning::api {
 using namespace oai::pcf::api;
 using namespace oai::common::sbi;
 
-supi_policy_decisions_handler::supi_policy_decisions_handler()
-    : handler_base(db_connector) {}
-
 oai::pcf::api::api_response
 supi_policy_decisions_handler::supi_policy_decision_supi_get(
     const std::string& supi) {

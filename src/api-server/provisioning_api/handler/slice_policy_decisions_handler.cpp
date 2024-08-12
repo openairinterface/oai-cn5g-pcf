@@ -41,9 +41,6 @@ using namespace oai::common::sbi;
 using namespace oai::pcf::provisioning::model;
 using namespace oai::model::common;
 
-slice_policy_decisions_handler::slice_policy_decisions_handler()
-    : handler_base(db_connector) {}
-
 oai::pcf::api::api_response
 slice_policy_decisions_handler::slice_policy_decision_get(
     const std::optional<int32_t>& sst, const std::optional<std::string>& sd) {
