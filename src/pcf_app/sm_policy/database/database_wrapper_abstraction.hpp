@@ -25,6 +25,7 @@
 #include "logger.hpp"
 #include "SupiPolicyDecision.h"
 #include "DnnPolicyDecision.h"
+#include "SmPolicyDecision.h"
 #include "SlicePolicyDecision.h"
 #include "QosData.h"
 #include "TrafficControlData.h"
@@ -130,6 +131,9 @@ class database_wrapper_abstraction {
   virtual bool deletePccRule(const std::string& pccRuleId) = 0;
 
   virtual std::vector<oai::model::pcf::PccRule> getAllPccRules() = 0;
+
+  virtual oai::model::pcf::SmPolicyDecision getSmPolicyDecision(
+      const std::vector<std::string>& pccRuleIds) = 0;
 };
 
 }  // namespace oai::pcf::app

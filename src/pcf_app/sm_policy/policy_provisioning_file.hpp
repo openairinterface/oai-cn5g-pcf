@@ -36,7 +36,7 @@
 #include "SmPolicyDecision.h"
 #include "PccRule.h"
 #include "TrafficControlData.h"
-#include "policy_storage.hpp"
+#include "policy_storage_yaml.hpp"
 
 namespace oai::pcf::app::sm_policy {
 
@@ -44,7 +44,7 @@ class policy_provisioning_file {
  public:
   bool read_all_policy_files();
   explicit policy_provisioning_file(
-      const std::shared_ptr<oai::pcf::app::sm_policy::policy_storage>&
+      const std::shared_ptr<oai::pcf::app::sm_policy::policy_storage_yaml>&
           policy_storage) {
     m_policy_storage = policy_storage;
   }
@@ -69,7 +69,8 @@ class policy_provisioning_file {
       const std::map<std::string, T>& map, std::vector<std::string>& ids,
       const std::string& error_msg_type, const std::string& pcc_id);
 
-  std::shared_ptr<oai::pcf::app::sm_policy::policy_storage> m_policy_storage;
+  std::shared_ptr<oai::pcf::app::sm_policy::policy_storage_yaml>
+      m_policy_storage;
 };
 }  // namespace oai::pcf::app::sm_policy
 #endif

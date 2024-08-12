@@ -171,6 +171,9 @@ class mysql_db : public database_wrapper<mysql_db> {
 
   std::vector<oai::model::pcf::PccRule> getAllPccRules();
 
+  oai::model::pcf::SmPolicyDecision getSmPolicyDecision(
+      const std::vector<std::string>& pccRuleIds);
+
  private:
   std::shared_ptr<odb::database> db;
   mutable std::shared_mutex m_db_connection_status;

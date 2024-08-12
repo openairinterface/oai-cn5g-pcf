@@ -28,6 +28,7 @@
  */
 
 #include "handler_base.hpp"
+#include "database_wrapper.hpp"
 
 namespace oai::pcf::provisioning::api {
 
@@ -52,6 +53,12 @@ oai::pcf::api::api_response handler_base::handle_request_with_error_handling(
     } else {
       response.status_code = http_status_code::SERVICE_UNAVAILABLE;
     }
+  } catch (const NotFoundException& e) {
+    response.status_code = http_status_code::NOT_FOUND;
+    response.body        = e.what();
+  } catch (const AlreadyExistException& e) {
+    response.status_code = http_status_code::CONFLICT;
+    response.body        = e.what();
   } catch (const std::exception& e) {
     response.status_code = http_status_code::INTERNAL_SERVER_ERROR;
     response.body        = e.what();
@@ -75,6 +82,12 @@ handler_base::handle_request_with_error_handling_json_body(
     } else {
       response.status_code = http_status_code::SERVICE_UNAVAILABLE;
     }
+  } catch (const NotFoundException& e) {
+    response.status_code = http_status_code::NOT_FOUND;
+    response.body        = e.what();
+  } catch (const AlreadyExistException& e) {
+    response.status_code = http_status_code::CONFLICT;
+    response.body        = e.what();
   } catch (const std::exception& e) {
     response.status_code = http_status_code::INTERNAL_SERVER_ERROR;
     response.body        = e.what();

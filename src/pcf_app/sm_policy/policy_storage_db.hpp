@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file policy_storage.hpp
+/*! \file policy_storage_hpp.cpp
  \brief
  \author  Lukas Rotheneder
  \company phine.tech
@@ -29,39 +29,20 @@
 
 #pragma once
 
-#include <string>
-#include <memory>
-#include <shared_mutex>
-#include <unordered_map>
-
-#include "SmPolicyDecision.h"
-#include "SmPolicyContextData.h"
-#include "policy_decision.hpp"
+#include "policy_storage.hpp"
 
 namespace oai::pcf::app::sm_policy {
+/**
+ * @brief Class connected to policies stored in the database, added through
+ * provisioning requests.
+ *
+ */
+class policy_storage_db : public policy_storage {
+  std::shared_ptr<policy_decision> find_policy(
+      const oai::model::pcf::SmPolicyContextData& context);
 
-class policy_storage {
- public:
-  /**
-   * @brief Finds a policy based on the existing supi, dnn, slice and default
-   * policies in that order.
-   *
-   * @param context  The policy context containing supi or dnn or snssai
-   * @param chosen_decision
-   * decision base class
-   * @return pointer to the object implementing the chosen, null in case no
-   * decision can be found
-   */
-  virtual std::shared_ptr<policy_decision> find_policy(
-      const oai::model::pcf::SmPolicyContextData& context) = 0;
-
-  /**
-   * @brief Calls the callback when any of the policies have been updated
-   *
-   * @param callback
-   */
-  virtual void subscribe_to_decision_change(
-      std::function<void(std::shared_ptr<policy_decision>&)> callback) = 0;
+  void subscribe_to_decision_change(
+      std::function<void(std::shared_ptr<policy_decision>&)> callback);
 };
 
 }  // namespace oai::pcf::app::sm_policy

@@ -29,6 +29,27 @@
 
 namespace oai::pcf::app {
 
+class NotFoundException : public std::exception {
+ private:
+  std::string message;
+
+ public:
+  NotFoundException(const std::string& msg) : message("NotFound: " + msg) {}
+
+  const char* what() const noexcept override { return message.c_str(); }
+};
+
+class AlreadyExistException : public std::exception {
+ private:
+  std::string message;
+
+ public:
+  AlreadyExistException(const std::string& msg)
+      : message("AlreadyExist: " + msg) {}
+
+  const char* what() const noexcept override { return message.c_str(); }
+};
+
 template<class DerivedT>
 class database_wrapper : public database_wrapper_abstraction {
  public:
@@ -256,6 +277,13 @@ class database_wrapper : public database_wrapper_abstraction {
     Logger::pcf_app().debug("Get all pccRules");
     auto derived = static_cast<DerivedT*>(this);
     return derived->getAllPccRules();
+  }
+
+  virtual oai::model::pcf::SmPolicyDecision getSmPolicyDecision(
+      const std::vector<std::string>& pccRuleIds) override {
+    Logger::pcf_app().debug("get SmPolicyDecision");
+    auto derived = static_cast<DerivedT*>(this);
+    return derived->getSmPolicyDecision(pccRuleIds);
   }
 };
 }  // namespace oai::pcf::app
