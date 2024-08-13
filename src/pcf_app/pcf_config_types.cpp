@@ -125,10 +125,10 @@ std::string pcf_config_type::to_string(const std::string& indent) const {
   std::string out = nf::to_string("");
 
   unsigned int inner_width = get_inner_width(indent.length());
-  out.append(indent)
-          .append(fmt::format(
-                  BASE_FORMATTER, OUTER_LIST_ELEM,  m_use_db_for_policy_storage.get_config_name(),
-                  inner_width, m_use_db_for_policy_storage.to_string(indent)));
+  out.append(indent).append(fmt::format(
+      BASE_FORMATTER, OUTER_LIST_ELEM,
+      m_use_db_for_policy_storage.get_config_name(), inner_width,
+      m_use_db_for_policy_storage.to_string(indent)));
 
   if (!m_use_db_for_policy_storage.get_value()) {
     out.append(m_policy_config.to_string(indent));

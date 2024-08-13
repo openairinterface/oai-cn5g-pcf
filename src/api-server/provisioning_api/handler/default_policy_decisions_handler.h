@@ -38,7 +38,6 @@ namespace oai::pcf::provisioning::api {
 
 class default_policy_decisions_handler : public handler_base {
  public:
-
   /**
    * get default decision
    * @return api_response

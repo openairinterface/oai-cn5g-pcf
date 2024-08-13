@@ -39,7 +39,6 @@ namespace oai::pcf::provisioning::api {
 
 class qos_data_handler : public handler_base {
  public:
-
   /**
    *
    * @return

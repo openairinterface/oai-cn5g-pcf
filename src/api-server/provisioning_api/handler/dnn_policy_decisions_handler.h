@@ -39,7 +39,6 @@ namespace oai::pcf::provisioning::api {
 
 class dnn_policy_decisions_handler : public handler_base {
  public:
-
   /**
    * delete dnn policy decision for dnn
    * @param dnn
