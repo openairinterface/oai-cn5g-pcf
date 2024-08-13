@@ -91,7 +91,6 @@ check_install_pcf_deps() {
       gcc-c++ \
       $CMAKE \
       make \
-      curl \
       git"
   else
     echo_fatal "$OS_DISTRO is not a supported distribution."
