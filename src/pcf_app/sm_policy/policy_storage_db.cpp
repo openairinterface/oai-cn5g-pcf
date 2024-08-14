@@ -108,7 +108,8 @@ std::shared_ptr<policy_decision> policy_storage_db::find_policy(
     }
   } catch (const std::exception& e) {
     Logger::pcf_app().error(
-        "%s %s - Error during requesting decisions from DB.", msg_base, supi);
+        "%s %s - Error during requesting decisions from DB: %e", msg_base, supi,
+        e.what());
     return nullptr;
   }
 }

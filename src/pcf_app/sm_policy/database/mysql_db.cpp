@@ -99,20 +99,23 @@ bool mysql_db::setDefaultPolicyDecision(std::vector<std::string> rules) {
   defaultPolicyDecision.setSupi("default");
   defaultPolicyDecision.setPccRuleIds(rules);
 
+  //  Validate that all rules exist in the database
+  for (const std::string& rule : rules) {
+    getPccRule(rule);
+  }
+
   try {
     odb::transaction t(db->begin());
     Logger::pcf_db().debug("Set default policy rules: %s", j_rules.dump());
-    db->update(defaultPolicyDecision);
-    t.commit();
-  } catch (const odb::object_not_persistent& e) {
+
+    // Try updating the object; if it doesn't exist, persist a new one
     try {
-      odb::transaction t(db->begin());
+      db->update(defaultPolicyDecision);
+    } catch (const odb::object_not_persistent& e) {
       db->persist(defaultPolicyDecision);
-      t.commit();
-    } catch (const std::exception& e) {
-      Logger::pcf_db().error("Error while setting default rules: %s", e.what());
-      throw;
     }
+
+    t.commit();
   } catch (const std::exception& e) {
     Logger::pcf_db().error("Error while setting default rules: %s", e.what());
     throw;
@@ -149,6 +152,10 @@ bool mysql_db::createSupiPolicyDecision(
     const SupiPolicyDecision& supiPolicyDecision) {
   check_db_connection();
 
+  //  Validate that all rules exist in the database
+  for (const std::string& rule : supiPolicyDecision.getPccRuleIds()) {
+    getPccRule(rule);
+  }
   try {
     odb::transaction t(db->begin());
     nlohmann::json j_data = supiPolicyDecision;
@@ -195,6 +202,11 @@ SupiPolicyDecision mysql_db::getSupiPolicyDecision(const std::string& supi) {
 bool mysql_db::updateSupiPolicyDecision(
     const SupiPolicyDecision& supiPolicyDecision) {
   check_db_connection();
+
+  //  Validate that all rules exist in the database
+  for (const std::string& rule : supiPolicyDecision.getPccRuleIds()) {
+    getPccRule(rule);
+  }
 
   try {
     odb::transaction t(db->begin());
@@ -274,6 +286,11 @@ bool mysql_db::createDnnPolicyDecision(
     const DnnPolicyDecision& dnnPolicyDecision) {
   check_db_connection();
 
+  //  Validate that all rules exist in the database
+  for (const std::string& rule : dnnPolicyDecision.getPccRuleIds()) {
+    getPccRule(rule);
+  }
+
   try {
     odb::transaction t(db->begin());
     nlohmann::json j_data = dnnPolicyDecision;
@@ -320,6 +337,11 @@ DnnPolicyDecision mysql_db::getDnnPolicyDecision(const std::string& dnn) {
 bool mysql_db::updateDnnPolicyDecision(
     const DnnPolicyDecision& dnnPolicyDecision) {
   check_db_connection();
+
+  //  Validate that all rules exist in the database
+  for (const std::string& rule : dnnPolicyDecision.getPccRuleIds()) {
+    getPccRule(rule);
+  }
 
   try {
     odb::transaction t(db->begin());
@@ -399,6 +421,11 @@ bool mysql_db::createSlicePolicyDecision(
     const SlicePolicyDecision& slicePolicyDecision) {
   check_db_connection();
 
+  //  Validate that all rules exist in the database
+  for (const std::string& rule : slicePolicyDecision.getPccRuleIds()) {
+    getPccRule(rule);
+  }
+
   try {
     odb::transaction t(db->begin());
     nlohmann::json j_data = slicePolicyDecision;
@@ -449,6 +476,11 @@ SlicePolicyDecision mysql_db::getSlicePolicyDecision(const Snssai& slice) {
 bool mysql_db::updateSlicePolicyDecision(
     const SlicePolicyDecision& slicePolicyDecision) {
   check_db_connection();
+
+  //  Validate that all rules exist in the database
+  for (const std::string& rule : slicePolicyDecision.getPccRuleIds()) {
+    getPccRule(rule);
+  }
 
   try {
     odb::transaction t(db->begin());
@@ -562,7 +594,7 @@ QosData mysql_db::getQosData(const std::string& qosId) {
   } catch (const odb::object_not_persistent& e) {
     Logger::pcf_db().error(
         "Error: QosData object with qosId %s not found.", qosId);
-    throw NotFoundException("QosData object not found.");
+    throw NotFoundException("QosData with id " + qosId + " does not exist.");
   } catch (const std::exception& e) {
     Logger::pcf_db().error("Error while retrieving QosData: %s", e.what());
     throw;
@@ -683,7 +715,8 @@ TrafficControlData mysql_db::getTrafficControlData(const std::string& tcId) {
   } catch (const odb::object_not_persistent& e) {
     Logger::pcf_db().error(
         "Error: TrafficControlData object with tcId %s not found.", tcId);
-    throw NotFoundException("TrafficControlData object not found.");
+    throw NotFoundException(
+        "TrafficControlData with id " + tcId + " does not exist.");
   } catch (const std::exception& e) {
     Logger::pcf_db().error(
         "Error while retrieving TrafficControlData: %s", e.what());
@@ -777,6 +810,14 @@ std::vector<TrafficControlData> mysql_db::getAllTrafficControlData() {
 bool mysql_db::createPccRule(const oai::model::pcf::PccRule& pccRule) {
   check_db_connection();
 
+  //  Validate that all Qos and TrafficControl Data exist in the database
+  for (const std::string& qosDataId : pccRule.getRefQosData()) {
+    getQosData(qosDataId);
+  }
+  for (const std::string& tcId : pccRule.getRefTcData()) {
+    getTrafficControlData(tcId);
+  }
+
   try {
     nlohmann::json json_pccRule = pccRule;
     PccRuleODB pccRuleODB       = json_pccRule;
@@ -814,7 +855,8 @@ oai::model::pcf::PccRule mysql_db::getPccRule(const std::string& pccRuleId) {
   } catch (const odb::object_not_persistent& e) {
     Logger::pcf_db().error(
         "Error: PccRule object with pccRuleId %s not found.", pccRuleId);
-    throw NotFoundException("PccRule object not found.");
+    throw NotFoundException(
+        "PccRule with id " + pccRuleId + " does not exist.");
   } catch (const std::exception& e) {
     Logger::pcf_db().error("Error while retrieving PccRule: %s", e.what());
     throw;
@@ -823,6 +865,14 @@ oai::model::pcf::PccRule mysql_db::getPccRule(const std::string& pccRuleId) {
 
 bool mysql_db::updatePccRule(const oai::model::pcf::PccRule& pccRule) {
   check_db_connection();
+
+  //  Validate that all Qos and TrafficControl Data exist in the database
+  for (const std::string& qosDataId : pccRule.getRefQosData()) {
+    getQosData(qosDataId);
+  }
+  for (const std::string& tcId : pccRule.getRefTcData()) {
+    getTrafficControlData(tcId);
+  }
 
   try {
     nlohmann::json json_pccRule = pccRule;
@@ -898,37 +948,26 @@ oai::model::pcf::SmPolicyDecision mysql_db::getSmPolicyDecision(
   std::map<std::string, QosData> qosDataMap;
   std::map<std::string, TrafficControlData> trafficControlDataMap;
   try {
-    odb::transaction t(db->begin());
     for (const std::string& pccRuleId : pccRuleIds) {
-      try {
-        PccRule pccRule = getPccRule(pccRuleId);
+      PccRule pccRule = getPccRule(pccRuleId);
 
-        std::vector<std::string> qosDataIds = pccRule.getRefQosData();
-        for (const std::string& qosDataId : qosDataIds) {
-          QosData qosData = getQosData(qosDataId);
-          qosDataMap.insert(std::make_pair(qosDataId, qosData));
-        }
-
-        std::vector<std::string> trafficControlDataIds = pccRule.getRefTcData();
-        for (const std::string& tcId : trafficControlDataIds) {
-          TrafficControlData trafficControlData = getTrafficControlData(tcId);
-          trafficControlDataMap.insert(
-              std::make_pair(tcId, trafficControlData));
-        }
-
-        pccRuleMap.insert(std::make_pair(pccRuleId, pccRule));
-      } catch (const NotFoundException& e) {
-        Logger::pcf_db().error(
-            "A requested PccRule, QosData or TrafficControlData for "
-            "SmPolicyDecision does not exist.",
-            e.what());
-        throw;
+      std::vector<std::string> qosDataIds = pccRule.getRefQosData();
+      for (const std::string& qosDataId : qosDataIds) {
+        QosData qosData = getQosData(qosDataId);
+        qosDataMap.insert(std::make_pair(qosDataId, qosData));
       }
+
+      std::vector<std::string> trafficControlDataIds = pccRule.getRefTcData();
+      for (const std::string& tcId : trafficControlDataIds) {
+        TrafficControlData trafficControlData = getTrafficControlData(tcId);
+        trafficControlDataMap.insert(std::make_pair(tcId, trafficControlData));
+      }
+
+      pccRuleMap.insert(std::make_pair(pccRuleId, pccRule));
     }
-    t.commit();
   } catch (const std::exception& e) {
     Logger::pcf_db().error(
-        "Error while retrieving data for SmPolicyDecision", e.what());
+        "Error while retrieving data for SmPolicyDecision: %s", e.what());
     throw;
   }
   decision.setPccRules(pccRuleMap);
