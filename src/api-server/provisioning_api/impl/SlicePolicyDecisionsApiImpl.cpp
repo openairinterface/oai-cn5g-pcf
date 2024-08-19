@@ -49,7 +49,7 @@ void SlicePolicyDecisionsApiImpl::slice_policy_decision_put(
     const SlicePolicyDecision& slicePolicyDecision,
     Pistache::Http::ResponseWriter& response) {
   api_response resp =
-      m_api_handler->slice_policy_decision_post(slicePolicyDecision);
+      m_api_handler->slice_policy_decision_put(sst, sd, slicePolicyDecision);
   response.headers() = resp.headers;
   response.send(Pistache::Http::Code(resp.status_code), resp.body);
 }

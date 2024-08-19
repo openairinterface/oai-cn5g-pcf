@@ -241,9 +241,6 @@ void SlicePolicyDecisionsApi::slice_policy_decision_put_handler(
       if (fromStringValue(sdQuery.get(), valueQuery_instance)) {
         sd = valueQuery_instance;
       }
-    } else {
-      response.send(
-          Pistache::Http::Code::Bad_Request, "Missing 'sd' parameter");
     }
 
     try {

@@ -49,8 +49,8 @@ slice_policy_decisions_handler::slice_policy_decision_get(
     if (sd.has_value()) {
       slice.setSd(sd.value());
     }
-    return handle_request_with_error_handling([&]() -> bool {
-      return db_connector->deleteSlicePolicyDecision(slice);
+    return handle_request_with_error_handling_json_body([&]() -> nlohmann::json {
+      return db_connector->getSlicePolicyDecision(slice);
     });
   } else {
     api_response response;
