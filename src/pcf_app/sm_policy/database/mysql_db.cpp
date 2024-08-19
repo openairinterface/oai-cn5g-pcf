@@ -106,7 +106,7 @@ bool mysql_db::setDefaultPolicyDecision(std::vector<std::string> rules) {
 
   try {
     odb::transaction t(db->begin());
-    Logger::pcf_db().debug("Set default policy rules: %s", j_rules.dump());
+    Logger::pcf_db().info("Set default policy rules: %s", j_rules.dump());
 
     // Try updating the object; if it doesn't exist, persist a new one
     try {
@@ -129,10 +129,11 @@ std::vector<std::string> mysql_db::getDefaultPolicyDecision() {
 
   try {
     odb::transaction t(db->begin());
-    Logger::pcf_db().debug("Reading default policy rules");
     std::shared_ptr<SupiPolicyDecision> supiPolicyDecision(
         db->load<SupiPolicyDecision>("default"));
     t.commit();
+    nlohmann::json data = *supiPolicyDecision;
+    Logger::pcf_db().info("Default policy rules successfully retrieved: %s", data.dump());
     return supiPolicyDecision->getPccRuleIds();
   } catch (const odb::object_not_persistent& e) {
     Logger::pcf_db().error("Error: No default policy rules found.");
@@ -159,7 +160,7 @@ bool mysql_db::createSupiPolicyDecision(
   try {
     odb::transaction t(db->begin());
     nlohmann::json j_data = supiPolicyDecision;
-    Logger::pcf_db().debug("Creating supi policy decision: %s", j_data.dump());
+    Logger::pcf_db().info("Creating supi policy decision: %s", j_data.dump());
     db->persist(supiPolicyDecision);
     t.commit();
   } catch (const odb::object_already_persistent& e) {
@@ -183,10 +184,12 @@ SupiPolicyDecision mysql_db::getSupiPolicyDecision(const std::string& supi) {
 
   try {
     odb::transaction t(db->begin());
-    Logger::pcf_db().debug("Reading supi policy decision with supi %s", supi);
+    Logger::pcf_db().info("Reading supi policy decision with supi %s", supi);
     std::shared_ptr<SupiPolicyDecision> supiPolicyDecision(
         db->load<SupiPolicyDecision>(supi));
     t.commit();
+    nlohmann::json data = *supiPolicyDecision;
+    Logger::pcf_db().info("Supi policy decision successfully retrieved: %s", data.dump());
     return *supiPolicyDecision;
   } catch (const odb::object_not_persistent& e) {
     Logger::pcf_db().error(
@@ -211,7 +214,7 @@ bool mysql_db::updateSupiPolicyDecision(
   try {
     odb::transaction t(db->begin());
     nlohmann::json j_data = supiPolicyDecision;
-    Logger::pcf_db().debug("Updating supi policy decision %s", j_data.dump());
+    Logger::pcf_db().info("Updating supi policy decision %s", j_data.dump());
     db->update(supiPolicyDecision);
     t.commit();
   } catch (const odb::object_not_persistent& e) {
@@ -235,7 +238,7 @@ bool mysql_db::deleteSupiPolicyDecision(const std::string& supi) {
 
   try {
     odb::transaction t(db->begin());
-    Logger::pcf_db().debug("Deleting supi policy decision with supi %s", supi);
+    Logger::pcf_db().info("Deleting supi policy decision with supi %s", supi);
     std::shared_ptr<SupiPolicyDecision> supiPolicyDecision(
         db->load<SupiPolicyDecision>(supi));
     db->erase(*supiPolicyDecision);
@@ -260,7 +263,6 @@ std::vector<SupiPolicyDecision> mysql_db::getAllSupiPolicyDecisions() {
   std::vector<SupiPolicyDecision> results;
   try {
     odb::transaction t(db->begin());
-    Logger::pcf_db().debug("Reading all supi policy decisions");
     odb::result<SupiPolicyDecision> r(db->query<SupiPolicyDecision>());
 
     for (odb::result<SupiPolicyDecision>::iterator i(r.begin()); i != r.end();
@@ -269,6 +271,8 @@ std::vector<SupiPolicyDecision> mysql_db::getAllSupiPolicyDecisions() {
     }
 
     t.commit();
+    nlohmann::json data = results;
+    Logger::pcf_db().info("All supi policy decisions successfully retrieved: %s", data.dump());
   } catch (const std::exception& e) {
     Logger::pcf_db().error(
         "Error while retrieving all SupiPolicyDecisions: %s", e.what());
@@ -294,7 +298,7 @@ bool mysql_db::createDnnPolicyDecision(
   try {
     odb::transaction t(db->begin());
     nlohmann::json j_data = dnnPolicyDecision;
-    Logger::pcf_db().debug("Creating dnn policy decision: %s", j_data.dump());
+    Logger::pcf_db().info("Creating dnn policy decision: %s", j_data.dump());
     db->persist(dnnPolicyDecision);
     t.commit();
   } catch (const odb::object_already_persistent& e) {
@@ -318,10 +322,11 @@ DnnPolicyDecision mysql_db::getDnnPolicyDecision(const std::string& dnn) {
 
   try {
     odb::transaction t(db->begin());
-    Logger::pcf_db().debug("Reading dnn policy decision with dnn %s", dnn);
     std::shared_ptr<DnnPolicyDecision> dnnPolicyDecision(
         db->load<DnnPolicyDecision>(dnn));
     t.commit();
+    nlohmann::json data = *dnnPolicyDecision;
+    Logger::pcf_db().info("Dnn policy decision successfully retrieved: %s", data.dump());
     return *dnnPolicyDecision;
   } catch (const odb::object_not_persistent& e) {
     Logger::pcf_db().error(
@@ -344,9 +349,9 @@ bool mysql_db::updateDnnPolicyDecision(
   }
 
   try {
-    odb::transaction t(db->begin());
     nlohmann::json j_data = dnnPolicyDecision;
-    Logger::pcf_db().debug("Updating dnn policy decision %s", j_data.dump());
+    Logger::pcf_db().info("Updating dnn policy decision %s", j_data.dump());
+    odb::transaction t(db->begin());
     db->update(dnnPolicyDecision);
     t.commit();
   } catch (const odb::object_not_persistent& e) {
@@ -369,8 +374,8 @@ bool mysql_db::deleteDnnPolicyDecision(const std::string& dnn) {
   check_db_connection();
 
   try {
+    Logger::pcf_db().info("Deleting dnn policy decision with dnn %s", dnn);
     odb::transaction t(db->begin());
-    Logger::pcf_db().debug("Deleting dnn policy decision with dnn %s", dnn);
     std::shared_ptr<DnnPolicyDecision> dnnPolicyDecision(
         db->load<DnnPolicyDecision>(dnn));
     db->erase(*dnnPolicyDecision);
@@ -395,13 +400,14 @@ std::vector<DnnPolicyDecision> mysql_db::getAllDnnPolicyDecisions() {
   std::vector<DnnPolicyDecision> results;
   try {
     odb::transaction t(db->begin());
-    Logger::pcf_db().debug("Reading all dnn policy decisions");
     odb::result<DnnPolicyDecision> r(db->query<DnnPolicyDecision>());
 
     for (odb::result<DnnPolicyDecision>::iterator i(r.begin()); i != r.end();
          ++i) {
       results.push_back(*i);
     }
+    nlohmann::json data = results;
+    Logger::pcf_db().info("All dnn policy decisions successfully retrieved: %s", data.dump());
 
     t.commit();
   } catch (const std::exception& e) {
@@ -427,9 +433,9 @@ bool mysql_db::createSlicePolicyDecision(
   }
 
   try {
-    odb::transaction t(db->begin());
     nlohmann::json j_data = slicePolicyDecision;
-    Logger::pcf_db().debug("Creating slice policy decision: %s", j_data.dump());
+    Logger::pcf_db().info("Creating slice policy decision: %s", j_data.dump());
+    odb::transaction t(db->begin());
     db->persist(slicePolicyDecision);
     t.commit();
   } catch (const odb::object_already_persistent& e) {
@@ -454,11 +460,11 @@ SlicePolicyDecision mysql_db::getSlicePolicyDecision(const Snssai& slice) {
   try {
     odb::transaction t(db->begin());
     nlohmann::json j_slice = slice;
-    Logger::pcf_db().debug(
-        "Reading slice policy decision with slice %s", j_slice.dump());
     std::shared_ptr<SlicePolicyDecision> slicePolicyDecision(
         db->load<SlicePolicyDecision>(slice));
     t.commit();
+    nlohmann::json data = *slicePolicyDecision;
+    Logger::pcf_db().info("Slice policy decision successfully retrieved: %s", data.dump());
     return *slicePolicyDecision;
   } catch (const odb::object_not_persistent& e) {
     nlohmann::json json_slice = slice;
@@ -483,9 +489,9 @@ bool mysql_db::updateSlicePolicyDecision(
   }
 
   try {
-    odb::transaction t(db->begin());
     nlohmann::json j_data = slicePolicyDecision;
-    Logger::pcf_db().debug("Updating slice policy decision: %s", j_data.dump());
+    Logger::pcf_db().info("Updating slice policy decision: %s", j_data.dump());
+    odb::transaction t(db->begin());
     db->update(slicePolicyDecision);
     t.commit();
   } catch (const odb::object_not_persistent& e) {
@@ -508,12 +514,12 @@ bool mysql_db::deleteSlicePolicyDecision(const Snssai& slice) {
   check_db_connection();
 
   try {
+    nlohmann::json j_slice = slice;
+    Logger::pcf_db().info(
+            "Deleting slice policy decision with slice %s", j_slice.dump());
     odb::transaction t(db->begin());
     std::shared_ptr<SlicePolicyDecision> slicePolicyDecision(
         db->load<SlicePolicyDecision>(slice));
-    nlohmann::json j_slice = slice;
-    Logger::pcf_db().debug(
-        "Deleting slice policy decision with slice %s", j_slice.dump());
     db->erase(*slicePolicyDecision);
     t.commit();
   } catch (const odb::object_not_persistent& e) {
@@ -538,13 +544,14 @@ std::vector<SlicePolicyDecision> mysql_db::getAllSlicePolicyDecisions() {
   std::vector<SlicePolicyDecision> results;
   try {
     odb::transaction t(db->begin());
-    Logger::pcf_db().debug("Reading all slice policy decisions");
     odb::result<SlicePolicyDecision> r(db->query<SlicePolicyDecision>());
 
     for (odb::result<SlicePolicyDecision>::iterator i(r.begin()); i != r.end();
          ++i) {
       results.push_back(*i);
     }
+    nlohmann::json data = results;
+    Logger::pcf_db().info("All slice policy decisions successfully retrieved: %s", data.dump());
 
     t.commit();
   } catch (const std::exception& e) {
@@ -564,9 +571,9 @@ bool mysql_db::createQosData(const QosData& qosData) {
   check_db_connection();
 
   try {
-    odb::transaction t(db->begin());
     nlohmann::json j_data = qosData;
-    Logger::pcf_db().debug("Creating QosData:  %s", j_data.dump());
+    Logger::pcf_db().info("Creating QosData:  %s", j_data.dump());
+    odb::transaction t(db->begin());
     db->persist(qosData);
     t.commit();
   } catch (const odb::object_already_persistent& e) {
@@ -587,9 +594,10 @@ QosData mysql_db::getQosData(const std::string& qosId) {
 
   try {
     odb::transaction t(db->begin());
-    Logger::pcf_db().debug("Reading QosData with id %s", qosId);
     std::shared_ptr<QosData> qosData(db->load<QosData>(qosId));
     t.commit();
+    nlohmann::json data = *qosData;
+    Logger::pcf_db().info("QoSData successfully retrieved: %s", data.dump());
     return *qosData;
   } catch (const odb::object_not_persistent& e) {
     Logger::pcf_db().error(
@@ -605,9 +613,9 @@ bool mysql_db::updateQosData(const QosData& qosData) {
   check_db_connection();
 
   try {
+    Logger::pcf_db().info("Updating QoSData %s", j_data.dump());
     odb::transaction t(db->begin());
     nlohmann::json j_data = qosData;
-    Logger::pcf_db().debug("Updating QosData %s", j_data.dump());
     db->update(qosData);
     t.commit();
   } catch (const odb::object_not_persistent& e) {
@@ -627,8 +635,8 @@ bool mysql_db::deleteQosData(const std::string& qosId) {
   check_db_connection();
 
   try {
+    Logger::pcf_db().info("Deleting QoSData with id %s", qosId);
     odb::transaction t(db->begin());
-    Logger::pcf_db().debug("Deleting QosData with id %s", qosId);
     std::shared_ptr<QosData> qosData(db->load<QosData>(qosId));
     db->erase(*qosData);
     t.commit();
@@ -649,7 +657,6 @@ std::vector<QosData> mysql_db::getAllQosData() {
   std::vector<QosData> results;
   try {
     odb::transaction t(db->begin());
-    Logger::pcf_db().debug("Reading all QosData");
     odb::result<QosData> r(db->query<QosData>());
 
     for (odb::result<QosData>::iterator i(r.begin()); i != r.end(); ++i) {
@@ -657,6 +664,9 @@ std::vector<QosData> mysql_db::getAllQosData() {
     }
 
     t.commit();
+    nlohmann::json data = results;
+    Logger::pcf_db().info("All QoSData successfully retrieved: %s", data.dump());
+
   } catch (const std::exception& e) {
     Logger::pcf_db().error("Error while retrieving all QosData: %s", e.what());
     throw;
@@ -676,10 +686,9 @@ bool mysql_db::createTrafficControlData(
   try {
     nlohmann::json json_trafficControlData      = trafficControlData;
     TrafficControlDataODB trafficControlDataODB = json_trafficControlData;
-
+    Logger::pcf_db().info(
+            "Creating TrafficControlData: %s", json_trafficControlData.dump());
     odb::transaction t(db->begin());
-    Logger::pcf_db().debug(
-        "Creating trafficControlData: %s", json_trafficControlData.dump());
     db->persist(trafficControlDataODB);
     t.commit();
   } catch (const odb::object_already_persistent& e) {
@@ -703,13 +712,14 @@ TrafficControlData mysql_db::getTrafficControlData(const std::string& tcId) {
 
   try {
     odb::transaction t(db->begin());
-    Logger::pcf_db().debug("Reading TrafficControlData with id %s", tcId);
     std::shared_ptr<TrafficControlDataODB> trafficControlDataODB(
         db->load<TrafficControlDataODB>(tcId));
     t.commit();
 
     nlohmann::json json_trafficControlDataODB = *trafficControlDataODB;
     TrafficControlData trafficControlData     = json_trafficControlDataODB;
+
+    Logger::pcf_db().info("TrafficControlData successfully retrieved: %s", json_trafficControlDataODB.dump());
 
     return trafficControlData;
   } catch (const odb::object_not_persistent& e) {
@@ -733,7 +743,7 @@ bool mysql_db::updateTrafficControlData(
     TrafficControlDataODB trafficControlDataODB = json_trafficControlData;
 
     odb::transaction t(db->begin());
-    Logger::pcf_db().debug(
+    Logger::pcf_db().info(
         "Updating TrafficControlData %s", json_trafficControlData.dump());
     db->update(trafficControlDataODB);
     t.commit();
@@ -758,7 +768,7 @@ bool mysql_db::deleteTrafficControlData(const std::string& tcId) {
 
   try {
     odb::transaction t(db->begin());
-    Logger::pcf_db().debug("Deleting TrafficControlData with id %s", tcId);
+    Logger::pcf_db().info("Deleting TrafficControlData with id %s", tcId);
     std::shared_ptr<TrafficControlDataODB> trafficControlDataODB(
         db->load<TrafficControlDataODB>(tcId));
     db->erase(*trafficControlDataODB);
@@ -783,7 +793,6 @@ std::vector<TrafficControlData> mysql_db::getAllTrafficControlData() {
   std::vector<TrafficControlData> results;
   try {
     odb::transaction t(db->begin());
-    Logger::pcf_db().debug("Reading all TrafficControlData");
     odb::result<TrafficControlDataODB> r(db->query<TrafficControlDataODB>());
 
     for (odb::result<TrafficControlDataODB>::iterator i(r.begin());
@@ -794,6 +803,8 @@ std::vector<TrafficControlData> mysql_db::getAllTrafficControlData() {
     }
 
     t.commit();
+    nlohmann::json data = results;
+    Logger::pcf_db().info("All TrafficControlData successfully retrieved: %s", data.dump());
   } catch (const std::exception& e) {
     Logger::pcf_db().error(
         "Error while retrieving all TrafficControlData: %s", e.what());
@@ -823,7 +834,7 @@ bool mysql_db::createPccRule(const oai::model::pcf::PccRule& pccRule) {
     PccRuleODB pccRuleODB       = json_pccRule;
 
     odb::transaction t(db->begin());
-    Logger::pcf_db().debug("Creating PccRule: %s", json_pccRule.dump());
+    Logger::pcf_db().info("Creating PccRule: %s", json_pccRule.dump());
     db->persist(pccRuleODB);
     t.commit();
   } catch (const odb::object_already_persistent& e) {
@@ -844,12 +855,12 @@ oai::model::pcf::PccRule mysql_db::getPccRule(const std::string& pccRuleId) {
 
   try {
     odb::transaction t(db->begin());
-    Logger::pcf_db().debug("Reading PccRule with id %s", pccRuleId);
     std::shared_ptr<PccRuleODB> pccRuleODB(db->load<PccRuleODB>(pccRuleId));
     t.commit();
 
     nlohmann::json json_pccRuleODB = *pccRuleODB;
     PccRule pccRule                = json_pccRuleODB;
+    Logger::pcf_db().info("PccRule successfully retrieved: %s", json_pccRuleODB.dump());
 
     return pccRule;
   } catch (const odb::object_not_persistent& e) {
@@ -877,9 +888,9 @@ bool mysql_db::updatePccRule(const oai::model::pcf::PccRule& pccRule) {
   try {
     nlohmann::json json_pccRule = pccRule;
     PccRuleODB pccRuleODB       = json_pccRule;
+    Logger::pcf_db().info("Updating PccRule %s", json_pccRule.dump());
 
     odb::transaction t(db->begin());
-    Logger::pcf_db().debug("Updating PccRule %s", json_pccRule.dump());
     db->update(pccRuleODB);
     t.commit();
   } catch (const odb::object_not_persistent& e) {
@@ -899,8 +910,8 @@ bool mysql_db::deletePccRule(const std::string& pccRuleId) {
   check_db_connection();
 
   try {
+    Logger::pcf_db().info("Deleting PccRule with id %s", pccRuleId);
     odb::transaction t(db->begin());
-    Logger::pcf_db().debug("Deleting PccRule with id %s", pccRuleId);
     std::shared_ptr<PccRuleODB> pccRuleODB(db->load<PccRuleODB>(pccRuleId));
     db->erase(*pccRuleODB);
     t.commit();
@@ -922,7 +933,6 @@ std::vector<oai::model::pcf::PccRule> mysql_db::getAllPccRules() {
   std::vector<oai::model::pcf::PccRule> results;
   try {
     odb::transaction t(db->begin());
-    Logger::pcf_db().debug("Reading all PccRules");
     odb::result<PccRuleODB> r(db->query<PccRuleODB>());
 
     for (odb::result<PccRuleODB>::iterator i(r.begin()); i != r.end(); ++i) {
@@ -932,6 +942,8 @@ std::vector<oai::model::pcf::PccRule> mysql_db::getAllPccRules() {
     }
 
     t.commit();
+    nlohmann::json data = results;
+    Logger::pcf_db().info("All PccRules successfully retrieved: %s", data.dump());
   } catch (const std::exception& e) {
     Logger::pcf_db().error("Error while retrieving all PccRules: %s", e.what());
     throw;
