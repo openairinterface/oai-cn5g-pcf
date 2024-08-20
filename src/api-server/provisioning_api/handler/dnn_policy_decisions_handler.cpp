@@ -42,8 +42,10 @@ using namespace oai::common::sbi;
 oai::pcf::api::api_response
 dnn_policy_decisions_handler::dnn_policy_decision_dnn_delete(
     const std::string& dnn) {
-  return handle_request_with_error_handling(
-      [&]() -> bool { return db_connector->deleteDnnPolicyDecision(dnn); });
+  return handle_request_with_error_handling([&]() -> bool {
+    Logger::pcf_db().info("Deleting dnn policy decision with dnn %s", dnn);
+    return db_connector->deleteDnnPolicyDecision(dnn);
+  });
 }
 
 oai::pcf::api::api_response
@@ -51,6 +53,8 @@ dnn_policy_decisions_handler::dnn_policy_decision_dnn_get(
     const std::string& dnn) {
   return handle_request_with_error_handling_json_body([&]() -> nlohmann::json {
     nlohmann::json json_data = db_connector->getDnnPolicyDecision(dnn);
+    Logger::pcf_db().info(
+        "Dnn policy decision successfully retrieved: %s", json_data.dump());
     return json_data;
   });
 }
@@ -67,6 +71,8 @@ dnn_policy_decisions_handler::dnn_policy_decision_dnn_put(
   }
 
   return handle_request_with_error_handling([&]() -> bool {
+    nlohmann::json json_data = dnnPolicyDecision;
+    Logger::pcf_db().info("Updating dnn policy decision %s", json_data.dump());
     return db_connector->updateDnnPolicyDecision(dnnPolicyDecision);
   });
 }
@@ -75,6 +81,8 @@ oai::pcf::api::api_response
 dnn_policy_decisions_handler::dnn_policy_decision_post(
     const oai::pcf::provisioning::model::DnnPolicyDecision& dnnPolicyDecision) {
   return handle_request_with_error_handling([&]() -> bool {
+    nlohmann::json json_data = dnnPolicyDecision;
+    Logger::pcf_db().info("Creating dnn policy decision: %s", json_data.dump());
     return db_connector->createDnnPolicyDecision(dnnPolicyDecision);
   });
 }
@@ -83,6 +91,9 @@ oai::pcf::api::api_response
 dnn_policy_decisions_handler::dnn_policy_decisions_get() {
   return handle_request_with_error_handling_json_body([&]() -> nlohmann::json {
     nlohmann::json json_data = db_connector->getAllDnnPolicyDecisions();
+    Logger::pcf_db().info(
+        "All dnn policy decisions successfully retrieved: %s",
+        json_data.dump());
     return json_data;
   });
 }

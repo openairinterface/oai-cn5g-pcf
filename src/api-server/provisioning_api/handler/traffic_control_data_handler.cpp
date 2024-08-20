@@ -42,8 +42,10 @@ using namespace oai::common::sbi;
 oai::pcf::api::api_response
 traffic_control_data_handler::traffic_control_data_tc_id_delete(
     const std::string& tcId) {
-  return handle_request_with_error_handling(
-      [&]() -> bool { return db_connector->deleteTrafficControlData(tcId); });
+  return handle_request_with_error_handling([&]() -> bool {
+    Logger::pcf_db().info("Deleting TrafficControlData with id %s", tcId);
+    return db_connector->deleteTrafficControlData(tcId);
+  });
 }
 
 oai::pcf::api::api_response
@@ -58,6 +60,8 @@ traffic_control_data_handler::traffic_control_data_tc_id_put(
   }
 
   return handle_request_with_error_handling([&]() -> bool {
+    nlohmann::json json_data = trafficControlData;
+    Logger::pcf_db().info("Updating TrafficControlData %s", json_data.dump());
     return db_connector->updateTrafficControlData(trafficControlData);
   });
 }
@@ -67,6 +71,8 @@ traffic_control_data_handler::traffic_control_data_tc_id_get(
     const std::string& tcId) {
   return handle_request_with_error_handling_json_body([&]() -> nlohmann::json {
     nlohmann::json json_data = db_connector->getTrafficControlData(tcId);
+    Logger::pcf_db().info(
+        "TrafficControlData successfully retrieved: %s", json_data.dump());
     return json_data;
   });
 }
@@ -75,6 +81,8 @@ oai::pcf::api::api_response
 traffic_control_data_handler::traffic_control_data_post(
     const oai::model::pcf::TrafficControlData& trafficControlData) {
   return handle_request_with_error_handling([&]() -> bool {
+    nlohmann::json json_data = trafficControlData;
+    Logger::pcf_db().info("Creating TrafficControlData: %s", json_data.dump());
     return db_connector->createTrafficControlData(trafficControlData);
   });
 }
@@ -83,6 +91,8 @@ oai::pcf::api::api_response
 traffic_control_data_handler::traffic_control_data_get() {
   return handle_request_with_error_handling_json_body([&]() -> nlohmann::json {
     nlohmann::json json_data = db_connector->getAllTrafficControlData();
+    Logger::pcf_db().info(
+        "All TrafficControlData successfully retrieved: %s", json_data.dump());
     return json_data;
   });
 }

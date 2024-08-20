@@ -41,14 +41,18 @@ using namespace oai::common::sbi;
 
 oai::pcf::api::api_response qos_data_handler::qos_data_qos_id_delete(
     const std::string& qosId) {
-  return handle_request_with_error_handling(
-      [&]() -> bool { return db_connector->deleteQosData(qosId); });
+  return handle_request_with_error_handling([&]() -> bool {
+    Logger::pcf_db().info("Deleting QoSData with id %s", qosId);
+    return db_connector->deleteQosData(qosId);
+  });
 }
 
 oai::pcf::api::api_response qos_data_handler::qos_data_qos_id_get(
     const std::string& qosId) {
   return handle_request_with_error_handling_json_body([&]() -> nlohmann::json {
     nlohmann::json json_data = db_connector->getQosData(qosId);
+    Logger::pcf_db().info(
+        "QoSData successfully retrieved: %s", json_data.dump());
     return json_data;
   });
 }
@@ -62,20 +66,28 @@ oai::pcf::api::api_response qos_data_handler::qos_data_qos_id_put(
     return response;
   }
 
-  return handle_request_with_error_handling(
-      [&]() -> bool { return db_connector->updateQosData(qosData); });
+  return handle_request_with_error_handling([&]() -> bool {
+    nlohmann::json json_data = qosData;
+    Logger::pcf_db().info("Updating QoSData %s", json_data.dump());
+    return db_connector->updateQosData(qosData);
+  });
 }
 
 oai::pcf::api::api_response qos_data_handler::qos_data_post(
     const oai::model::pcf::QosData& qosData) {
-  return handle_request_with_error_handling(
-      [&]() -> bool { return db_connector->createQosData(qosData); });
+  return handle_request_with_error_handling([&]() -> bool {
+    nlohmann::json json_data = qosData;
+    Logger::pcf_db().info("Creating QosData:  %s", json_data.dump());
+    return db_connector->createQosData(qosData);
+  });
 }
 
 oai::pcf::api::api_response qos_data_handler::qos_data_get() {
   api_response response;
   return handle_request_with_error_handling_json_body([&]() -> nlohmann::json {
     nlohmann::json json_data = db_connector->getAllPccRules();
+    Logger::pcf_db().info(
+        "All QoSData successfully retrieved: %s", json_data.dump());
     return json_data;
   });
 }

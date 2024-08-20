@@ -42,13 +42,17 @@ using namespace oai::common::sbi;
 api_response default_policy_decisions_handler::default_decision_get() {
   return handle_request_with_error_handling_json_body([&]() -> nlohmann::json {
     nlohmann::json json_data = db_connector->getDefaultPolicyDecision();
+    Logger::pcf_db().info(
+        "Default policy rules successfully retrieved: %s", json_data.dump());
     return json_data;
   });
 }
 
 api_response default_policy_decisions_handler::default_decision_put(
     const std::vector<std::string>& pccRules) {
+  nlohmann::json json_data = pccRules;
   return handle_request_with_error_handling([&]() -> bool {
+    Logger::pcf_db().info("Set default policy rules: %s", json_data.dump());
     return db_connector->setDefaultPolicyDecision(pccRules);
   });
 }

@@ -41,14 +41,18 @@ using namespace oai::common::sbi;
 
 oai::pcf::api::api_response pcc_rules_handler::pcc_rule_pcc_rule_id_delete(
     const std::string& pccRuleId) {
-  return handle_request_with_error_handling(
-      [&]() -> bool { return db_connector->deletePccRule(pccRuleId); });
+  return handle_request_with_error_handling([&]() -> bool {
+    Logger::pcf_db().info("Deleting PccRule with id %s", pccRuleId);
+    return db_connector->deletePccRule(pccRuleId);
+  });
 }
 
 oai::pcf::api::api_response pcc_rules_handler::pcc_rule_pcc_rule_id_get(
     const std::string& pccRuleId) {
   return handle_request_with_error_handling_json_body([&]() -> nlohmann::json {
     nlohmann::json json_data = db_connector->getPccRule(pccRuleId);
+    Logger::pcf_db().info(
+        "PccRule successfully retrieved: %s", json_data.dump());
     return json_data;
   });
 }
@@ -62,19 +66,27 @@ oai::pcf::api::api_response pcc_rules_handler::pcc_rule_pcc_rule_id_put(
     return response;
   }
 
-  return handle_request_with_error_handling(
-      [&]() -> bool { return db_connector->updatePccRule(pccRule); });
+  return handle_request_with_error_handling([&]() -> bool {
+    nlohmann::json json_data = pccRule;
+    Logger::pcf_db().info("Updating PccRule %s", json_data.dump());
+    return db_connector->updatePccRule(pccRule);
+  });
 }
 
 oai::pcf::api::api_response pcc_rules_handler::pcc_rule_post(
     const oai::model::pcf::PccRule& pccRule) {
-  return handle_request_with_error_handling(
-      [&]() -> bool { return db_connector->createPccRule(pccRule); });
+  return handle_request_with_error_handling([&]() -> bool {
+    nlohmann::json json_data = pccRule;
+    Logger::pcf_db().info("Creating PccRule: %s", json_data.dump());
+    return db_connector->createPccRule(pccRule);
+  });
 }
 
 oai::pcf::api::api_response pcc_rules_handler::pcc_rules_get() {
   return handle_request_with_error_handling_json_body([&]() -> nlohmann::json {
     nlohmann::json json_data = db_connector->getAllPccRules();
+    Logger::pcf_db().info(
+        "All PccRules successfully retrieved: %s", json_data.dump());
     return json_data;
   });
 }
