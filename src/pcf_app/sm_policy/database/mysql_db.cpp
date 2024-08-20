@@ -25,7 +25,10 @@
 #include <chrono>
 #include <thread>
 #include <stdexcept>
-
+#include <utility>
+#include <supi_policy_decision.hpp>
+#include <dnn_policy_decision.hpp>
+#include <slice_policy_decision.hpp>
 #include "logger.hpp"
 #include "pcf_config.hpp"
 
@@ -38,7 +41,12 @@ using namespace oai::model::pcf;
 extern std::unique_ptr<pcf_config> pcf_cfg;
 
 //------------------------------------------------------------------------------
-mysql_db::mysql_db() : database_wrapper<mysql_db>(), m_db_connection_status() {}
+mysql_db::mysql_db(
+    std::function<void(const std::shared_ptr<sm_policy::policy_decision>&)>
+        notify_callback)
+    : database_wrapper<mysql_db>(),
+      notify_func(std::move(notify_callback)),
+      db() {}
 
 //------------------------------------------------------------------------------
 mysql_db::~mysql_db() {}
@@ -121,6 +129,10 @@ bool mysql_db::setDefaultPolicyDecision(std::vector<std::string> rules) {
     throw;
   }
 
+  std::shared_ptr<sm_policy::policy_decision> decision =
+      std::make_shared<sm_policy::policy_decision>(getSmPolicyDecision(rules));
+  notify_func(decision);
+
   return true;
 }
 
@@ -177,6 +189,11 @@ bool mysql_db::createSupiPolicyDecision(
     throw;
   }
 
+  std::shared_ptr<sm_policy::supi_policy_decision> decision =
+      std::make_shared<sm_policy::supi_policy_decision>(
+          supiPolicyDecision.getSupi(),
+          getSmPolicyDecision(supiPolicyDecision.getPccRuleIds()));
+  notify_func(decision);
   return true;
 }
 
@@ -232,6 +249,11 @@ bool mysql_db::updateSupiPolicyDecision(
     throw;
   }
 
+  std::shared_ptr<sm_policy::supi_policy_decision> decision =
+      std::make_shared<sm_policy::supi_policy_decision>(
+          supiPolicyDecision.getSupi(),
+          getSmPolicyDecision(supiPolicyDecision.getPccRuleIds()));
+  notify_func(decision);
   return true;
 }
 
@@ -256,6 +278,7 @@ bool mysql_db::deleteSupiPolicyDecision(const std::string& supi) {
     throw;
   }
 
+  // TODO Notify Subscriber
   return true;
 }
 
@@ -317,6 +340,11 @@ bool mysql_db::createDnnPolicyDecision(
     throw;
   }
 
+  std::shared_ptr<sm_policy::dnn_policy_decision> decision =
+      std::make_shared<sm_policy::dnn_policy_decision>(
+          dnnPolicyDecision.getDnn(),
+          getSmPolicyDecision(dnnPolicyDecision.getPccRuleIds()));
+  notify_func(decision);
   return true;
 }
 
@@ -371,6 +399,11 @@ bool mysql_db::updateDnnPolicyDecision(
     throw;
   }
 
+  std::shared_ptr<sm_policy::dnn_policy_decision> decision =
+      std::make_shared<sm_policy::dnn_policy_decision>(
+          dnnPolicyDecision.getDnn(),
+          getSmPolicyDecision(dnnPolicyDecision.getPccRuleIds()));
+  notify_func(decision);
   return true;
 }
 
@@ -395,6 +428,7 @@ bool mysql_db::deleteDnnPolicyDecision(const std::string& dnn) {
     throw;
   }
 
+  // TODO notify subscriber
   return true;
 }
 
@@ -456,6 +490,11 @@ bool mysql_db::createSlicePolicyDecision(
     throw;
   }
 
+  std::shared_ptr<sm_policy::slice_policy_decision> decision =
+      std::make_shared<sm_policy::slice_policy_decision>(
+          slicePolicyDecision.getSnssai(),
+          getSmPolicyDecision(slicePolicyDecision.getPccRuleIds()));
+  notify_func(decision);
   return true;
 }
 
@@ -513,6 +552,11 @@ bool mysql_db::updateSlicePolicyDecision(
     throw;
   }
 
+  std::shared_ptr<sm_policy::slice_policy_decision> decision =
+      std::make_shared<sm_policy::slice_policy_decision>(
+          slicePolicyDecision.getSnssai(),
+          getSmPolicyDecision(slicePolicyDecision.getPccRuleIds()));
+  notify_func(decision);
   return true;
 }
 
@@ -541,6 +585,7 @@ bool mysql_db::deleteSlicePolicyDecision(const Snssai& slice) {
     throw;
   }
 
+  // TODO notify subscriber
   return true;
 }
 

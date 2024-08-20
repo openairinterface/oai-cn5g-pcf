@@ -49,25 +49,8 @@ pcf_app::pcf_app(pcf_event& ev) : m_event_sub(ev) {
 
   if (pcf_cfg->use_db_policy_storage() &&
       pcf_cfg->get_database_config().is_set()) {
-    if (pcf_cfg->get_database_config().is_set()) {
-      // Use the appropriate DB connector to initialize the connection to the DB
-      if (boost::iequals(
-              pcf_cfg->get_database_config().get_database_type(), "mysql")) {
-        db_connector = std::make_unique<mysql_db>();
-      } else {
-        Logger::pcf_app().error(
-            "PCF currently only supports MySQL for storing policies!");
-        exit(-1);
-      }
+    m_policy_storage = std::make_shared<sm_policy::policy_storage_db>();
 
-      Logger::pcf_app().startup("Connect to DB...");
-      if (!db_connector->connect(MAX_FIRST_CONNECTION_RETRY)) {
-        Logger::pcf_app().error("Could not establish the connection to the DB");
-        exit(-1);
-      }
-
-      m_policy_storage = std::make_shared<sm_policy::policy_storage_db>();
-    }
   } else {
     if (pcf_cfg->use_db_policy_storage()) {
       Logger::pcf_app().warn(

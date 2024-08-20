@@ -47,12 +47,15 @@
 #include "PccRule.h"
 #include "PccRuleODB.h"
 #include "PccRuleODB-odb.hxx"
+#include "../policy_storage_db.hpp"
 
 namespace oai::pcf::app {
 
 class mysql_db : public database_wrapper<mysql_db> {
  public:
-  mysql_db();
+  mysql_db(
+      std::function<void(const std::shared_ptr<sm_policy::policy_decision>&)>
+          notify_callback);
 
   virtual ~mysql_db();
 
@@ -176,7 +179,8 @@ class mysql_db : public database_wrapper<mysql_db> {
 
  private:
   std::shared_ptr<odb::database> db;
-  mutable std::shared_mutex m_db_connection_status;
+  std::function<void(const std::shared_ptr<sm_policy::policy_decision>&)>
+      notify_func;
 
   void check_db_connection() const {
     if (!db) {

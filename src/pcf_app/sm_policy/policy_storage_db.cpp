@@ -28,13 +28,15 @@
  */
 
 #include "policy_storage_db.hpp"
-#include "sm_policy/database/database_wrapper.hpp"
 #include <string>
 #include <sstream>
+#include <boost/algorithm/string/predicate.hpp>
+#include <mysql_db.hpp>
 #include "SupiPolicyDecision.h"
 #include "supi_policy_decision.hpp"
 #include "dnn_policy_decision.hpp"
 #include "slice_policy_decision.hpp"
+#include "pcf_config.hpp"
 
 using namespace oai::pcf::app::sm_policy;
 using namespace oai::model::pcf;
@@ -42,7 +44,26 @@ using namespace oai::model::common;
 using namespace oai::pcf::provisioning::model;
 using namespace oai::pcf::app;
 
-extern std::unique_ptr<database_wrapper_abstraction> db_connector;
+extern std::unique_ptr<oai::config::pcf::pcf_config> pcf_cfg;
+
+policy_storage_db::policy_storage_db() {
+  // Use the appropriate DB connector to initialize the connection to the DB
+  if (boost::iequals(
+          pcf_cfg->get_database_config().get_database_type(), "mysql")) {
+    db_connector = std::make_unique<mysql_db>(std::bind(
+        &policy_storage_db::notify_subscribers, this, std::placeholders::_1));
+  } else {
+    Logger::pcf_app().error(
+        "PCF currently only supports MySQL for storing policies!");
+    exit(-1);
+  }
+
+  Logger::pcf_app().startup("Connect to DB...");
+  if (!db_connector->connect(MAX_FIRST_CONNECTION_RETRY)) {
+    Logger::pcf_app().error("Could not establish the connection to the DB");
+    exit(-1);
+  }
+}
 
 std::shared_ptr<policy_decision> policy_storage_db::find_policy(
     const SmPolicyContextData& context) {
@@ -112,6 +133,11 @@ std::shared_ptr<policy_decision> policy_storage_db::find_policy(
         e.what());
     return nullptr;
   }
+}
+
+void policy_storage_db::notify_subscribers(
+    const std::shared_ptr<policy_decision>& decision) {
+  // TODO
 }
 
 void policy_storage_db::subscribe_to_decision_change(

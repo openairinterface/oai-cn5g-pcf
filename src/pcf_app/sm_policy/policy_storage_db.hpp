@@ -29,6 +29,7 @@
 
 #pragma once
 
+#include <database_wrapper_abstraction.hpp>
 #include "policy_storage.hpp"
 
 namespace oai::pcf::app::sm_policy {
@@ -38,11 +39,19 @@ namespace oai::pcf::app::sm_policy {
  *
  */
 class policy_storage_db : public policy_storage {
+ public:
+  policy_storage_db();
+
   std::shared_ptr<policy_decision> find_policy(
       const oai::model::pcf::SmPolicyContextData& context);
 
+  void notify_subscribers(const std::shared_ptr<policy_decision>& decision);
+
   void subscribe_to_decision_change(
       std::function<void(std::shared_ptr<policy_decision>&)> callback);
+
+ private:
+  std::unique_ptr<database_wrapper_abstraction> db_connector;
 };
 
 }  // namespace oai::pcf::app::sm_policy
