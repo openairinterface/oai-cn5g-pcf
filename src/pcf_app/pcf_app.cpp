@@ -83,7 +83,6 @@ pcf_app::pcf_app(pcf_event& ev) : m_event_sub(ev) {
 //------------------------------------------------------------------------------
 pcf_app::~pcf_app() {
   Logger::pcf_app().debug("Delete PCF_APP instance...");
-  /*if (db_connector) db_connector->close_connection();*/
 }
 
 std::shared_ptr<pcf_smpc> pcf_app::get_pcf_smpc_service() {

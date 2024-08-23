@@ -45,6 +45,7 @@ using namespace oai::pcf::provisioning::model;
 using namespace oai::pcf::app;
 
 extern std::unique_ptr<oai::config::pcf::pcf_config> pcf_cfg;
+extern std::unique_ptr<database_wrapper_abstraction> db_connector;
 
 policy_storage_db::policy_storage_db() {
   // Use the appropriate DB connector to initialize the connection to the DB

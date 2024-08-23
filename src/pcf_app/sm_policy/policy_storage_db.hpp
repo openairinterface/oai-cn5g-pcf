@@ -49,9 +49,6 @@ class policy_storage_db : public policy_storage {
 
   void subscribe_to_decision_change(
       std::function<void(std::shared_ptr<policy_decision>&)> callback);
-
- private:
-  std::unique_ptr<database_wrapper_abstraction> db_connector;
 };
 
 }  // namespace oai::pcf::app::sm_policy

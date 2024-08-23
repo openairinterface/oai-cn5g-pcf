@@ -532,86 +532,15 @@ paths:
         '200':
           description: Default policy decision updated successfully
 components:
-
-  # PccRules QosData and TrafficControlData:
-  # You can use 5G standard models for these objects. The schemas printed here are a subset and correspond to
-  # what is currently considered by the pcf.
   schemas:
+    # Get the referenced files from https://forge.3gpp.org/rep/all/5G_APIs
     PccRule:
-      type: object
-      properties:
-        pccRuleId:
-          type: string
-        flowInfos:
-          type: object
-          properties:
-            flowDescription:
-              type: string
-            packetFilterUsage:
-              type: boolean
-            flowDirection:
-              type: string
-              enum: [DOWNLINK, UPLINK, BIDIRECTIONAL, UNSPECIFIED, NULL_VALUE]
-        refTcData:
-          type: array
-          items:
-            type: string
-        precedence:
-          type: integer
-        refQosData:
-          type: array
-          items:
-            type: string
+      $ref: 'TS29512_Npcf_SMPolicyControl.yaml#/components/schemas/PccRule'
     QosData:
-      type: object
-      properties:
-        qosId:
-          type: string
-        5qi:
-          type: integer
-        arp:
-          type: object
-          properties:
-            priorityLevel:
-              type: integer
-            preemptCap:
-              type: string
-              enum: [NOT_PREEMPT, MAY_PREEMPT]
-            preemptVuln:
-              type: string
-              enum: [NOT_PREEMPT, MAY_PREEMPT]
-        priorityLevel:
-          type: integer
-        maxbrUl:
-          type: string
-        maxbrDl:
-          type: string
-        gbrUl:
-          type: string
-        gbrDl:
-          type: string
+      # Kommentar
+      $ref: 'TS29512_Npcf_SMPolicyControl.yaml#/components/schemas/QosData'
     TrafficControlData:
-      type: object
-      properties:
-        tcId:
-          type: string
-        redirectInfo:
-          type: object
-          properties:
-            redirectEnabled:
-              type: boolean
-            redirectAddressType:
-              type: string
-              enum: [URL, IPV4_ADDR, IPV6_ADDR, SIP_URI]
-            redirectServerAddress:
-              type: string
-        routeToLocs:
-          type: array
-          items:
-            type: object
-            properties:
-              dnai:
-                type: string
+      $ref: 'TS29512_Npcf_SMPolicyControl.yaml#/components/schemas/TrafficControlData'
     SupiPolicyDecision:
       type: object
       properties:
@@ -645,3 +574,4 @@ components:
           items:
             type: string
 
+#docker run -p 5000:8080 --name swaggerui -v /home/lukas/Projects/OAI/oai-cn5g-pcf/etc/api-spec:/open-apis -e SWAGGER_JSON=/open-apis/policy_decision_api_spec.yaml swaggerapi/swagger-ui
