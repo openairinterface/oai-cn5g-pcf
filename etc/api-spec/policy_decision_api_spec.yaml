@@ -573,5 +573,3 @@ components:
           type: array
           items:
             type: string
-
-#docker run -p 5000:8080 --name swaggerui -v /home/lukas/Projects/OAI/oai-cn5g-pcf/etc/api-spec:/open-apis -e SWAGGER_JSON=/open-apis/policy_decision_api_spec.yaml swaggerapi/swagger-ui
