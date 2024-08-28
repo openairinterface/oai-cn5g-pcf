@@ -19,7 +19,8 @@ using namespace oai::model::pcf;
 
 EventsSubscriptionDocumentApiImpl::EventsSubscriptionDocumentApiImpl(
     const std::shared_ptr<Pistache::Rest::Router>& rtr,
-    const std::shared_ptr<pcf_pa>& pa_service, const std::string&)
+    const std::shared_ptr<pcf_policy_authorization>& pa_service,
+    const std::string&)
     : EventsSubscriptionDocumentApi(rtr) {
   m_api_handler =
       std::make_shared<events_subscription_document_api_handler>(pa_service);

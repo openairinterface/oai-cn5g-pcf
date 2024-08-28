@@ -40,8 +40,9 @@ namespace oai::pcf::api {
 class pcscf_restoration_indication_api_handler {
  public:
   explicit pcscf_restoration_indication_api_handler(
-      const std::shared_ptr<oai::pcf::app::pcf_pa>& pcf_pa) {
-    m_pa_service = pcf_pa;
+      const std::shared_ptr<oai::pcf::app::pcf_policy_authorization>&
+          pcf_policy_authorization) {
+    m_pa_service = pcf_policy_authorization;
   }
   /**
    * Indicates P-CSCF restoration
@@ -53,7 +54,7 @@ class pcscf_restoration_indication_api_handler {
           pcscf_restoration_request_data);
 
  private:
-  std::shared_ptr<oai::pcf::app::pcf_pa> m_pa_service;
+  std::shared_ptr<oai::pcf::app::pcf_policy_authorization> m_pa_service;
 };
 
 }  // namespace oai::pcf::api

@@ -39,8 +39,9 @@ namespace oai::pcf::api {
 class application_sessions_collection_api_handler {
  public:
   explicit application_sessions_collection_api_handler(
-      const std::shared_ptr<oai::pcf::app::pcf_pa>& pcf_pa) {
-    m_pa_service = pcf_pa;
+      const std::shared_ptr<oai::pcf::app::pcf_policy_authorization>&
+          pcf_policy_authorization) {
+    m_pa_service = pcf_policy_authorization;
   }
   /**
    * Creates a new Individual Application Session Context resource
@@ -51,7 +52,7 @@ class application_sessions_collection_api_handler {
       const oai::model::pcf::AppSessionContext& app_session_context);
 
  private:
-  std::shared_ptr<oai::pcf::app::pcf_pa> m_pa_service;
+  std::shared_ptr<oai::pcf::app::pcf_policy_authorization> m_pa_service;
 };
 
 }  // namespace oai::pcf::api

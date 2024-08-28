@@ -37,7 +37,7 @@
 
 #include "AppSessionContext.h"
 #include "AppSessionContextUpdateDataPatch.h"
-#include "policy_auth/pcf_pa_status_code.hpp"
+#include "policy_auth/pcf_policy_authorization_status_code.hpp"
 #include "uint_generator.hpp"
 
 namespace oai::pcf::app {
@@ -46,13 +46,13 @@ namespace oai::pcf::app {
  * @brief Service class to handle Session Management Policies
  *
  */
-class pcf_pa {
+class pcf_policy_authorization {
  public:
-  explicit pcf_pa();
-  pcf_pa(pcf_pa const&) = delete;
-  void operator=(pcf_pa const&) = delete;
+  explicit pcf_policy_authorization();
+  pcf_policy_authorization(pcf_policy_authorization const&) = delete;
+  void operator=(pcf_policy_authorization const&) = delete;
 
-  virtual ~pcf_pa();
+  virtual ~pcf_policy_authorization();
 
   /**
    * @brief Handler for receiving service policy requests, as defined in

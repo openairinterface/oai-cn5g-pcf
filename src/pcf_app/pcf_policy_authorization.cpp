@@ -45,10 +45,10 @@ using namespace oai::model::pcf;
 using namespace std;
 
 //------------------------------------------------------------------------------
-pcf_pa::pcf_pa() {}
+pcf_policy_authorization::pcf_policy_authorization() {}
 
 //------------------------------------------------------------------------------
-status_code pcf_pa::post_app_sessions_handler(
+status_code pcf_policy_authorization::post_app_sessions_handler(
     const SmPolicyContextData& context, std::string& problem_details) {
   Logger::pcf_app().warn("App session, but not implemented!");
 
@@ -56,7 +56,7 @@ status_code pcf_pa::post_app_sessions_handler(
 }
 
 //------------------------------------------------------------------------------
-policy_auth::status_code pcf_pa::mod_app_session_handler(
+policy_auth::status_code pcf_policy_authorization::mod_app_session_handler(
     const std::string& app_session_id,
     const oai::model::pcf::AppSessionContextUpdateDataPatch&
         app_session_context_update_data_patch,
@@ -68,6 +68,6 @@ policy_auth::status_code pcf_pa::mod_app_session_handler(
 }
 
 //------------------------------------------------------------------------------
-pcf_pa::~pcf_pa() {
+pcf_policy_authorization::~pcf_policy_authorization() {
   Logger::pcf_app().debug("Delete PCF PA instance...");
 }

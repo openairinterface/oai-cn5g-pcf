@@ -48,7 +48,10 @@
 #include "pcf_app.hpp"
 #include "SMPoliciesCollectionApiImpl.h"
 #include "IndividualSMPolicyDocumentApiImpl.h"
-
+#include "ApplicationSessionsCollectionApiImpl.h"
+#include "EventsSubscriptionDocumentApiImpl.h"
+#include "IndividualApplicationSessionContextDocumentApiImpl.h"
+#include "PCSCFRestorationIndicationApiImpl.h"
 namespace oai::pcf::api {
 
 class PCFApiServer {
@@ -68,6 +71,22 @@ class PCFApiServer {
     m_individualSmPolicyDocumentApi =
         std::make_shared<oai::pcf::api::IndividualSMPolicyDocumentApiImpl>(
             m_router, pcf_app_inst->get_pcf_smpc_service(), m_address);
+    
+    m_applicationSessionsCollectionApi =
+        std::make_shared<oai::pcf::api::ApplicationSessionsCollectionApiImpl>(
+            m_router, pcf_app_inst->get_pcf_policy_authorization_service(), m_address);
+
+    m_eventsSubscriptionDocumentApi =
+        std::make_shared<oai::pcf::api::EventsSubscriptionDocumentApiImpl>(
+            m_router, pcf_app_inst->get_pcf_policy_authorization_service(), m_address);
+
+    m_individualApplicationSessionContextDocumentApi =
+        std::make_shared<oai::pcf::api::IndividualApplicationSessionContextDocumentApiImpl>(
+            m_router, pcf_app_inst->get_pcf_policy_authorization_service(), m_address);
+
+    m_pcscfRestorationIndicationApi =
+        std::make_shared<oai::pcf::api::PCSCFRestorationIndicationApiImpl>(
+            m_router, pcf_app_inst->get_pcf_policy_authorization_service(), m_address);
   }
   void init(size_t thr = 1);
   void start();
@@ -84,5 +103,17 @@ class PCFApiServer {
 
   std::shared_ptr<oai::pcf::api::IndividualSMPolicyDocumentApiImpl>
       m_individualSmPolicyDocumentApi;
+
+  std::shared_ptr<oai::pcf::api::ApplicationSessionsCollectionApiImpl>
+      m_applicationSessionsCollectionApi;
+
+  std::shared_ptr<oai::pcf::api::EventsSubscriptionDocumentApiImpl>
+      m_eventsSubscriptionDocumentApi;
+  
+  std::shared_ptr<oai::pcf::api::IndividualApplicationSessionContextDocumentApiImpl>
+      m_individualApplicationSessionContextDocumentApi;
+
+  std::shared_ptr<oai::pcf::api::PCSCFRestorationIndicationApiImpl>
+      m_pcscfRestorationIndicationApi;
 };
 }  // namespace oai::pcf::api

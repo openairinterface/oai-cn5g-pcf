@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file pcf_pa_status_code.hpp
+/*! \file pcf_policy_authorization_status_code.hpp
  \brief
  \author  Tariro Mukute
  \company University of Cape Town

@@ -20,7 +20,8 @@ using namespace oai::model::pcf;
 IndividualApplicationSessionContextDocumentApiImpl::
     IndividualApplicationSessionContextDocumentApiImpl(
         const std::shared_ptr<Pistache::Rest::Router>& rtr,
-        const std::shared_ptr<pcf_pa>& pa_service, const std::string&)
+        const std::shared_ptr<pcf_policy_authorization>& pa_service,
+        const std::string&)
     : IndividualApplicationSessionContextDocumentApi(rtr) {
   m_api_handler = std::make_shared<
       individual_application_session_context_document_api_handler>(pa_service);

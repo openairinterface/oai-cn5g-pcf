@@ -163,6 +163,151 @@ void pcf_http2_server::start() {
         });
       });
 
+  // Watch for /app-sessions
+  server.handle(
+      app_sessions::get_route(),
+      [&](const request& request, const response& response) {
+        if (request.method() != "POST") {
+          handle_method_not_exists(response, request);
+          return;
+        }
+        auto request_body = std::make_shared<std::stringstream>();
+
+        request.on_data([&, request_body](
+                            const uint8_t* data, std::size_t len) {
+          if (len > 0) {
+            std::copy(
+                data, data + len,
+                std::ostream_iterator<uint8_t>(*request_body));
+            return;
+          }
+          AppSessionContext context;
+          try {
+            nlohmann::json::parse(request_body->str()).get_to(context);
+            context.validate();
+            api_response resp = m_application_sessions_collection_api_handler
+                                    ->post_app_sessions(context);
+            auto h_map = convert_headers(resp);
+            response.write_head(
+                static_cast<unsigned int>(resp.status_code), h_map);
+            response.end(resp.body);
+            return;
+          } catch (std::exception& e) {
+            handle_parsing_error(response, e);
+            return;
+          }
+        });
+      });
+
+  // We match for /app-sessions/*
+  server.handle(
+      app_sessions::get_route() + "/",
+      [&](const request& request, const response& response) {
+        std::vector<std::string> split_result;
+        boost::split(split_result, request.uri().path, boost::is_any_of("/"));
+        bool is_restoration = false;  // /app-sessions/pcscf-restoration
+        bool is_get_patch   = false;  // /app-sessions/{appSessionId}
+        bool is_delete      = false;  // /app-sessions/{appSessionId}/delete
+        bool is_event =
+            false;  // /app-sessions/{appSessionId}/events-subscription
+
+        std::string app_session_id;
+        if (split_result[split_result.size() - 1] == "pcscf-restoration") {
+          is_restoration = true;
+        } else if (split_result[split_result.size() - 1] == "delete") {
+          is_delete      = true;
+          app_session_id = split_result[split_result.size() - 2];
+        } else if (
+            split_result[split_result.size() - 1] == "events-subscription") {
+          is_event       = true;
+          app_session_id = split_result[split_result.size() - 2];
+        } else {
+          is_get_patch   = true;
+          app_session_id = split_result[split_result.size() - 1];
+        }
+
+        if ((is_restoration || is_delete) && request.method() != "POST") {
+          handle_method_not_exists(response, request);
+          return;
+        }
+
+        if (is_event &&
+            (request.method() != "PUT" || request.method() != "DELETE")) {
+          handle_method_not_exists(response, request);
+          return;
+        }
+
+        if (is_get_patch &&
+            (request.method() != "GET" || request.method() != "PATCH")) {
+          handle_method_not_exists(response, request);
+          return;
+        }
+
+        auto request_body = std::make_shared<std::stringstream>();
+
+        request.on_data([&, request_body, is_restoration, is_get_patch,
+                         is_delete, is_event,
+                         app_session_id](const uint8_t* data, std::size_t len) {
+          if (len > 0) {
+            std::copy(
+                data, data + len,
+                std::ostream_iterator<uint8_t>(*request_body));
+            return;
+          }
+          PcscfRestorationRequestData pcscf_restoration_data;
+          EventsSubscReqData events_subsc_data;
+          AppSessionContextUpdateDataPatch app_session_context_data;
+          api_response resp;
+          try {
+            if (is_restoration) {
+              nlohmann::json::parse(request_body->str())
+                  .get_to(pcscf_restoration_data);
+              pcscf_restoration_data.validate();
+              resp =
+                  m_pcscf_restoration_indication_api_handler->pcscf_restoration(
+                      pcscf_restoration_data);
+            } else if (is_delete) {
+              nlohmann::json::parse(request_body->str())
+                  .get_to(events_subsc_data);
+              events_subsc_data.validate();
+              resp =
+                  m_individual_application_session_context_document_api_handler
+                      ->delete_app_session(app_session_id, events_subsc_data);
+            } else if (is_event && request.method() == "PUT") {
+              nlohmann::json::parse(request_body->str())
+                  .get_to(events_subsc_data);
+              events_subsc_data.validate();
+              resp =
+                  m_events_subscription_document_api_handler
+                      ->update_events_subsc(app_session_id, events_subsc_data);
+            } else if (is_event && request.method() == "DELTE") {
+              resp = m_events_subscription_document_api_handler
+                         ->delete_events_subsc(app_session_id);
+            } else if (is_get_patch && request.method() == "GET") {
+              resp =
+                  m_individual_application_session_context_document_api_handler
+                      ->get_app_session(app_session_id);
+            } else if (is_get_patch && request.method() == "PATCH") {
+              nlohmann::json::parse(request_body->str())
+                  .get_to(app_session_context_data);
+              app_session_context_data.validate();
+              resp =
+                  m_individual_application_session_context_document_api_handler
+                      ->mod_app_session(
+                          app_session_id, app_session_context_data);
+            }
+            auto h_map = convert_headers(resp);
+            response.write_head(
+                static_cast<unsigned int>(resp.status_code), h_map);
+            response.end(resp.body);
+            return;
+          } catch (std::exception& e) {
+            handle_parsing_error(response, e);
+            return;
+          }
+        });
+      });
+
   // Default Route
   server.handle("/", [&](const request& request, const response& response) {
     handle_method_not_exists(response, request);

@@ -40,8 +40,9 @@ namespace oai::pcf::api {
 class individual_application_session_context_document_api_handler {
  public:
   explicit individual_application_session_context_document_api_handler(
-      const std::shared_ptr<oai::pcf::app::pcf_pa>& pcf_pa) {
-    m_pa_service = pcf_pa;
+      const std::shared_ptr<oai::pcf::app::pcf_policy_authorization>&
+          pcf_policy_authorization) {
+    m_pa_service = pcf_policy_authorization;
   }
   /**
    * Delete Individual Application Session Context based on ID
@@ -73,7 +74,7 @@ class individual_application_session_context_document_api_handler {
           app_session_context_update_data_patch);
 
  private:
-  std::shared_ptr<oai::pcf::app::pcf_pa> m_pa_service;
+  std::shared_ptr<oai::pcf::app::pcf_policy_authorization> m_pa_service;
 };
 
 }  // namespace oai::pcf::api

@@ -51,7 +51,8 @@ class ApplicationSessionsCollectionApiImpl
  public:
   explicit ApplicationSessionsCollectionApiImpl(
       const std::shared_ptr<Pistache::Rest::Router>& rtr,
-      const std::shared_ptr<pcf_pa>& pa_service, const std::string&);
+      const std::shared_ptr<pcf_policy_authorization>& pa_service,
+      const std::string&);
   ~ApplicationSessionsCollectionApiImpl() override = default;
 
   void post_app_sessions(

@@ -38,8 +38,9 @@ namespace oai::pcf::api {
 class events_subscription_document_api_handler {
  public:
   explicit events_subscription_document_api_handler(
-      const std::shared_ptr<oai::pcf::app::pcf_pa>& pcf_pa) {
-    m_pa_service = pcf_pa;
+      const std::shared_ptr<oai::pcf::app::pcf_policy_authorization>&
+          pcf_policy_authorization) {
+    m_pa_service = pcf_policy_authorization;
   }
   /**
    * Delete Events Subscription based on ID
@@ -59,7 +60,7 @@ class events_subscription_document_api_handler {
       const oai::model::pcf::EventsSubscReqData& events_subsc_req_data);
 
  private:
-  std::shared_ptr<oai::pcf::app::pcf_pa> m_pa_service;
+  std::shared_ptr<oai::pcf::app::pcf_policy_authorization> m_pa_service;
 };
 
 }  // namespace oai::pcf::api
