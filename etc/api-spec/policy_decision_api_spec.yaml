@@ -537,7 +537,6 @@ components:
     PccRule:
       $ref: 'TS29512_Npcf_SMPolicyControl.yaml#/components/schemas/PccRule'
     QosData:
-      # Kommentar
       $ref: 'TS29512_Npcf_SMPolicyControl.yaml#/components/schemas/QosData'
     TrafficControlData:
       $ref: 'TS29512_Npcf_SMPolicyControl.yaml#/components/schemas/TrafficControlData'
