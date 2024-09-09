@@ -85,7 +85,7 @@ oai::pcf::api::api_response qos_data_handler::qos_data_post(
 oai::pcf::api::api_response qos_data_handler::qos_data_get() {
   api_response response;
   return handle_request_with_error_handling_json_body([&]() -> nlohmann::json {
-    nlohmann::json json_data = db_connector->getAllPccRules();
+    nlohmann::json json_data = db_connector->getAllQosData();
     Logger::pcf_db().info(
         "All QoSData successfully retrieved: %s", json_data.dump());
     return json_data;
