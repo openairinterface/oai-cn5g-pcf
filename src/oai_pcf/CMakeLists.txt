@@ -307,3 +307,10 @@ ENDIF(STATIC_LINKING)
 
 target_link_libraries (pcf ${ASAN}  -Wl,--start-group PCF PCF_API ${CRYPTO_LIBRARIES} -lnghttp2_asio -lboost_system -lboost_thread -lssl -lcrypto -lfmt -lspdlog dl -Wl,--end-group
 pthread m rt event boost_system -lboost_filesystem pistache curl -lyaml-cpp cpr::cpr)
+
+add_boolean_option(USE_LTTNG  False "Activate the LTTNG tracer, a debugging/monitoring framework" ON)
+if (USE_LTTNG)
+    message("Using the lttng build variant")
+    add_definitions("-DLOGGER_CAN_USE_LTTNG")
+    target_link_libraries(pcf -ldl lttng-ust)
+endif ()
