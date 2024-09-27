@@ -114,7 +114,8 @@ pcf_config_type::pcf_config_type(
 void pcf_config_type::from_yaml(const YAML::Node& node) {
   nf::from_yaml(node);
   if (node["enable_policy_provisioning_api"]) {
-    m_enable_policy_provisioning_api.from_yaml(node["enable_policy_provisioning_api"]);
+    m_enable_policy_provisioning_api.from_yaml(
+        node["enable_policy_provisioning_api"]);
   }
   if (node["local_policy"]) {
     m_policy_config.from_yaml(node["local_policy"]);
