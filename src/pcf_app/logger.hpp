@@ -63,6 +63,10 @@ class Logger {
     oai::logger::logger_registry::set_level(level);
   }
 
+  static void set_lttng(bool isLttngActive) {
+    oai::logger::logger_registry::set_lttng_is_active(isLttngActive);
+  }
+
   static const oai::logger::printf_logger& pcf_app() {
     return oai::logger::logger_registry::get_logger(PCF_APP);
   }

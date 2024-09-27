@@ -217,14 +217,6 @@ endif()
 add_definitions("-DPACKAGE_VERSION=\"Branch: ${GIT_BRANCH} Abrev. Hash: ${GIT_COMMIT_HASH} Date: ${GIT_COMMIT_DATE}\"")
 add_definitions("-DPACKAGE_BUGREPORT=\"openaircn-user@lists.eurecom.fr\"")
 
-################################################################
-# ODB
-################################################################
-#include_directories(${ODB_INCLUDE_DIRS})
-#include_directories(${ODBMySQL_INCLUDE_DIRS})
-
-
-
 ###############################################################################
 # Include CMake modules to find other library
 ###############################################################################
@@ -324,4 +316,10 @@ ENDIF(STATIC_LINKING)
 
 target_link_libraries (pcf ${ASAN}  -Wl,--start-group PCF PCF_API ${CRYPTO_LIBRARIES} -lnghttp2_asio -lboost_system -lboost_thread -lssl -lcrypto -lfmt -lspdlog dl -Wl,--end-group
 pthread m rt event boost_system -lboost_filesystem pistache curl -lyaml-cpp cpr::cpr -lodb -lodb-mysql -lmysqlclient odb odb-mysql)
-## ${ODB_LIBRARIES} ${ODBMySQL_LIBRARIES}
+
+add_boolean_option(USE_LTTNG  False "Activate the LTTNG tracer, a debugging/monitoring framework" ON)
+if (USE_LTTNG)
+    message("Using the lttng build variant")
+    add_definitions("-DLOGGER_CAN_USE_LTTNG")
+    target_link_libraries(pcf -ldl lttng-ust)
+endif ()
