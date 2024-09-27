@@ -104,17 +104,17 @@ const std::string& policy_config::get_qos_data_path() const {
 
 pcf_config_type::pcf_config_type(
     const std::string& name, const std::string& host, const sbi_interface& sbi,
-    bool use_db_for_policy_storage, const policy_config& policy)
+    bool enable_policy_provisioning_api, const policy_config& policy)
     : nf(name, host, sbi), m_policy_config(policy) {
-  m_use_db_for_policy_storage = option_config_value(
-      "use_db_for_policy_storage", use_db_for_policy_storage);
+  m_enable_policy_provisioning_api = option_config_value(
+      "enable_policy_provisioning_api", enable_policy_provisioning_api);
   m_policy_config.set_config();
 }
 
 void pcf_config_type::from_yaml(const YAML::Node& node) {
   nf::from_yaml(node);
-  if (node["use_db_for_policy_storage"]) {
-    m_use_db_for_policy_storage.from_yaml(node["use_db_for_policy_storage"]);
+  if (node["enable_policy_provisioning_api"]) {
+    m_enable_policy_provisioning_api.from_yaml(node["enable_policy_provisioning_api"]);
   }
   if (node["local_policy"]) {
     m_policy_config.from_yaml(node["local_policy"]);
@@ -127,10 +127,10 @@ std::string pcf_config_type::to_string(const std::string& indent) const {
   unsigned int inner_width = get_inner_width(indent.length());
   out.append(indent).append(fmt::format(
       BASE_FORMATTER, OUTER_LIST_ELEM,
-      m_use_db_for_policy_storage.get_config_name(), inner_width,
-      m_use_db_for_policy_storage.to_string(indent)));
+      m_enable_policy_provisioning_api.get_config_name(), inner_width,
+      m_enable_policy_provisioning_api.to_string(indent)));
 
-  if (!m_use_db_for_policy_storage.get_value()) {
+  if (!m_enable_policy_provisioning_api.get_value()) {
     out.append(m_policy_config.to_string(indent));
   }
 
@@ -142,8 +142,8 @@ void pcf_config_type::validate() {
   m_policy_config.validate();
 }
 
-bool pcf_config_type::use_db_for_policy_storage() const {
-  return m_use_db_for_policy_storage.get_value();
+bool pcf_config_type::enable_policy_provisioning_api() const {
+  return m_enable_policy_provisioning_api.get_value();
 }
 
 const policy_config& pcf_config_type::get_policy_config() const {

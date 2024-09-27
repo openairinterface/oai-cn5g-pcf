@@ -63,5 +63,5 @@ oai::config::pcf::pcf_config::get_pcf_policy() const {
 
 bool oai::config::pcf::pcf_config::use_db_policy_storage() const {
   return std::dynamic_pointer_cast<pcf_config_type>(get_local())
-      ->use_db_for_policy_storage();
+      ->enable_policy_provisioning_api();
 }

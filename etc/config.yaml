@@ -206,7 +206,7 @@ dnns:
     ipv4_pool: "14.1.1.2 - 14.1.1.253"
 
 pcf:
-  use_db_for_policy_storage: yes # Use db instead of yaml, enables dynamic pcc rule creation via API
+  enable_policy_provisioning_api: yes # Use db instead of yaml, enables dynamic pcc rule creation via API
   local_policy:
     policy_decisions_path: /tmp/pcf/etc/policies/policy_decisions #/openair-pcf/policies/policy_decisions
     pcc_rules_path: /tmp/pcf/etc/policies/pcc_rules
