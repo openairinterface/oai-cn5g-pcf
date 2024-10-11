@@ -276,9 +276,8 @@ std::vector<SupiPolicyDecision> mysql_db::getAllSupiPolicyDecisions() {
     odb::transaction t(db->begin());
     odb::result<SupiPolicyDecision> r(db->query<SupiPolicyDecision>());
 
-    for (odb::result<SupiPolicyDecision>::iterator i(r.begin()); i != r.end();
-         ++i) {
-      results.push_back(*i);
+    for (auto& obj : r) {
+      results.push_back(std::move(obj));
     }
 
     t.commit();
@@ -415,9 +414,8 @@ std::vector<DnnPolicyDecision> mysql_db::getAllDnnPolicyDecisions() {
     odb::transaction t(db->begin());
     odb::result<DnnPolicyDecision> r(db->query<DnnPolicyDecision>());
 
-    for (odb::result<DnnPolicyDecision>::iterator i(r.begin()); i != r.end();
-         ++i) {
-      results.push_back(*i);
+    for (auto& obj : r) {
+      results.push_back(std::move(obj));
     }
     t.commit();
   } catch (const std::exception& e) {
@@ -558,9 +556,8 @@ std::vector<SlicePolicyDecision> mysql_db::getAllSlicePolicyDecisions() {
     odb::transaction t(db->begin());
     odb::result<SlicePolicyDecision> r(db->query<SlicePolicyDecision>());
 
-    for (odb::result<SlicePolicyDecision>::iterator i(r.begin()); i != r.end();
-         ++i) {
-      results.push_back(*i);
+    for (auto& obj : r) {
+      results.push_back(std::move(obj));
     }
     t.commit();
   } catch (const std::exception& e) {
@@ -661,8 +658,8 @@ std::vector<QosData> mysql_db::getAllQosData() {
     odb::transaction t(db->begin());
     odb::result<QosData> r(db->query<QosData>());
 
-    for (odb::result<QosData>::iterator i(r.begin()); i != r.end(); ++i) {
-      results.push_back(*i);
+    for (auto& obj : r) {
+      results.push_back(std::move(obj));
     }
 
     t.commit();
@@ -789,11 +786,11 @@ std::vector<TrafficControlData> mysql_db::getAllTrafficControlData() {
     odb::transaction t(db->begin());
     odb::result<TrafficControlDataODB> r(db->query<TrafficControlDataODB>());
 
-    for (odb::result<TrafficControlDataODB>::iterator i(r.begin());
-         i != r.end(); ++i) {
-      nlohmann::json json_trafficControlDataODB = *i;
-      TrafficControlData trafficControlData     = json_trafficControlDataODB;
-      results.push_back(trafficControlData);
+    for (auto& obj : r) {
+      nlohmann::json json_trafficControlDataODB = std::move(obj);
+      TrafficControlData trafficControlData =
+          std::move(json_trafficControlDataODB);
+      results.push_back(std::move(trafficControlData));
     }
 
     t.commit();
@@ -923,10 +920,10 @@ std::vector<oai::model::pcf::PccRule> mysql_db::getAllPccRules() {
     odb::transaction t(db->begin());
     odb::result<PccRuleODB> r(db->query<PccRuleODB>());
 
-    for (odb::result<PccRuleODB>::iterator i(r.begin()); i != r.end(); ++i) {
-      nlohmann::json json_pccRuleODB   = *i;
-      oai::model::pcf::PccRule pccRule = json_pccRuleODB;
-      results.push_back(pccRule);
+    for (auto& obj : r) {
+      nlohmann::json json_pccRuleODB   = std::move(obj);
+      oai::model::pcf::PccRule pccRule = std::move(json_pccRuleODB);
+      results.push_back(std::move(pccRule));
     }
 
     t.commit();

@@ -370,9 +370,7 @@ void pcf_http2_server::start() {
           if (query_params.find("sd") != query_params.end()) {
             sd = query_params["sd"];
           } else {
-            response.write_head(400);
-            response.end("Missing 'sd' parameter");
-            return;
+            sd = oai::model::common::SD_DEFAULT_VALUE;
           }
 
           // slice = split_result[split_result.size() - 1];

@@ -11,6 +11,7 @@
  * the class manually.
  */
 
+#include <Snssai.h>
 #include "SlicePolicyDecisionsApi.h"
 #include "Helpers.h"
 #include "api_defs.h"
@@ -116,8 +117,7 @@ void SlicePolicyDecisionsApi::slice_policy_decision_delete_handler(
         sd = valueQuery_instance;
       }
     } else {
-      response.send(
-          Pistache::Http::Code::Bad_Request, "Missing 'sd' parameter");
+      sd = oai::model::common::SD_DEFAULT_VALUE;
     }
 
     try {
@@ -160,8 +160,7 @@ void SlicePolicyDecisionsApi::slice_policy_decision_get_handler(
         sd = valueQuery_instance;
       }
     } else {
-      response.send(
-          Pistache::Http::Code::Bad_Request, "Missing 'sd' parameter");
+      sd = oai::model::common::SD_DEFAULT_VALUE;
     }
 
     try {
@@ -241,6 +240,8 @@ void SlicePolicyDecisionsApi::slice_policy_decision_put_handler(
       if (fromStringValue(sdQuery.get(), valueQuery_instance)) {
         sd = valueQuery_instance;
       }
+    } else {
+      sd = oai::model::common::SD_DEFAULT_VALUE;
     }
 
     try {
