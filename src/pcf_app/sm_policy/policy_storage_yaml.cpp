@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file policy_storage.cpp
+/*! \file policy_storage_yaml.cpp
  \brief
  \author  Stefan Spettel
  \company Openairinterface Software Allianse
@@ -27,7 +27,7 @@
  \email: stefan.spettel@eurecom.fr
  */
 
-#include "policy_storage.hpp"
+#include "policy_storage_yaml.hpp"
 #include "logger.hpp"
 #include <string>
 #include <sstream>
@@ -36,7 +36,8 @@ using namespace oai::pcf::app::sm_policy;
 using namespace oai::model::pcf;
 using namespace oai::model::common;
 
-void policy_storage::set_default_decision(const SmPolicyDecision& decision) {
+void policy_storage_yaml::set_default_decision(
+    const SmPolicyDecision& decision) {
   std::shared_ptr<policy_decision> desc =
       std::make_shared<policy_decision>(decision);
 
@@ -44,7 +45,7 @@ void policy_storage::set_default_decision(const SmPolicyDecision& decision) {
   notify_subscribers(desc);
 }
 
-void policy_storage::insert_supi_decision(
+void policy_storage_yaml::insert_supi_decision(
     const std::string& supi, const SmPolicyDecision& decision) {
   std::unique_lock supi_decision_lock(m_supi_policy_decisions_mutex);
 
@@ -56,7 +57,7 @@ void policy_storage::insert_supi_decision(
   notify_subscribers(desc);
 }
 
-void policy_storage::insert_dnn_decision(
+void policy_storage_yaml::insert_dnn_decision(
     const std::string& dnn, const SmPolicyDecision& decision) {
   std::unique_lock dnn_decision_lock(m_dnn_policy_decisions_mutex);
 
@@ -68,7 +69,7 @@ void policy_storage::insert_dnn_decision(
   notify_subscribers(desc);
 }
 
-void policy_storage::insert_slice_decision(
+void policy_storage_yaml::insert_slice_decision(
     const Snssai& slice, const SmPolicyDecision& decision) {
   std::unique_lock slice_decision_lock(m_slice_policy_decisions_mutex);
 
@@ -80,7 +81,7 @@ void policy_storage::insert_slice_decision(
   notify_subscribers(desc);
 }
 
-std::shared_ptr<policy_decision> policy_storage::find_policy(
+std::shared_ptr<policy_decision> policy_storage_yaml::find_policy(
     const SmPolicyContextData& context) {
   std::string msg_base = "SM Policy request from SUPI:";
   std::string supi     = context.getSupi();
@@ -134,17 +135,17 @@ std::shared_ptr<policy_decision> policy_storage::find_policy(
   }
 }
 
-void policy_storage::notify_subscribers(
+void policy_storage_yaml::notify_subscribers(
     const std::shared_ptr<policy_decision>& /* decision */) {
   // TODO
 }
 
-void policy_storage::subscribe_to_decision_change(
+void policy_storage_yaml::subscribe_to_decision_change(
     std::function<void(std::shared_ptr<policy_decision>&)> /* callback */) {
   // TODO implement me
 }
 
-std::string policy_storage::to_string() const {
+std::string policy_storage_yaml::to_string() const {
   std::shared_lock supi_lock(m_supi_policy_decisions_mutex);
   std::shared_lock dnn_lock(m_dnn_policy_decisions_mutex);
   std::shared_lock slice_lock(m_slice_policy_decisions_mutex);
@@ -190,6 +191,7 @@ std::string policy_storage::to_string() const {
 }
 
 std::ostream& operator<<(
-    std::ostream& os, const oai::pcf::app::sm_policy::policy_storage& storage) {
+    std::ostream& os,
+    const oai::pcf::app::sm_policy::policy_storage_yaml& storage) {
   return os << storage.to_string();
 }

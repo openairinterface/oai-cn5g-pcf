@@ -34,7 +34,7 @@
 static const std::string PCF_APP    = "pcf_app";
 static const std::string PCF_SBI    = "pcf_sbi";
 static const std::string PCF_CLIENT = "pcf_client";
-static const std::string SYSTEM     = "system ";
+static const std::string PCF_DB     = "pcf_db";
 
 class Logger {
  public:
@@ -48,6 +48,8 @@ class Logger {
         name, PCF_CLIENT, log_stdout, log_rot_file);
     oai::logger::logger_registry::register_logger(
         name, LOGGER_COMMON, log_stdout, log_rot_file);
+    oai::logger::logger_registry::register_logger(
+        name, PCF_DB, log_stdout, log_rot_file);
     oai::logger::logger_registry::register_logger(
         name, SYSTEM, log_stdout, log_rot_file);
   }
@@ -74,6 +76,10 @@ class Logger {
 
   static const oai::logger::printf_logger& pcf_client() {
     return oai::logger::logger_registry::get_logger(PCF_CLIENT);
+  }
+
+  static const oai::logger::printf_logger& pcf_db() {
+    return oai::logger::logger_registry::get_logger(PCF_DB);
   }
 
   static const oai::logger::printf_logger& system() {

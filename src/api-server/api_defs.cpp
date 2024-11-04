@@ -40,4 +40,8 @@ std::string sm_policies::get_route() {
          sm_policies::CREATE_ROUTE;
 }
 
+std::string policy_decision_provisioning::get_provisioning_base() {
+  return API_BASE + pcf_cfg->local().get_sbi().get_api_version();
+}
+
 }  // namespace oai::pcf::api

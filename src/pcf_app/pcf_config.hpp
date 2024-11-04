@@ -47,5 +47,6 @@ class pcf_config : public oai::config::config {
       const std::string& config_path, bool log_stdout, bool log_rot_file);
 
   const policy_config& get_pcf_policy() const;
+  bool use_db_policy_storage() const;
 };
 }  // namespace oai::config::pcf

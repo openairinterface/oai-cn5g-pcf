@@ -38,8 +38,12 @@
 #include "PatchItem.h"
 #include "pcf_sm_policy_control.hpp"
 #include "sm_policy/policy_storage.hpp"
+#include "sm_policy/policy_storage_db.hpp"
+#include "sm_policy/policy_storage_yaml.hpp"
 #include "sm_policy/policy_provisioning_file.hpp"
 #include "pcf_nrf.hpp"
+#include "sm_policy/database/database_wrapper.hpp"
+#include "sm_policy/database/mysql_db.hpp"
 
 namespace oai::pcf::app {
 

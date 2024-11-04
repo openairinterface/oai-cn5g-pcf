@@ -31,6 +31,8 @@
 #include "pcf_nrf.hpp"
 #include "logger.hpp"
 #include "pcf_config.hpp"
+#include "SupiPolicyDecision.h"
+#include "QosData.h"
 
 #include <stdexcept>
 
@@ -38,24 +40,34 @@ using namespace oai::pcf::app;
 using namespace oai::config::pcf;
 using namespace oai::model::pcf;
 
-using namespace std;
-
 extern std::unique_ptr<pcf_config> pcf_cfg;
+extern std::unique_ptr<database_wrapper_abstraction> db_connector;
 
 //------------------------------------------------------------------------------
 pcf_app::pcf_app(pcf_event& ev) : m_event_sub(ev) {
   Logger::pcf_app().startup("Starting...");
 
-  Logger::pcf_app().startup("Reading local Policy configuration...");
-  m_policy_storage = std::make_shared<sm_policy::policy_storage>();
+  if (pcf_cfg->use_db_policy_storage() &&
+      pcf_cfg->get_database_config().is_set()) {
+    m_policy_storage = std::make_shared<sm_policy::policy_storage_db>();
 
-  m_provisioning_file =
-      std::make_shared<sm_policy::policy_provisioning_file>(m_policy_storage);
+  } else {
+    if (pcf_cfg->use_db_policy_storage()) {
+      Logger::pcf_app().warn(
+          "DB policy storage activated, bot no DB configured!");
+    }
+    Logger::pcf_app().startup("Reading local Policy configuration...");
+    m_policy_storage = std::make_shared<sm_policy::policy_storage_yaml>();
 
-  if (!m_provisioning_file->read_all_policy_files()) {
-    Logger::pcf_app().error(
-        "Cannot read policy configuration from file. Exiting");
-    exit(-1);
+    m_provisioning_file = std::make_shared<sm_policy::policy_provisioning_file>(
+        std::static_pointer_cast<sm_policy::policy_storage_yaml>(
+            m_policy_storage));
+
+    if (!m_provisioning_file->read_all_policy_files()) {
+      Logger::pcf_app().error(
+          "Cannot read policy configuration from file. Exiting");
+      exit(-1);
+    }
   }
 
   // Register to NRF

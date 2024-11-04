@@ -40,4 +40,12 @@ class sm_policies {
   static std::string get_route();
 };
 
+class policy_decision_provisioning {
+ public:
+  static inline const std::string API_NAME = "npcf-provisioning";
+  static inline const std::string API_BASE = "/" + API_NAME + "/";
+
+  static std::string get_provisioning_base();
+};
+
 }  // namespace oai::pcf::api
