@@ -227,7 +227,10 @@ std::map<std::string, T> policy_provisioning_file::convert_yaml_to_model(
   std::map<std::string, T> objects_map;
   for (const auto& node : nodes) {
     auto j = oai::utils::conv::yaml_to_json(node);
-    fixEthType(j); // EthType must be a string but is interpreted as an int when it only contains numeric hex digits
+
+    // EthType must be a string but is interpreted as an int when it only
+    // contains numeric hex digits
+    fixEthType(j);
 
     for (const auto& elem : j.items()) {
       T obj;
@@ -302,9 +305,7 @@ bool policy_provisioning_file::read_all_files_in_dir(
   return !yaml_output.empty();
 }
 
-
 void policy_provisioning_file::fixEthType(nlohmann::json& j) {
-
   for (auto& element : j.items()) {
     auto& value = element.value();
 
@@ -314,9 +315,11 @@ void policy_provisioning_file::fixEthType(nlohmann::json& j) {
           auto& ethFlowDescription = flowInfo["ethFlowDescription"];
 
           // Check if ethFlowDescription has "ethType" and ensure it is a string
-          if (ethFlowDescription.contains("ethType") && !ethFlowDescription["ethType"].is_string()) {
+          if (ethFlowDescription.contains("ethType") &&
+              !ethFlowDescription["ethType"].is_string()) {
             // Convert ethType to string
-            ethFlowDescription["ethType"] = std::to_string(ethFlowDescription["ethType"].get<int>());
+            ethFlowDescription["ethType"] =
+                std::to_string(ethFlowDescription["ethType"].get<int>());
           }
         }
       }
