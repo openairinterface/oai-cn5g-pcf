@@ -71,6 +71,8 @@ class policy_provisioning_file {
 
   std::shared_ptr<oai::pcf::app::sm_policy::policy_storage_yaml>
       m_policy_storage;
+
+  static void fixEthType(nlohmann::json& j);
 };
 }  // namespace oai::pcf::app::sm_policy
 #endif
