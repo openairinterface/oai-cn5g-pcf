@@ -34,11 +34,17 @@
 #include <unordered_map>
 #include <shared_mutex>
 #include <memory>
+#include <optional>
 
+#include "SmPolicyContextData.h"
+#include "SmPolicyDecision.h"
+#include "TrafficControlData.h"
 #include "AppSessionContext.h"
 #include "AppSessionContextUpdateDataPatch.h"
+#include "AppSessionContextReqData.h"
 #include "policy_auth/pcf_policy_authorization_status_code.hpp"
 #include "uint_generator.hpp"
+#include "pcf_event.hpp"
 
 namespace oai::pcf::app {
 
@@ -48,7 +54,7 @@ namespace oai::pcf::app {
  */
 class pcf_policy_authorization {
  public:
-  explicit pcf_policy_authorization();
+  explicit pcf_policy_authorization(pcf_event& ev);
   pcf_policy_authorization(pcf_policy_authorization const&) = delete;
   void operator=(pcf_policy_authorization const&) = delete;
 
@@ -85,6 +91,66 @@ class pcf_policy_authorization {
           app_session_context_update_data_patch,
       const oai::model::pcf::AppSessionContext& context,
       std::string& problem_details);
+
+  private:
+    // for Event Handling
+    pcf_event& m_event_sub;
 };
+
+class session_binding_key {
+public:
+    session_binding_key() = default;
+
+    session_binding_key(
+        const std::optional<std::string>& ueIpv4,
+        const std::optional<oai::model::common::Ipv6Addr>& ueIpv6,
+        const std::optional<std::string>& ueMac,
+        const std::optional<std::string>& dnn,
+        const std::optional<oai::model::common::Snssai>& sliceInfo,
+        const std::optional<std::string>& supi,
+        const std::optional<std::string>& gpsi,
+        const std::optional<std::string>& ipDomain
+    ) : m_UeIpv4(ueIpv4),
+        m_UeIpv6(ueIpv6),
+        m_UeMac(ueMac),
+        m_Dnn(dnn),
+        m_SliceInfo(sliceInfo),
+        m_Supi(supi),
+        m_Gpsi(gpsi),
+        m_IpDomain(ipDomain) {}
+
+    // Accessors
+    const std::optional<std::string>& GetUeIpv4() const { return m_UeIpv4; }
+    const std::optional<oai::model::common::Ipv6Addr>& GetUeIpv6() const { return m_UeIpv6; }
+    const std::optional<std::string>& GetUeMac() const { return m_UeMac; }
+    const std::optional<std::string>& GetDnn() const { return m_Dnn; }
+    const std::optional<oai::model::common::Snssai>& GetSliceInfo() const { return m_SliceInfo; }
+    const std::optional<std::string>& GetSupi() const { return m_Supi; }
+    const std::optional<std::string>& GetGpsi() const { return m_Gpsi; }
+    const std::optional<std::string>& GetIpDomain() const { return m_IpDomain; }
+
+private:
+    std::optional<std::string> m_UeIpv4;
+    std::optional<oai::model::common::Ipv6Addr> m_UeIpv6;
+    std::optional<std::string> m_UeMac;
+    std::optional<std::string> m_Dnn;
+    std::optional<oai::model::common::Snssai> m_SliceInfo;
+    std::optional<std::string> m_Supi;
+    std::optional<std::string> m_Gpsi;
+    std::optional<std::string> m_IpDomain;
+};
+
+/**
+ * @brief Extract session key from an AppSessionContextReqData object
+ *
+ * This function extracts the session_binding_key from a given AppSessionContextReqData object.
+ * It assumes that the input data contains all required fields to form a valid session_binding_key.
+ *
+ * @param context The input AppSessionContextReqData object
+ *
+ * @return A reference to the extracted session_binding_key
+ */
+session_binding_key extract_session_key(const oai::model::pcf::AppSessionContextReqData& context);
+
 }  // namespace oai::pcf::app
 #endif /* FILE_PCF_POLICY_AUTHORIZATION_SEEN */

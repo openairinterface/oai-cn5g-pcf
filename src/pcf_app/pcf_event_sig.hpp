@@ -63,5 +63,11 @@ typedef bs2::signal_type<
 // AVAILABILITY_AFTER_DNN_FAILURE
 // CN_TYPE_CHANGE
 
+// Signal for sm_policy_control to perform session binding
+typedef bs2::signal_type<
+    void(oai::pcf::app::session_binding_key, oai::model::pcf::SmPolicyDecision),
+    bs2::keywords::mutex_type<bs2::dummy_mutex>>::type
+    sm_session_binding_sig_t;
+
 }  // namespace oai::pcf::app
 #endif

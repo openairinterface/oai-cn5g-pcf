@@ -48,18 +48,28 @@ using namespace std;
 //------------------------------------------------------------------------------
 pcf_smpc::pcf_smpc(
     const std::shared_ptr<oai::pcf::app::sm_policy::policy_storage>&
-        policy_storage) {
+        policy_storage,
+    pcf_event& ev)
+    : m_event_sub(ev) {
   m_policy_storage = policy_storage;
 
   std::function<void(const std::shared_ptr<policy_decision>& decision)> f =
       std::bind(&pcf_smpc::handle_policy_change, this, std::placeholders::_1);
 
   m_policy_storage->subscribe_to_decision_change(f);
+
+  m_sm_session_binding_connection =
+      m_event_sub.subscribe_sm_session_binding(boost::bind(
+          &pcf_smpc::handle_session_binding_request, this), std::placeholders::_1. std::placeholders::_2);
 }
 
 void pcf_smpc::handle_policy_change(
     const std::shared_ptr<policy_decision>& /* decision */) {
   Logger::pcf_app().warn("Policy changed, but not implemented!");
+}
+
+void pcf_smpc::handle_session_binding_request(oai::pcf::app::session_binding_key &key, oai::model::pcf::SmPolicyDecision &decision) {
+  Logger::pcf_app().warn("Session binding, but not implemented!");
 }
 
 //------------------------------------------------------------------------------

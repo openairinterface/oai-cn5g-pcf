@@ -65,9 +65,9 @@ pcf_app::pcf_app(pcf_event& ev) : m_event_sub(ev) {
     Logger::pcf_app().info("NRF TASK Created ");
   }
 
-  m_pcf_smpc_service = std::make_shared<pcf_smpc>(m_policy_storage);
+  m_pcf_smpc_service = std::make_shared<pcf_smpc>(m_policy_storage, ev);
   m_pcf_policy_authorization_service =
-      std::make_shared<pcf_policy_authorization>();
+      std::make_shared<pcf_policy_authorization>(ev);
 }
 
 //------------------------------------------------------------------------------

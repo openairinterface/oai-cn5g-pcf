@@ -1,0 +1,83 @@
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this
+ * file except in compliance with the License. You may obtain a copy of the
+ * License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
+
+/*! \file pcf_policy_authorization_status_code.hpp
+ \brief
+ \author  Tariro Mukute
+ \company University of Cape Town
+ \date 2024
+ \email: mkttar001@myuct.ac.za
+ */
+
+#include "AppSessionContext.h"
+
+namespace oai::pcf::app::policy_auth {
+
+class app_session {
+ public:
+  explicit app_session() {}
+
+  virtual ~app_session() = default;
+
+  [[nodiscard]] virtual const oai::model::pcf::AppSessionContext&
+  get_app_session_context() const;
+
+  [[nodiscard]] virtual std::string get_id() const;
+
+ private:
+  oai::model::pcf::AppSessionContext m_context;
+  std::string m_id;
+};
+
+/**
+ * Handlers for processing different App Session operation procedures
+ *
+ * 3GPP TS 29.514 4.2.x
+ */
+
+
+/**
+ * Extracts the N6-LAN Traffic Steering Requirements from the given
+ * AfSfcRequirement object.
+ *
+ * @param af_sfc           The AfSfcRequirement object containing the SFC
+ * requirements.
+ * @param traffic_control_data The TrafficControlData object to store the
+ * extracted requirements.
+ * @param problem_details  A reference string to hold any error details if
+ * extraction fails.
+ *
+ * @return status_code::OK on success or a failure code if an issue occurs
+ * during extraction.
+ */
+oai::pcf::app::policy_auth::handler_result handle_service_function_chaining(
+    oai::model::pcf::AfSfcRequirement& af_sfc,
+    oai::model::pcf::TrafficControlData& traffic_control_data);
+
+//   oai::pcf::app::policy_auth::status_code handle_traffic_routing(
+//       oai::model::pcf::SmPolicyContextData& orig_context,
+//       const oai::model::pcf::SmPolicyUpdateContextData& update,
+//       std::string& problem_details);
+
+}  // namespace oai::pcf::app::policy_auth
+
+// traffic_routing
+// service_function_chaining

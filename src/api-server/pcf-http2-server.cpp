@@ -40,6 +40,10 @@
 #include "pcf_config.hpp"
 #include "api_defs.h"
 #include "SmPolicyContextData.h"
+#include "AppSessionContext.h"
+#include "PcscfRestorationRequestData.h"
+#include "EventsSubscReqData.h"
+#include "AppSessionContextUpdateDataPatch.h"
 
 using namespace nghttp2::asio_http2;
 using namespace nghttp2::asio_http2::server;
