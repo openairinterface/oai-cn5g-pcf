@@ -34,11 +34,17 @@
 #include <unordered_map>
 #include <shared_mutex>
 #include <memory>
+#include <optional>
 
+#include "SmPolicyContextData.h"
+#include "SmPolicyDecision.h"
+#include "TrafficControlData.h"
 #include "AppSessionContext.h"
 #include "AppSessionContextUpdateDataPatch.h"
+#include "AppSessionContextReqData.h"
 #include "policy_auth/pcf_policy_authorization_status_code.hpp"
 #include "uint_generator.hpp"
+#include "pcf_event.hpp"
 
 namespace oai::pcf::app {
 
@@ -48,7 +54,7 @@ namespace oai::pcf::app {
  */
 class pcf_policy_authorization {
  public:
-  explicit pcf_policy_authorization();
+  explicit pcf_policy_authorization(pcf_event& ev);
   pcf_policy_authorization(pcf_policy_authorization const&) = delete;
   void operator=(pcf_policy_authorization const&) = delete;
 
@@ -85,6 +91,10 @@ class pcf_policy_authorization {
           app_session_context_update_data_patch,
       const oai::model::pcf::AppSessionContext& context,
       std::string& problem_details);
+
+  private:
+    // for Event Handling
+    pcf_event& m_event_sub;
 };
 }  // namespace oai::pcf::app
 #endif /* FILE_PCF_POLICY_AUTHORIZATION_SEEN */

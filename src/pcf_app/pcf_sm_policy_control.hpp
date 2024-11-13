@@ -44,6 +44,7 @@
 #include "sm_policy/individual_sm_association.hpp"
 #include "uint_generator.hpp"
 #include "sm_policy/policy_storage.hpp"
+#include "pcf_event.hpp"
 
 namespace oai::pcf::app {
 
@@ -55,8 +56,9 @@ class pcf_smpc {
  public:
   explicit pcf_smpc(
       const std::shared_ptr<oai::pcf::app::sm_policy::policy_storage>&
-          policy_storage);
-  pcf_smpc(pcf_smpc const&) = delete;
+          policy_storage,
+      pcf_event& ev);
+  pcf_smpc(pcf_smpc const&)       = delete;
   void operator=(pcf_smpc const&) = delete;
 
   virtual ~pcf_smpc();
@@ -138,6 +140,16 @@ class pcf_smpc {
   void handle_policy_change(
       const std::shared_ptr<oai::pcf::app::sm_policy::policy_decision>&
           decision);
+
+  void handle_session_binding_request(
+      const std::optional<std::string>& ipv4,
+      const std::optional<std::string>& supi,
+      const std::optional<std::string>& dnn,
+      oai::model::pcf::SmPolicyDecision& decision);
+
+  // for Event Handling
+  pcf_event& m_event_sub;
+  bs2::connection m_sm_session_binding_connection;
 };
 }  // namespace oai::pcf::app
 #endif /* FILE_PCF_SM_POLICY_CONTROL_SEEN */

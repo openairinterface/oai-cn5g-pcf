@@ -48,18 +48,65 @@ using namespace std;
 //------------------------------------------------------------------------------
 pcf_smpc::pcf_smpc(
     const std::shared_ptr<oai::pcf::app::sm_policy::policy_storage>&
-        policy_storage) {
+        policy_storage,
+    pcf_event& ev)
+    : m_event_sub(ev) {
   m_policy_storage = policy_storage;
 
   std::function<void(const std::shared_ptr<policy_decision>& decision)> f =
       std::bind(&pcf_smpc::handle_policy_change, this, std::placeholders::_1);
 
   m_policy_storage->subscribe_to_decision_change(f);
+
+  // std::function<void(int decision)> f2 =
+  //     std::bind(&pcf_smpc::handle_session_binding_request, this, std::placeholders::_1);
+
+  m_sm_session_binding_connection =
+      m_event_sub.subscribe_sm_session_binding(boost::bind(
+          &pcf_smpc::handle_session_binding_request, this, boost::placeholders::_1, boost::placeholders::_2, boost::placeholders::_3, boost::placeholders::_4));
+
+  // m_sm_session_binding_connection =
+  //     m_event_sub.subscribe_sm_session_binding(f2);
 }
 
 void pcf_smpc::handle_policy_change(
     const std::shared_ptr<policy_decision>& /* decision */) {
   Logger::pcf_app().warn("Policy changed, but not implemented!");
+}
+ 
+void pcf_smpc::handle_session_binding_request(
+      const std::optional<std::string>& ipv4,
+      const std::optional<std::string>& supi,
+      const std::optional<std::string>& dnn,
+      oai::model::pcf::SmPolicyDecision& decision) {
+  // TODO: support multiple sessions
+  Logger::pcf_app().warn("handle_session_binding_request");
+
+  Logger::pcf_app().warn(fmt::format("handle_session_binding_request, UE has {}", ipv4.value().c_str()));
+
+  std::shared_ptr<std::string> association_id = m_policy_storage->find_association(ipv4, supi, dnn);
+
+  if (!association_id) {
+      Logger::pcf_app().debug(fmt::format("handle_session_binding_request, association_id is null"));
+      return;
+  }
+  Logger::pcf_app().warn(fmt::format("handle_session_binding_request, UE has association id {}", association_id->c_str()));
+  
+  //
+  
+  std::unique_lock lock_assocations(m_associations_mutex);
+  auto iter = m_associations.find(association_id->c_str());
+  if (iter == m_associations.end()) {
+    Logger::pcf_app().info(fmt::format("Could not delete policy association: ID {} not found", association_id->c_str()));
+    return;
+  }
+
+  decision =  iter->second.get_sm_policy_decision_dto();
+  
+
+  Logger::pcf_app().warn(fmt::format("Session binding, but not implemented!, suppFeat: {}", decision.getSuppFeat()));
+  decision.setSuppFeat("A");
+  Logger::pcf_app().warn(fmt::format("Session binding, but not implemented!, changed suppFeat: {}", decision.getSuppFeat()));
 }
 
 //------------------------------------------------------------------------------
@@ -72,6 +119,7 @@ status_code pcf_smpc::create_sm_policy_handler(
   if (!chosen_decision) {
     problem_details = fmt::format(
         "SM policy request from SUPI {}: No policies found", context.getSupi());
+    Logger::pcf_app().debug(fmt::format(problem_details));
     return status_code::CONTEXT_DENIED;
   }
 
@@ -81,10 +129,14 @@ status_code pcf_smpc::create_sm_policy_handler(
 
   status_code res = assoc.decide_policy(decision);
 
+  // XXX: Perform session binding
+  m_policy_storage->insert_associations(context, association_id);
+
   if (res != status_code::CREATED) {
     problem_details = fmt::format(
         "SM Policy request from SUPI {}: Invalid policy decision provisioned",
         context.getSupi());
+    Logger::pcf_app().debug(fmt::format(problem_details));
   } else {
     std::unique_lock lock_assocations(m_associations_mutex);
     m_associations.insert(std::make_pair(association_id, assoc));
@@ -112,6 +164,8 @@ sm_policy::status_code pcf_smpc::delete_sm_policy_handler(
   m_associations.erase(iter);
   Logger::pcf_app().info(
       fmt::format("Deleted policy association with ID {}", id));
+
+  // TODO [PAS]: Perform session binding delete
 
   return status_code::OK;
 }
@@ -150,6 +204,8 @@ sm_policy::status_code pcf_smpc::update_sm_policy_handler(
     Logger::pcf_app().info(problem_details);
     return status_code::NOT_FOUND;
   }
+
+  // TODO [PAS]: Perform session binding update
 
   SmPolicyDecision new_decision;
 

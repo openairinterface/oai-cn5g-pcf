@@ -144,6 +144,96 @@ void policy_storage::subscribe_to_decision_change(
   // TODO implement me
 }
 
+void policy_storage::insert_associations(
+    const oai::model::pcf::SmPolicyContextData& context,
+    const std::string& association_id) {
+  Logger::pcf_app().debug(
+      "Inserting into association maps [IPv4 -> %s, SUPI -> %s, DNN -> %s] : "
+      "[Assoc Id -> %s]",
+      context.getIpv4Address().c_str(), context.getSupi().c_str(),
+      context.getDnn().c_str(), association_id.c_str());
+  policy_storage::insert_ip_association(
+      context.getIpv4Address(), association_id);
+
+  policy_storage::insert_supi_association(context.getSupi(), association_id);
+
+  policy_storage::insert_dnn_association(context.getDnn(), association_id);
+}
+
+void policy_storage::insert_ip_association(
+    const std::string& ip, const std::string& association_id) {
+  std::unique_lock ip_association_lock(m_ip_to_association_map_mutex);
+
+  m_ip_to_association_map.insert(std::make_pair(ip, association_id));
+  ip_association_lock.unlock();
+}
+
+void policy_storage::insert_supi_association(
+    const std::string& supi, const std::string& association_id) {
+  std::unique_lock supi_to_association_lock(m_supi_to_association_map_mutex);
+
+  m_supi_to_association_map.insert(std::make_pair(supi, association_id));
+  supi_to_association_lock.unlock();
+}
+
+void policy_storage::insert_dnn_association(
+    const std::string& dnn, const std::string& association_id) {
+  std::unique_lock dnn_to_association_lock(m_dnn_to_association_map_mutex);
+
+  auto assocs = m_dnn_to_association_map.find(dnn);
+  if (assocs == m_dnn_to_association_map.end()) {
+    // Insert with empty vector
+    std::vector<std::string> assocs_v = {association_id};
+    m_dnn_to_association_map.insert(std::make_pair(dnn, assocs_v));
+  } else {
+    // Insert into vector that was found
+    assocs->second.push_back(association_id);
+  }
+
+  dnn_to_association_lock.unlock();
+}
+
+std::shared_ptr<std::string> policy_storage::find_association(
+    const std::optional<std::string>& ipv4,
+    const std::optional<std::string>& supi,
+    const std::optional<std::string>& dnn) {
+  std::string msg_base = "Finding SM Association: ";
+
+  // First, check based on SUPI, then DNN, then Slice, then global default rule.
+  std::shared_lock lock_supi(m_ip_to_association_map_mutex);
+  auto got_ip   = m_ip_to_association_map.end();
+  if (ipv4.has_value() &&
+      (got_ip = m_ip_to_association_map.find(ipv4.value())) ==
+          m_ip_to_association_map.end()) {
+    Logger::pcf_app().debug(
+        "%s - Did not find for IPv4 -> %s", msg_base.c_str(),
+        ipv4.value().c_str());
+
+    auto got_supi = m_supi_to_association_map.end();
+    if (supi.has_value() &&
+        (got_supi = m_supi_to_association_map.find(supi.value())) ==
+            m_supi_to_association_map.end()) {
+      Logger::pcf_app().debug(
+          "%s - Did not find for SUPI -> %s", msg_base.c_str(),
+          supi.value().c_str());
+
+      // TODO [PAS] handle DNN
+
+    } else if (got_supi != m_supi_to_association_map.end()) {
+      Logger::pcf_app().debug(
+          "%s - Decide based on SUPI -> %s", msg_base.c_str(), supi.value().c_str());
+      return std::make_shared<std::string>(got_supi->second);
+    }
+  } else if (got_ip != m_ip_to_association_map.end()) {
+    Logger::pcf_app().debug(
+        "%s - Decide based on Ipv4 -> %s", msg_base.c_str(), ipv4.value().c_str());
+    return std::make_shared<std::string>(got_ip->second);
+  }
+  Logger::pcf_app().debug(
+      "%s - Failed to find association, returning NULL", msg_base.c_str());
+  return nullptr;
+}
+
 std::string policy_storage::to_string() const {
   std::shared_lock supi_lock(m_supi_policy_decisions_mutex);
   std::shared_lock dnn_lock(m_dnn_policy_decisions_mutex);

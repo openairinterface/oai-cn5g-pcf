@@ -34,6 +34,7 @@
 #include <memory>
 #include <shared_mutex>
 #include <unordered_map>
+#include <optional>
 
 #include "SmPolicyDecision.h"
 #include "SmPolicyContextData.h"
@@ -77,6 +78,20 @@ class policy_storage {
   mutable std::shared_mutex m_dnn_policy_decisions_mutex;
   mutable std::shared_mutex m_supi_policy_decisions_mutex;
 
+  // ip_association_map < IP, association_id>  
+  std::unordered_map<
+      std::string, std::string> m_ip_to_association_map;
+  // supi_association_map <supi, association_id> 
+  std::unordered_map<
+      std::string, std::string> m_supi_to_association_map;
+  // dnn_to_association_map < DNN, vector<association_id>>
+  std::unordered_map<
+      std::string, std::vector<std::string>> m_dnn_to_association_map;
+
+  mutable std::shared_mutex m_ip_to_association_map_mutex;
+  mutable std::shared_mutex m_supi_to_association_map_mutex;
+  mutable std::shared_mutex m_dnn_to_association_map_mutex;
+
  public:
   explicit policy_storage()             = default;
   policy_storage(policy_storage const&) = delete;
@@ -119,6 +134,26 @@ class policy_storage {
       std::function<void(std::shared_ptr<policy_decision>&)> callback);
 
   std::string to_string() const;
+
+  // TODO methods to update and delete
+  void insert_associations(
+    const oai::model::pcf::SmPolicyContextData& context,
+    const std::string& association_id
+  );
+  void insert_ip_association(
+      const std::string& dnn,
+      const std::string& association_id);
+
+  void insert_supi_association(
+      const std::string& supi,
+      const std::string& association_id);
+
+  void insert_dnn_association(
+      const std::string& dnn,
+      const std::string& association_id);
+
+  std::shared_ptr<std::string> find_association(const std::optional<std::string>& ipv4, const std::optional<std::string>& supi, const std::optional<std::string>& dnn);
+
 };
 }  // namespace oai::pcf::app::sm_policy
 

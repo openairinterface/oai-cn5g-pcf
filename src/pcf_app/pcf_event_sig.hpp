@@ -32,10 +32,13 @@
 
 #include <boost/signals2.hpp>
 #include <string>
+#include "SmPolicyDecision.h"
 
 namespace bs2 = boost::signals2;
 
 namespace oai::pcf::app {
+
+using namespace oai::model::pcf;
 
 typedef bs2::signal_type<
     void(uint64_t), bs2::keywords::mutex_type<bs2::dummy_mutex>>::type
@@ -62,6 +65,13 @@ typedef bs2::signal_type<
 // COMMUNICATION_FAILURE
 // AVAILABILITY_AFTER_DNN_FAILURE
 // CN_TYPE_CHANGE
+
+// Signal for sm_policy_control to perform session binding
+typedef bs2::signal_type<
+    void(
+        const std::optional<std::string>&, const std::optional<std::string>&,
+        const std::optional<std::string>&, oai::model::pcf::SmPolicyDecision&),
+    bs2::keywords::mutex_type<bs2::dummy_mutex>>::type sm_session_binding_sig_t;
 
 }  // namespace oai::pcf::app
 #endif

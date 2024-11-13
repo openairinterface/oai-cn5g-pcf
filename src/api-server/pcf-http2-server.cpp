@@ -40,6 +40,10 @@
 #include "pcf_config.hpp"
 #include "api_defs.h"
 #include "SmPolicyContextData.h"
+#include "AppSessionContext.h"
+#include "PcscfRestorationRequestData.h"
+#include "EventsSubscReqData.h"
+#include "AppSessionContextUpdateDataPatch.h"
 
 using namespace nghttp2::asio_http2;
 using namespace nghttp2::asio_http2::server;
@@ -78,6 +82,7 @@ void pcf_http2_server::start() {
               }
               SmPolicyContextData context;
               try {
+                Logger::pcf_sbi().error("SM Policies request body: %s", request_body->str());
                 nlohmann::json::parse(request_body->str()).get_to(context);
                 context.validate();
                 api_response resp =
