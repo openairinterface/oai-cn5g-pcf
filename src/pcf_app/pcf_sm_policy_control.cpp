@@ -109,6 +109,10 @@ void pcf_smpc::handle_session_binding_request(
   Logger::pcf_app().warn(fmt::format("Session binding, but not implemented!, changed suppFeat: {}", decision.getSuppFeat()));
 }
 
+void pcf_smpc::handle_session_binding_request(oai::pcf::app::session_binding_key &key, oai::model::pcf::SmPolicyDecision &decision) {
+  Logger::pcf_app().warn("Session binding, but not implemented!");
+}
+
 //------------------------------------------------------------------------------
 status_code pcf_smpc::create_sm_policy_handler(
     const SmPolicyContextData& context, SmPolicyDecision& decision,

@@ -3,8 +3,9 @@ title 3GPP TS 29.514 Npcf_PolicyAuthorization_Create Initial provisioning of tra
 
 start
 
-:1. Receive Request;
-:2. Create request context;
+:0. Receive Request;
+:1. Create request context;
+:2. Perform session binding;
 :3. Init Traffic Control Data decision;
 :4. Extract Routing Requirements;
 if (4.1. Routing Requirements include afSfcReq) then

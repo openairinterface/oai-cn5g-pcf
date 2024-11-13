@@ -142,6 +142,14 @@ policy_auth::status_code pcf_policy_authorization::mod_app_session_handler(
   return status_code::NOT_FOUND;
 }
 
+session_binding_key oai::pcf::app::extract_session_key(
+    const oai::model::pcf::AppSessionContextReqData& context) {
+  return session_binding_key(
+      context.getUeIpv4(), context.getUeIpv6(), context.getUeMac(),
+      context.getDnn(), context.getSliceInfo(), context.getSupi(),
+      context.getGpsi(), context.getIpDomain());
+}
+
 //------------------------------------------------------------------------------
 pcf_policy_authorization::~pcf_policy_authorization() {
   Logger::pcf_app().debug("Delete PCF PA instance...");
