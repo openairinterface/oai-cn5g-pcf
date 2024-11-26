@@ -38,6 +38,7 @@ enum class status_code {
   INVALID_PARAMETERS,
   CONTEXT_DENIED,
   NOT_FOUND,
+  INTERNAL_SERVER_ERROR,
   OK,
 };
 }  // namespace oai::pcf::app::sm_policy

@@ -34,7 +34,7 @@
 static const std::string PCF_APP    = "pcf_app";
 static const std::string PCF_SBI    = "pcf_sbi";
 static const std::string PCF_CLIENT = "pcf_client";
-static const std::string SYSTEM     = "system ";
+// static const std::string SYSTEM     = "system ";
 
 class Logger {
  public:

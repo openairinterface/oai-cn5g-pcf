@@ -43,6 +43,7 @@
 #include "AppSessionContextUpdateDataPatch.h"
 #include "AppSessionContextReqData.h"
 #include "policy_auth/pcf_policy_authorization_status_code.hpp"
+#include "policy_auth/app_session.hpp"
 #include "uint_generator.hpp"
 #include "pcf_event.hpp"
 

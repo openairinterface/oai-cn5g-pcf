@@ -37,7 +37,7 @@
 #include "pcf_config.hpp"
 #include "logger.hpp"
 #include "Snssai.h"
-#include "conv.hpp"
+#include "conversions.hpp"
 
 using namespace oai::pcf::app;
 using namespace oai::config::pcf;
@@ -226,7 +226,7 @@ std::map<std::string, T> policy_provisioning_file::convert_yaml_to_model(
     const std::vector<YAML::Node>& nodes) {
   std::map<std::string, T> objects_map;
   for (const auto& node : nodes) {
-    auto j = oai::utils::conversions::yaml_to_json(node);
+    auto j = oai::utils::conv::yaml_to_json(node);
 
     for (const auto& elem : j.items()) {
       T obj;

@@ -31,19 +31,29 @@
 #include "logger.hpp"
 #include "pcf_config.hpp"
 #include "sm_policy/policy_decision.hpp"
+#include "SmPolicyDecision.h"
 
 #include <boost/uuid/uuid_io.hpp>
 #include <unordered_map>
 #include <map>
 #include <memory>
 #include <string>
+#include <optional>
+#include "nlohmann/json.hpp"
+#include "3gpp_29.500.h"
+#include "ProblemDetails.h"
+#include "http_client.hpp"
 
 using namespace oai::pcf::app;
 using namespace oai::pcf::app::sm_policy;
 using namespace oai::config::pcf;
 using namespace oai::model::pcf;
+using namespace oai::model::common;
+using namespace oai::http;
 
 using namespace std;
+
+extern std::shared_ptr<oai::http::http_client> http_client_inst;
 
 //------------------------------------------------------------------------------
 pcf_smpc::pcf_smpc(
@@ -63,8 +73,11 @@ pcf_smpc::pcf_smpc(
 
   m_sm_session_binding_connection =
       m_event_sub.subscribe_sm_session_binding(boost::bind(
-          &pcf_smpc::handle_session_binding_request, this, boost::placeholders::_1, boost::placeholders::_2, boost::placeholders::_3, boost::placeholders::_4));
+          &pcf_smpc::handle_session_binding_request, this, boost::placeholders::_1, boost::placeholders::_2, boost::placeholders::_3, boost::placeholders::_4, boost::placeholders::_5));
 
+  m_sm_update_decision_connection =
+      m_event_sub.subscribe_sm_update_decision(boost::bind(
+          &pcf_smpc::handle_update_decision_request, this, boost::placeholders::_1, boost::placeholders::_2));
   // m_sm_session_binding_connection =
   //     m_event_sub.subscribe_sm_session_binding(f2);
 }
@@ -73,11 +86,73 @@ void pcf_smpc::handle_policy_change(
     const std::shared_ptr<policy_decision>& /* decision */) {
   Logger::pcf_app().warn("Policy changed, but not implemented!");
 }
+
+sm_policy::status_code pcf_smpc::send_sm_policy_control_update_notify(
+  const oai::pcf::app::sm_policy::individual_sm_association& association) {
+  std::string uri = association.get_sm_policy_context_data().getNotificationUri()  + "/update";
+  nlohmann::json json_data;
+  // to_json(json_data, association.decsion);
+  nlohmann::json decision_json; 
+  to_json(decision_json, association.get_sm_policy_decision_dto());
+
+  json_data["smPolicyDecision"] = decision_json;
+
+  Logger::pcf_app().info("Sending PCF SM policy association creation request");
+  request req =
+      http_client_inst->prepare_json_request(uri, json_data.dump());
+  response resp = http_client_inst->send_http_request(method_e::POST, req);
+
+  if (resp.status_code == http_status_code::CREATED) {
+    // TODO [PAS] check if for required headers
+    Logger::pcf_app().info(
+        "Successful SM Policy Update Notification for SUPI %s",
+        association.get_sm_policy_context_data().getSupi().c_str());
+    return status_code::CREATED;
+  }
+
+  // failure case
+  ProblemDetails problem_details;
+  from_json(resp.body, problem_details);
+
+  std::string info;
+  status_code response;
+  switch (resp.status_code) {
+    case http_status_code::FORBIDDEN:
+      info     = "SM Policy Update Notification Forbidden";
+      response = status_code::CONTEXT_DENIED;
+      break;
+    case http_status_code::BAD_REQUEST:
+      if (problem_details.getCause() == "USER_UNKNOWN") {
+        response = status_code::USER_UNKOWN;
+        info     = "SM Policy Association Creation: Unknown User";
+      } else {
+        response = status_code::INVALID_PARAMETERS;
+        info     = "SM Policy Update Notification: Bad Request";
+      }
+      break;
+    case http_status_code::INTERNAL_SERVER_ERROR:
+      response = status_code::INTERNAL_SERVER_ERROR;
+      info     = "SM Policy Update Notification: Internal Error";
+      break;
+    default:
+      response = status_code::INTERNAL_SERVER_ERROR;
+      info =
+          "SM Policy Update Notification: Unknown Error Code from "
+          "SMF: " +
+          std::to_string(resp.status_code);
+  }
+
+  Logger::pcf_app().warn(
+      "%s -- Details: %s - %s", info.c_str(),
+      problem_details.getCause().c_str(), problem_details.getDetail().c_str());
+  return response;
+}
  
 void pcf_smpc::handle_session_binding_request(
       const std::optional<std::string>& ipv4,
       const std::optional<std::string>& supi,
       const std::optional<std::string>& dnn,
+      std::optional<std::string>& assoc_id,
       oai::model::pcf::SmPolicyDecision& decision) {
   // TODO: support multiple sessions
   Logger::pcf_app().warn("handle_session_binding_request");
@@ -90,9 +165,9 @@ void pcf_smpc::handle_session_binding_request(
       Logger::pcf_app().debug(fmt::format("handle_session_binding_request, association_id is null"));
       return;
   }
+
   Logger::pcf_app().warn(fmt::format("handle_session_binding_request, UE has association id {}", association_id->c_str()));
-  
-  //
+  assoc_id = association_id->c_str();
   
   std::unique_lock lock_assocations(m_associations_mutex);
   auto iter = m_associations.find(association_id->c_str());
@@ -102,6 +177,8 @@ void pcf_smpc::handle_session_binding_request(
   }
 
   decision =  iter->second.get_sm_policy_decision_dto();
+
+  // Get PCC from decision
   
 
   Logger::pcf_app().warn(fmt::format("Session binding, but not implemented!, suppFeat: {}", decision.getSuppFeat()));
@@ -109,8 +186,38 @@ void pcf_smpc::handle_session_binding_request(
   Logger::pcf_app().warn(fmt::format("Session binding, but not implemented!, changed suppFeat: {}", decision.getSuppFeat()));
 }
 
-void pcf_smpc::handle_session_binding_request(oai::pcf::app::session_binding_key &key, oai::model::pcf::SmPolicyDecision &decision) {
-  Logger::pcf_app().warn("Session binding, but not implemented!");
+void pcf_smpc::handle_update_decision_request(
+  std::optional<std::string>& association_id, oai::model::pcf::SmPolicyDecision& decision
+) {
+  Logger::pcf_app().debug("Handing update decision request");
+  // TODO update decision
+
+  // Fetch the association related to the decision
+  std::unique_lock lock_assocations(m_associations_mutex);
+  auto iter = m_associations.find(association_id.value());
+  if (iter == m_associations.end()) {
+    Logger::pcf_app().info(fmt::format("Could not delete policy association: ID {} not found", association_id.value()));
+    return;
+  }
+
+  // TODO ensure the decision can be updated
+
+  // Update the association with the incoming decision
+  auto context = iter->second.get_sm_policy_context_data();
+  if (!context.getSupi().empty()) {
+    m_policy_storage->insert_supi_decision(context.getSupi(), decision);
+  } else if (!context.getDnn().empty()) {
+    m_policy_storage->insert_dnn_decision(context.getDnn(), decision);
+  } else {
+    Logger::pcf_app().error("Failed to update policy decision");
+  }
+   
+  // Send a notification to the SMF related to the updated decision
+  const auto& association_ref = iter->second;
+  auto ret = send_sm_policy_control_update_notify(association_ref);
+  if (ret != status_code::CREATED) {
+    Logger::pcf_app().error("Policy update notification failed");
+  }
 }
 
 //------------------------------------------------------------------------------
@@ -178,6 +285,7 @@ sm_policy::status_code pcf_smpc::delete_sm_policy_handler(
 sm_policy::status_code pcf_smpc::get_sm_policy_handler(
     const std::string& id, SmPolicyControl& control,
     std::string& problem_details) {
+  Logger::pcf_app().debug(fmt::format("get_sm_policy_handler: ID {}", id));
   std::shared_lock lock_associations(m_associations_mutex);
   auto iter = m_associations.find(id);
   if (iter == m_associations.end()) {
@@ -199,6 +307,7 @@ sm_policy::status_code pcf_smpc::get_sm_policy_handler(
 sm_policy::status_code pcf_smpc::update_sm_policy_handler(
     const std::string& id, const SmPolicyUpdateContextData& update_context,
     SmPolicyDecision& decision, std::string& problem_details) {
+  Logger::pcf_app().info("Entering update_sm_policy_handler");
   std::unique_lock lock_associations(m_associations_mutex);
   auto iter = m_associations.find(id);
 

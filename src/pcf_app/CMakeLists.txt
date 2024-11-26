@@ -56,6 +56,6 @@ add_library (PCF STATIC
   sm_policy/dnn_policy_decision.cpp
   sm_policy/policy_storage.cpp
   sm_policy/policy_provisioning_file.cpp
-  pcf_policy_authorization.cpp
   policy_auth/app_session.cpp
+  pcf_policy_authorization.cpp
   )

@@ -218,6 +218,9 @@ std::shared_ptr<std::string> policy_storage::find_association(
           supi.value().c_str());
 
       // TODO [PAS] handle DNN
+      /* The since during creation of association, the IP address might be absent, we need to make
+       * sure either it's updated or the we loop through the associations on DNN that have had the
+       * an association with the IP updated i.e., for each assoc in DNN find one with IP == Ipv4 */
 
     } else if (got_supi != m_supi_to_association_map.end()) {
       Logger::pcf_app().debug(

@@ -27,6 +27,9 @@
  \email: mkttar001@myuct.ac.za
  */
 
+#ifndef FILE_APP_SESSION_SEEN
+#define FILE_APP_SESSION_SEEN
+
 #include "AppSessionContext.h"
 
 namespace oai::pcf::app::policy_auth {
@@ -75,8 +78,8 @@ class app_session {
  * during extraction.
  */
 oai::pcf::app::policy_auth::handler_result handle_service_function_chaining(
-    oai::model::pcf::AfSfcRequirement& af_sfc,
-    oai::model::pcf::TrafficControlData& traffic_control_data);
+    const oai::model::pcf::AfSfcRequirement& af_sfc,
+    oai::model::pcf::SmPolicyDecision& decision);
 
 //   oai::pcf::app::policy_auth::status_code handle_traffic_routing(
 //       oai::model::pcf::SmPolicyContextData& orig_context,
@@ -85,5 +88,6 @@ oai::pcf::app::policy_auth::handler_result handle_service_function_chaining(
 
 }  // namespace oai::pcf::app::policy_auth
 
+#endif
 // traffic_routing
 // service_function_chaining

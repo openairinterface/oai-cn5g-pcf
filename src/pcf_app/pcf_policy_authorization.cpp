@@ -34,6 +34,7 @@
 #include "AppSessionContext.h"
 #include "AppSessionContextReqData.h"
 #include "AppSessionContextUpdateDataPatch.h"
+#include "policy_auth/app_session.hpp"
 
 #include <boost/uuid/uuid_io.hpp>
 #include <unordered_map>
@@ -61,10 +62,11 @@ status_code pcf_policy_authorization::post_app_sessions_handler(
    Logger::pcf_app().info("post_app_sessions_handler");
 
   const oai::model::pcf::AppSessionContextReqData reqContext = context.getAscReqData();
+  std::optional<std::string> association_id = {};
   try {
     // Perform session binding using the session_binding_key
     decision.setSuppFeat("F");
-    m_event_sub.sm_session_binding(reqContext.getUeIpv4(), reqContext.getSupi(), reqContext.getDnn(), decision);
+    m_event_sub.sm_session_binding(reqContext.getUeIpv4(), reqContext.getSupi(), reqContext.getDnn(), association_id, decision);
     Logger::pcf_app().warn(fmt::format("Policy auth, changed suppFeat: {}, pccRulesIsSet: {}", decision.getSuppFeat(), decision.pccRulesIsSet()));
     // handler_result binding_result = perform_binding(session_key, &decision);
     // if (binding_result.problem_details.has_value()) {
@@ -75,6 +77,11 @@ status_code pcf_policy_authorization::post_app_sessions_handler(
     Logger::pcf_app().info(e.what());
     problem_details = "PDU_SESSION_NOT_AVAILABLE";
     return status_code::INTERNAL_SERVER_ERROR;
+  }
+
+  if (!association_id.has_value()) {
+    Logger::pcf_app().debug("Failed to find session");
+    return status_code::NOT_FOUND;
   }
 
   // // If the request contains the "medComponents" store the received service
@@ -92,19 +99,19 @@ status_code pcf_policy_authorization::post_app_sessions_handler(
   //   return auth_result.status.value();
   // }
 
-  oai::model::pcf::TrafficControlData traffic_control_data;
-
   // If the service information provided in the body of the HTTP POST request is
   // rejected, return HTTP "403 Forbidden" response message the cause for the
   // rejection
-  // if (context.getAscReqData().afSfcReqIsSet()) {
-  //   handler_result result = policy_auth::handle_service_function_chaining(
-  //       context.getAscReqData().getAfSfcReq(), &traffic_control_data);
-  //   if (result.problem_details.has_value()) {
-  //     problem_details = result.problem_details();
-  //     return result.status.value();
-  //   }
-  // }
+  if (context.getAscReqData().afSfcReqIsSet()) {
+    handler_result result = policy_auth::handle_service_function_chaining(
+        context.getAscReqData().getAfSfcReq(), decision);
+    if (result.problem_details.has_value()) {
+      problem_details = result.problem_details.value();
+      return result.status.value();
+    }
+  }
+
+  // Logger debug message should refTCddata on pcc and TcId on traffic data control
 
   // // Fetch current PCC for the PDU session retrieved session binding
   // auto pcc_result = fetch_current_pcc(session_key);
@@ -113,9 +120,9 @@ status_code pcf_policy_authorization::post_app_sessions_handler(
   //   return status_code::internal_server_error;
   // }
 
-  // // Modify PCC Rules with Traffic Control Data
-  // Event with updated decision and supi
-
+  // Event with updated decision
+  
+  
 
 
   // // Success, create Application Session Context resource

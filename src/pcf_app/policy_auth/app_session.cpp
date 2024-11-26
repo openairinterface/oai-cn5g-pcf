@@ -29,11 +29,14 @@
 
 #include "AppSessionContext.h"
 #include "TrafficControlData.h"
+#include "PccRule.h"
+#include "SmPolicyDecision.h"
 #include "AfSfcRequirement.h"
 #include "policy_auth/pcf_policy_authorization_status_code.hpp"
 #include "logger.hpp"
 
-namespace oai::pcf::app::policy_auth {
+namespace oai::pcf::app {
+namespace policy_auth {
     
 using namespace oai::model::pcf;
 using namespace oai::pcf::app;
@@ -41,16 +44,13 @@ using namespace oai::pcf::app;
 class app_session {
  public:
  private:
-  oai::model::pcf::TrafficControlData handle_service_function_chaining(
-      oai::model::pcf::AfSfcRequirement& af_sfc, std::string& problem_details) {
-
-  }
 };
 
 handler_result handle_service_function_chaining(
-    oai::model::pcf::AfSfcRequirement& af_sfc,
-    oai::model::pcf::TrafficControlData& traffic_control_data) {
+    const oai::model::pcf::AfSfcRequirement& af_sfc,
+    oai::model::pcf::SmPolicyDecision& decision) {
   // Extract N6-LAN Traffic Steering Requirements
+  std::shared_ptr<oai::model::pcf::TrafficControlData> traffic_control_data = std::make_shared<oai::model::pcf::TrafficControlData>();
 
   if (!af_sfc.sfcIdDlIsSet() && !af_sfc.sfcIdUlIsSet()) {
     Logger::pcf_app().error(
@@ -61,16 +61,39 @@ handler_result handle_service_function_chaining(
   // Set Traffic Steering Policy ID for DL and/or UL based on the presence of
   // corresponding SFC IDs
   if (af_sfc.sfcIdDlIsSet()) {
-    traffic_control_data.setTrafficSteeringPolIdDl(af_sfc.getSfcIdDl());
+    Logger::pcf_app().debug("Setting DL SFC ID on Traffic Control Data");
+    traffic_control_data->setTrafficSteeringPolIdDl(af_sfc.getSfcIdDl());
   }
 
   if (af_sfc.sfcIdUlIsSet()) {
-    traffic_control_data.setTrafficSteeringPolIdUl(af_sfc.getSfcIdUl());
+    Logger::pcf_app().debug("Setting UL SFC ID on Traffic Control Data");
+    traffic_control_data->setTrafficSteeringPolIdUl(af_sfc.getSfcIdUl());
   }
 
-  // TODO: Transparently include SFC Metadata if available
+  // TODO [PAS]: Transparently include SFC Metadata if available
 
+  // Add the traffic control to PCC rules
+  std::shared_ptr<oai::model::pcf::PccRule> pcc_rule = std::make_shared<oai::model::pcf::PccRule>();
+  std::string  pcc_rule_id = "app-session-rule-1";
+  std::string rcId = "app-session";
+  std::vector<std::string> refTcData = { rcId };
+
+  pcc_rule->setRefTcData(refTcData);
+  pcc_rule->setPccRuleId(pcc_rule_id);
+
+  // // Create and set TCId on traffic control data and add it as RefTc to PCC
+  traffic_control_data->setTcId(rcId);
+
+
+  // // Set traffic control to decision decision.setTraffContDecs(used_traffic_control);
+  // decision.setPccRules(std::make_pair(pcc_rule_id, pcc_rule));
+  // decision.setTraffContDecs(std::make_pair(rcId, traffic_control_data));
+
+  
   return handler_result{ .status = status_code::OK };
 }
+
+}
+
 
 }  // namespace oai::pcf::app::policy_auth

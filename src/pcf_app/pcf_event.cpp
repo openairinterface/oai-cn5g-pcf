@@ -58,3 +58,8 @@ bs2::connection pcf_event::subscribe_sm_session_binding(
     const sm_session_binding_sig_t::slot_type& sig) {
   return sm_session_binding.connect(sig);
 }
+
+bs2::connection pcf_event::subscribe_sm_update_decision(
+    const sm_update_decision_sig_t::slot_type& sig) {
+  return sm_update_decision.connect(sig);
+}

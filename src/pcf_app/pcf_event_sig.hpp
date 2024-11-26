@@ -70,8 +70,14 @@ typedef bs2::signal_type<
 typedef bs2::signal_type<
     void(
         const std::optional<std::string>&, const std::optional<std::string>&,
-        const std::optional<std::string>&, oai::model::pcf::SmPolicyDecision&),
+        const std::optional<std::string>&, std::optional<std::string>&,
+        oai::model::pcf::SmPolicyDecision&),
     bs2::keywords::mutex_type<bs2::dummy_mutex>>::type sm_session_binding_sig_t;
+
+// Signal for sm_policy_control to update policy decision
+typedef bs2::signal_type<
+    void(std::optional<std::string>&, oai::model::pcf::SmPolicyDecision&),
+    bs2::keywords::mutex_type<bs2::dummy_mutex>>::type sm_update_decision_sig_t;
 
 }  // namespace oai::pcf::app
 #endif
