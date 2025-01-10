@@ -63,6 +63,41 @@ class policy_storage {
    */
   virtual void subscribe_to_decision_change(
       std::function<void(std::shared_ptr<policy_decision>&)> callback) = 0;
+
+
+  virtual void insert_supi_decision(
+      const std::string& supi,
+      const oai::model::pcf::SmPolicyDecision& decision) = 0;
+
+  virtual void insert_dnn_decision(
+      const std::string& dnn,
+      const oai::model::pcf::SmPolicyDecision& decision) = 0;
+
+  virtual void insert_slice_decision(
+      const oai::model::common::Snssai&,
+      const oai::model::pcf::SmPolicyDecision& decision) = 0;
+
+  virtual void insert_associations(
+    const oai::model::pcf::SmPolicyContextData& context,
+    const std::string& association_id
+  ) = 0;
+
+  virtual void insert_ip_association(
+      const std::string& dnn,
+      const std::string& association_id) = 0;
+
+  virtual void insert_supi_association(
+      const std::string& supi,
+      const std::string& association_id) = 0;
+
+  virtual void insert_dnn_association(
+      const std::string& dnn,
+      const std::string& association_id) = 0;
+
+  virtual std::shared_ptr<std::string> find_association(
+    const std::optional<std::string>& ipv4,
+    const std::optional<std::string>& supi,
+    const std::optional<std::string>& dnn) = 0;
 };
 
 }  // namespace oai::pcf::app::sm_policy
