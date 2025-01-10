@@ -28,6 +28,7 @@
 #include <iostream>
 #include <csignal>
 #include <thread>
+#include <chrono>
 
 using namespace std;
 using namespace oai::pcf::app;
@@ -37,14 +38,16 @@ using namespace oai::pcf::api;
 
 using namespace oai::config;
 
-std::unique_ptr<pcf_app> pcf_app_inst                    = nullptr;
-std::unique_ptr<pcf_config> pcf_cfg                      = nullptr;
-std::unique_ptr<PCFApiServer> pcf_api_server_1           = nullptr;
-std::unique_ptr<pcf_http2_server> pcf_api_server_2       = nullptr;
-std::shared_ptr<oai::http::http_client> http_client_inst = nullptr;
-
+std::unique_ptr<pcf_app> pcf_app_inst                      = nullptr;
+std::unique_ptr<pcf_config> pcf_cfg                        = nullptr;
+std::unique_ptr<PCFApiServer> pcf_api_server_1             = nullptr;
+std::unique_ptr<pcf_http2_server> pcf_api_server_2         = nullptr;
+std::shared_ptr<oai::http::http_client> http_client_inst   = nullptr;
+std::unique_ptr<database_wrapper_abstraction> db_connector = nullptr;
+std::unique_ptr<oai::config::lttng_configuration> lttng_config_yaml;
 //------------------------------------------------------------------------------
 void signal_handler_sigint(int s) {
+  auto shutdown_start = std::chrono::system_clock::now();
   // Setting log level arbitrarly to debug to show the whole
   // shutdown procedure in the logs even in case of off-logging
   Logger::set_level(spdlog::level::debug);
@@ -70,7 +73,9 @@ void signal_handler_sigint(int s) {
 
   Logger::system().debug("PCF APP memory done");
   Logger::system().debug("Freeing allocated memory done");
-  Logger::system().info("Bye.");
+  auto elapsed = std::chrono::system_clock::now() - shutdown_start;
+  auto ms_diff = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed);
+  Logger::system().info("Bye. Shutdown Procedure took %d ms", ms_diff.count());
   exit(0);
 }
 
@@ -88,6 +93,28 @@ int main(int argc, char** argv) {
   }
 
   // Logger
+  const std::string conf_file_name =
+      static_cast<std::string>(oai::utils::options::getlibconfigConfig());
+
+  std::cout << "Trying to read .yaml configuration file: " << conf_file_name
+            << "\n";
+  lttng_config_yaml =
+      std::make_unique<oai::config::lttng_configuration>(conf_file_name);
+  lttng_config_yaml->read_from_file();
+
+#ifdef LOGGER_CAN_USE_LTTNG
+  std::cout << "LTTNG Log Activation: " << lttng_config_yaml->is_lttng_active()
+            << "\n";
+  std::cout << "Log Level of LTTng: "
+            << lttng_config_yaml->get_lttng_log_level() << "\n";
+#else
+  std::cout << "LTTNG Tracing disabled at build-time!\n";
+  if (lttng_config_yaml->is_lttng_active())
+    std::cout << "Cannot use lttng log scheme on this build variant!\n";
+#endif
+
+  Logger::set_lttng(static_cast<bool>(lttng_config_yaml->is_lttng_active()));
+
   Logger::init(
       "pcf", oai::utils::options::getlogStdout(),
       oai::utils::options::getlogRotFilelog());

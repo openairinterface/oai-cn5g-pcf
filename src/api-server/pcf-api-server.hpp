@@ -52,6 +52,14 @@
 #include "EventsSubscriptionDocumentApiImpl.h"
 #include "IndividualApplicationSessionContextDocumentApiImpl.h"
 #include "PCSCFRestorationIndicationApiImpl.h"
+#include "provisioning_api/impl/DefaultPolicyDecisionsApiImpl.h"
+#include "provisioning_api/impl/SlicePolicyDecisionsApiImpl.h"
+#include "provisioning_api/impl/SupiPolicyDecisionsApiImpl.h"
+#include "provisioning_api/impl/DNNPolicyDecisionsApiImpl.h"
+#include "provisioning_api/impl/QOSDataApiImpl.h"
+#include "provisioning_api/impl/TrafficControlDataApiImpl.h"
+#include "provisioning_api/impl/PCCRulesApiImpl.h"
+
 namespace oai::pcf::api {
 
 class PCFApiServer {
@@ -87,6 +95,28 @@ class PCFApiServer {
     m_pcscfRestorationIndicationApi =
         std::make_shared<oai::pcf::api::PCSCFRestorationIndicationApiImpl>(
             m_router, pcf_app_inst->get_pcf_policy_authorization_service(), m_address);
+
+    m_defaultPolicyDecisionProvisioningApi = std::make_shared<
+        oai::pcf::provisioning::api::DefaultPolicyDecisionsApiImpl>(m_router);
+
+    m_slicePolicyDecisionProvisioningApi = std::make_shared<
+        oai::pcf::provisioning::api::SlicePolicyDecisionsApiImpl>(m_router);
+
+    m_supiPolicyDecisionProvisioningApi = std::make_shared<
+        oai::pcf::provisioning::api::SupiPolicyDecisionsApiImpl>(m_router);
+
+    m_dnnPolicyDecisionProvisioningApi = std::make_shared<
+        oai::pcf::provisioning::api::DNNPolicyDecisionsApiImpl>(m_router);
+
+    m_pccRulesProvisioningApi =
+        std::make_shared<oai::pcf::provisioning::api::PCCRulesApiImpl>(
+            m_router);
+
+    m_qosDataProvisioningApi =
+        std::make_shared<oai::pcf::provisioning::api::QOSDataApiImpl>(m_router);
+
+    m_trafficControlDataProvisioningApi = std::make_shared<
+        oai::pcf::provisioning::api::TrafficControlDataApiImpl>(m_router);
   }
   void init(size_t thr = 1);
   void start();
@@ -115,5 +145,25 @@ class PCFApiServer {
 
   std::shared_ptr<oai::pcf::api::PCSCFRestorationIndicationApiImpl>
       m_pcscfRestorationIndicationApi;
+  std::shared_ptr<oai::pcf::provisioning::api::DefaultPolicyDecisionsApiImpl>
+      m_defaultPolicyDecisionProvisioningApi;
+
+  std::shared_ptr<oai::pcf::provisioning::api::DNNPolicyDecisionsApiImpl>
+      m_dnnPolicyDecisionProvisioningApi;
+
+  std::shared_ptr<oai::pcf::provisioning::api::SupiPolicyDecisionsApiImpl>
+      m_supiPolicyDecisionProvisioningApi;
+
+  std::shared_ptr<oai::pcf::provisioning::api::SlicePolicyDecisionsApiImpl>
+      m_slicePolicyDecisionProvisioningApi;
+
+  std::shared_ptr<oai::pcf::provisioning::api::PCCRulesApiImpl>
+      m_pccRulesProvisioningApi;
+
+  std::shared_ptr<oai::pcf::provisioning::api::QOSDataApiImpl>
+      m_qosDataProvisioningApi;
+
+  std::shared_ptr<oai::pcf::provisioning::api::TrafficControlDataApiImpl>
+      m_trafficControlDataProvisioningApi;
 };
 }  // namespace oai::pcf::api

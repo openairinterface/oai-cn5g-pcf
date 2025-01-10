@@ -93,7 +93,7 @@ nfs:
       api_version: v1
       interface_name: eth0
 
-#### Common for UDR and AMF
+#### Common for UDR and AMF and PCF
 database:
   host: mysql
   user: test
@@ -206,6 +206,7 @@ dnns:
     ipv4_pool: "14.1.1.2 - 14.1.1.253"
 
 pcf:
+  enable_policy_provisioning_api: yes # Use db instead of yaml, enables dynamic pcc rule creation via API
   local_policy:
     policy_decisions_path: /openair-pcf/policies/policy_decisions
     pcc_rules_path: /openair-pcf/policies/pcc_rules

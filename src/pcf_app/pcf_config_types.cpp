@@ -104,13 +104,19 @@ const std::string& policy_config::get_qos_data_path() const {
 
 pcf_config_type::pcf_config_type(
     const std::string& name, const std::string& host, const sbi_interface& sbi,
-    const policy_config& policy)
+    bool enable_policy_provisioning_api, const policy_config& policy)
     : nf(name, host, sbi), m_policy_config(policy) {
+  m_enable_policy_provisioning_api = option_config_value(
+      "enable_policy_provisioning_api", enable_policy_provisioning_api);
   m_policy_config.set_config();
 }
 
 void pcf_config_type::from_yaml(const YAML::Node& node) {
   nf::from_yaml(node);
+  if (node["enable_policy_provisioning_api"]) {
+    m_enable_policy_provisioning_api.from_yaml(
+        node["enable_policy_provisioning_api"]);
+  }
   if (node["local_policy"]) {
     m_policy_config.from_yaml(node["local_policy"]);
   }
@@ -118,7 +124,16 @@ void pcf_config_type::from_yaml(const YAML::Node& node) {
 
 std::string pcf_config_type::to_string(const std::string& indent) const {
   std::string out = nf::to_string("");
-  out.append(m_policy_config.to_string(indent));
+
+  unsigned int inner_width = get_inner_width(indent.length());
+  out.append(indent).append(fmt::format(
+      BASE_FORMATTER, OUTER_LIST_ELEM,
+      m_enable_policy_provisioning_api.get_config_name(), inner_width,
+      m_enable_policy_provisioning_api.to_string(indent)));
+
+  if (!m_enable_policy_provisioning_api.get_value()) {
+    out.append(m_policy_config.to_string(indent));
+  }
 
   return out;
 }
@@ -126,6 +141,10 @@ std::string pcf_config_type::to_string(const std::string& indent) const {
 void pcf_config_type::validate() {
   nf::validate();
   m_policy_config.validate();
+}
+
+bool pcf_config_type::enable_policy_provisioning_api() const {
+  return m_enable_policy_provisioning_api.get_value();
 }
 
 const policy_config& pcf_config_type::get_policy_config() const {

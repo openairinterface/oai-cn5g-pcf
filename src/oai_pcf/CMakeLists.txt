@@ -276,6 +276,7 @@ ADD_SUBDIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/../../src/api-server ${CMAKE_CURREN
 add_definitions("-DPACKAGE_NAME=\"PCF\"")
 
 include_directories(${SRC_TOP_DIR}/pcf_app)
+include_directories(${SRC_TOP_DIR}/pcf_app/sm_policy/database)
 include_directories(${SRC_TOP_DIR}/oai_pcf)
 include_directories(${SRC_TOP_DIR}/common)
 include_directories(${SRC_TOP_DIR}/common/msg)
@@ -285,6 +286,10 @@ include_directories(${SRC_TOP_DIR}/api-server)
 include_directories(${SRC_TOP_DIR}/api-server/api)
 include_directories(${SRC_TOP_DIR}/api-server/impl)
 include_directories(${SRC_TOP_DIR}/api-server/handler)
+include_directories(${SRC_TOP_DIR}/api-server/provisioning_api/api)
+include_directories(${SRC_TOP_DIR}/api-server/provisioning_api/impl)
+include_directories(${SRC_TOP_DIR}/api-server/provisioning_api/handler)
+include_directories(${SRC_TOP_DIR}/api-server/provisioning_api/model)
 
 add_executable(pcf
   ${SRC_TOP_DIR}/oai_pcf/main.cpp
@@ -296,7 +301,11 @@ include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/http/http.cmake)
 include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/logger/logger.cmake)
 include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/config/config.cmake)
 include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/utils/utils.cmake)
+include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/model/pcf/pcf_model.cmake)
+include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/model/common_model/common_model.cmake)
 include_directories(${SRC_TOP_DIR}/${MOUNTED_COMMON}/utils)
+include_directories(${SRC_TOP_DIR}/${MOUNTED_COMMON}/model/pcf)
+include_directories(${SRC_TOP_DIR}/${MOUNTED_COMMON}/model/common_model)
 
 IF(STATIC_LINKING)
     SET(CMAKE_EXE_LINKER_FLAGS "-static")
@@ -306,4 +315,11 @@ IF(STATIC_LINKING)
 ENDIF(STATIC_LINKING)
 
 target_link_libraries (pcf ${ASAN}  -Wl,--start-group PCF PCF_API ${CRYPTO_LIBRARIES} -lnghttp2_asio -lboost_system -lboost_thread -lssl -lcrypto -lfmt -lspdlog dl -Wl,--end-group
-pthread m rt event boost_system -lboost_filesystem pistache curl -lyaml-cpp cpr::cpr)
+pthread m rt event boost_system -lboost_filesystem pistache curl -lyaml-cpp cpr::cpr -lodb -lodb-mysql -lmysqlclient odb odb-mysql)
+
+add_boolean_option(USE_LTTNG  False "Activate the LTTNG tracer, a debugging/monitoring framework" ON)
+if (USE_LTTNG)
+    message("Using the lttng build variant")
+    add_definitions("-DLOGGER_CAN_USE_LTTNG")
+    target_link_libraries(pcf -ldl lttng-ust)
+endif ()

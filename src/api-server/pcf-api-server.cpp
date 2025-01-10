@@ -80,6 +80,13 @@ void PCFApiServer::init(size_t thr) {
   // Custom APIs
   m_smPoliciesCollectionApi->init();
   m_individualSmPolicyDocumentApi->init();
+  m_defaultPolicyDecisionProvisioningApi->init();
+  m_dnnPolicyDecisionProvisioningApi->init();
+  m_slicePolicyDecisionProvisioningApi->init();
+  m_supiPolicyDecisionProvisioningApi->init();
+  m_pccRulesProvisioningApi->init();
+  m_qosDataProvisioningApi->init();
+  m_trafficControlDataProvisioningApi->init();
 }
 
 void PCFApiServer::start() {
