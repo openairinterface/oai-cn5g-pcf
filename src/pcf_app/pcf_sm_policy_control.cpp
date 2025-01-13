@@ -166,7 +166,6 @@ void pcf_smpc::handle_session_binding_request(
       return;
   }
 
-  Logger::pcf_app().warn(fmt::format("handle_session_binding_request, UE has association id {}", association_id->c_str()));
   assoc_id = association_id->c_str();
   
   std::unique_lock lock_assocations(m_associations_mutex);
@@ -179,11 +178,7 @@ void pcf_smpc::handle_session_binding_request(
   decision =  iter->second.get_sm_policy_decision_dto();
 
   // Get PCC from decision
-  
 
-  Logger::pcf_app().warn(fmt::format("Session binding, but not implemented!, suppFeat: {}", decision.getSuppFeat()));
-  decision.setSuppFeat("A");
-  Logger::pcf_app().warn(fmt::format("Session binding, but not implemented!, changed suppFeat: {}", decision.getSuppFeat()));
 }
 
 void pcf_smpc::handle_update_decision_request(
@@ -200,7 +195,7 @@ void pcf_smpc::handle_update_decision_request(
     return;
   }
 
-  // TODO ensure the decision can be updated
+  // TODO [PAS] ensure the decision can be updated
 
   // Update the association with the incoming decision
   auto context = iter->second.get_sm_policy_context_data();
