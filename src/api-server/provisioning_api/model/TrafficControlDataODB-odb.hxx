@@ -8,11 +8,6 @@
 #define TRAFFIC_CONTROL_DATA_ODB_ODB_HXX
 
 #include <odb/version.hxx>
-
-#if ODB_VERSION != 20477UL
-#error ODB runtime version mismatch
-#endif
-
 #include <odb/pre.hxx>
 
 #include "TrafficControlDataODB.h"
