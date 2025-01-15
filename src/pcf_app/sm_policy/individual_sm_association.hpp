@@ -57,6 +57,9 @@ class individual_sm_association {
   [[nodiscard]] virtual const oai::model::pcf::SmPolicyDecision&
   get_sm_policy_decision_dto() const;
 
+  [[nodiscard]] virtual const void set_sm_policy_decision(
+    oai::model::pcf::SmPolicyDecision& new_decision);
+
   [[nodiscard]] virtual oai::pcf::app::sm_policy::status_code redecide_policy(
       const oai::model::pcf::SmPolicyUpdateContextData& update_data,
       oai::model::pcf::SmPolicyDecision& new_decision,

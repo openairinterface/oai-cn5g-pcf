@@ -122,7 +122,9 @@ handler_result validate_and_merge_decision(
     // Check if PCC rule id in request decision exists in current decision
     if (request_decision.getPccRules().size() > 0) {
         for (const auto& [key, value] : request_decision.getPccRules()) {
-            if (current_decision.getPccRules().find(key) == current_decision.getPccRules().end()) {
+            auto iter = current_decision.getPccRules().find(key.c_str());
+            if (iter != current_decision.getPccRules().end() && !iter->first.empty()) {
+                Logger::pcf_app().debug(fmt::format("PCC Rule ID: {} already exists in current decision", key.c_str()));
                 return handler_result{ .status = status_code::FORBIDDEN, .problem_details = "INVALID_SERVICE_INFORMATION" };
             }
         }
@@ -131,7 +133,9 @@ handler_result validate_and_merge_decision(
     // Check if TcId in traffic control data in request decision exists in current decision
     if (request_decision.getTraffContDecs().size() > 0) {
         for (const auto& [key, value] : request_decision.getTraffContDecs()) {
-            if (current_decision.getTraffContDecs().find(key) == current_decision.getTraffContDecs().end()) {
+            auto iter = current_decision.getTraffContDecs().find(key);
+            if (iter != current_decision.getTraffContDecs().end() && !iter->first.empty()) {
+                Logger::pcf_app().debug(fmt::format("Traffic Cont ID: {} already exists in current decision", key.c_str()));
                 return handler_result{ .status = status_code::FORBIDDEN, .problem_details = "INVALID_SERVICE_INFORMATION" };
             }
         }

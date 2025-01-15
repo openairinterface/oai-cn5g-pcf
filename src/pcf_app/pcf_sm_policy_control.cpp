@@ -171,7 +171,7 @@ void pcf_smpc::handle_session_binding_request(
   std::unique_lock lock_assocations(m_associations_mutex);
   auto iter = m_associations.find(association_id->c_str());
   if (iter == m_associations.end()) {
-    Logger::pcf_app().info(fmt::format("Could not delete policy association: ID {} not found", association_id->c_str()));
+    Logger::pcf_app().info(fmt::format("Could not find policy association: ID {} not found", association_id->c_str()));
     return;
   }
 
@@ -195,9 +195,9 @@ void pcf_smpc::handle_update_decision_request(
     return;
   }
 
-  // TODO [PAS] ensure the decision can be updated
+  iter->second.set_sm_policy_decision(decision);
 
-  // Update the association with the incoming decision
+  // TODO [PAS] confirm if the storage should be updated
   auto context = iter->second.get_sm_policy_context_data();
   if (!context.getSupi().empty()) {
     m_policy_storage->insert_supi_decision(context.getSupi(), decision);
