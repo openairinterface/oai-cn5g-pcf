@@ -73,6 +73,7 @@ class pcf_policy_authorization {
    */
   policy_auth::status_code post_app_sessions_handler(
       const oai::model::pcf::AppSessionContext& context,
+      std::string& app_session_id,
       std::string& problem_details);
 
   /**

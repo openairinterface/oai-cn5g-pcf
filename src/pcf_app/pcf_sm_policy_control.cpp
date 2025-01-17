@@ -97,7 +97,7 @@ sm_policy::status_code pcf_smpc::send_sm_policy_control_update_notify(
 
   json_data["smPolicyDecision"] = decision_json;
 
-  Logger::pcf_app().info("Sending PCF SM policy association creation request");
+  Logger::pcf_app().info("Sending PCF SM policy association creation request: uri -> %s", uri.c_str());
   request req =
       http_client_inst->prepare_json_request(uri, json_data.dump());
   response resp = http_client_inst->send_http_request(method_e::POST, req);

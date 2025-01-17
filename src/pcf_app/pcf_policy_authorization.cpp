@@ -55,7 +55,7 @@ pcf_policy_authorization::pcf_policy_authorization(pcf_event& ev)
 
 //------------------------------------------------------------------------------
 status_code pcf_policy_authorization::post_app_sessions_handler(
-    const oai::model::pcf::AppSessionContext& context,
+    const oai::model::pcf::AppSessionContext& context, std::string& app_session_id,
     std::string& problem_details) {
   oai::model::pcf::SmPolicyDecision current_decision = {};
   oai::model::pcf::SmPolicyDecision request_decision = {};
@@ -150,7 +150,7 @@ status_code pcf_policy_authorization::post_app_sessions_handler(
   }
   
 
-  auto app_session_id = std::to_string(m_app_sessions_id_generator.get_uid());
+  app_session_id = std::to_string(m_app_sessions_id_generator.get_uid());
   policy_auth::app_session app_session(context.getAscReqData(), current_decision, app_session_id);
 
   // Create an association

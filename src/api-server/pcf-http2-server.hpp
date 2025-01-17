@@ -70,7 +70,7 @@ class pcf_http2_server {
     
     m_application_sessions_collection_api_handler = 
         std::make_shared<application_sessions_collection_api_handler>(
-            pcf_app_inst->get_pcf_policy_authorization_service());
+            pcf_app_inst->get_pcf_policy_authorization_service(), address);
 
     m_events_subscription_document_api_handler = 
         std::make_shared<events_subscription_document_api_handler>(
