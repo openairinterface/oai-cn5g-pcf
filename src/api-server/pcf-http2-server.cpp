@@ -241,13 +241,13 @@ void pcf_http2_server::start() {
         }
 
         if (is_event &&
-            (request.method() != "PUT" || request.method() != "DELETE")) {
+            (request.method() != "PUT" && request.method() != "DELETE")) {
           handle_method_not_exists(response, request);
           return;
         }
 
         if (is_get_patch &&
-            (request.method() != "GET" || request.method() != "PATCH")) {
+            (request.method() != "GET" && request.method() != "PATCH")) {
           handle_method_not_exists(response, request);
           return;
         }

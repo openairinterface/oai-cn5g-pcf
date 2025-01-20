@@ -57,7 +57,7 @@ api_response application_sessions_collection_api_handler::post_app_sessions(
   problem_details.setDetail(problem_description);
 
   switch (res) {
-    case status_code::OK:
+    case status_code::CREATED:
       content_type = "application/json";
       location  = m_address + app_sessions::get_route() + "/" + app_session_id;
       http_code    = http_status_code::OK;

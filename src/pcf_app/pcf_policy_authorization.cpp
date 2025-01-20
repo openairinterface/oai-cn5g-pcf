@@ -151,10 +151,11 @@ status_code pcf_policy_authorization::post_app_sessions_handler(
   
 
   app_session_id = std::to_string(m_app_sessions_id_generator.get_uid());
-  policy_auth::app_session app_session(context.getAscReqData(), current_decision, app_session_id);
+  policy_auth::app_session app_session(reqContext, current_decision, app_session_id);
 
   // Create an association
   m_app_sessions.insert(std::make_pair(app_session_id, app_session));
+  context.getAscReqData().setAfAppId(app_session_id);
 
   // Log the decision after the merge
   std::stringstream ss3;
@@ -168,7 +169,7 @@ status_code pcf_policy_authorization::post_app_sessions_handler(
   // TODO [PAS] send notification if notifcation is required
 
   // Return "201 Created" response to the HTTP POST request
-  return status_code::OK;
+  return status_code::CREATED;
 }
 
 //------------------------------------------------------------------------------
@@ -178,9 +179,100 @@ policy_auth::status_code pcf_policy_authorization::mod_app_session_handler(
         app_session_context_update_data_patch,
     const oai::model::pcf::AppSessionContext& context,
     std::string& problem_details) {
-  Logger::pcf_app().warn("App session, but not implemented!");
 
-  return status_code::NOT_FOUND;
+  oai::model::pcf::SmPolicyDecision current_decision = {};
+  oai::model::pcf::SmPolicyDecision request_decision = {};
+
+  Logger::pcf_app().info("mod_app_session_handler");
+
+  const oai::model::pcf::AppSessionContextUpdateData reqContext = app_session_context_update_data_patch.getAscReqData();
+  std::optional<std::string> association_id = {};
+
+  // Get app session
+  auto iter = m_app_sessions.find(app_session_id);
+  if (iter == m_app_sessions.end()) {
+    Logger::pcf_app().error("App session not found");
+    return status_code::NOT_FOUND;
+  }
+
+  auto app_session = iter->second;
+  auto app_session_context = app_session.get_app_session_context();
+
+  try {
+    // Perform session binding
+    m_event_sub.sm_session_binding(app_session_context.getUeIpv4(), app_session_context.getSupi(), app_session_context.getDnn(), association_id, current_decision);
+  } catch (const std::exception& e) {
+    Logger::pcf_app().info(e.what());
+    problem_details = "PDU_SESSION_NOT_AVAILABLE";
+    return status_code::INTERNAL_SERVER_ERROR;
+  }
+
+  /**
+   * Handle Initial provisioning of service function chaining information
+   * 
+   * the "afSfcReq" attribute of "AfSfcRequirement" data type with specific N6-LAN 
+   * traffic steering requirements for the application traffic flows either within "AppSessionContextReqData" data type for
+   * the service indicated in the "afAppId" attribute, or within the "medComponents" attribute. When provided at both
+   * levels, the "afSfcReq" attribute value in the "medComponents" attribute shall have precedence over the "afSfcReq"
+   * attribute included in the "AppSessionContextReqData" data type
+   */
+
+  // Check if the request contains the "afSfcReq" attribute or medComponents is present. Pick medComponents if both are present
+  if (app_session_context_update_data_patch.getAscReqData().medComponentsIsSet()) {
+    Logger::pcf_app().info("MedComponents is set");
+    // TODO [PAS] handle multiple medComponents
+    for (const auto& medComponent : app_session_context_update_data_patch.getAscReqData().getMedComponents()) {
+      if (medComponent.second.afSfcReqIsSet()) {
+        handler_result result = policy_auth::handle_service_function_chaining_update(
+            medComponent.second.getAfSfcReq(), request_decision, app_session_context);
+        if (result.problem_details.has_value()) {
+          problem_details = result.problem_details.value();
+          Logger::pcf_app().error("Service function chaining failed. Problem details: {}", result.problem_details.value());
+          return result.status.value();
+        }
+        break;
+      }
+    }
+
+  } else if (app_session_context_update_data_patch.getAscReqData().afSfcReqIsSet()) {
+    Logger::pcf_app().info("AfSfcReq is set");
+    handler_result result = policy_auth::handle_service_function_chaining_update(
+        app_session_context_update_data_patch.getAscReqData().getAfSfcReq(), request_decision, app_session_context);
+    if (result.problem_details.has_value()) {
+      problem_details = result.problem_details.value();
+      Logger::pcf_app().error("Service function chaining failed. Problem details: {}", result.problem_details.value());
+      return result.status.value();
+    }
+  }
+
+
+  // Validate the request decision against the current decision
+  // merge the request decision with the current decision if the request decision is valid
+  handler_result decision_result = validate_and_merge_decision(request_decision, current_decision);
+
+  if (decision_result.problem_details.has_value()) {
+      problem_details = decision_result.problem_details.value();
+      Logger::pcf_app().error("Validation and merge of Decision failed. Problem details: {}", decision_result.problem_details.value());
+      return decision_result.status.value();
+  }
+
+  // Log the decision after the merge
+  std::stringstream ss;
+  ss << "App Session ID: " << app_session_id << "\n";
+  ss << " -- " << current_decision << "\n";
+  Logger::pcf_app().info(ss.str());
+
+  // Event with updated decision
+  m_event_sub.sm_update_decision(association_id, current_decision);
+
+  // Update app session
+  // m_app_sessions[app_session_id] = app_session;
+  app_session.set_app_session_context(app_session_context);
+  m_app_sessions.insert(std::make_pair(app_session_id, app_session));
+
+  // TODO [PAS] send notification if notifcation is required
+
+  return status_code::OK;
 }
 
 //------------------------------------------------------------------------------

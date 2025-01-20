@@ -27,6 +27,7 @@
  \email: mkttar001@myuct.ac.za
  */
 
+#include <string>
 #include <sstream>
 
 #include "AppSessionContext.h"
@@ -37,12 +38,14 @@
 #include "policy_auth/pcf_policy_authorization_status_code.hpp"
 #include "logger.hpp"
 #include "app_session.hpp"
+#include "uint_generator.hpp"
 
 namespace oai::pcf::app {
 namespace policy_auth {
     
 using namespace oai::model::pcf;
 using namespace oai::pcf::app;
+using namespace oai::utils;
 
 std::string app_session::get_id() const {
   return m_id;
@@ -50,6 +53,10 @@ std::string app_session::get_id() const {
 
 const oai::model::pcf::AppSessionContextReqData& app_session::get_app_session_context() const {
   return m_context;
+}
+
+void app_session::set_app_session_context(oai::model::pcf::AppSessionContextReqData& context) {
+  m_context = context;
 }
 
 
@@ -83,8 +90,13 @@ handler_result handle_service_function_chaining(
 
   // Add the traffic control to PCC rules
   std::shared_ptr<oai::model::pcf::PccRule> pcc_rule = std::make_shared<oai::model::pcf::PccRule>();
-  std::string  pcc_rule_id = "app-session-rule-1";
-  std::string rcId = "app-session";
+  // Generate Id using id generator
+  auto& uid_generator = oai::utils::uint_uid_generator<uint32_t>::get_instance();
+  uint32_t uid = uid_generator.get_uid();
+  Logger::pcf_app().debug(fmt::format("Generated PCC Rule ID: {}", uid));
+
+  std::string  pcc_rule_id = std::to_string(uid);
+  std::string rcId = "rc-" + pcc_rule_id;
   std::vector<std::string> refTcData = { rcId };
 
   pcc_rule->setRefTcData(refTcData);
@@ -92,7 +104,6 @@ handler_result handle_service_function_chaining(
 
   // // Create and set TCId on traffic control data and add it as RefTc to PCC
   traffic_control_data->setTcId(rcId);
-
 
   // Set traffic control to decision decision.setTraffContDecs(used_traffic_control);
   auto traffic_control_map = decision.getTraffContDecs();
@@ -104,23 +115,47 @@ handler_result handle_service_function_chaining(
   pcc_rules_map.insert(std::make_pair(pcc_rule_id, *pcc_rule));
   decision.setPccRules(pcc_rules_map);
 
-  std::stringstream ss2;
-  ss2 << "Handled Decision: " << "\n";
-  ss2 << " -- " << decision << "\n";
-  Logger::pcf_app().info(ss2.str());
+  return handler_result{ .status = status_code::OK };
+}
+
+
+handler_result handle_service_function_chaining_update(
+    const oai::model::pcf::AfSfcRequirement& af_sfc,
+    oai::model::pcf::SmPolicyDecision& decision,
+    oai::model::pcf::AppSessionContextReqData& context) {
+
+  Logger::pcf_app().info("Handling Service Function Chaining Update");
+  auto result = handle_service_function_chaining(af_sfc, decision);
+  if (result.problem_details.has_value()) {
+    return result;
+  }
+
+  auto af_sfc_req = context.getAfSfcReq();
+
+  if (af_sfc.sfcIdDlIsSet()) {
+    Logger::pcf_app().debug("Setting Context DL SFC ID on Traffic Control Data");
+    af_sfc_req.setSfcIdDl(af_sfc.getSfcIdDl());
+  }
+
+  if (af_sfc.sfcIdUlIsSet()) {
+    Logger::pcf_app().debug("Setting Context UL SFC ID on Traffic Control Data");
+    af_sfc_req.setSfcIdUl(af_sfc.getSfcIdUl());
+  }
+  context.setAfSfcReq(af_sfc_req);
 
   return handler_result{ .status = status_code::OK };
 }
 
 handler_result validate_and_merge_decision(
     const oai::model::pcf::SmPolicyDecision& request_decision,
-    oai::model::pcf::SmPolicyDecision& current_decision) {
+    oai::model::pcf::SmPolicyDecision& current_decision,
+    bool update) {
     Logger::pcf_app().info("Validating and Merging Decision");
 
     // If PCC rules in request conflict with current decision, return 403 Forbidden
 
     // Check if PCC rule id in request decision exists in current decision
-    if (request_decision.getPccRules().size() > 0) {
+    if (request_decision.getPccRules().size() > 0 && !update) {
         for (const auto& [key, value] : request_decision.getPccRules()) {
             auto iter = current_decision.getPccRules().find(key.c_str());
             if (iter != current_decision.getPccRules().end() && !iter->first.empty()) {
@@ -131,7 +166,7 @@ handler_result validate_and_merge_decision(
     }
 
     // Check if TcId in traffic control data in request decision exists in current decision
-    if (request_decision.getTraffContDecs().size() > 0) {
+    if (request_decision.getTraffContDecs().size() > 0 && !update) {
         for (const auto& [key, value] : request_decision.getTraffContDecs()) {
             auto iter = current_decision.getTraffContDecs().find(key);
             if (iter != current_decision.getTraffContDecs().end() && !iter->first.empty()) {
@@ -143,6 +178,7 @@ handler_result validate_and_merge_decision(
 
     // Merge the request decision with current decision
 
+    // TODO [PAS]: Discuss with team if we should merge the decisions or replace the current decision with the request decision
     // Merge PCC rules
     auto pccRulesMap = current_decision.getPccRules();
     for (auto& [key, value] : request_decision.getPccRules()) {

@@ -6,7 +6,7 @@ start
 :0. Receive Request;
 :1. Create request context;
 :2. Perform session binding;
-:3. Init Traffic Control Data decision;
+:3. Init SM Policy Decision;
 :4. Extract Routing Requirements;
 if (4.1. Routing Requirements include afSfcReq) then
     if (4.1.1. SFC Feature Supported) then

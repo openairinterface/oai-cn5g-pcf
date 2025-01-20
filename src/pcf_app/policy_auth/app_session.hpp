@@ -51,6 +51,8 @@ class app_session {
   [[nodiscard]] virtual const oai::model::pcf::AppSessionContextReqData&
   get_app_session_context() const;
 
+  [[nodiscard]] virtual void set_app_session_context(oai::model::pcf::AppSessionContextReqData& context);
+
   [[nodiscard]] virtual std::string get_id() const;
 
  private:
@@ -89,6 +91,11 @@ oai::pcf::app::policy_auth::handler_result handle_service_function_chaining(
     const oai::model::pcf::AfSfcRequirement& af_sfc,
     oai::model::pcf::SmPolicyDecision& decision);
 
+oai::pcf::app::policy_auth::handler_result handle_service_function_chaining_update(
+    const oai::model::pcf::AfSfcRequirement& af_sfc,
+    oai::model::pcf::SmPolicyDecision& decision,
+    oai::model::pcf::AppSessionContextReqData& context);
+
 //   oai::pcf::app::policy_auth::status_code handle_traffic_routing(
 //       oai::model::pcf::SmPolicyContextData& orig_context,
 //       const oai::model::pcf::SmPolicyUpdateContextData& update,
@@ -99,7 +106,9 @@ oai::pcf::app::policy_auth::handler_result authorize_service_info(
 
 oai::pcf::app::policy_auth::handler_result validate_and_merge_decision(
   const oai::model::pcf::SmPolicyDecision& request_decision,
-  oai::model::pcf::SmPolicyDecision& current_decision);
+  oai::model::pcf::SmPolicyDecision& current_decision,
+  bool update = false);
+
 }  // namespace oai::pcf::app::policy_auth
 
 #endif // FILE_APP_SESSION_SEEN
