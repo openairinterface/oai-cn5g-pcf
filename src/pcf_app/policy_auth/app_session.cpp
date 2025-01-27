@@ -40,6 +40,7 @@
 #include "app_session.hpp"
 #include "uint_generator.hpp"
 
+#define DEFAULT_PCC_RULE_PRECEDENCE 255
 namespace oai::pcf::app {
 namespace policy_auth {
     
@@ -63,7 +64,6 @@ void app_session::set_app_session_context(oai::model::pcf::AppSessionContextReqD
 handler_result handle_service_function_chaining(
     const oai::model::pcf::AfSfcRequirement& af_sfc,
     oai::model::pcf::SmPolicyDecision& decision) {
-  Logger::pcf_app().info("Handling Service Function Chaining");
 
   // Extract N6-LAN Traffic Steering Requirements
   std::shared_ptr<oai::model::pcf::TrafficControlData> traffic_control_data = std::make_shared<oai::model::pcf::TrafficControlData>();
@@ -77,12 +77,10 @@ handler_result handle_service_function_chaining(
   // Set Traffic Steering Policy ID for DL and/or UL based on the presence of
   // corresponding SFC IDs
   if (af_sfc.sfcIdDlIsSet()) {
-    Logger::pcf_app().debug("Setting DL SFC ID on Traffic Control Data");
     traffic_control_data->setTrafficSteeringPolIdDl(af_sfc.getSfcIdDl());
   }
 
   if (af_sfc.sfcIdUlIsSet()) {
-    Logger::pcf_app().debug("Setting UL SFC ID on Traffic Control Data");
     traffic_control_data->setTrafficSteeringPolIdUl(af_sfc.getSfcIdUl());
   }
 
@@ -133,14 +131,15 @@ handler_result handle_service_function_chaining_update(
   auto af_sfc_req = context.getAfSfcReq();
 
   if (af_sfc.sfcIdDlIsSet()) {
-    Logger::pcf_app().debug("Setting Context DL SFC ID on Traffic Control Data");
     af_sfc_req.setSfcIdDl(af_sfc.getSfcIdDl());
   }
 
   if (af_sfc.sfcIdUlIsSet()) {
-    Logger::pcf_app().debug("Setting Context UL SFC ID on Traffic Control Data");
     af_sfc_req.setSfcIdUl(af_sfc.getSfcIdUl());
   }
+
+  // TODO [PAS] Transparently include SFC Metadata if available
+
   context.setAfSfcReq(af_sfc_req);
 
   return handler_result{ .status = status_code::OK };
@@ -152,7 +151,24 @@ handler_result validate_and_merge_decision(
     bool update) {
     Logger::pcf_app().info("Validating and Merging Decision");
 
-    // If PCC rules in request conflict with current decision, return 403 Forbidden
+    // TODO [PAS] Discuss with team how to handle creation of new PCC rules for the same traffic control data
+    
+    /* Note: Current implementation. The request decision contains the decision to be made by the PCF. The PCC
+     * rules in the request decision will be assigned a precedence value higher than the highest precedence value
+     * in the current decision. During update new PCC rules will be added to the current decision. With a new precedence
+     * value higher than the highest precedence value in the current decision.
+     */
+
+    // Get the highest precedence value from current_decision PCC rules
+    int highest_precedence = 0;
+    for (const auto& [key, value] : current_decision.getPccRules()) {
+        if (value.getPrecedence() > highest_precedence) {
+            highest_precedence = value.getPrecedence();
+        }
+    }
+    if (highest_precedence == 0) {
+        highest_precedence = DEFAULT_PCC_RULE_PRECEDENCE;
+    }
 
     // Check if PCC rule id in request decision exists in current decision
     if (request_decision.getPccRules().size() > 0 && !update) {
@@ -177,21 +193,41 @@ handler_result validate_and_merge_decision(
     }
 
     // Merge the request decision with current decision
-
-    // TODO [PAS]: Discuss with team if we should merge the decisions or replace the current decision with the request decision
-    // Merge PCC rules
     auto pccRulesMap = current_decision.getPccRules();
     for (auto& [key, value] : request_decision.getPccRules()) {
+        if (value.getPrecedence() == 0) {
+            value.setPrecedence(highest_precedence + 1);
+        }
         pccRulesMap.insert(std::make_pair(key, value));
     }
     current_decision.setPccRules(pccRulesMap);
 
     // Merge Traffic Control Data
     auto trafficControlMap = current_decision.getTraffContDecs();
-    // Now pass the map to the function
     for (auto& [key, value] : request_decision.getTraffContDecs()) {
         trafficControlMap.insert(std::make_pair(key, value));
     }
+
+    try {
+      auto pcc_rules = current_decision.getPccRules();
+      // pcc_rules.erase(key);
+      for (auto& [key, value] : pcc_rules) {
+        for (auto& refTcData : value.getRefTcData()) {
+            // Check if refTcData is in trafficControlMap, if not remove PCC rule
+            if (trafficControlMap.find(refTcData) == trafficControlMap.end()) {
+                Logger::pcf_app().debug(fmt::format("Removing PCC Rule ID: {} from current decision", key.c_str()));
+                auto refTcDataVector = pcc_rules[key].getRefTcData();
+                // Set empty vector
+                refTcDataVector.clear();
+                pcc_rules[key].setRefTcData(refTcDataVector);
+                current_decision.setPccRules(pcc_rules);
+            }
+        }
+      }
+    } catch (const std::exception& e) {
+        Logger::pcf_app().error(fmt::format("Error while processing PCC rules: {}", e.what()));
+    }
+    
     current_decision.setTraffContDecs(trafficControlMap);
 
     return handler_result{ .status = status_code::OK };

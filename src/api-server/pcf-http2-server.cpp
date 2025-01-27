@@ -299,6 +299,8 @@ void pcf_http2_server::start() {
             } else if (is_get_patch && request.method() == "PATCH") {
               nlohmann::json::parse(request_body->str())
                   .get_to(app_session_context_data);
+              Logger::pcf_sbi().info(
+                  "App Session Context Update Data:");
               app_session_context_data.validate();
               resp =
                   m_individual_application_session_context_document_api_handler

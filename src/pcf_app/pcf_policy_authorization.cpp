@@ -78,13 +78,6 @@ status_code pcf_policy_authorization::post_app_sessions_handler(
     return status_code::NOT_FOUND;
   }
 
-  std::stringstream ss;
-  ss << "Association ID: " << association_id.value() << "\n";
-  ss << " -- " << current_decision << "\n";
-
-  // Log the current decision
-  Logger::pcf_app().info(ss.str());
-
   // We are saving the entire app context at the end
 
   // Authorise the service information received
@@ -135,11 +128,6 @@ status_code pcf_policy_authorization::post_app_sessions_handler(
     }
   }
 
-  std::stringstream ss2;
-  ss2 << "Request Decision: " << "\n";
-  ss2 << " -- " << request_decision << "\n";
-  Logger::pcf_app().info(ss2.str());
-
   // Validate the request decision against the current decision
   // merge the request decision with the current decision if the request decision is valid
   handler_result decision_result = validate_and_merge_decision(request_decision, current_decision);
@@ -156,12 +144,6 @@ status_code pcf_policy_authorization::post_app_sessions_handler(
   // Create an association
   m_app_sessions.insert(std::make_pair(app_session_id, app_session));
   context.getAscReqData().setAfAppId(app_session_id);
-
-  // Log the decision after the merge
-  std::stringstream ss3;
-  ss3 << "App Session ID: " << app_session_id << "\n";
-  ss3 << " -- " << current_decision << "\n";
-  Logger::pcf_app().info(ss3.str());
 
   // Event with updated decision
   m_event_sub.sm_update_decision(association_id, current_decision);
@@ -183,8 +165,6 @@ policy_auth::status_code pcf_policy_authorization::mod_app_session_handler(
   oai::model::pcf::SmPolicyDecision current_decision = {};
   oai::model::pcf::SmPolicyDecision request_decision = {};
 
-  Logger::pcf_app().info("mod_app_session_handler");
-
   const oai::model::pcf::AppSessionContextUpdateData reqContext = app_session_context_update_data_patch.getAscReqData();
   std::optional<std::string> association_id = {};
 
@@ -195,7 +175,7 @@ policy_auth::status_code pcf_policy_authorization::mod_app_session_handler(
     return status_code::NOT_FOUND;
   }
 
-  auto app_session = iter->second;
+  auto& app_session = iter->second;
   auto app_session_context = app_session.get_app_session_context();
 
   try {
@@ -235,7 +215,6 @@ policy_auth::status_code pcf_policy_authorization::mod_app_session_handler(
     }
 
   } else if (app_session_context_update_data_patch.getAscReqData().afSfcReqIsSet()) {
-    Logger::pcf_app().info("AfSfcReq is set");
     handler_result result = policy_auth::handle_service_function_chaining_update(
         app_session_context_update_data_patch.getAscReqData().getAfSfcReq(), request_decision, app_session_context);
     if (result.problem_details.has_value()) {
@@ -248,7 +227,7 @@ policy_auth::status_code pcf_policy_authorization::mod_app_session_handler(
 
   // Validate the request decision against the current decision
   // merge the request decision with the current decision if the request decision is valid
-  handler_result decision_result = validate_and_merge_decision(request_decision, current_decision);
+  handler_result decision_result = validate_and_merge_decision(request_decision, current_decision, true);
 
   if (decision_result.problem_details.has_value()) {
       problem_details = decision_result.problem_details.value();
@@ -256,19 +235,20 @@ policy_auth::status_code pcf_policy_authorization::mod_app_session_handler(
       return decision_result.status.value();
   }
 
-  // Log the decision after the merge
-  std::stringstream ss;
-  ss << "App Session ID: " << app_session_id << "\n";
-  ss << " -- " << current_decision << "\n";
-  Logger::pcf_app().info(ss.str());
-
   // Event with updated decision
   m_event_sub.sm_update_decision(association_id, current_decision);
 
   // Update app session
   // m_app_sessions[app_session_id] = app_session;
+  std::shared_lock lock_associations(m_app_sessions_mutex);
   app_session.set_app_session_context(app_session_context);
-  m_app_sessions.insert(std::make_pair(app_session_id, app_session));
+  // Get mutex
+
+  auto iter2 = m_app_sessions.find(app_session_id);
+  if (iter2 == m_app_sessions.end()) {
+    Logger::pcf_app().error("App session not found");
+    return status_code::NOT_FOUND;
+  }
 
   // TODO [PAS] send notification if notifcation is required
 

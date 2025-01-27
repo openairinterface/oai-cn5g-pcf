@@ -43,6 +43,7 @@ class app_session {
       const std::string& id)
       : m_decision(decision) {
     m_context = context;
+    // TODO [PAS] add association id to be used during update
     m_id      = id;
   }
 

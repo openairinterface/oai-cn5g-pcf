@@ -68,9 +68,6 @@ pcf_smpc::pcf_smpc(
 
   m_policy_storage->subscribe_to_decision_change(f);
 
-  // std::function<void(int decision)> f2 =
-  //     std::bind(&pcf_smpc::handle_session_binding_request, this, std::placeholders::_1);
-
   m_sm_session_binding_connection =
       m_event_sub.subscribe_sm_session_binding(boost::bind(
           &pcf_smpc::handle_session_binding_request, this, boost::placeholders::_1, boost::placeholders::_2, boost::placeholders::_3, boost::placeholders::_4, boost::placeholders::_5));
@@ -102,7 +99,7 @@ sm_policy::status_code pcf_smpc::send_sm_policy_control_update_notify(
       http_client_inst->prepare_json_request(uri, json_data.dump());
   response resp = http_client_inst->send_http_request(method_e::POST, req);
 
-  if (resp.status_code == http_status_code::CREATED) {
+  if (resp.status_code == http_status_code::OK) {
     // TODO [PAS] check if for required headers
     Logger::pcf_app().info(
         "Successful SM Policy Update Notification for SUPI %s",
@@ -155,9 +152,6 @@ void pcf_smpc::handle_session_binding_request(
       std::optional<std::string>& assoc_id,
       oai::model::pcf::SmPolicyDecision& decision) {
   // TODO: support multiple sessions
-  Logger::pcf_app().warn("handle_session_binding_request");
-
-  Logger::pcf_app().warn(fmt::format("handle_session_binding_request, UE has {}", ipv4.value().c_str()));
 
   std::shared_ptr<std::string> association_id = m_policy_storage->find_association(ipv4, supi, dnn);
 
@@ -184,8 +178,6 @@ void pcf_smpc::handle_session_binding_request(
 void pcf_smpc::handle_update_decision_request(
   std::optional<std::string>& association_id, oai::model::pcf::SmPolicyDecision& decision
 ) {
-  Logger::pcf_app().debug("Handing update decision request");
-  // TODO update decision
 
   // Fetch the association related to the decision
   std::unique_lock lock_assocations(m_associations_mutex);
