@@ -9,10 +9,6 @@
 
 #include <odb/version.hxx>
 
-#if ODB_VERSION != 20477UL
-#error ODB runtime version mismatch
-#endif
-
 #include <odb/pre.hxx>
 
 #include "QosData.h"
