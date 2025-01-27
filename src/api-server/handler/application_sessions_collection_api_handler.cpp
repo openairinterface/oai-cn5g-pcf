@@ -60,7 +60,7 @@ api_response application_sessions_collection_api_handler::post_app_sessions(
     case status_code::CREATED:
       content_type = "application/json";
       location  = m_address + app_sessions::get_route() + "/" + app_session_id;
-      http_code    = http_status_code::OK;
+      http_code = http_status_code::OK;
       break;
     default:
       problem_details.setCause("INTERNAL_ERROR");

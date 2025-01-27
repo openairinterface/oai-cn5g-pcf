@@ -24,8 +24,8 @@ ApplicationSessionsCollectionApiImpl::ApplicationSessionsCollectionApiImpl(
     const std::shared_ptr<pcf_policy_authorization>& pa_service,
     const std::string& address)
     : ApplicationSessionsCollectionApi(rtr) {
-  m_api_handler =
-      std::make_shared<application_sessions_collection_api_handler>(pa_service, address);
+  m_api_handler = std::make_shared<application_sessions_collection_api_handler>(
+      pa_service, address);
 }
 
 void ApplicationSessionsCollectionApiImpl::post_app_sessions(

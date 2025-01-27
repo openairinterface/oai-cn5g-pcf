@@ -40,7 +40,8 @@ class application_sessions_collection_api_handler {
  public:
   explicit application_sessions_collection_api_handler(
       const std::shared_ptr<oai::pcf::app::pcf_policy_authorization>&
-          pcf_policy_authorization, const std::string& address) {
+          pcf_policy_authorization,
+      const std::string& address) {
     m_pa_service = pcf_policy_authorization;
     m_address    = address;
   }

@@ -151,58 +151,54 @@ void policy_storage_db::subscribe_to_decision_change(
 void policy_storage_db::insert_supi_decision(
     const std::string& supi,
     const oai::model::pcf::SmPolicyDecision& decision) {
-      // TODO implement
-      Logger::pcf_app().debug("Not implemented: Inserting SUPI decision into DB");
-    }
+  // TODO implement
+  Logger::pcf_app().debug("Not implemented: Inserting SUPI decision into DB");
+}
 
 void policy_storage_db::insert_dnn_decision(
-    const std::string& dnn,
-    const oai::model::pcf::SmPolicyDecision& decision) {
-      // TODO implement
-      Logger::pcf_app().debug("Not implemented: Inserting DNN decision into DB");
-    }
+    const std::string& dnn, const oai::model::pcf::SmPolicyDecision& decision) {
+  // TODO implement
+  Logger::pcf_app().debug("Not implemented: Inserting DNN decision into DB");
+}
 
 void policy_storage_db::insert_slice_decision(
     const oai::model::common::Snssai&,
     const oai::model::pcf::SmPolicyDecision& decision) {
-      // TODO implement
-      Logger::pcf_app().debug("Not implemented: Inserting Slice decision into DB");
-    }
+  // TODO implement
+  Logger::pcf_app().debug("Not implemented: Inserting Slice decision into DB");
+}
 
 void policy_storage_db::insert_associations(
-  const oai::model::pcf::SmPolicyContextData& context,
-  const std::string& association_id
-) {
+    const oai::model::pcf::SmPolicyContextData& context,
+    const std::string& association_id) {
   // TODO implement
   Logger::pcf_app().debug("Not implemented: Inserting associations into DB");
 }
 
 void policy_storage_db::insert_ip_association(
-    const std::string& dnn,
-    const std::string& association_id) {
-      // TODO implement
-      Logger::pcf_app().debug("Not implemented: Inserting IP association into DB");
-    }
+    const std::string& dnn, const std::string& association_id) {
+  // TODO implement
+  Logger::pcf_app().debug("Not implemented: Inserting IP association into DB");
+}
 
 void policy_storage_db::insert_supi_association(
-    const std::string& supi,
-    const std::string& association_id) {
-      // TODO implement
-      Logger::pcf_app().debug("Not implemented: Inserting SUPI association into DB");
-    }
+    const std::string& supi, const std::string& association_id) {
+  // TODO implement
+  Logger::pcf_app().debug(
+      "Not implemented: Inserting SUPI association into DB");
+}
 
 void policy_storage_db::insert_dnn_association(
-    const std::string& dnn,
-    const std::string& association_id) {
-      // TODO implement
-      Logger::pcf_app().debug("Not implemented: Inserting DNN association into DB");
-    }
+    const std::string& dnn, const std::string& association_id) {
+  // TODO implement
+  Logger::pcf_app().debug("Not implemented: Inserting DNN association into DB");
+}
 
 std::shared_ptr<std::string> policy_storage_db::find_association(
-  const std::optional<std::string>& ipv4,
-  const std::optional<std::string>& supi,
-  const std::optional<std::string>& dnn) {
-    // TODO implement
-    Logger::pcf_app().debug("Not implemented: Finding association in DB");
-    return NULL;
-  }
+    const std::optional<std::string>& ipv4,
+    const std::optional<std::string>& supi,
+    const std::optional<std::string>& dnn) {
+  // TODO implement
+  Logger::pcf_app().debug("Not implemented: Finding association in DB");
+  return NULL;
+}

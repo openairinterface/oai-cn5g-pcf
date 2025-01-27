@@ -55,18 +55,21 @@ pcf_policy_authorization::pcf_policy_authorization(pcf_event& ev)
 
 //------------------------------------------------------------------------------
 status_code pcf_policy_authorization::post_app_sessions_handler(
-    const oai::model::pcf::AppSessionContext& context, std::string& app_session_id,
-    std::string& problem_details) {
+    const oai::model::pcf::AppSessionContext& context,
+    std::string& app_session_id, std::string& problem_details) {
   oai::model::pcf::SmPolicyDecision current_decision = {};
   oai::model::pcf::SmPolicyDecision request_decision = {};
 
-   Logger::pcf_app().info("post_app_sessions_handler");
+  Logger::pcf_app().info("post_app_sessions_handler");
 
-  const oai::model::pcf::AppSessionContextReqData reqContext = context.getAscReqData();
+  const oai::model::pcf::AppSessionContextReqData reqContext =
+      context.getAscReqData();
   std::optional<std::string> association_id = {};
   try {
     // Perform session binding
-    m_event_sub.sm_session_binding(reqContext.getUeIpv4(), reqContext.getSupi(), reqContext.getDnn(), association_id, current_decision);
+    m_event_sub.sm_session_binding(
+        reqContext.getUeIpv4(), reqContext.getSupi(), reqContext.getDnn(),
+        association_id, current_decision);
   } catch (const std::exception& e) {
     Logger::pcf_app().info(e.what());
     problem_details = "PDU_SESSION_NOT_AVAILABLE";
@@ -93,25 +96,31 @@ status_code pcf_policy_authorization::post_app_sessions_handler(
 
   /**
    * Handle Initial provisioning of service function chaining information
-   * 
-   * the "afSfcReq" attribute of "AfSfcRequirement" data type with specific N6-LAN 
-   * traffic steering requirements for the application traffic flows either within "AppSessionContextReqData" data type for
-   * the service indicated in the "afAppId" attribute, or within the "medComponents" attribute. When provided at both
-   * levels, the "afSfcReq" attribute value in the "medComponents" attribute shall have precedence over the "afSfcReq"
+   *
+   * the "afSfcReq" attribute of "AfSfcRequirement" data type with specific
+   * N6-LAN traffic steering requirements for the application traffic flows
+   * either within "AppSessionContextReqData" data type for the service
+   * indicated in the "afAppId" attribute, or within the "medComponents"
+   * attribute. When provided at both levels, the "afSfcReq" attribute value in
+   * the "medComponents" attribute shall have precedence over the "afSfcReq"
    * attribute included in the "AppSessionContextReqData" data type
    */
 
-  // Check if the request contains the "afSfcReq" attribute or medComponents is present. Pick medComponents if both are present
+  // Check if the request contains the "afSfcReq" attribute or medComponents is
+  // present. Pick medComponents if both are present
   if (context.getAscReqData().medComponentsIsSet()) {
     Logger::pcf_app().info("MedComponents is set");
     // TODO [PAS] handle multiple medComponents
-    for (const auto& medComponent : context.getAscReqData().getMedComponents()) {
+    for (const auto& medComponent :
+         context.getAscReqData().getMedComponents()) {
       if (medComponent.second.afSfcReqIsSet()) {
         handler_result result = policy_auth::handle_service_function_chaining(
             medComponent.second.getAfSfcReq(), request_decision);
         if (result.problem_details.has_value()) {
           problem_details = result.problem_details.value();
-          Logger::pcf_app().error("Service function chaining failed. Problem details: {}", result.problem_details.value());
+          Logger::pcf_app().error(
+              "Service function chaining failed. Problem details: {}",
+              result.problem_details.value());
           return result.status.value();
         }
         break;
@@ -123,23 +132,29 @@ status_code pcf_policy_authorization::post_app_sessions_handler(
         context.getAscReqData().getAfSfcReq(), request_decision);
     if (result.problem_details.has_value()) {
       problem_details = result.problem_details.value();
-      Logger::pcf_app().error("Service function chaining failed. Problem details: {}", result.problem_details.value());
+      Logger::pcf_app().error(
+          "Service function chaining failed. Problem details: {}",
+          result.problem_details.value());
       return result.status.value();
     }
   }
 
   // Validate the request decision against the current decision
-  // merge the request decision with the current decision if the request decision is valid
-  handler_result decision_result = validate_and_merge_decision(request_decision, current_decision);
+  // merge the request decision with the current decision if the request
+  // decision is valid
+  handler_result decision_result =
+      validate_and_merge_decision(request_decision, current_decision);
   if (decision_result.problem_details.has_value()) {
-      problem_details = decision_result.problem_details.value();
-      Logger::pcf_app().error("Validation and merge of Decision failed. Problem details: {}", decision_result.problem_details.value());
-      return decision_result.status.value();
+    problem_details = decision_result.problem_details.value();
+    Logger::pcf_app().error(
+        "Validation and merge of Decision failed. Problem details: {}",
+        decision_result.problem_details.value());
+    return decision_result.status.value();
   }
-  
 
   app_session_id = std::to_string(m_app_sessions_id_generator.get_uid());
-  policy_auth::app_session app_session(reqContext, current_decision, app_session_id);
+  policy_auth::app_session app_session(
+      reqContext, current_decision, app_session_id);
 
   // Create an association
   m_app_sessions.insert(std::make_pair(app_session_id, app_session));
@@ -161,11 +176,11 @@ policy_auth::status_code pcf_policy_authorization::mod_app_session_handler(
         app_session_context_update_data_patch,
     const oai::model::pcf::AppSessionContext& context,
     std::string& problem_details) {
-
   oai::model::pcf::SmPolicyDecision current_decision = {};
   oai::model::pcf::SmPolicyDecision request_decision = {};
 
-  const oai::model::pcf::AppSessionContextUpdateData reqContext = app_session_context_update_data_patch.getAscReqData();
+  const oai::model::pcf::AppSessionContextUpdateData reqContext =
+      app_session_context_update_data_patch.getAscReqData();
   std::optional<std::string> association_id = {};
 
   // Get app session
@@ -175,12 +190,14 @@ policy_auth::status_code pcf_policy_authorization::mod_app_session_handler(
     return status_code::NOT_FOUND;
   }
 
-  auto& app_session = iter->second;
+  auto& app_session        = iter->second;
   auto app_session_context = app_session.get_app_session_context();
 
   try {
     // Perform session binding
-    m_event_sub.sm_session_binding(app_session_context.getUeIpv4(), app_session_context.getSupi(), app_session_context.getDnn(), association_id, current_decision);
+    m_event_sub.sm_session_binding(
+        app_session_context.getUeIpv4(), app_session_context.getSupi(),
+        app_session_context.getDnn(), association_id, current_decision);
   } catch (const std::exception& e) {
     Logger::pcf_app().info(e.what());
     problem_details = "PDU_SESSION_NOT_AVAILABLE";
@@ -189,50 +206,68 @@ policy_auth::status_code pcf_policy_authorization::mod_app_session_handler(
 
   /**
    * Handle Initial provisioning of service function chaining information
-   * 
-   * the "afSfcReq" attribute of "AfSfcRequirement" data type with specific N6-LAN 
-   * traffic steering requirements for the application traffic flows either within "AppSessionContextReqData" data type for
-   * the service indicated in the "afAppId" attribute, or within the "medComponents" attribute. When provided at both
-   * levels, the "afSfcReq" attribute value in the "medComponents" attribute shall have precedence over the "afSfcReq"
+   *
+   * the "afSfcReq" attribute of "AfSfcRequirement" data type with specific
+   * N6-LAN traffic steering requirements for the application traffic flows
+   * either within "AppSessionContextReqData" data type for the service
+   * indicated in the "afAppId" attribute, or within the "medComponents"
+   * attribute. When provided at both levels, the "afSfcReq" attribute value in
+   * the "medComponents" attribute shall have precedence over the "afSfcReq"
    * attribute included in the "AppSessionContextReqData" data type
    */
 
-  // Check if the request contains the "afSfcReq" attribute or medComponents is present. Pick medComponents if both are present
-  if (app_session_context_update_data_patch.getAscReqData().medComponentsIsSet()) {
+  // Check if the request contains the "afSfcReq" attribute or medComponents is
+  // present. Pick medComponents if both are present
+  if (app_session_context_update_data_patch.getAscReqData()
+          .medComponentsIsSet()) {
     Logger::pcf_app().info("MedComponents is set");
     // TODO [PAS] handle multiple medComponents
-    for (const auto& medComponent : app_session_context_update_data_patch.getAscReqData().getMedComponents()) {
+    for (const auto& medComponent :
+         app_session_context_update_data_patch.getAscReqData()
+             .getMedComponents()) {
       if (medComponent.second.afSfcReqIsSet()) {
-        handler_result result = policy_auth::handle_service_function_chaining_update(
-            medComponent.second.getAfSfcReq(), request_decision, app_session_context);
+        handler_result result =
+            policy_auth::handle_service_function_chaining_update(
+                medComponent.second.getAfSfcReq(), request_decision,
+                app_session_context);
         if (result.problem_details.has_value()) {
           problem_details = result.problem_details.value();
-          Logger::pcf_app().error("Service function chaining failed. Problem details: {}", result.problem_details.value());
+          Logger::pcf_app().error(
+              "Service function chaining failed. Problem details: {}",
+              result.problem_details.value());
           return result.status.value();
         }
         break;
       }
     }
 
-  } else if (app_session_context_update_data_patch.getAscReqData().afSfcReqIsSet()) {
-    handler_result result = policy_auth::handle_service_function_chaining_update(
-        app_session_context_update_data_patch.getAscReqData().getAfSfcReq(), request_decision, app_session_context);
+  } else if (app_session_context_update_data_patch.getAscReqData()
+                 .afSfcReqIsSet()) {
+    handler_result result =
+        policy_auth::handle_service_function_chaining_update(
+            app_session_context_update_data_patch.getAscReqData().getAfSfcReq(),
+            request_decision, app_session_context);
     if (result.problem_details.has_value()) {
       problem_details = result.problem_details.value();
-      Logger::pcf_app().error("Service function chaining failed. Problem details: {}", result.problem_details.value());
+      Logger::pcf_app().error(
+          "Service function chaining failed. Problem details: {}",
+          result.problem_details.value());
       return result.status.value();
     }
   }
 
-
   // Validate the request decision against the current decision
-  // merge the request decision with the current decision if the request decision is valid
-  handler_result decision_result = validate_and_merge_decision(request_decision, current_decision, true);
+  // merge the request decision with the current decision if the request
+  // decision is valid
+  handler_result decision_result =
+      validate_and_merge_decision(request_decision, current_decision, true);
 
   if (decision_result.problem_details.has_value()) {
-      problem_details = decision_result.problem_details.value();
-      Logger::pcf_app().error("Validation and merge of Decision failed. Problem details: {}", decision_result.problem_details.value());
-      return decision_result.status.value();
+    problem_details = decision_result.problem_details.value();
+    Logger::pcf_app().error(
+        "Validation and merge of Decision failed. Problem details: {}",
+        decision_result.problem_details.value());
+    return decision_result.status.value();
   }
 
   // Event with updated decision

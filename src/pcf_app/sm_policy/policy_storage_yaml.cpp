@@ -156,7 +156,8 @@ void policy_storage_yaml::insert_associations(
   policy_storage_yaml::insert_ip_association(
       context.getIpv4Address(), association_id);
 
-  policy_storage_yaml::insert_supi_association(context.getSupi(), association_id);
+  policy_storage_yaml::insert_supi_association(
+      context.getSupi(), association_id);
 
   policy_storage_yaml::insert_dnn_association(context.getDnn(), association_id);
 }
@@ -202,7 +203,7 @@ std::shared_ptr<std::string> policy_storage_yaml::find_association(
 
   // First, check based on SUPI, then DNN, then Slice, then global default rule.
   std::shared_lock lock_supi(m_ip_to_association_map_mutex);
-  auto got_ip   = m_ip_to_association_map.end();
+  auto got_ip = m_ip_to_association_map.end();
   if (ipv4.has_value() &&
       (got_ip = m_ip_to_association_map.find(ipv4.value())) ==
           m_ip_to_association_map.end()) {
@@ -219,18 +220,21 @@ std::shared_ptr<std::string> policy_storage_yaml::find_association(
           supi.value().c_str());
 
       // TODO [PAS] handle DNN
-      /* The since during creation of association, the IP address might be absent, we need to make
-       * sure either it's updated or the we loop through the associations on DNN that have had the
-       * an association with the IP updated i.e., for each assoc in DNN find one with IP == Ipv4 */
+      /* The since during creation of association, the IP address might be
+       * absent, we need to make sure either it's updated or the we loop through
+       * the associations on DNN that have had the an association with the IP
+       * updated i.e., for each assoc in DNN find one with IP == Ipv4 */
 
     } else if (got_supi != m_supi_to_association_map.end()) {
       Logger::pcf_app().debug(
-          "%s - Decide based on SUPI -> %s", msg_base.c_str(), supi.value().c_str());
+          "%s - Decide based on SUPI -> %s", msg_base.c_str(),
+          supi.value().c_str());
       return std::make_shared<std::string>(got_supi->second);
     }
   } else if (got_ip != m_ip_to_association_map.end()) {
     Logger::pcf_app().debug(
-        "%s - Decide based on Ipv4 -> %s", msg_base.c_str(), ipv4.value().c_str());
+        "%s - Decide based on Ipv4 -> %s", msg_base.c_str(),
+        ipv4.value().c_str());
     return std::make_shared<std::string>(got_ip->second);
   }
   Logger::pcf_app().debug(
