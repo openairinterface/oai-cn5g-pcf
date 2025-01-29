@@ -90,19 +90,23 @@ class pcf_event {
 
   /**
    * Subscribe to SM Session Binding signal.
-   * @param [const sm_session_binding_sig_t::slot_type&] sig: slot_type parameter
-   * @return boost::signals2::connection: the connection between the signal and the slot
+   * @param [const sm_session_binding_sig_t::slot_type&] sig: slot_type
+   * parameter
+   * @return boost::signals2::connection: the connection between the signal and
+   * the slot
    */
   bs2::connection subscribe_sm_session_binding(
-    const sm_session_binding_sig_t::slot_type& sig);
+      const sm_session_binding_sig_t::slot_type& sig);
 
   /**
    * Subscribe to SM Update Decision signal.
-   * @param [const sm_update_decision_sig_t::slot_type&] sig: slot_type parameter
-   * @return boost::signals2::connection: the connection between the signal and the slot
+   * @param [const sm_update_decision_sig_t::slot_type&] sig: slot_type
+   * parameter
+   * @return boost::signals2::connection: the connection between the signal and
+   * the slot
    */
   bs2::connection subscribe_sm_update_decision(
-    const sm_update_decision_sig_t::slot_type& sig);
+      const sm_update_decision_sig_t::slot_type& sig);
 
  private:
   task_sig_t task_tick;
@@ -112,11 +116,9 @@ class pcf_event {
   ue_reachability_for_data_sig_t
       ue_reachability_for_data;  // Signal for UE Reachability for Data Report
 
-  sm_session_binding_sig_t
-      sm_session_binding;  // Signal for SM Session Binding
+  sm_session_binding_sig_t sm_session_binding;  // Signal for SM Session Binding
 
-  sm_update_decision_sig_t
-      sm_update_decision; // Signal for SM Update Decision
+  sm_update_decision_sig_t sm_update_decision;  // Signal for SM Update Decision
 };
 }  // namespace oai::pcf::app
 #endif

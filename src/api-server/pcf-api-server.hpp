@@ -79,22 +79,26 @@ class PCFApiServer {
     m_individualSmPolicyDocumentApi =
         std::make_shared<oai::pcf::api::IndividualSMPolicyDocumentApiImpl>(
             m_router, pcf_app_inst->get_pcf_smpc_service(), m_address);
-    
+
     m_applicationSessionsCollectionApi =
         std::make_shared<oai::pcf::api::ApplicationSessionsCollectionApiImpl>(
-            m_router, pcf_app_inst->get_pcf_policy_authorization_service(), m_address);
+            m_router, pcf_app_inst->get_pcf_policy_authorization_service(),
+            m_address);
 
     m_eventsSubscriptionDocumentApi =
         std::make_shared<oai::pcf::api::EventsSubscriptionDocumentApiImpl>(
-            m_router, pcf_app_inst->get_pcf_policy_authorization_service(), m_address);
+            m_router, pcf_app_inst->get_pcf_policy_authorization_service(),
+            m_address);
 
-    m_individualApplicationSessionContextDocumentApi =
-        std::make_shared<oai::pcf::api::IndividualApplicationSessionContextDocumentApiImpl>(
-            m_router, pcf_app_inst->get_pcf_policy_authorization_service(), m_address);
+    m_individualApplicationSessionContextDocumentApi = std::make_shared<
+        oai::pcf::api::IndividualApplicationSessionContextDocumentApiImpl>(
+        m_router, pcf_app_inst->get_pcf_policy_authorization_service(),
+        m_address);
 
     m_pcscfRestorationIndicationApi =
         std::make_shared<oai::pcf::api::PCSCFRestorationIndicationApiImpl>(
-            m_router, pcf_app_inst->get_pcf_policy_authorization_service(), m_address);
+            m_router, pcf_app_inst->get_pcf_policy_authorization_service(),
+            m_address);
 
     m_defaultPolicyDecisionProvisioningApi = std::make_shared<
         oai::pcf::provisioning::api::DefaultPolicyDecisionsApiImpl>(m_router);
@@ -139,8 +143,9 @@ class PCFApiServer {
 
   std::shared_ptr<oai::pcf::api::EventsSubscriptionDocumentApiImpl>
       m_eventsSubscriptionDocumentApi;
-  
-  std::shared_ptr<oai::pcf::api::IndividualApplicationSessionContextDocumentApiImpl>
+
+  std::shared_ptr<
+      oai::pcf::api::IndividualApplicationSessionContextDocumentApiImpl>
       m_individualApplicationSessionContextDocumentApi;
 
   std::shared_ptr<oai::pcf::api::PCSCFRestorationIndicationApiImpl>

@@ -39,12 +39,11 @@ class app_session {
  public:
   explicit app_session(
       const oai::model::pcf::AppSessionContextReqData& context,
-      const  oai::model::pcf::SmPolicyDecision& decision,
-      const std::string& id)
+      const oai::model::pcf::SmPolicyDecision& decision, const std::string& id)
       : m_decision(decision) {
     m_context = context;
     // TODO [PAS] add association id to be used during update
-    m_id      = id;
+    m_id = id;
   }
 
   virtual ~app_session() = default;
@@ -52,7 +51,8 @@ class app_session {
   [[nodiscard]] virtual const oai::model::pcf::AppSessionContextReqData&
   get_app_session_context() const;
 
-  [[nodiscard]] virtual void set_app_session_context(oai::model::pcf::AppSessionContextReqData& context);
+  [[nodiscard]] virtual void set_app_session_context(
+      oai::model::pcf::AppSessionContextReqData& context);
 
   [[nodiscard]] virtual std::string get_id() const;
 
@@ -73,7 +73,6 @@ class app_session {
  * 3GPP TS 29.514 4.2.x
  */
 
-
 /**
  * Extracts the N6-LAN Traffic Steering Requirements from the given
  * AfSfcRequirement object. 3GPP TS 29.514 4.2.2.8.
@@ -92,7 +91,8 @@ oai::pcf::app::policy_auth::handler_result handle_service_function_chaining(
     const oai::model::pcf::AfSfcRequirement& af_sfc,
     oai::model::pcf::SmPolicyDecision& decision);
 
-oai::pcf::app::policy_auth::handler_result handle_service_function_chaining_update(
+oai::pcf::app::policy_auth::handler_result
+handle_service_function_chaining_update(
     const oai::model::pcf::AfSfcRequirement& af_sfc,
     oai::model::pcf::SmPolicyDecision& decision,
     oai::model::pcf::AppSessionContextReqData& context);
@@ -103,13 +103,12 @@ oai::pcf::app::policy_auth::handler_result handle_service_function_chaining_upda
 //       std::string& problem_details);
 
 oai::pcf::app::policy_auth::handler_result authorize_service_info(
-  const oai::model::pcf::AppSessionContextReqData& reqData);
+    const oai::model::pcf::AppSessionContextReqData& reqData);
 
 oai::pcf::app::policy_auth::handler_result validate_and_merge_decision(
-  const oai::model::pcf::SmPolicyDecision& request_decision,
-  oai::model::pcf::SmPolicyDecision& current_decision,
-  bool update = false);
+    const oai::model::pcf::SmPolicyDecision& request_decision,
+    oai::model::pcf::SmPolicyDecision& current_decision, bool update = false);
 
 }  // namespace oai::pcf::app::policy_auth
 
-#endif // FILE_APP_SESSION_SEEN
+#endif  // FILE_APP_SESSION_SEEN

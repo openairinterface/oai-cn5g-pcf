@@ -59,7 +59,7 @@ class pcf_smpc {
       const std::shared_ptr<oai::pcf::app::sm_policy::policy_storage>&
           policy_storage,
       pcf_event& ev);
-  pcf_smpc(pcf_smpc const&)       = delete;
+  pcf_smpc(pcf_smpc const&) = delete;
   void operator=(pcf_smpc const&) = delete;
 
   virtual ~pcf_smpc();
@@ -127,7 +127,6 @@ class pcf_smpc {
       oai::model::pcf::SmPolicyDecision& decision,
       std::string& problem_details);
 
-
  private:
   oai::utils::uint_generator<uint32_t> m_association_id_generator;
 
@@ -144,9 +143,8 @@ class pcf_smpc {
           decision);
 
   sm_policy::status_code send_sm_policy_control_update_notify(
-      const oai::pcf::app::sm_policy::individual_sm_association& association
-    );
-    
+      const oai::pcf::app::sm_policy::individual_sm_association& association);
+
   void handle_session_binding_request(
       const std::optional<std::string>& ipv4,
       const std::optional<std::string>& supi,
@@ -155,7 +153,8 @@ class pcf_smpc {
       oai::model::pcf::SmPolicyDecision& decision);
 
   void handle_update_decision_request(
-      std::optional<std::string>& association_id, oai::model::pcf::SmPolicyDecision& decision);
+      std::optional<std::string>& association_id,
+      oai::model::pcf::SmPolicyDecision& decision);
 
   // for Event Handling
   pcf_event& m_event_sub;

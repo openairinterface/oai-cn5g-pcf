@@ -67,26 +67,22 @@ class policy_storage_db : public policy_storage {
       const oai::model::pcf::SmPolicyDecision& decision);
 
   void insert_associations(
-    const oai::model::pcf::SmPolicyContextData& context,
-    const std::string& association_id
-  );
+      const oai::model::pcf::SmPolicyContextData& context,
+      const std::string& association_id);
 
   void insert_ip_association(
-      const std::string& dnn,
-      const std::string& association_id);
+      const std::string& dnn, const std::string& association_id);
 
   void insert_supi_association(
-      const std::string& supi,
-      const std::string& association_id);
+      const std::string& supi, const std::string& association_id);
 
   void insert_dnn_association(
-      const std::string& dnn,
-      const std::string& association_id);
+      const std::string& dnn, const std::string& association_id);
 
   std::shared_ptr<std::string> find_association(
-    const std::optional<std::string>& ipv4,
-    const std::optional<std::string>& supi,
-    const std::optional<std::string>& dnn);
+      const std::optional<std::string>& ipv4,
+      const std::optional<std::string>& supi,
+      const std::optional<std::string>& dnn);
 };
 
 }  // namespace oai::pcf::app::sm_policy

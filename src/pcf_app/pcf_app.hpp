@@ -57,7 +57,8 @@ class pcf_app {
   virtual ~pcf_app();
 
   std::shared_ptr<pcf_smpc> get_pcf_smpc_service();
-  std::shared_ptr<pcf_policy_authorization> get_pcf_policy_authorization_service();
+  std::shared_ptr<pcf_policy_authorization>
+  get_pcf_policy_authorization_service();
 
   /**
    * Stop all the ongoing processes and procedures of the PCF APP layer,

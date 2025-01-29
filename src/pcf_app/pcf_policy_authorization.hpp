@@ -73,8 +73,7 @@ class pcf_policy_authorization {
    */
   policy_auth::status_code post_app_sessions_handler(
       const oai::model::pcf::AppSessionContext& context,
-      std::string& app_session_id,
-      std::string& problem_details);
+      std::string& app_session_id, std::string& problem_details);
 
   /**
    * @brief Handler for receiving service policy requests to update application
@@ -94,18 +93,16 @@ class pcf_policy_authorization {
       const oai::model::pcf::AppSessionContext& context,
       std::string& problem_details);
 
-  private:
+ private:
+  oai::utils::uint_generator<uint32_t> m_app_sessions_id_generator;
 
-    oai::utils::uint_generator<uint32_t> m_app_sessions_id_generator;
+  std::unordered_map<std::string, oai::pcf::app::policy_auth::app_session>
+      m_app_sessions;
 
-    std::unordered_map<
-        std::string, oai::pcf::app::policy_auth::app_session>
-        m_app_sessions;
+  mutable std::shared_mutex m_app_sessions_mutex;
 
-    mutable std::shared_mutex m_app_sessions_mutex;
-    
-    // for Event Handling
-    pcf_event& m_event_sub;
+  // for Event Handling
+  pcf_event& m_event_sub;
 };
 
 }  // namespace oai::pcf::app
