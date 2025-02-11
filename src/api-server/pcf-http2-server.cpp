@@ -178,10 +178,46 @@ void pcf_http2_server::start() {
   server.handle(
       provisioning_base + "/defaultDecision",
       [&](const request& request, const response& response) {
-        api_response resp;
         if (request.method() == "GET") {
-          resp = m_default_policy_decisions_handler->default_decision_get();
+          api_response resp =
+              m_default_policy_decisions_handler->default_decision_get();
+          send_response(response, resp);
         } else if (request.method() == "PUT") {
+          auto request_body = std::make_shared<std::stringstream>();
+          request.on_data(
+              [&, request_body](const uint8_t* data, std::size_t len) {
+                if (len > 0) {
+                  std::copy(
+                      data, data + len,
+                      std::ostream_iterator<uint8_t>(*request_body));
+                  return;
+                }
+                try {
+                  std::vector<std::string> pccRules;
+                  nlohmann::json::parse(request_body->str()).get_to(pccRules);
+                  api_response resp =
+                      m_default_policy_decisions_handler->default_decision_put(
+                          pccRules);
+                  send_response(response, resp);
+                  return;
+                } catch (std::exception& e) {
+                  handle_parsing_error(response, e);
+                  return;
+                }
+              });
+        } else {
+          handle_method_not_exists(response, request);
+          return;
+        }
+      });
+
+  /**
+   *  DNN Policy Decision
+   */
+  server.handle(
+      provisioning_base + "/dnnPolicyDecision",
+      [&](const request& request, const response& response) {
+        if (request.method() == "POST") {
           auto request_body = std::make_shared<std::stringstream>();
           request.on_data([&, request_body](
                               const uint8_t* data, std::size_t len) {
@@ -192,10 +228,14 @@ void pcf_http2_server::start() {
               return;
             }
             try {
-              std::vector<std::string> pccRules;
-              nlohmann::json::parse(request_body->str()).get_to(pccRules);
-              resp = m_default_policy_decisions_handler->default_decision_put(
-                  pccRules);
+              oai::pcf::provisioning::model::DnnPolicyDecision dnnDecision;
+              nlohmann::json::parse(request_body->str()).get_to(dnnDecision);
+              api_response resp =
+                  m_dnn_policy_decisions_handler->dnn_policy_decision_post(
+                      dnnDecision);
+              send_response(response, resp);
+              return;
+
             } catch (std::exception& e) {
               handle_parsing_error(response, e);
               return;
@@ -205,16 +245,8 @@ void pcf_http2_server::start() {
           handle_method_not_exists(response, request);
           return;
         }
-
-        auto h_map = convert_headers(resp);
-        response.write_head(static_cast<unsigned int>(resp.status_code), h_map);
-        response.end(resp.body);
-        return;
       });
 
-  /**
-   *  DNN Policy Decision
-   */
   server.handle(
       provisioning_base + "/dnnPolicyDecision/",
       [&](const request& request, const response& response) {
@@ -242,9 +274,11 @@ void pcf_http2_server::start() {
             try {
               oai::pcf::provisioning::model::DnnPolicyDecision dnnDecision;
               nlohmann::json::parse(request_body->str()).get_to(dnnDecision);
-              resp =
+              api_response put_resp =
                   m_dnn_policy_decisions_handler->dnn_policy_decision_dnn_put(
                       dnn, dnnDecision);
+              send_response(response, put_resp);
+              return;
             } catch (std::exception& e) {
               handle_parsing_error(response, e);
               return;
@@ -254,63 +288,22 @@ void pcf_http2_server::start() {
           handle_method_not_exists(response, request);
           return;
         }
-
-        auto h_map = convert_headers(resp);
-        response.write_head(static_cast<unsigned int>(resp.status_code), h_map);
-        response.end(resp.body);
-        return;
-      });
-
-  server.handle(
-      provisioning_base + "/dnnPolicyDecision",
-      [&](const request& request, const response& response) {
-        api_response resp;
-        if (request.method() == "POST") {
-          auto request_body = std::make_shared<std::stringstream>();
-          request.on_data([&, request_body](
-                              const uint8_t* data, std::size_t len) {
-            if (len > 0) {
-              std::copy(
-                  data, data + len,
-                  std::ostream_iterator<uint8_t>(*request_body));
-              return;
-            }
-            try {
-              oai::pcf::provisioning::model::DnnPolicyDecision dnnDecision;
-              nlohmann::json::parse(request_body->str()).get_to(dnnDecision);
-              resp = m_dnn_policy_decisions_handler->dnn_policy_decision_post(
-                  dnnDecision);
-            } catch (std::exception& e) {
-              handle_parsing_error(response, e);
-              return;
-            }
-          });
-        } else {
-          handle_method_not_exists(response, request);
-          return;
-        }
-
-        auto h_map = convert_headers(resp);
-        response.write_head(static_cast<unsigned int>(resp.status_code), h_map);
-        response.end(resp.body);
+        send_response(response, resp);
         return;
       });
 
   server.handle(
       provisioning_base + "/dnnPolicyDecisions",
       [&](const request& request, const response& response) {
-        api_response resp;
         if (request.method() == "GET") {
-          resp = m_dnn_policy_decisions_handler->dnn_policy_decisions_get();
+          api_response resp =
+              m_dnn_policy_decisions_handler->dnn_policy_decisions_get();
+          send_response(response, resp);
+          return;
         } else {
           handle_method_not_exists(response, request);
           return;
         }
-
-        auto h_map = convert_headers(resp);
-        response.write_head(static_cast<unsigned int>(resp.status_code), h_map);
-        response.end(resp.body);
-        return;
       });
 
   /**
@@ -319,7 +312,6 @@ void pcf_http2_server::start() {
   server.handle(
       provisioning_base + "/slicePolicyDecision",
       [&](const request& request, const response& response) {
-        api_response resp;
         if (request.method() == "POST") {
           auto request_body = std::make_shared<std::stringstream>();
           request.on_data([&, request_body](
@@ -333,9 +325,11 @@ void pcf_http2_server::start() {
             try {
               oai::pcf::provisioning::model::SlicePolicyDecision sliceDecision;
               nlohmann::json::parse(request_body->str()).get_to(sliceDecision);
-              resp =
+              api_response resp =
                   m_slice_policy_decisions_handler->slice_policy_decision_post(
                       sliceDecision);
+              send_response(response, resp);
+              return;
             } catch (std::exception& e) {
               handle_parsing_error(response, e);
               return;
@@ -372,7 +366,7 @@ void pcf_http2_server::start() {
           } else {
             sd = oai::model::common::SD_DEFAULT_VALUE;
           }
-
+          api_response resp;
           // slice = split_result[split_result.size() - 1];
           if (request.method() == "GET") {
             resp = m_slice_policy_decisions_handler->slice_policy_decision_get(
@@ -396,9 +390,11 @@ void pcf_http2_server::start() {
                     sliceDecision;
                 nlohmann::json::parse(request_body->str())
                     .get_to(sliceDecision);
-                resp =
+                api_response put_resp =
                     m_slice_policy_decisions_handler->slice_policy_decision_put(
                         sst, sd, sliceDecision);
+                send_response(response, put_resp);
+                return;
               } catch (std::exception& e) {
                 handle_parsing_error(response, e);
                 return;
@@ -408,12 +404,9 @@ void pcf_http2_server::start() {
             handle_method_not_exists(response, request);
             return;
           }
+          send_response(response, resp);
+          return;
         }
-
-        auto h_map = convert_headers(resp);
-        response.write_head(static_cast<unsigned int>(resp.status_code), h_map);
-        response.end(resp.body);
-        return;
       });
 
   server.handle(
@@ -426,16 +419,46 @@ void pcf_http2_server::start() {
           handle_method_not_exists(response, request);
           return;
         }
-
-        auto h_map = convert_headers(resp);
-        response.write_head(static_cast<unsigned int>(resp.status_code), h_map);
-        response.end(resp.body);
+        send_response(response, resp);
         return;
       });
 
   /**
    *  Supi Policy Decision
    */
+  server.handle(
+      provisioning_base + "/supiPolicyDecision",
+      [&](const request& request, const response& response) {
+        if (request.method() == "POST") {
+          auto request_body = std::make_shared<std::stringstream>();
+          request.on_data([&, request_body](
+                              const uint8_t* data, std::size_t len) {
+            if (len > 0) {
+              std::copy(
+                  data, data + len,
+                  std::ostream_iterator<uint8_t>(*request_body));
+              return;
+            }
+            oai::pcf::provisioning::model::SupiPolicyDecision supiDecision;
+            try {
+              nlohmann::json::parse(request_body->str()).get_to(supiDecision);
+              supiDecision.validate();
+              api_response resp =
+                  m_supi_policy_decisions_handler->supi_policy_decision_post(
+                      supiDecision);
+              send_response(response, resp);
+              return;
+            } catch (std::exception& e) {
+              handle_parsing_error(response, e);
+              return;
+            }
+          });
+        } else {
+          handle_method_not_exists(response, request);
+          return;
+        }
+      });
+
   server.handle(
       provisioning_base + "/supiPolicyDecision/",
       [&](const request& request, const response& response) {
@@ -464,8 +487,11 @@ void pcf_http2_server::start() {
             try {
               oai::pcf::provisioning::model::SupiPolicyDecision supiDecision;
               nlohmann::json::parse(request_body->str()).get_to(supiDecision);
-              resp = m_supi_policy_decisions_handler
-                         ->supi_policy_decision_supi_put(supi, supiDecision);
+              api_response put_resp =
+                  m_supi_policy_decisions_handler
+                      ->supi_policy_decision_supi_put(supi, supiDecision);
+              send_response(response, put_resp);
+              return;
             } catch (std::exception& e) {
               handle_parsing_error(response, e);
               return;
@@ -476,51 +502,13 @@ void pcf_http2_server::start() {
           return;
         }
 
-        auto h_map = convert_headers(resp);
-        response.write_head(static_cast<unsigned int>(resp.status_code), h_map);
-        response.end(resp.body);
-        return;
-      });
-
-  server.handle(
-      provisioning_base + "/supiPolicyDecision",
-      [&](const request& request, const response& response) {
-        api_response resp;
-        if (request.method() == "POST") {
-          auto request_body = std::make_shared<std::stringstream>();
-          request.on_data([&, request_body](
-                              const uint8_t* data, std::size_t len) {
-            if (len > 0) {
-              std::copy(
-                  data, data + len,
-                  std::ostream_iterator<uint8_t>(*request_body));
-              return;
-            }
-            try {
-              oai::pcf::provisioning::model::SupiPolicyDecision supiDecision;
-              nlohmann::json::parse(request_body->str()).get_to(supiDecision);
-              resp = m_supi_policy_decisions_handler->supi_policy_decision_post(
-                  supiDecision);
-            } catch (std::exception& e) {
-              handle_parsing_error(response, e);
-              return;
-            }
-          });
-        } else {
-          handle_method_not_exists(response, request);
-          return;
-        }
-
-        auto h_map = convert_headers(resp);
-        response.write_head(static_cast<unsigned int>(resp.status_code), h_map);
-        response.end(resp.body);
+        send_response(response, resp);
         return;
       });
 
   server.handle(
       provisioning_base + "/supiPolicyDecisions",
       [&](const request& request, const response& response) {
-        api_response resp;
         if (request.method() == "GET") {
           auto request_body = std::make_shared<std::stringstream>();
           request.on_data([&, request_body](
@@ -532,8 +520,10 @@ void pcf_http2_server::start() {
               return;
             }
             try {
-              resp =
+              api_response resp =
                   m_supi_policy_decisions_handler->supi_policy_decisions_get();
+              send_response(response, resp);
+              return;
             } catch (std::exception& e) {
               handle_parsing_error(response, e);
               return;
@@ -543,16 +533,41 @@ void pcf_http2_server::start() {
           handle_method_not_exists(response, request);
           return;
         }
-
-        auto h_map = convert_headers(resp);
-        response.write_head(static_cast<unsigned int>(resp.status_code), h_map);
-        response.end(resp.body);
-        return;
       });
 
   /**
    *  PCC Rules
    */
+  server.handle(
+      provisioning_base + "/pccRule",
+      [&](const request& request, const response& response) {
+        if (request.method() == "POST") {
+          auto request_body = std::make_shared<std::stringstream>();
+          request.on_data([&, request_body](
+                              const uint8_t* data, std::size_t len) {
+            if (len > 0) {
+              std::copy(
+                  data, data + len,
+                  std::ostream_iterator<uint8_t>(*request_body));
+              return;
+            }
+            try {
+              PccRule pccRule;
+              nlohmann::json::parse(request_body->str()).get_to(pccRule);
+              api_response resp = m_pcc_rules_handler->pcc_rule_post(pccRule);
+              send_response(response, resp);
+              return;
+            } catch (std::exception& e) {
+              handle_parsing_error(response, e);
+              return;
+            }
+          });
+        } else {
+          handle_method_not_exists(response, request);
+          return;
+        }
+      });
+
   server.handle(
       provisioning_base + "/pccRule/",
       [&](const request& request, const response& response) {
@@ -578,8 +593,11 @@ void pcf_http2_server::start() {
                 try {
                   PccRule pccRule;
                   nlohmann::json::parse(request_body->str()).get_to(pccRule);
-                  resp = m_pcc_rules_handler->pcc_rule_pcc_rule_id_put(
-                      pccRuleId, pccRule);
+                  api_response put_resp =
+                      m_pcc_rules_handler->pcc_rule_pcc_rule_id_put(
+                          pccRuleId, pccRule);
+                  send_response(response, put_resp);
+                  return;
                 } catch (std::exception& e) {
                   handle_parsing_error(response, e);
                   return;
@@ -589,51 +607,13 @@ void pcf_http2_server::start() {
           handle_method_not_exists(response, request);
           return;
         }
-
-        auto h_map = convert_headers(resp);
-        response.write_head(static_cast<unsigned int>(resp.status_code), h_map);
-        response.end(resp.body);
-        return;
-      });
-
-  server.handle(
-      provisioning_base + "/pccRule",
-      [&](const request& request, const response& response) {
-        api_response resp;
-        if (request.method() == "POST") {
-          auto request_body = std::make_shared<std::stringstream>();
-          request.on_data(
-              [&, request_body](const uint8_t* data, std::size_t len) {
-                if (len > 0) {
-                  std::copy(
-                      data, data + len,
-                      std::ostream_iterator<uint8_t>(*request_body));
-                  return;
-                }
-                try {
-                  PccRule pccRule;
-                  nlohmann::json::parse(request_body->str()).get_to(pccRule);
-                  resp = m_pcc_rules_handler->pcc_rule_post(pccRule);
-                } catch (std::exception& e) {
-                  handle_parsing_error(response, e);
-                  return;
-                }
-              });
-        } else {
-          handle_method_not_exists(response, request);
-          return;
-        }
-
-        auto h_map = convert_headers(resp);
-        response.write_head(static_cast<unsigned int>(resp.status_code), h_map);
-        response.end(resp.body);
+        send_response(response, resp);
         return;
       });
 
   server.handle(
       provisioning_base + "/pccRules",
       [&](const request& request, const response& response) {
-        api_response resp;
         if (request.method() == "GET") {
           auto request_body = std::make_shared<std::stringstream>();
           request.on_data(
@@ -645,7 +625,9 @@ void pcf_http2_server::start() {
                   return;
                 }
                 try {
-                  resp = m_pcc_rules_handler->pcc_rules_get();
+                  api_response resp = m_pcc_rules_handler->pcc_rules_get();
+                  send_response(response, resp);
+                  return;
                 } catch (std::exception& e) {
                   handle_parsing_error(response, e);
                   return;
@@ -655,16 +637,60 @@ void pcf_http2_server::start() {
           handle_method_not_exists(response, request);
           return;
         }
-
-        auto h_map = convert_headers(resp);
-        response.write_head(static_cast<unsigned int>(resp.status_code), h_map);
-        response.end(resp.body);
-        return;
       });
 
   /**
    *  Qos Data
    */
+  server.handle(
+      provisioning_base + "/qosData",
+      [&](const request& request, const response& response) {
+        if (request.method() == "POST") {
+          auto request_body = std::make_shared<std::stringstream>();
+          request.on_data([&, request_body](
+                              const uint8_t* data, std::size_t len) {
+            if (len > 0) {
+              std::copy(
+                  data, data + len,
+                  std::ostream_iterator<uint8_t>(*request_body));
+              return;
+            }
+            try {
+              QosData qosData;
+              nlohmann::json::parse(request_body->str()).get_to(qosData);
+              api_response resp = m_qos_data_handler->qos_data_post(qosData);
+              send_response(response, resp);
+              return;
+            } catch (std::exception& e) {
+              handle_parsing_error(response, e);
+              return;
+            }
+          });
+        } else if (request.method() == "GET") {
+          auto request_body = std::make_shared<std::stringstream>();
+          request.on_data(
+              [&, request_body](const uint8_t* data, std::size_t len) {
+                if (len > 0) {
+                  std::copy(
+                      data, data + len,
+                      std::ostream_iterator<uint8_t>(*request_body));
+                  return;
+                }
+                try {
+                  api_response resp = m_qos_data_handler->qos_data_get();
+                  send_response(response, resp);
+                  return;
+                } catch (std::exception& e) {
+                  handle_parsing_error(response, e);
+                  return;
+                }
+              });
+        } else {
+          handle_method_not_exists(response, request);
+          return;
+        }
+      });
+
   server.handle(
       provisioning_base + "/qosData/",
       [&](const request& request, const response& response) {
@@ -690,8 +716,10 @@ void pcf_http2_server::start() {
             try {
               QosData qosData;
               nlohmann::json::parse(request_body->str()).get_to(qosData);
-              resp =
+              api_response put_resp =
                   m_qos_data_handler->qos_data_qos_id_put(qosDataId, qosData);
+              send_response(response, put_resp);
+              return;
             } catch (std::exception& e) {
               handle_parsing_error(response, e);
               return;
@@ -701,17 +729,16 @@ void pcf_http2_server::start() {
           handle_method_not_exists(response, request);
           return;
         }
-
-        auto h_map = convert_headers(resp);
-        response.write_head(static_cast<unsigned int>(resp.status_code), h_map);
-        response.end(resp.body);
+        send_response(response, resp);
         return;
       });
 
+  /**
+   *  Traffic Control Data
+   */
   server.handle(
-      provisioning_base + "/qosData",
+      provisioning_base + "/trafficControlData",
       [&](const request& request, const response& response) {
-        api_response resp;
         if (request.method() == "POST") {
           auto request_body = std::make_shared<std::stringstream>();
           request.on_data(
@@ -723,9 +750,14 @@ void pcf_http2_server::start() {
                   return;
                 }
                 try {
-                  QosData qosData;
-                  nlohmann::json::parse(request_body->str()).get_to(qosData);
-                  resp = m_qos_data_handler->qos_data_post(qosData);
+                  TrafficControlData trafficControlData;
+                  nlohmann::json::parse(request_body->str())
+                      .get_to(trafficControlData);
+                  api_response resp =
+                      m_traffic_control_data_handler->traffic_control_data_post(
+                          trafficControlData);
+                  send_response(response, resp);
+                  return;
                 } catch (std::exception& e) {
                   handle_parsing_error(response, e);
                   return;
@@ -733,35 +765,30 @@ void pcf_http2_server::start() {
               });
         } else if (request.method() == "GET") {
           auto request_body = std::make_shared<std::stringstream>();
-          request.on_data(
-              [&, request_body](const uint8_t* data, std::size_t len) {
-                if (len > 0) {
-                  std::copy(
-                      data, data + len,
-                      std::ostream_iterator<uint8_t>(*request_body));
-                  return;
-                }
-                try {
-                  resp = m_qos_data_handler->qos_data_get();
-                } catch (std::exception& e) {
-                  handle_parsing_error(response, e);
-                  return;
-                }
-              });
+          request.on_data([&, request_body](
+                              const uint8_t* data, std::size_t len) {
+            if (len > 0) {
+              std::copy(
+                  data, data + len,
+                  std::ostream_iterator<uint8_t>(*request_body));
+              return;
+            }
+            try {
+              api_response resp =
+                  m_traffic_control_data_handler->traffic_control_data_get();
+              send_response(response, resp);
+              return;
+            } catch (std::exception& e) {
+              handle_parsing_error(response, e);
+              return;
+            }
+          });
         } else {
           handle_method_not_exists(response, request);
           return;
         }
-
-        auto h_map = convert_headers(resp);
-        response.write_head(static_cast<unsigned int>(resp.status_code), h_map);
-        response.end(resp.body);
-        return;
       });
 
-  /**
-   *  Qos Data
-   */
   server.handle(
       provisioning_base + "/trafficControlData/",
       [&](const request& request, const response& response) {
@@ -791,9 +818,12 @@ void pcf_http2_server::start() {
                   TrafficControlData trafficControlData;
                   nlohmann::json::parse(request_body->str())
                       .get_to(trafficControlData);
-                  resp = m_traffic_control_data_handler
-                             ->traffic_control_data_tc_id_put(
-                                 trafficControlId, trafficControlData);
+                  api_response put_resp =
+                      m_traffic_control_data_handler
+                          ->traffic_control_data_tc_id_put(
+                              trafficControlId, trafficControlData);
+                  send_response(response, put_resp);
+                  return;
                 } catch (std::exception& e) {
                   handle_parsing_error(response, e);
                   return;
@@ -803,63 +833,7 @@ void pcf_http2_server::start() {
           handle_method_not_exists(response, request);
           return;
         }
-
-        auto h_map = convert_headers(resp);
-        response.write_head(static_cast<unsigned int>(resp.status_code), h_map);
-        response.end(resp.body);
-        return;
-      });
-
-  server.handle(
-      provisioning_base + "/trafficControlData",
-      [&](const request& request, const response& response) {
-        api_response resp;
-        if (request.method() == "POST") {
-          auto request_body = std::make_shared<std::stringstream>();
-          request.on_data([&, request_body](
-                              const uint8_t* data, std::size_t len) {
-            if (len > 0) {
-              std::copy(
-                  data, data + len,
-                  std::ostream_iterator<uint8_t>(*request_body));
-              return;
-            }
-            try {
-              TrafficControlData trafficControlData;
-              nlohmann::json::parse(request_body->str())
-                  .get_to(trafficControlData);
-              resp = m_traffic_control_data_handler->traffic_control_data_post(
-                  trafficControlData);
-            } catch (std::exception& e) {
-              handle_parsing_error(response, e);
-              return;
-            }
-          });
-        } else if (request.method() == "GET") {
-          auto request_body = std::make_shared<std::stringstream>();
-          request.on_data([&, request_body](
-                              const uint8_t* data, std::size_t len) {
-            if (len > 0) {
-              std::copy(
-                  data, data + len,
-                  std::ostream_iterator<uint8_t>(*request_body));
-              return;
-            }
-            try {
-              resp = m_traffic_control_data_handler->traffic_control_data_get();
-            } catch (std::exception& e) {
-              handle_parsing_error(response, e);
-              return;
-            }
-          });
-        } else {
-          handle_method_not_exists(response, request);
-          return;
-        }
-
-        auto h_map = convert_headers(resp);
-        response.write_head(static_cast<unsigned int>(resp.status_code), h_map);
-        response.end(resp.body);
+        send_response(response, resp);
         return;
       });
 
