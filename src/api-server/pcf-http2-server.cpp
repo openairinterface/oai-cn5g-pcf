@@ -205,6 +205,7 @@ void pcf_http2_server::start() {
                   return;
                 }
               });
+          return;
         } else {
           handle_method_not_exists(response, request);
           return;
@@ -263,7 +264,7 @@ void pcf_http2_server::start() {
               dnn);
         } else if (request.method() == "PUT") {
           auto request_body = std::make_shared<std::stringstream>();
-          request.on_data([&, request_body](
+          request.on_data([&, request_body, dnn](
                               const uint8_t* data, std::size_t len) {
             if (len > 0) {
               std::copy(
@@ -284,6 +285,7 @@ void pcf_http2_server::start() {
               return;
             }
           });
+          return;
         } else {
           handle_method_not_exists(response, request);
           return;
@@ -377,7 +379,7 @@ void pcf_http2_server::start() {
                     sst, sd);
           } else if (request.method() == "PUT") {
             auto request_body = std::make_shared<std::stringstream>();
-            request.on_data([&, request_body](
+            request.on_data([&, request_body, sst, sd](
                                 const uint8_t* data, std::size_t len) {
               if (len > 0) {
                 std::copy(
@@ -400,6 +402,7 @@ void pcf_http2_server::start() {
                 return;
               }
             });
+            return;
           } else {
             handle_method_not_exists(response, request);
             return;
@@ -476,7 +479,7 @@ void pcf_http2_server::start() {
                   supi);
         } else if (request.method() == "PUT") {
           auto request_body = std::make_shared<std::stringstream>();
-          request.on_data([&, request_body](
+          request.on_data([&, request_body, supi](
                               const uint8_t* data, std::size_t len) {
             if (len > 0) {
               std::copy(
@@ -497,6 +500,7 @@ void pcf_http2_server::start() {
               return;
             }
           });
+          return;
         } else {
           handle_method_not_exists(response, request);
           return;
@@ -582,27 +586,28 @@ void pcf_http2_server::start() {
           resp = m_pcc_rules_handler->pcc_rule_pcc_rule_id_delete(pccRuleId);
         } else if (request.method() == "PUT") {
           auto request_body = std::make_shared<std::stringstream>();
-          request.on_data(
-              [&, request_body](const uint8_t* data, std::size_t len) {
-                if (len > 0) {
-                  std::copy(
-                      data, data + len,
-                      std::ostream_iterator<uint8_t>(*request_body));
-                  return;
-                }
-                try {
-                  PccRule pccRule;
-                  nlohmann::json::parse(request_body->str()).get_to(pccRule);
-                  api_response put_resp =
-                      m_pcc_rules_handler->pcc_rule_pcc_rule_id_put(
-                          pccRuleId, pccRule);
-                  send_response(response, put_resp);
-                  return;
-                } catch (std::exception& e) {
-                  handle_parsing_error(response, e);
-                  return;
-                }
-              });
+          request.on_data([&, request_body, pccRuleId](
+                              const uint8_t* data, std::size_t len) {
+            if (len > 0) {
+              std::copy(
+                  data, data + len,
+                  std::ostream_iterator<uint8_t>(*request_body));
+              return;
+            }
+            try {
+              PccRule pccRule;
+              nlohmann::json::parse(request_body->str()).get_to(pccRule);
+              api_response put_resp =
+                  m_pcc_rules_handler->pcc_rule_pcc_rule_id_put(
+                      pccRuleId, pccRule);
+              send_response(response, put_resp);
+              return;
+            } catch (std::exception& e) {
+              handle_parsing_error(response, e);
+              return;
+            }
+          });
+          return;
         } else {
           handle_method_not_exists(response, request);
           return;
@@ -705,7 +710,7 @@ void pcf_http2_server::start() {
           resp = m_qos_data_handler->qos_data_qos_id_delete(qosDataId);
         } else if (request.method() == "PUT") {
           auto request_body = std::make_shared<std::stringstream>();
-          request.on_data([&, request_body](
+          request.on_data([&, request_body, qosDataId](
                               const uint8_t* data, std::size_t len) {
             if (len > 0) {
               std::copy(
@@ -725,6 +730,7 @@ void pcf_http2_server::start() {
               return;
             }
           });
+          return;
         } else {
           handle_method_not_exists(response, request);
           return;
@@ -806,29 +812,30 @@ void pcf_http2_server::start() {
                   trafficControlId);
         } else if (request.method() == "PUT") {
           auto request_body = std::make_shared<std::stringstream>();
-          request.on_data(
-              [&, request_body](const uint8_t* data, std::size_t len) {
-                if (len > 0) {
-                  std::copy(
-                      data, data + len,
-                      std::ostream_iterator<uint8_t>(*request_body));
-                  return;
-                }
-                try {
-                  TrafficControlData trafficControlData;
-                  nlohmann::json::parse(request_body->str())
-                      .get_to(trafficControlData);
-                  api_response put_resp =
-                      m_traffic_control_data_handler
-                          ->traffic_control_data_tc_id_put(
-                              trafficControlId, trafficControlData);
-                  send_response(response, put_resp);
-                  return;
-                } catch (std::exception& e) {
-                  handle_parsing_error(response, e);
-                  return;
-                }
-              });
+          request.on_data([&, request_body, trafficControlId](
+                              const uint8_t* data, std::size_t len) {
+            if (len > 0) {
+              std::copy(
+                  data, data + len,
+                  std::ostream_iterator<uint8_t>(*request_body));
+              return;
+            }
+            try {
+              TrafficControlData trafficControlData;
+              nlohmann::json::parse(request_body->str())
+                  .get_to(trafficControlData);
+              api_response put_resp =
+                  m_traffic_control_data_handler
+                      ->traffic_control_data_tc_id_put(
+                          trafficControlId, trafficControlData);
+              send_response(response, put_resp);
+              return;
+            } catch (std::exception& e) {
+              handle_parsing_error(response, e);
+              return;
+            }
+          });
+          return;
         } else {
           handle_method_not_exists(response, request);
           return;
