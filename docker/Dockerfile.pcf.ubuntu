@@ -70,7 +70,6 @@ COPY . /openair-pcf
 WORKDIR /openair-pcf/build/scripts
 
 RUN  if [ "$ENABLE_LTTNG" = "true" ]; then DEBIAN_FRONTEND=noninteractive apt-get install --yes \
-        lttng-modules-dkms \
         liblttng-ust-dev \
         lttng-tools && \
         ldconfig && \
