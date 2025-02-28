@@ -45,7 +45,7 @@ RUN apt-get update && \
   && rm -rf /var/lib/apt/lists/*
 
 # Some GIT configuration command quite useful
-RUN git config --global https.postBuffer 123289600 && \
+RUN git config --global https.postBuffer 524288000 && \
     git config --global http.sslverify false
 ARG ENABLE_LTTNG=false
 # Copying source code
@@ -70,6 +70,7 @@ COPY . /openair-pcf
 WORKDIR /openair-pcf/build/scripts
 
 RUN  if [ "$ENABLE_LTTNG" = "true" ]; then DEBIAN_FRONTEND=noninteractive apt-get install --yes \
+        lttng-modules-dkms \
         liblttng-ust-dev \
         lttng-tools && \
         ldconfig && \
