@@ -45,7 +45,7 @@ RUN apt-get update && \
   && rm -rf /var/lib/apt/lists/*
 
 # Some GIT configuration command quite useful
-RUN git config --global https.postBuffer 524288000 && \
+RUN git config --global https.postBuffer 199757920 && \
     git config --global http.sslverify false
 ARG ENABLE_LTTNG=false
 # Copying source code
