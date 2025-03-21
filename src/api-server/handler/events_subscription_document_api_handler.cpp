@@ -49,7 +49,7 @@ api_response events_subscription_document_api_handler::delete_events_subsc(
       Pistache::Http::Mime::MediaType(content_type));
   response.body        = json_data.dump();
   response.status_code = http_status_code::NOT_FOUND;
-  ;
+
   return response;
 }
 
@@ -67,7 +67,7 @@ api_response events_subscription_document_api_handler::update_events_subsc(
       Pistache::Http::Mime::MediaType(content_type));
   response.body        = json_data.dump();
   response.status_code = http_status_code::NOT_FOUND;
-  ;
+
   return response;
 }
 

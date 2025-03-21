@@ -199,6 +199,17 @@ void pcf_smpc::handle_update_decision_request(
   iter->second.set_sm_policy_decision(decision);
 
   // TODO [PAS] confirm if the storage should be updated
+  /**
+   * The changes from the update policy authorisation request should be
+   * be for an existing policy association for an existing PDU session.
+   * THe SMF gets the updated policy decision from the PCF for which the
+   * PCF reads the new decision from the policy storage. However the policy
+   * storage persists over new UE connections.
+   *
+   * The TODO is to confirm if the policy storage should be updated with the
+   * new decision and to look for an alternative way to store the updates for
+   * the policy decisions that are not persisted.
+   */
   auto context = iter->second.get_sm_policy_context_data();
   if (!context.getSupi().empty()) {
     m_policy_storage->insert_supi_decision(context.getSupi(), decision);

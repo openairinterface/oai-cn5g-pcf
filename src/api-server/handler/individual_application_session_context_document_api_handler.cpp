@@ -53,7 +53,7 @@ individual_application_session_context_document_api_handler::delete_app_session(
       Pistache::Http::Mime::MediaType(content_type));
   response.body        = json_data.dump();
   response.status_code = http_status_code::NOT_FOUND;
-  ;
+
   return response;
 }
 
@@ -71,7 +71,7 @@ individual_application_session_context_document_api_handler::get_app_session(
       Pistache::Http::Mime::MediaType(content_type));
   response.body        = json_data.dump();
   response.status_code = http_status_code::NOT_FOUND;
-  ;
+
   return response;
 }
 
@@ -87,7 +87,6 @@ individual_application_session_context_document_api_handler::mod_app_session(
   nlohmann::json json_data;
   uint16_t http_code;
 
-  // XXX
   AppSessionContext app_session_context;
   status_code res = m_pa_service->mod_app_session_handler(
       app_session_id, app_session_context_update_data_patch,
@@ -104,8 +103,6 @@ individual_application_session_context_document_api_handler::mod_app_session(
       problem_details.setCause("INTERNAL_ERROR");
       http_code = http_status_code::INTERNAL_SERVER_ERROR;
   }
-
-  // XXX
 
   if (res == status_code::OK) {
     to_json(json_data, app_session_context);

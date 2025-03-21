@@ -60,7 +60,7 @@ status_code pcf_policy_authorization::post_app_sessions_handler(
   oai::model::pcf::SmPolicyDecision current_decision = {};
   oai::model::pcf::SmPolicyDecision request_decision = {};
 
-  Logger::pcf_app().info("post_app_sessions_handler");
+  Logger::pcf_app().info("POST /app-sessions");
 
   const oai::model::pcf::AppSessionContextReqData reqContext =
       context.getAscReqData();

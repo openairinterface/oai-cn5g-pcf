@@ -209,22 +209,57 @@ void pcf_http2_server::start() {
         });
       });
 
+  // We match for /app-sessions/pcsfc-restoration
+  server.handle(
+      app_sessions::get_route(),
+      [&](const request& request, const response& response) {
+        if (request.method() != "POST") {
+          handle_method_not_exists(response, request);
+          return;
+        }
+        auto request_body = std::make_shared<std::stringstream>();
+
+        request.on_data([&, request_body](
+                            const uint8_t* data, std::size_t len) {
+          if (len > 0) {
+            std::copy(
+                data, data + len,
+                std::ostream_iterator<uint8_t>(*request_body));
+            return;
+          }
+          PcscfRestorationRequestData pcscf_restoration_data;
+          try {
+            nlohmann::json::parse(request_body->str())
+                .get_to(pcscf_restoration_data);
+            pcscf_restoration_data.validate();
+            api_response resp =
+                m_pcscf_restoration_indication_api_handler->pcscf_restoration(
+                    pcscf_restoration_data);
+            auto h_map = convert_headers(resp);
+            response.write_head(
+                static_cast<unsigned int>(resp.status_code), h_map);
+            response.end(resp.body);
+            return;
+          } catch (std::exception& e) {
+            handle_parsing_error(response, e);
+            return;
+          }
+        });
+      });
+
   // We match for /app-sessions/*
   server.handle(
       app_sessions::get_route() + "/",
       [&](const request& request, const response& response) {
         std::vector<std::string> split_result;
         boost::split(split_result, request.uri().path, boost::is_any_of("/"));
-        bool is_restoration = false;  // /app-sessions/pcscf-restoration
-        bool is_get_patch   = false;  // /app-sessions/{appSessionId}
-        bool is_delete      = false;  // /app-sessions/{appSessionId}/delete
+        bool is_get_patch = false;  // /app-sessions/{appSessionId}
+        bool is_delete    = false;  // /app-sessions/{appSessionId}/delete
         bool is_event =
             false;  // /app-sessions/{appSessionId}/events-subscription
 
         std::string app_session_id;
-        if (split_result[split_result.size() - 1] == "pcscf-restoration") {
-          is_restoration = true;
-        } else if (split_result[split_result.size() - 1] == "delete") {
+        if (split_result[split_result.size() - 1] == "delete") {
           is_delete      = true;
           app_session_id = split_result[split_result.size() - 2];
         } else if (
@@ -234,11 +269,6 @@ void pcf_http2_server::start() {
         } else {
           is_get_patch   = true;
           app_session_id = split_result[split_result.size() - 1];
-        }
-
-        if ((is_restoration || is_delete) && request.method() != "POST") {
-          handle_method_not_exists(response, request);
-          return;
         }
 
         if (is_event &&
@@ -255,8 +285,7 @@ void pcf_http2_server::start() {
 
         auto request_body = std::make_shared<std::stringstream>();
 
-        request.on_data([&, request_body, is_restoration, is_get_patch,
-                         is_delete, is_event,
+        request.on_data([&, request_body, is_get_patch, is_delete, is_event,
                          app_session_id](const uint8_t* data, std::size_t len) {
           if (len > 0) {
             std::copy(
@@ -264,19 +293,11 @@ void pcf_http2_server::start() {
                 std::ostream_iterator<uint8_t>(*request_body));
             return;
           }
-          PcscfRestorationRequestData pcscf_restoration_data;
           EventsSubscReqData events_subsc_data;
           AppSessionContextUpdateDataPatch app_session_context_data;
           api_response resp;
           try {
-            if (is_restoration) {
-              nlohmann::json::parse(request_body->str())
-                  .get_to(pcscf_restoration_data);
-              pcscf_restoration_data.validate();
-              resp =
-                  m_pcscf_restoration_indication_api_handler->pcscf_restoration(
-                      pcscf_restoration_data);
-            } else if (is_delete) {
+            if (is_delete) {
               nlohmann::json::parse(request_body->str())
                   .get_to(events_subsc_data);
               events_subsc_data.validate();
