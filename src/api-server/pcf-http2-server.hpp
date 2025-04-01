@@ -156,6 +156,14 @@ class pcf_http2_server {
 
   static std::map<std::string, std::string> parse_query(
       const std::string& query);
+
+  static void send_response(
+      const nghttp2::asio_http2::server::response& response,
+      const api_response& resp) {
+    auto h_map = convert_headers(resp);
+    response.write_head(static_cast<unsigned int>(resp.status_code), h_map);
+    response.end(resp.body);
+  }
 };
 
 }  // namespace oai::pcf::api
