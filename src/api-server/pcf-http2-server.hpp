@@ -37,6 +37,10 @@
 #include "SMPoliciesCollectionApiImpl.h"
 #include "sm_policies_collection_api_handler.h"
 #include "individual_sm_policy_document_api_handler.h"
+#include "application_sessions_collection_api_handler.h"
+#include "events_subscription_document_api_handler.h"
+#include "individual_application_session_context_document_api_handler.h"
+#include "pcscf_restoration_indication_api_handler.h"
 #include "provisioning_api/handler/default_policy_decisions_handler.h"
 #include "provisioning_api/handler/dnn_policy_decisions_handler.h"
 #include "provisioning_api/handler/slice_policy_decisions_handler.h"
@@ -63,6 +67,23 @@ class pcf_http2_server {
     m_individual_api_handler =
         std::make_shared<individual_sm_policy_document_api_handler>(
             pcf_app_inst->get_pcf_smpc_service());
+
+    m_application_sessions_collection_api_handler =
+        std::make_shared<application_sessions_collection_api_handler>(
+            pcf_app_inst->get_pcf_policy_authorization_service(), address);
+
+    m_events_subscription_document_api_handler =
+        std::make_shared<events_subscription_document_api_handler>(
+            pcf_app_inst->get_pcf_policy_authorization_service());
+
+    m_individual_application_session_context_document_api_handler =
+        std::make_shared<
+            individual_application_session_context_document_api_handler>(
+            pcf_app_inst->get_pcf_policy_authorization_service());
+
+    m_pcscf_restoration_indication_api_handler =
+        std::make_shared<pcscf_restoration_indication_api_handler>(
+            pcf_app_inst->get_pcf_policy_authorization_service());
 
     m_default_policy_decisions_handler = std::make_shared<
         oai::pcf::provisioning::api::default_policy_decisions_handler>();
@@ -99,6 +120,14 @@ class pcf_http2_server {
   std::shared_ptr<individual_sm_policy_document_api_handler>
       m_individual_api_handler;
 
+  std::shared_ptr<application_sessions_collection_api_handler>
+      m_application_sessions_collection_api_handler;
+  std::shared_ptr<events_subscription_document_api_handler>
+      m_events_subscription_document_api_handler;
+  std::shared_ptr<individual_application_session_context_document_api_handler>
+      m_individual_application_session_context_document_api_handler;
+  std::shared_ptr<pcscf_restoration_indication_api_handler>
+      m_pcscf_restoration_indication_api_handler;
   std::shared_ptr<oai::pcf::provisioning::api::default_policy_decisions_handler>
       m_default_policy_decisions_handler;
   std::shared_ptr<oai::pcf::provisioning::api::dnn_policy_decisions_handler>

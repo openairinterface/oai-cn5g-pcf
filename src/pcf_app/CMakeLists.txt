@@ -27,6 +27,7 @@ include_directories(${SRC_TOP_DIR}/api-server/api)
 include_directories(${SRC_TOP_DIR}/api-server/impl)
 include_directories(${SRC_TOP_DIR}/api-server/)
 include_directories(${SRC_TOP_DIR}/pcf_app/sm_policy/)
+include_directories(${SRC_TOP_DIR}/pcf_app/policy_auth/)
 include_directories(${SRC_TOP_DIR}/api-server/provisioning_api/api)
 include_directories(${SRC_TOP_DIR}/api-server/provisioning_api/impl)
 include_directories(${SRC_TOP_DIR}/api-server/provisioning_api/handler)
@@ -62,5 +63,7 @@ add_library (PCF STATIC
   sm_policy/policy_storage_yaml.cpp
   sm_policy/policy_storage_db.cpp
   sm_policy/policy_provisioning_file.cpp
+  policy_auth/app_session.cpp
+  pcf_policy_authorization.cpp
   sm_policy/database/mysql_db.cpp
   )

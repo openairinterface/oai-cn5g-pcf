@@ -19,34 +19,40 @@
  *      contact@openairinterface.org
  */
 
-/*! \file api_defs.h
+/*! \file pcf_policy_authorization_status_code.hpp
  \brief
- \author  Stefan Spettel
- \company phine.tech
- \date 2023
- \email: stefan.spettel@phine.tech
+ \author  Tariro Mukute
+ \company University of Cape Town
+ \date 2024
+ \email: mkttar001@myuct.ac.za
  */
 
-#include "api_defs.h"
+#ifndef FILE_PCF_PA_STATUS_CODE_H_SEEN
+#define FILE_PCF_PA_STATUS_CODE_H_SEEN
 
-#include "pcf_config.hpp"
+#include <optional>
+#include <string>
 
-extern std::unique_ptr<oai::config::pcf::pcf_config> pcf_cfg;
+namespace oai::pcf::app::policy_auth {
 
-namespace oai::pcf::api {
+enum class status_code {
+  CREATED,
+  USER_UNKOWN,
+  INVALID_PARAMETERS,
+  CONTEXT_DENIED,
+  NOT_FOUND,
+  PDU_SESSION_NOT_AVAILABLE,
+  REQUESTED_SERVICE_NOT_AUTHORIZED,
+  OK,
+  BAD_REQUEST,
+  INTERNAL_SERVER_ERROR,
+  FORBIDDEN
+};
 
-std::string sm_policies::get_route() {
-  return API_BASE + pcf_cfg->local().get_sbi().get_api_version() +
-         sm_policies::CREATE_ROUTE;
-}
+struct handler_result {
+  std::optional<status_code> status;
+  std::optional<std::string> problem_details;
+};
 
-std::string app_sessions::get_route() {
-  return API_BASE + pcf_cfg->local().get_sbi().get_api_version() +
-         app_sessions::CREATE_ROUTE;
-}
-
-std::string policy_decision_provisioning::get_provisioning_base() {
-  return API_BASE + pcf_cfg->local().get_sbi().get_api_version();
-}
-
-}  // namespace oai::pcf::api
+}  // namespace oai::pcf::app::policy_auth
+#endif

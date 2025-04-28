@@ -19,42 +19,48 @@
  *      contact@openairinterface.org
  */
 
-/*! \file api_defs.h
+/*! \file events_subscription_document_api_handler.h
  \brief
- \author  Stefan Spettel
- \company phine.tech
- \date 2023
- \email: stefan.spettel@phine.tech
+ \author  Tariro Mukute
+ \company University of Cape Town
+ \date 2024
+ \email: mkttar001@myuct.ac.za
  */
 
 #pragma once
-#include <string>
+
+#include "EventsSubscReqData.h"
+#include "api_response.h"
+#include "pcf_policy_authorization.hpp"
 
 namespace oai::pcf::api {
-class sm_policies {
+
+class events_subscription_document_api_handler {
  public:
-  static inline const std::string API_NAME     = "npcf-smpolicycontrol";
-  static inline const std::string API_BASE     = "/" + API_NAME + "/";
-  static inline const std::string CREATE_ROUTE = "/sm-policies";
+  explicit events_subscription_document_api_handler(
+      const std::shared_ptr<oai::pcf::app::pcf_policy_authorization>&
+          pcf_policy_authorization) {
+    m_pa_service = pcf_policy_authorization;
+  }
+  /**
+   * Delete Events Subscription based on ID
+   * @param app_session_id
+   * @return api_response
+   */
+  api_response delete_events_subsc(const std::string& app_session_id);
 
-  static std::string get_route();
-};
+  /**
+   * Creates or modifies an Events Subscription subresource
+   * @param app_session_id
+   * @param events_subsc_req_data
+   * @return api_response
+   */
+  api_response update_events_subsc(
+      const std::string& app_session_id,
+      const oai::model::pcf::EventsSubscReqData& events_subsc_req_data);
 
-class app_sessions {
- public:
-  static inline const std::string API_NAME     = "npcf-policyauthorization";
-  static inline const std::string API_BASE     = "/" + API_NAME + "/";
-  static inline const std::string CREATE_ROUTE = "/app-sessions";
-
-  static std::string get_route();
-};
-
-class policy_decision_provisioning {
- public:
-  static inline const std::string API_NAME = "npcf-provisioning";
-  static inline const std::string API_BASE = "/" + API_NAME + "/";
-
-  static std::string get_provisioning_base();
+ private:
+  std::shared_ptr<oai::pcf::app::pcf_policy_authorization> m_pa_service;
 };
 
 }  // namespace oai::pcf::api

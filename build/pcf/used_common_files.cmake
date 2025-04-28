@@ -97,6 +97,10 @@ list(APPEND USED_COMMON_MODEL_SRC_FILES
         ${COMMON_MODEL_DIR}/DlDataDeliveryStatus.cpp
         ${COMMON_MODEL_DIR}/DlDataDeliveryStatus_anyOf.cpp
         ${COMMON_MODEL_DIR}/DddTrafficDescriptor.cpp
+        ${COMMON_MODEL_DIR}/Ipv6AddrRm.cpp
+        ${COMMON_MODEL_DIR}/SscMode.cpp
+        ${COMMON_MODEL_DIR}/SscMode_anyOf.cpp
+        ${COMMON_MODEL_DIR}/IpAddr.cpp
         )
 
 list(APPEND USED_PCF_MODEL_SRC_FILES
@@ -206,6 +210,91 @@ list(APPEND USED_PCF_MODEL_SRC_FILES
         ${PCF_MODEL_DIR}/RequestedQosMonitoringParameter_anyOf.cpp
         ${PCF_MODEL_DIR}/ReportingFrequency.cpp
         ${PCF_MODEL_DIR}/ReportingFrequency_anyOf.cpp
+        # Policy Authorization
+        ${PCF_MODEL_DIR}/AppSessionContext.cpp
+        ${PCF_MODEL_DIR}/AppSessionContextUpdateDataPatch.cpp
+        ${PCF_MODEL_DIR}/PcscfRestorationRequestData.cpp
+        ${PCF_MODEL_DIR}/EventsSubscReqData.cpp
+        ${PCF_MODEL_DIR}/AppSessionContextUpdateData.cpp
+        #
+        ${PCF_MODEL_DIR}/AppSessionContextRespData.cpp
+        ${PCF_MODEL_DIR}/AppSessionContextReqData.cpp
+        ${PCF_MODEL_DIR}/EventsNotification.cpp
+        ${PCF_MODEL_DIR}/BridgeManagementContainer.cpp
+        ${PCF_MODEL_DIR}/MediaComponent.cpp
+        ${PCF_MODEL_DIR}/AfSfcRequirement.cpp
+        ${PCF_MODEL_DIR}/MediaType.cpp
+        ${PCF_MODEL_DIR}/PrioritySharingIndicator.cpp
+        ${PCF_MODEL_DIR}/ReservPriority.cpp
+        ${PCF_MODEL_DIR}/TsnQosContainer.cpp
+        ${PCF_MODEL_DIR}/PduSetQosPara.cpp
+        ${PCF_MODEL_DIR}/ProtocolDescription.cpp
+        ${PCF_MODEL_DIR}/UplinkDownlinkSupport.cpp
+        # 
+        ${PCF_MODEL_DIR}/AfEventNotification.cpp
+        ${PCF_MODEL_DIR}/PdvMonitoringReport.cpp
+        ${PCF_MODEL_DIR}/OutOfCreditInformation.cpp
+        ${PCF_MODEL_DIR}/ResourcesAllocationInfo.cpp
+        ${PCF_MODEL_DIR}/AccessNetChargingIdentifier.cpp
+        ${PCF_MODEL_DIR}/AppDetectionReport.cpp
+        ${PCF_MODEL_DIR}/NetLocAccessSupport.cpp
+        ${PCF_MODEL_DIR}/SatelliteBackhaulCategory.cpp
+        ${PCF_MODEL_DIR}/AccumulatedUsage.cpp
+        ${PCF_MODEL_DIR}/L4sSupport.cpp
+        ${PCF_MODEL_DIR}/BatOffsetInfo.cpp
+        ${PCF_MODEL_DIR}/RedundantPduSessionInformation.cpp
+        ${PCF_MODEL_DIR}/PdvMonitoringReport.cpp
+        ${PCF_MODEL_DIR}/Rsn.cpp
+        ${PCF_MODEL_DIR}/NetLocAccessSupport_anyOf.cpp
+        ${PCF_MODEL_DIR}/AppDetectionNotifType.cpp
+        ${PCF_MODEL_DIR}/Flows.cpp
+        ${PCF_MODEL_DIR}/MediaComponentResourcesStatus.cpp
+        ${PCF_MODEL_DIR}/PduSetHandlingInfo.cpp
+        ${PCF_MODEL_DIR}/SpatialValidityRm.cpp
+        ${PCF_MODEL_DIR}/SponsoringStatus.cpp
+        ${PCF_MODEL_DIR}/ServiceInfoStatus.cpp
+        ${PCF_MODEL_DIR}/PreemptionControlInformation.cpp
+        ${PCF_MODEL_DIR}/MpsAction.cpp
+        ${PCF_MODEL_DIR}/AfRoutingRequirement.cpp
+        ${PCF_MODEL_DIR}/UeIdentityInfo.cpp
+        ${PCF_MODEL_DIR}/ServAuthInfo.cpp
+        ${PCF_MODEL_DIR}/DirectNotificationReport.cpp
+        ${PCF_MODEL_DIR}/QosMonitoringInformation.cpp
+        ${PCF_MODEL_DIR}/EasIpReplacementInfo.cpp
+        ${PCF_MODEL_DIR}/TemporalValidity.cpp
+        ${PCF_MODEL_DIR}/TrafficCorrelationInfo.cpp
+        ${PCF_MODEL_DIR}/SpatialValidity.cpp
+        ${PCF_MODEL_DIR}/MediaTransportProto.cpp
+        ${PCF_MODEL_DIR}/RtpPayloadInfo.cpp
+        ${PCF_MODEL_DIR}/RtpHeaderExtInfo.cpp
+        ${PCF_MODEL_DIR}/MediaSubComponent.cpp
+        ${PCF_MODEL_DIR}/AlternativeServiceRequirementsData.cpp
+        ${PCF_MODEL_DIR}/AfRequestedData.cpp
+        ${PCF_MODEL_DIR}/UsageThreshold.cpp
+        ${PCF_MODEL_DIR}/RequiredAccessInfo.cpp
+        ${PCF_MODEL_DIR}/L4sNotifType.cpp
+        ${PCF_MODEL_DIR}/AfEventSubscription.cpp
+        ${PCF_MODEL_DIR}/QosMonitoringParamType.cpp
+        ${PCF_MODEL_DIR}/AfNotifMethod.cpp
+        ${PCF_MODEL_DIR}/AfEvent.cpp
+        ${PCF_MODEL_DIR}/FlowUsage.cpp
+        ${PCF_MODEL_DIR}/AddFlowDescriptionInfo.cpp
+        ${PCF_MODEL_DIR}/RtpHeaderExtType.cpp
+        ${PCF_MODEL_DIR}/RtpPayloadFormat.cpp
+        ${PCF_MODEL_DIR}/FqdnPatternMatchingRule.cpp
+        ${PCF_MODEL_DIR}/CorrelationType.cpp
+        ${PCF_MODEL_DIR}/EasServerAddress.cpp
+        ${PCF_MODEL_DIR}/MediaComponentRm.cpp
+        ${PCF_MODEL_DIR}/EventsSubscReqDataRm.cpp
+        ${PCF_MODEL_DIR}/SipForkingIndication.cpp
+        ${PCF_MODEL_DIR}/AfRoutingRequirementRm.cpp
+        ${PCF_MODEL_DIR}/QosMonitoringInformationRm.cpp
+        ${PCF_MODEL_DIR}/UsageThresholdRm.cpp
+        ${PCF_MODEL_DIR}/MediaSubComponentRm.cpp
+        ${PCF_MODEL_DIR}/TsnQosContainerRm.cpp
+        ${PCF_MODEL_DIR}/StringMatchingRule.cpp
+        ${PCF_MODEL_DIR}/StringMatchingCondition.cpp
+        ${PCF_MODEL_DIR}/MatchingOperator.cpp
         )
 
 include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/model/smf/smf_model.cmake)

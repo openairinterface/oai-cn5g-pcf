@@ -19,34 +19,43 @@
  *      contact@openairinterface.org
  */
 
-/*! \file api_defs.h
+/*! \file application_sessions_collection_api_handler.h
  \brief
- \author  Stefan Spettel
- \company phine.tech
- \date 2023
- \email: stefan.spettel@phine.tech
+ \author  Tariro Mukute
+ \company University of Cape Town
+ \date 2024
+ \email: mkttar001@myuct.ac.za
  */
 
-#include "api_defs.h"
+#pragma once
 
-#include "pcf_config.hpp"
-
-extern std::unique_ptr<oai::config::pcf::pcf_config> pcf_cfg;
+#include "AppSessionContext.h"
+#include "Ambr.h"
+#include "api_response.h"
+#include "pcf_policy_authorization.hpp"
 
 namespace oai::pcf::api {
 
-std::string sm_policies::get_route() {
-  return API_BASE + pcf_cfg->local().get_sbi().get_api_version() +
-         sm_policies::CREATE_ROUTE;
-}
+class application_sessions_collection_api_handler {
+ public:
+  explicit application_sessions_collection_api_handler(
+      const std::shared_ptr<oai::pcf::app::pcf_policy_authorization>&
+          pcf_policy_authorization,
+      const std::string& address) {
+    m_pa_service = pcf_policy_authorization;
+    m_address    = address;
+  }
+  /**
+   * Creates a new Individual Application Session Context resource
+   * @param app_session_context
+   * @return api_response
+   */
+  api_response post_app_sessions(
+      const oai::model::pcf::AppSessionContext& app_session_context);
 
-std::string app_sessions::get_route() {
-  return API_BASE + pcf_cfg->local().get_sbi().get_api_version() +
-         app_sessions::CREATE_ROUTE;
-}
-
-std::string policy_decision_provisioning::get_provisioning_base() {
-  return API_BASE + pcf_cfg->local().get_sbi().get_api_version();
-}
+ private:
+  std::shared_ptr<oai::pcf::app::pcf_policy_authorization> m_pa_service;
+  std::string m_address;
+};
 
 }  // namespace oai::pcf::api
