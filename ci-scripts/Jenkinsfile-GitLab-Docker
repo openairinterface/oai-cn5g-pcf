@@ -46,6 +46,8 @@ armBuildResource = params.armBuildResource
 // Boolean param to control trivy scan
 runTrivyScan = params.runTrivyScan
 
+// Boolean param to control the run of "Pushing Image to Official Registry" stage (keep it false by default)
+runDockerHubPushStage = false // Please set it to true when replaying a "PUSH" event Pipeline
 
 // Tags/Branches to use
 def pcf_tag = "develop"
@@ -186,12 +188,13 @@ pipeline {
                     --file docker/Dockerfile.pcf.ubuntu \
                     --builder multiarch-localremote-builder \
                     --progress=plain \
-                    --push . > archives/pcf_multiarch_buildx.log 2>&1"
+                    --push . > archives/pcf_ubuntu_image_build.log 2>&1"
                   // If not satisfactory, we can remove it.
                   sh "docker image prune --force"
                   sh "docker rmi ${PrivateRegistryURL}/oai-pcf:${pcf_tag} || true"
                   sh "docker pull ${PrivateRegistryURL}/oai-pcf:${pcf_tag}"
-                  sh "docker image inspect ${PrivateRegistryURL}/oai-pcf:${pcf_tag} | jq '.[0] | {RepoTags, Labels: .Config.Labels, DockerVersion}' >> archives/pcf_multiarch_buildx.log 2>&1"
+                  sh "docker image inspect ${PrivateRegistryURL}/oai-pcf:${pcf_tag} | jq '.[0] | {RepoTags, Labels: .Config.Labels, DockerVersion}' >> archives/pcf_ubuntu_image_build.log 2>&1"
+                  sh "docker images ${PrivateRegistryURL}/oai-pcf:${pcf_tag} >> archives/pcf_ubuntu_image_build.log 2>&1"
                     // Run the trivy scan only if the boolean variable runTrivyScan is True
                     if (runTrivyScan) {
                        sh "docker rmi oai-pcf:${shortenShaOne} || true"
@@ -201,7 +204,7 @@ pipeline {
                     }
                     sh "docker rmi ${PrivateRegistryURL}/oai-pcf:${pcf_tag} || true"
                     sh "docker logout ${PrivateRegistryURL}"
-                    sh "bash ./ci-scripts/common/bash/extract_arm_amd_logs.sh archives/pcf_multiarch_buildx.log"
+                    sh "bash ./ci-scripts/common/bash/extract_arm_amd_logs.sh archives/pcf_ubuntu_image_build.log"
                 }
               }
               }
@@ -447,17 +450,16 @@ pipeline {
         lock(ubuntuBuildResource) {
           script {
             // Only in case of push to target branch!
-            if ("PUSH".equals(env.gitlabActionType)) {
+            if ("PUSH".equals(env.gitlabActionType) || runDockerHubPushStage) {
               withCredentials([
                 [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.DockerHubCredentials}", usernameVariable: 'DH_Username', passwordVariable: 'DH_Password']
               ]) {
                 sh "echo ${DH_Password} | docker login --username ${DH_Username} --password-stdin"
               }
               sh "docker login -u oaicicd -p oaicicd ${PrivateRegistryURL}"
-              sh "docker pull ${PrivateRegistryURL}/oai-pcf:${pcf_tag}"
-              sh "docker image tag ${PrivateRegistryURL}/oai-pcf:${pcf_tag} ${DH_Account}/oai-pcf:develop"
-              sh "docker push ${DH_Account}/oai-pcf:develop"
-              sh "docker rmi ${DH_Account}/oai-pcf:develop ${PrivateRegistryURL}/oai-pcf:${pcf_tag}"
+              sh "docker rmi ${PrivateRegistryURL}/oai-pcf:${pcf_tag} || true"
+              sh "docker buildx imagetools create -t ${DH_Account}/oai-pcf:develop ${PrivateRegistryURL}/oai-pcf:${pcf_tag}"
+              sh "docker rmi ${DH_Account}/oai-pcf:develop ${PrivateRegistryURL}/oai-pcf:${pcf_tag} || true"
               sh "docker logout ${PrivateRegistryURL}"
               sh "docker logout"
             }
@@ -505,7 +507,11 @@ pipeline {
         }
 
         // Zipping all archived log files
-        sh "zip -r -qq docker_logs.zip archives"
+        if (fileExists('archives/pcf_multiarch_image_trivy_report.html')) 
+        {
+              archiveArtifacts artifacts: 'archives/pcf_multiarch_image_trivy_report.html'
+        }
+        sh "zip -r -qq docker_logs.zip archives -x archives/pcf_multiarch_image_trivy_report.html"
         if (fileExists('docker_logs.zip')) {
           archiveArtifacts artifacts: 'docker_logs.zip'
         }
