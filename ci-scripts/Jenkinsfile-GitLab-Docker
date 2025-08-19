@@ -40,6 +40,15 @@ cppcheckResource = params.CppCheckResource
 formatCheckNode = params.FormatCheckNode
 formatCheckResource = params.FormatCheckResource
 
+// Its main purpose is the ARM Neoverse-v2 Build
+armBuildResource = params.armBuildResource
+
+// Boolean param to control trivy scan
+runTrivyScan = params.runTrivyScan
+
+// Boolean param to control the run of "Pushing Image to Official Registry" stage (keep it false by default)
+runDockerHubPushStage = false // Please set it to true when replaying a "PUSH" event Pipeline
+
 // Tags/Branches to use
 def pcf_tag = "develop"
 def pcf_branch = "develop"
@@ -76,7 +85,7 @@ pipeline {
     gitLabConnection('OAI GitLab')
     // Minimal checks
     gitlabBuilds(builds: [
-      "Build Ubuntu PCF Image",
+      "Build Ubuntu ARM Neoverse V2 (Grace) Image",
       "Build Ubuntu PCF Image with LTTNG",
       "Build RHEL PCF Image",
       "Static Code Analysis",
@@ -153,13 +162,15 @@ pipeline {
     }
     stage('Build Core Network Function') {
       parallel {
-        stage ('Build Ubuntu PCF Image') {
+        stage ('Build Ubuntu ARM Neoverse V2 (Grace) Image') {
           steps {
             // Now it is only locked during this build stage and not for the whole pipeline
             lock(ubuntuBuildResource) {
+              lock(armBuildResource) {
               script {
-                gitlabCommitStatus(name: "Build Ubuntu PCF Image") {
+                gitlabCommitStatus(name: "Build Ubuntu ARM Neoverse V2 (Grace) Image") {
                   sh "docker image rm oai-pcf:${pcf_tag} || true"
+                  sh "docker image rm ${PrivateRegistryURL}/oai-pcf:${pcf_tag} || true"
                   sh "docker image prune --force"
                   if ("PUSH".equals(env.gitlabActionType)) {
                     dockerBuildOptions = '--no-cache '
@@ -168,20 +179,34 @@ pipeline {
                     dockerBuildOptions = ''
                     sh "date --rfc-email > src/oai-cn5g-common-src/date.txt"
                   }
-                  sh "docker buildx build ${dockerBuildOptions} --target oai-pcf --tag oai-pcf:${pcf_tag} --file docker/Dockerfile.pcf.ubuntu . > archives/pcf_ubuntu_image_build.log 2>&1"
-                  // Putting a place holder to try out on the flattening of image.
-                  // If not satisfactory, we can remove it.
-                  sh "python3 ./ci-scripts/flatten_image.py --tag oai-pcf:${pcf_tag}"
-                  sh "docker image prune --force"
-                  sh "docker image ls | egrep --color=never 'pcf|REPOSITORY' >> archives/pcf_ubuntu_image_build.log"
-                  // Pushing to local private registry for testing purpose
                   sh "docker login -u oaicicd -p oaicicd ${PrivateRegistryURL}"
-                  sh "docker image tag oai-pcf:${pcf_tag} ${PrivateRegistryURL}/oai-pcf:${pcf_tag}"
-                  sh "docker push ${PrivateRegistryURL}/oai-pcf:${pcf_tag}"
-                  // Remove all images locally
-                  sh "docker rmi oai-pcf:${pcf_tag} ${PrivateRegistryURL}/oai-pcf:${pcf_tag}"
-                  sh "docker logout ${PrivateRegistryURL}"
+                  sh "docker buildx build ${dockerBuildOptions} \
+                    --target oai-pcf \
+                    --tag ${PrivateRegistryURL}/oai-pcf:${pcf_tag} \
+                    --platform linux/amd64,linux/arm64 \
+                    --build-arg GIT_COMMIT=\"${shortenShaOne}\" \
+                    --file docker/Dockerfile.pcf.ubuntu \
+                    --builder multiarch-localremote-builder \
+                    --progress=plain \
+                    --push . > archives/pcf_ubuntu_image_build.log 2>&1"
+                  // If not satisfactory, we can remove it.
+                  sh "docker image prune --force"
+                  sh "docker rmi ${PrivateRegistryURL}/oai-pcf:${pcf_tag} || true"
+                  sh "docker pull ${PrivateRegistryURL}/oai-pcf:${pcf_tag}"
+                  sh "docker image inspect ${PrivateRegistryURL}/oai-pcf:${pcf_tag} | jq '.[0] | {RepoTags, Labels: .Config.Labels, DockerVersion}' >> archives/pcf_ubuntu_image_build.log 2>&1"
+                  sh "docker images ${PrivateRegistryURL}/oai-pcf:${pcf_tag} >> archives/pcf_ubuntu_image_build.log 2>&1"
+                    // Run the trivy scan only if the boolean variable runTrivyScan is True
+                    if (runTrivyScan) {
+                       sh "docker rmi oai-pcf:${shortenShaOne} || true"
+                       sh "docker image tag ${PrivateRegistryURL}/oai-pcf:${pcf_tag} oai-pcf:${shortenShaOne}"
+                       sh "trivy image --exit-code 1 --severity MEDIUM,HIGH,CRITICAL --no-progress --format=template --template @./ci-scripts/common/html-templates/trivy_html.tpl --output archives/pcf_multiarch_image_trivy_report.html oai-pcf:${shortenShaOne} > /dev/null || true"
+                       sh "docker rmi oai-pcf:${shortenShaOne} || true"
+                    }
+                    sh "docker rmi ${PrivateRegistryURL}/oai-pcf:${pcf_tag} || true"
+                    sh "docker logout ${PrivateRegistryURL}"
+                    sh "bash ./ci-scripts/common/bash/extract_arm_amd_logs.sh archives/pcf_ubuntu_image_build.log"
                 }
+              }
               }
             }
           }
@@ -425,17 +450,16 @@ pipeline {
         lock(ubuntuBuildResource) {
           script {
             // Only in case of push to target branch!
-            if ("PUSH".equals(env.gitlabActionType)) {
+            if ("PUSH".equals(env.gitlabActionType) || runDockerHubPushStage) {
               withCredentials([
                 [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.DockerHubCredentials}", usernameVariable: 'DH_Username', passwordVariable: 'DH_Password']
               ]) {
                 sh "echo ${DH_Password} | docker login --username ${DH_Username} --password-stdin"
               }
               sh "docker login -u oaicicd -p oaicicd ${PrivateRegistryURL}"
-              sh "docker pull ${PrivateRegistryURL}/oai-pcf:${pcf_tag}"
-              sh "docker image tag ${PrivateRegistryURL}/oai-pcf:${pcf_tag} ${DH_Account}/oai-pcf:develop"
-              sh "docker push ${DH_Account}/oai-pcf:develop"
-              sh "docker rmi ${DH_Account}/oai-pcf:develop ${PrivateRegistryURL}/oai-pcf:${pcf_tag}"
+              sh "docker rmi ${PrivateRegistryURL}/oai-pcf:${pcf_tag} || true"
+              sh "docker buildx imagetools create -t ${DH_Account}/oai-pcf:develop ${PrivateRegistryURL}/oai-pcf:${pcf_tag}"
+              sh "docker rmi ${DH_Account}/oai-pcf:develop ${PrivateRegistryURL}/oai-pcf:${pcf_tag} || true"
               sh "docker logout ${PrivateRegistryURL}"
               sh "docker logout"
             }
@@ -483,7 +507,11 @@ pipeline {
         }
 
         // Zipping all archived log files
-        sh "zip -r -qq docker_logs.zip archives"
+        if (fileExists('archives/pcf_multiarch_image_trivy_report.html')) 
+        {
+              archiveArtifacts artifacts: 'archives/pcf_multiarch_image_trivy_report.html'
+        }
+        sh "zip -r -qq docker_logs.zip archives -x archives/pcf_multiarch_image_trivy_report.html"
         if (fileExists('docker_logs.zip')) {
           archiveArtifacts artifacts: 'docker_logs.zip'
         }
