@@ -132,6 +132,10 @@ pipeline {
             echo "MR TITLE    is ${env.gitlabMergeRequestTitle}"
             echo "MR Usermail is ${gitCommittorEmailAddr}"
             echo "MR TAG      is ${pcf_tag}"
+            def safePattern = /^[a-zA-Z0-9",\.\?\-_ %\+\[\]\(\)~]*$/
+            if (!(env.gitlabMergeRequestTitle =~ safePattern)) {
+                error "Merge request title contains unsafe characters. Only letters, numbers, \",.?-_%+[]()~ and spaces are allowed. Please fix your merge request title."
+            }
           } else {
             gitCommittorEmailAddr = sh returnStdout: true, script: 'git log -n1 --pretty=format:%ae ${GIT_COMMIT}'
             gitCommittorEmailAddr = gitCommittorEmailAddr.trim()
