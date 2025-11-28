@@ -23,6 +23,47 @@
 
 namespace oai::pcf::app {
 
+// TODO [QOS] PCF QoS Coordination Architecture Overview
+// =====================================================
+//
+// This PCF implementation needs comprehensive QoS coordination between two main services:
+// 1. Policy Authorization Service (pcf_policy_authorization) - Handles application QoS requests
+// 2. SM Policy Control Service (pcf_sm_policy_control) - Handles session management QoS policies
+//
+// KEY QOS COORDINATION CHALLENGES TO ADDRESS:
+//
+// A. PCC RULE MANAGEMENT:
+//    - Unique PCC rule ID generation across services (prefix-based: "pa-" for Policy Auth, "sm-" for SM)
+//    - Precedence value coordination to avoid conflicts (Policy Auth: 1-100, SM Policy: 101-255)
+//    - Rule lifecycle management and cleanup coordination
+//
+// B. QOS DATA CONSISTENCY:
+//    - QosData merging between Policy Authorization and SM Policy decisions
+//    - QosCharacteristics coordination for non-standard 5QI values
+//    - QosMonitoringData synchronization across services
+//
+// C. RESOURCE MANAGEMENT:
+//    - Bandwidth allocation tracking across both services
+//    - QoS flow identifier allocation and management
+//    - Priority level and ARP coordination
+//
+// D. NOTIFICATION COORDINATION:
+//    - SMF notification consolidation for combined policy updates
+//    - Event-driven coordination via pcf_event system
+//    - Error handling and rollback mechanisms for failed updates
+//
+// E. VALIDATION AND AUTHORIZATION:
+//    - Cross-service QoS requirement validation
+//    - Subscription and slice policy compliance checking
+//    - Resource availability verification
+//
+// IMPLEMENTATION APPROACH:
+// - Use pcf_event system for real-time coordination between services
+// - Implement shared QoS coordination functions in both service classes
+// - Create unified PCC rule and QoS data management framework
+// - Establish clear precedence and ID allocation schemes
+// - Design comprehensive validation and conflict resolution mechanisms
+
 class pcf_app {
  public:
   explicit pcf_app(pcf_event& ev);

@@ -193,6 +193,12 @@ handler_result validate_and_merge_decision(
   }
   current_decision.setPccRules(pccRulesMap);
 
+  // TODO [QOS] Merge QoS-related decision data
+  // Merge QosData entries from request_decision to current_decision
+  // Handle QosChars (QoS Characteristics) for non-standard 5QIs
+  // Merge QosMonDecs (QoS Monitoring Data) entries
+  // Validate QoS parameter consistency across merged rules
+
   // Merge Traffic Control Data
   auto trafficControlMap = current_decision.getTraffContDecs();
   for (auto& [key, value] : request_decision.getTraffContDecs()) {
@@ -223,6 +229,33 @@ handler_result validate_and_merge_decision(
 
   current_decision.setTraffContDecs(trafficControlMap);
 
+  // TODO [QOS] Apply merged QoS data to current_decision
+  // if (request_decision.qosDataIsSet()) {
+  //   auto qosDataMap = current_decision.getQosData();
+  //   for (const auto& [key, value] : request_decision.getQosData()) {
+  //     qosDataMap.insert(std::make_pair(key, value));
+  //   }
+  //   current_decision.setQosData(qosDataMap);
+  // }
+
+  // TODO [QOS] Apply merged QoS Characteristics to current_decision
+  // if (request_decision.qosCharsIsSet()) {
+  //   auto qosCharsMap = current_decision.getQosChars();
+  //   for (const auto& [key, value] : request_decision.getQosChars()) {
+  //     qosCharsMap.insert(std::make_pair(key, value));
+  //   }
+  //   current_decision.setQosChars(qosCharsMap);
+  // }
+
+  // TODO [QOS] Apply merged QoS Monitoring Data to current_decision
+  // if (request_decision.qosMonDecsIsSet()) {
+  //   auto qosMonDecsMap = current_decision.getQosMonDecs();
+  //   for (const auto& [key, value] : request_decision.getQosMonDecs()) {
+  //     qosMonDecsMap.insert(std::make_pair(key, value));
+  //   }
+  //   current_decision.setQosMonDecs(qosMonDecsMap);
+  // }
+
   return handler_result{.status = status_code::OK};
 }
 
@@ -230,8 +263,61 @@ handler_result authorize_service_info(
     const oai::model::pcf::AppSessionContextReqData& reqData) {
   // TODO: Implement service authorization
 
+  // TODO [QOS] Add QoS authorization checks
+  // Validate QoS requirements in MediaComponents against:
+  // - User subscription QoS profile
+  // - Network slice QoS limits
+  // - Current network resource availability
+  // - Service level agreements
+
   return handler_result{.status = status_code::OK};
 }
+
+// TODO [QOS] Implement QoS handling functions
+// The following functions need to be implemented to handle QoS requirements
+// as specified in 3GPP TS 29.514:
+
+// TODO [QOS] handler_result handle_qos_requirements(
+//     const oai::model::pcf::MediaComponent& media_component,
+//     oai::model::pcf::SmPolicyDecision& decision) {
+//   Logger::pcf_app().info("Processing QoS requirements for MediaComponent");
+//
+//   // Extract bandwidth requirements
+//   if (media_component.marBwDlIsSet() || media_component.marBwUlIsSet()) {
+//     // Process maximum bandwidth requirements
+//   }
+//
+//   if (media_component.mirBwDlIsSet() || media_component.mirBwUlIsSet()) {
+//     // Process minimum bandwidth requirements
+//   }
+//
+//   // Extract latency requirements
+//   if (media_component.desMaxLatencyIsSet()) {
+//     // Process maximum latency requirements
+//   }
+//
+//   // Extract packet loss requirements
+//   if (media_component.desMaxLossIsSet()) {
+//     // Process maximum packet loss requirements
+//   }
+//
+//   // Create QosData entries and update decision
+//   // Generate appropriate PCC rules for QoS enforcement
+//
+//   return handler_result{.status = status_code::OK};
+// }
+
+// TODO [QOS] handler_result setup_qos_monitoring(
+//     const oai::model::pcf::MediaComponent& media_component,
+//     oai::model::pcf::SmPolicyDecision& decision) {
+//   Logger::pcf_app().info("Setting up QoS monitoring for MediaComponent");
+//
+//   // Create QosMonitoringData entries based on MediaComponent requirements
+//   // Configure monitoring parameters (thresholds, reporting frequency)
+//   // Add monitoring data to SmPolicyDecision
+//
+//   return handler_result{.status = status_code::OK};
+// }
 
 }  // namespace policy_auth
 

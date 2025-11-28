@@ -65,6 +65,16 @@ void pcf_smpc::handle_policy_change(
 
 sm_policy::status_code pcf_smpc::send_sm_policy_control_update_notify(
     const oai::pcf::app::sm_policy::individual_sm_association& association) {
+  // TODO [QOS] Enhanced notification for QoS policy updates to SMF
+  // This function sends updated policy decisions including QoS-related changes from
+  // Policy Authorization Service to SMF. Key QoS elements to include:
+  // 1. Updated PCC rules with QoS enforcement actions
+  // 2. QoS Data entries for flow-specific QoS parameters
+  // 3. QoS Characteristics for non-standard 5QI values
+  // 4. QoS Monitoring Data configurations
+  // 5. Traffic Control Data with QoS steering information
+  // 6. Updated QoS flow identifiers and bindings
+
   std::string uri =
       association.get_sm_policy_context_data().getNotificationUri() + "/update";
   nlohmann::json json_data;
@@ -85,6 +95,35 @@ sm_policy::status_code pcf_smpc::send_sm_policy_control_update_notify(
     Logger::pcf_app().info(
         "Successful SM Policy Update Notification for SUPI %s",
         association.get_sm_policy_context_data().getSupi().c_str());
+
+    // TODO [QOS-AF] Coordinate Application Function notifications after successful SMF update
+    // Following successful SMF notification, trigger AF notifications as per 3GPP TS 29.514:
+    //
+    // 1. EXTRACT AF NOTIFICATION TARGETS:
+    //    - Identify AF applications affected by the policy update
+    //    - Retrieve AF notification URIs from associated application sessions
+    //    - Determine notification event types required by each AF
+    //
+    // 2. PREPARE AF NOTIFICATION DATA:
+    //    - Extract QoS status changes from the policy decision
+    //    - Compile monitoring measurements if available from UPF reports
+    //    - Prepare session context updates for AF consumption
+    //
+    // 3. TRIGGER ASYNCHRONOUS AF NOTIFICATIONS:
+    //    - Emit events to Policy Authorization service for AF notification delivery
+    //    - Include session binding information to correlate AF applications
+    //    - Schedule retry for failed AF notifications with appropriate backoff
+    //
+    // 4. LOG COORDINATION STATUS:
+    //    - Track successful AF notification triggers
+    //    - Log any coordination failures for troubleshooting
+    //    - Update AF subscription health status
+    //
+    // Example coordination:
+    // std::string supi = association.get_sm_policy_context_data().getSupi();
+    // std::string dnn = association.get_sm_policy_context_data().getDnn();
+    // m_event_sub.coordinate_af_notifications(supi, dnn, association.get_sm_policy_decision_dto());
+
     return status_code::CREATED;
   }
 
@@ -131,6 +170,24 @@ void pcf_smpc::handle_session_binding_request(
     const std::optional<std::string>& supi,
     const std::optional<std::string>& dnn, std::optional<std::string>& assoc_id,
     oai::model::pcf::SmPolicyDecision& decision) {
+  // TODO [QOS] Handle QoS requirements during session binding
+  // When Policy Authorization requests session binding, provide comprehensive QoS context:
+  //
+  // 1. QOS CONTEXT RETRIEVAL:
+  //    - Retrieve existing QoS policies for this SUPI/DNN combination
+  //    - Include base QoS characteristics from subscription profile
+  //    - Provide network slice-specific QoS limits and policies
+  //
+  // 2. QOS BASELINE ESTABLISHMENT:
+  //    - Set baseline QoS parameters that Policy Authorization can build upon
+  //    - Ensure default QoS flows are properly configured
+  //    - Provide QoS rule precedence ranges available for Policy Auth use
+  //
+  // 3. RESOURCE AVAILABILITY:
+  //    - Include current QoS resource utilization information
+  //    - Provide available bandwidth and priority level ranges
+  //    - Share network congestion status affecting QoS decisions
+
   // TODO: support multiple sessions
 
   std::shared_ptr<std::string> association_id =
@@ -155,12 +212,38 @@ void pcf_smpc::handle_session_binding_request(
 
   decision = iter->second.get_sm_policy_decision_dto();
 
+  // TODO [QOS] Enhance decision with QoS binding information
+  // Before returning decision to Policy Authorization, enrich it with:
+  // - Current QoS flow configurations and available flow identifiers
+  // - Precedence ranges that Policy Authorization can safely use
+  // - QoS monitoring capabilities and current monitoring status
+  // - Resource reservation status and available QoS budget
+
   // Get PCC from decision
 }
 
 void pcf_smpc::handle_update_decision_request(
     std::optional<std::string>& association_id,
     oai::model::pcf::SmPolicyDecision& decision) {
+  // TODO [QOS] Process QoS policy updates from Policy Authorization Service
+  // This function receives updated policy decisions from pcf_policy_authorization
+  // containing QoS requirements that need to be integrated with existing SM policies:
+  //
+  // 1. CONFLICT RESOLUTION:
+  //    - Check for PCC rule ID conflicts between Policy Auth and SM Policy Control
+  //    - Ensure QoS rule precedence values don't overlap with existing SM rules
+  //    - Resolve conflicts between Policy Auth QoS requirements and SM QoS policies
+  //
+  // 2. QOS DATA INTEGRATION:
+  //    - Merge QosData entries from Policy Authorization with existing SM QoS data
+  //    - Validate QoS parameters against subscription and network slice limits
+  //    - Update QoS Characteristics for new or modified 5QI values
+  //
+  // 3. PCC RULE COORDINATION:
+  //    - Generate unique PCC rule IDs that don't conflict across services
+  //    - Assign appropriate precedence values considering both Policy Auth and SM rules
+  //    - Ensure QoS enforcement actions are consistent across rule sets
+
   // Fetch the association related to the decision
   std::unique_lock lock_assocations(m_associations_mutex);
   auto iter = m_associations.find(association_id.value());
@@ -171,7 +254,32 @@ void pcf_smpc::handle_update_decision_request(
     return;
   }
 
+  // TODO [QOS] Validate and merge QoS decisions from Policy Authorization
+  // Before setting the new decision, perform comprehensive validation:
+  // - Check QoS parameter consistency across all active PCC rules
+  // - Validate total bandwidth allocations don't exceed session limits
+  // - Ensure QoS flow mappings are consistent and non-conflicting
+  // - Resolve any QoS precedence conflicts with existing rules
+
   iter->second.set_sm_policy_decision(decision);
+
+  // TODO [QOS] Coordinate QoS policy storage updates between Policy Auth and SM Policy Control
+  // The QoS policy updates from Policy Authorization need careful storage management:
+  //
+  // 1. STORAGE STRATEGY:
+  //    - Decide whether QoS policies from Policy Auth should be persisted in storage
+  //    - Consider separating dynamic QoS policies (from apps) from static SM policies
+  //    - Implement versioning for QoS policy updates to track changes
+  //
+  // 2. POLICY COORDINATION:
+  //    - Ensure Policy Authorization QoS updates don't overwrite critical SM policies
+  //    - Implement merge strategy for combining Policy Auth and SM QoS requirements
+  //    - Maintain separate namespaces for PCC rule IDs from different sources
+  //
+  // 3. PERSISTENCE CONSIDERATIONS:
+  //    - Policy Auth QoS rules may be session-specific and shouldn't persist
+  //    - SM Policy QoS rules should persist across UE reconnections
+  //    - Consider hybrid approach: persist base QoS policies, cache dynamic ones
 
   // TODO [PAS] confirm if the storage should be updated
   /**
@@ -194,18 +302,77 @@ void pcf_smpc::handle_update_decision_request(
     Logger::pcf_app().error("Failed to update policy decision");
   }
 
+  // TODO [QOS] Enhanced SMF notification for QoS policy changes
+  // Before sending notification, ensure comprehensive QoS update preparation:
+  // 1. Validate all QoS flows have consistent parameters
+  // 2. Generate QoS flow setup/modification instructions for SMF
+  // 3. Include QoS monitoring setup parameters if required
+  // 4. Provide clear indication of which QoS flows are new/modified/deleted
+
   // Send a notification to the SMF related to the updated decision
   const auto& association_ref = iter->second;
   auto ret = send_sm_policy_control_update_notify(association_ref);
   if (ret != status_code::CREATED) {
     Logger::pcf_app().error("Policy update notification failed");
+
+    // TODO [QOS] Handle QoS notification failures gracefully
+    // On notification failure, consider:
+    // - Rolling back QoS policy changes to maintain consistency
+    // - Implementing retry mechanism for critical QoS updates
+    // - Alerting operator about QoS policy synchronization issues
+    // - Maintaining fallback QoS policies for service continuity
   }
+
+  // TODO [QOS-AF] Trigger Application Function notifications for QoS policy updates
+  // After successful SM policy update, coordinate AF notifications as per 3GPP TS 29.514:
+  //
+  // 1. IDENTIFY AFFECTED AF APPLICATIONS:
+  //    - Determine which AF applications are impacted by the QoS policy changes
+  //    - Extract AF application identifiers from the updated policy decision
+  //    - Check for active AF subscriptions requiring notifications
+  //
+  // 2. GENERATE AF QOS NOTIFICATIONS:
+  //    - Emit af_qos_status_notification signal for QoS flow changes
+  //    - Include updated QoS parameters (bandwidth, latency, packet loss)
+  //    - Report QoS guarantee status (met/violated) based on network conditions
+  //
+  // 3. SEND AF MONITORING REPORTS:
+  //    - Emit af_monitoring_report_notification for threshold-based events
+  //    - Include current QoS measurements and congestion status
+  //    - Provide bandwidth utilization and performance metrics
+  //
+  // 4. COORDINATE WITH POLICY AUTHORIZATION SERVICE:
+  //    - Signal Policy Authorization service about completed QoS updates
+  //    - Request AF notification delivery for related application sessions
+  //    - Ensure consistent notification content across both services
+  //
+  // Example event emissions:
+  // m_event_sub.emit_af_qos_status_notification(af_app_id, session_id, qos_flows, "QoS_UPDATED");
+  // m_event_sub.emit_af_monitoring_report_notification(af_app_id, session_id, monitoring_data, threshold_events);
 }
 
 //------------------------------------------------------------------------------
 status_code pcf_smpc::create_sm_policy_handler(
     const SmPolicyContextData& context, SmPolicyDecision& decision,
     std::string& association_id, std::string& problem_details) {
+  // TODO [QOS] Initialize QoS framework for new SM policy associations
+  // When creating new SM policy associations, establish QoS foundation:
+  //
+  // 1. QOS BASELINE SETUP:
+  //    - Initialize default QoS characteristics from subscription profile
+  //    - Set up base QoS flows for the PDU session
+  //    - Reserve QoS precedence ranges for different services (Policy Auth, SM Policy, etc.)
+  //
+  // 2. RESOURCE ALLOCATION:
+  //    - Allocate initial QoS flow identifiers for this association
+  //    - Reserve bandwidth quotas based on subscription and slice policies
+  //    - Initialize QoS monitoring framework if required
+  //
+  // 3. COORDINATION PREPARATION:
+  //    - Set up coordination structures for future Policy Authorization requests
+  //    - Initialize conflict resolution mechanisms for PCC rule management
+  //    - Prepare QoS update notification framework
+
   std::shared_ptr<policy_decision> chosen_decision =
       m_policy_storage->find_policy(context);
 
@@ -290,6 +457,25 @@ sm_policy::status_code pcf_smpc::update_sm_policy_handler(
     const std::string& id, const SmPolicyUpdateContextData& update_context,
     SmPolicyDecision& decision, std::string& problem_details) {
   Logger::pcf_app().info("Entering update_sm_policy_handler");
+
+  // TODO [QOS] Handle QoS-related SM policy updates and coordination
+  // When SM policy context changes, ensure QoS policies remain consistent:
+  //
+  // 1. QOS IMPACT ASSESSMENT:
+  //    - Analyze how SM context changes affect existing QoS policies
+  //    - Check if Policy Authorization QoS rules need updates
+  //    - Validate that updated context doesn't violate QoS commitments
+  //
+  // 2. CROSS-SERVICE COORDINATION:
+  //    - Notify Policy Authorization of relevant context changes
+  //    - Update QoS monitoring parameters if context affects QoS requirements
+  //    - Ensure QoS flow mappings remain valid after context updates
+  //
+  // 3. QOS RULE CONSISTENCY:
+  //    - Maintain consistency between SM-generated and Policy Auth-generated QoS rules
+  //    - Update QoS precedence mappings if service priorities change
+  //    - Validate that all QoS flows remain properly configured
+
   std::unique_lock lock_associations(m_associations_mutex);
   auto iter = m_associations.find(id);
 
@@ -301,6 +487,7 @@ sm_policy::status_code pcf_smpc::update_sm_policy_handler(
   }
 
   // TODO [PAS]: Perform session binding update
+  // TODO [QOS]: Update QoS session binding and coordinate with Policy Authorization
 
   SmPolicyDecision new_decision;
 

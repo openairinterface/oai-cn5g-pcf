@@ -78,6 +78,53 @@ class pcf_policy_authorization {
 
   // for Event Handling
   pcf_event& m_event_sub;
+
+  // TODO [QOS-AF] Application Function notification infrastructure
+  // Add data structures and methods for AF monitoring and notifications as per 3GPP TS 29.514:
+  //
+  // 1. AF NOTIFICATION CLIENT:
+  //    - std::unique_ptr<af_notification_client> m_af_notif_client;
+  //    - HTTP/2 client for sending notifications to Application Functions
+  //    - Support for both secured (HTTPS) and unsecured (HTTP) connections
+  //    - Connection pooling and retry mechanisms for AF endpoints
+  //
+  // 2. SUBSCRIPTION MANAGEMENT:
+  //    - std::unordered_map<std::string, af_subscription> m_af_subscriptions;
+  //    - Maps session_id to AF notification subscription details
+  //    - std::unordered_map<std::string, af_endpoint_info> m_af_endpoints;
+  //    - AF endpoint health monitoring and authentication credentials
+  //
+  // 3. NOTIFICATION QUEUE SYSTEM:
+  //    - std::queue<af_notification_event> m_notification_queue;
+  //    - std::queue<af_notification_event> m_priority_notification_queue;
+  //    - std::queue<af_notification_event> m_failed_notification_queue;
+  //    - Asynchronous notification processing with priority handling
+  //
+  // 4. MONITORING EVENT HANDLERS:
+  //    - void handle_qos_flow_update(session_id, qos_flow_info);
+  //    - void handle_pdu_session_event(session_id, session_event);
+  //    - void handle_monitoring_report(session_id, monitoring_data);
+  //    - void handle_policy_decision_update(session_id, policy_changes);
+  //
+  // 5. AF NOTIFICATION METHODS:
+  //    - status_code notify_af_qos_status(af_endpoint, qos_notification);
+  //    - status_code notify_af_session_event(af_endpoint, session_notification);
+  //    - status_code notify_af_monitoring_report(af_endpoint, monitoring_report);
+  //    - status_code notify_af_policy_update(af_endpoint, policy_notification);
+  //
+  // 6. SUBSCRIPTION LIFECYCLE:
+  //    - status_code register_af_subscription(session_id, af_subscription_info);
+  //    - status_code update_af_subscription(session_id, subscription_updates);
+  //    - status_code remove_af_subscription(session_id);
+  //    - void cleanup_expired_subscriptions();
+  //
+  // TODO [QOS-MON] QoS monitoring infrastructure
+  // Add comprehensive QoS monitoring framework:
+  //
+  // 7. MONITORING INFRASTRUCTURE:
+  //    - std::unordered_map<std::string, qos_monitoring_context> m_qos_monitors;
+  //    - Timer-based monitoring report generation for subscribed sessions
+  //    - Threshold-based event triggering for QoS violations and improvements
 };
 
 }  // namespace oai::pcf::app

@@ -131,6 +131,38 @@ class pcf_smpc {
       std::optional<std::string>& association_id,
       oai::model::pcf::SmPolicyDecision& decision);
 
+  // TODO [QOS] Add QoS coordination functions between Policy Authorization and SM Policy Control
+  // Implement the following functions to ensure proper QoS policy coordination:
+
+  // TODO [QOS] PCC rule conflict resolution and ID management
+  // void resolve_pcc_rule_conflicts(
+  //     const oai::model::pcf::SmPolicyDecision& policy_auth_decision,
+  //     oai::model::pcf::SmPolicyDecision& current_sm_decision);
+
+  // TODO [QOS] QoS precedence and priority coordination
+  // bool validate_qos_precedence_ranges(
+  //     const oai::model::pcf::SmPolicyDecision& new_decision,
+  //     const std::string& association_id);
+
+  // TODO [QOS] Generate unique identifiers for cross-service coordination
+  // std::string generate_unique_pcc_rule_id(const std::string& service_prefix);
+  // uint32_t allocate_precedence_value(const std::string& association_id, uint32_t base_precedence);
+
+  // TODO [QOS] QoS data validation and consistency checks
+  // bool validate_qos_data_consistency(
+  //     const std::map<std::string, oai::model::pcf::QosData>& qos_data_map,
+  //     const std::string& association_id);
+
+  // TODO [QOS] Resource availability and capacity management
+  // bool check_qos_resource_availability(
+  //     const oai::model::pcf::SmPolicyDecision& requested_decision,
+  //     const std::string& association_id);
+
+  // TODO [QOS] QoS monitoring coordination between services
+  // void coordinate_qos_monitoring_setup(
+  //     const std::map<std::string, oai::model::pcf::QosMonitoringData>& monitoring_data,
+  //     const std::string& association_id);
+
   // for Event Handling
   pcf_event& m_event_sub;
   bs2::connection m_sm_session_binding_connection;
