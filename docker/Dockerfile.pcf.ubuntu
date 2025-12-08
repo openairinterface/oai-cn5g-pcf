@@ -32,7 +32,7 @@
 # BASE IMAGE
 #---------------------------------------------------------------------
 ARG BASE_IMAGE=ubuntu:jammy
-FROM $BASE_IMAGE as oai-pcf-base
+FROM $BASE_IMAGE AS oai-pcf-base
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Europe/Paris
@@ -45,9 +45,9 @@ RUN apt-get update && \
   && rm -rf /var/lib/apt/lists/*
 
 # Some GIT configuration command quite useful
-RUN git config --global https.postBuffer 123289600 && \
+RUN git config --global https.postBuffer 199757920 && \
     git config --global http.sslverify false
-
+ARG ENABLE_LTTNG=false
 # Copying source code
 WORKDIR /openair-pcf
 COPY ./build/scripts /openair-pcf/build/scripts/
@@ -63,23 +63,37 @@ RUN ./build_pcf --install-deps --force && \
 #---------------------------------------------------------------------
 # BUILDER IMAGE
 #---------------------------------------------------------------------
-FROM oai-pcf-base as oai-pcf-builder
+FROM oai-pcf-base AS oai-pcf-builder
 # Copying source code
 COPY . /openair-pcf
 # Building PCF
 WORKDIR /openair-pcf/build/scripts
-RUN ./build_pcf --clean --Verbose --build-type Release --jobs && \
+
+RUN  if [ "$ENABLE_LTTNG" = "true" ]; then DEBIAN_FRONTEND=noninteractive apt-get install --yes \
+        lttng-modules-dkms \
+        liblttng-ust-dev \
+        lttng-tools && \
+        ldconfig && \
+        ./build_pcf --clean --Verbose --build-type Release --jobs --lttng; \
+    else \
+        ldconfig && \
+        ./build_pcf --clean --Verbose --build-type Release --jobs; \
+    fi && \
     ldd /openair-pcf/build/pcf/build/pcf && \
     mv /openair-pcf/build/pcf/build/pcf /openair-pcf/build/pcf/build/oai_pcf
 
-FROM mikefarah/yq:latest as yq-source
 
 #---------------------------------------------------------------------
 # TARGET IMAGE
 #---------------------------------------------------------------------
-FROM $BASE_IMAGE as oai-pcf
+FROM $BASE_IMAGE AS oai-pcf
+ARG TARGETPLATFORM
+ARG VERSION=v4.47.1
+ENV TARGETPLATFORM=${TARGETPLATFORM}
+
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Europe/Paris
+ARG ENABLE_LTTNG=false
 # We install some debug tools for the moment in addition of mandatory libraries
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get upgrade --yes && \
@@ -91,6 +105,7 @@ RUN apt-get update && \
       tcpdump \
       iputils-ping \
       bc \
+      wget \
 # Mandatory packages for the NF to run
       openssl \
 # Ubuntu 20 --> libasan5
@@ -102,6 +117,12 @@ RUN apt-get update && \
       libcurl?-gnutls \
       librtmp1 \
       libpsl5 \
+# Ubuntu 20 --> gcc-9-plugin-dev
+# Ubuntu 22 --> gcc-11-plugin-dev
+      gcc-?-plugin-dev \
+      libmysqlclient2? \
+# lttng
+  && if [ "$ENABLE_LTTNG" = "true" ]; then DEBIAN_FRONTEND=noninteractive apt-get install --yes liblttng-ust-dev; fi \
   && rm -rf /var/lib/apt/lists/*
 
 # Copying executable and generated libraries
@@ -110,7 +131,15 @@ COPY --from=oai-pcf-builder \
     /openair-pcf/build/pcf/build/oai_pcf \
     /openair-pcf/scripts/healthcheck.sh \
     ./
-COPY --from=yq-source /usr/bin/yq /usr/bin
+
+RUN echo "Target platform is: ${TARGETPLATFORM}" && \
+    case "${TARGETPLATFORM}" in \
+      "linux/amd64") BINARY="yq_linux_amd64"; ;; \
+      "linux/arm64") BINARY="yq_linux_arm64"; ;; \
+      *) echo "Unsupported platform"; exit 1; ;; \
+    esac && \
+    wget https://github.com/mikefarah/yq/releases/download/${VERSION}/${BINARY} -O /usr/bin/yq && \
+    chmod +x /usr/bin/yq
 
 WORKDIR /usr/local/lib/
 COPY --from=oai-pcf-builder \
@@ -122,6 +151,11 @@ COPY --from=oai-pcf-builder \
     /usr/local/lib/libcpr.so.1 \
     /usr/local/lib/libspdlog.so \
     /usr/local/lib/libfmt.so \
+    /usr/local/lib/libmysqlclient-21.so \
+    /usr/local/lib/libssl-1.1.so \
+    /usr/local/lib/libcrypto-1.1.so \
+    /usr/local/lib/libodb-2.5.so \
+    /usr/local/lib/libodb-mysql-2.5.so \
     ./
 
 RUN ldconfig && \
@@ -136,7 +170,16 @@ COPY --from=oai-pcf-builder \
 
 WORKDIR /openair-pcf
 
-EXPOSE 80/tcp 8080/tcp
+ARG GIT_COMMIT
+
+LABEL org.opencontainers.image.authors="OpenAirInterface <contact@openairinterface.org>" \
+      org.opencontainers.image.vendor="OpenAirInterface Software Alliance" \
+      org.opencontainers.image.licenses="OAI Public License, Version 1.1" \
+      org.opencontainers.image.title="OAI PCF" \
+      org.opencontainers.image.description="OpenAirInterface Policy Control Function" \
+      org.opencontainers.image.revision="commit:${GIT_COMMIT}"
+
+EXPOSE 80/tcp 8080/tcp 5342 5343 5344
 # healthcheck
 HEALTHCHECK --interval=10s \
             --timeout=15s \

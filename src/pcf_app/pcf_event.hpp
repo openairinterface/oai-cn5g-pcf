@@ -31,6 +31,7 @@
 #define FILE_PCF_EVENT_HPP_SEEN
 
 #include <boost/signals2.hpp>
+#include <optional>
 namespace bs2 = boost::signals2;
 
 #include "pcf_event_sig.hpp"
@@ -53,6 +54,8 @@ class pcf_event {
   friend class pcf_app;
   friend class pcf_nrf;
   friend class task_manager;
+  friend class pcf_policy_authorization;
+  friend class pcf_smpc;
 
   //------------------------------------------------------------------------------
   /*
@@ -85,6 +88,26 @@ class pcf_event {
   bs2::connection subscribe_ue_reachability_for_data(
       const ue_reachability_for_data_sig_t::slot_type& sig);
 
+  /**
+   * Subscribe to SM Session Binding signal.
+   * @param [const sm_session_binding_sig_t::slot_type&] sig: slot_type
+   * parameter
+   * @return boost::signals2::connection: the connection between the signal and
+   * the slot
+   */
+  bs2::connection subscribe_sm_session_binding(
+      const sm_session_binding_sig_t::slot_type& sig);
+
+  /**
+   * Subscribe to SM Update Decision signal.
+   * @param [const sm_update_decision_sig_t::slot_type&] sig: slot_type
+   * parameter
+   * @return boost::signals2::connection: the connection between the signal and
+   * the slot
+   */
+  bs2::connection subscribe_sm_update_decision(
+      const sm_update_decision_sig_t::slot_type& sig);
+
  private:
   task_sig_t task_tick;
 
@@ -92,6 +115,10 @@ class pcf_event {
       loss_of_connectivity;  // Signal for Loss of Connectivity Report
   ue_reachability_for_data_sig_t
       ue_reachability_for_data;  // Signal for UE Reachability for Data Report
+
+  sm_session_binding_sig_t sm_session_binding;  // Signal for SM Session Binding
+
+  sm_update_decision_sig_t sm_update_decision;  // Signal for SM Update Decision
 };
 }  // namespace oai::pcf::app
 #endif

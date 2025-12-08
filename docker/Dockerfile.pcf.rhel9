@@ -35,13 +35,9 @@ ENV IS_DOCKERFILE=1
 # Copy the entitlements
 COPY ./etc-pki-entitlement /etc/pki/entitlement
 
-# Copy the subscription manager configurations
-COPY ./rhsm-conf /etc/rhsm
-COPY ./rhsm-ca /etc/rhsm/ca
-
 RUN rm -f /etc/rhsm-host && \
     subscription-manager repos --enable codeready-builder-for-rhel-9-x86_64-rpms && \
-    dnf update -y && \
+    dnf update -y --allowerasing --skip-broken --nobest && \
     # here just to display the current version
     cat /etc/os-release && \
     dnf install -y \
@@ -50,6 +46,7 @@ RUN rm -f /etc/rhsm-host && \
         diffutils \
         libasan \
         wget \
+        gcc-plugin-devel \
         file && \
     echo "/usr/local/lib" > /etc/ld.so.conf.d/local-lib.conf && \
     echo "/usr/local/lib64" >> /etc/ld.so.conf.d/local-lib.conf
@@ -70,8 +67,7 @@ RUN ldconfig && \
     ldd /openair-pcf/build/pcf/build/pcf && \
     mv /openair-pcf/build/pcf/build/pcf /openair-pcf/build/pcf/build/oai_pcf && \
     # Remove entitlements and Subscription Manager configs
-    rm -rf /etc/pki/entitlement && \
-    rm -rf /etc/rhsm
+    rm -rf /etc/pki/entitlement
 
 FROM mikefarah/yq:latest as yq-source
 
@@ -83,11 +79,8 @@ ENV TZ=Europe/Paris
 
 # Copy the entitlements
 COPY ./etc-pki-entitlement /etc/pki/entitlement
-
 # Copy the subscription manager configurations
-COPY ./rhsm-conf /etc/rhsm
-COPY ./rhsm-ca /etc/rhsm/ca
-
+COPY --from=oai-pcf-builder /etc/rhsm /etc/rhsm
 
 # We install some debug tools for the moment in addition of mandatory libraries
 RUN rm -f /etc/rhsm-host && \
@@ -129,6 +122,11 @@ COPY --from=oai-pcf-builder \
     /usr/local/lib64/libfmt.so \
     /usr/local/lib64/libyaml-cpp.so.0.* \
     /usr/local/lib64/libcpr.so.1 \
+    /usr/lib64/mysql/libmysqlclient.so.21 \
+    /usr/local/lib/libssl-1.1.so \
+    /usr/local/lib/libcrypto-1.1.so \
+    /usr/local/lib/libodb-2.5.so \
+    /usr/local/lib/libodb-mysql-2.5.so \
     /usr/lib64/
 
 RUN ldconfig && \

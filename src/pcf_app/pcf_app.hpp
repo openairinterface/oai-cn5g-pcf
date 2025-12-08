@@ -38,8 +38,13 @@
 #include "PatchItem.h"
 #include "pcf_sm_policy_control.hpp"
 #include "sm_policy/policy_storage.hpp"
+#include "sm_policy/policy_storage_db.hpp"
+#include "sm_policy/policy_storage_yaml.hpp"
 #include "sm_policy/policy_provisioning_file.hpp"
 #include "pcf_nrf.hpp"
+#include "pcf_policy_authorization.hpp"
+#include "sm_policy/database/database_wrapper.hpp"
+#include "sm_policy/database/mysql_db.hpp"
 
 namespace oai::pcf::app {
 
@@ -52,6 +57,8 @@ class pcf_app {
   virtual ~pcf_app();
 
   std::shared_ptr<pcf_smpc> get_pcf_smpc_service();
+  std::shared_ptr<pcf_policy_authorization>
+  get_pcf_policy_authorization_service();
 
   /**
    * Stop all the ongoing processes and procedures of the PCF APP layer,
@@ -72,5 +79,7 @@ class pcf_app {
 
   std::shared_ptr<oai::pcf::app::sm_policy::policy_provisioning_file>
       m_provisioning_file;
+
+  std::shared_ptr<pcf_policy_authorization> m_pcf_policy_authorization_service;
 };
 }  // namespace oai::pcf::app

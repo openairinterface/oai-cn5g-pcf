@@ -1,5 +1,18 @@
 # RELEASE NOTES: #
 
+## v2.2.0 -- December 2025 ##
+
+* Features
+  - PCF Provisioning API: Introduced support for provisioning Policy Decisions,
+  PCC Rules, QoS Data, and Traffic Control Data.
+* Fixes
+  - HTTP/2 PUT request for each endpoint
+  - LTTNG build issue
+* Future Fixes
+  - Add support for Ubuntu 24.04
+  - Add support for RHEL 10, update container images to UBI 10
+  - Fix build issue in non-containerized environment
+
 ## v2.1.0 -- August 2024 ##
 
 * Features
