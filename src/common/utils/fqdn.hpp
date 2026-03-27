@@ -2,12 +2,6 @@
  * SPDX-License-Identifier: LicenseRef-CSSL-1.0
  */
 
-/*! \file fqdn.hpp
- \brief
- \author
- \company Eurecom
- \email:
- */
 #ifndef FILE_FQDN_HPP_SEEN
 #define FILE_FQDN_HPP_SEEN
 #include <string>

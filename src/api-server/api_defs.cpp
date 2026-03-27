@@ -2,14 +2,6 @@
  * SPDX-License-Identifier: LicenseRef-CSSL-1.0
  */
 
-/*! \file api_defs.h
- \brief
- \author  Stefan Spettel
- \company phine.tech
- \date 2023
- \email: stefan.spettel@phine.tech
- */
-
 #include "api_defs.h"
 
 #include "pcf_config.hpp"

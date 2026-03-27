@@ -2,14 +2,6 @@
  * SPDX-License-Identifier: LicenseRef-CSSL-1.0
  */
 
-/*! \file snssai_hasher.hpp
- \brief
- \author  Stefan Spettel
- \company Openairinterface Software Allianse
- \date 2022
- \email: stefan.spettel@eurecom.fr
- */
-
 #ifndef FILE_SNSSAI_HASHER_SEEN
 #define FILE_SNSSAI_HASHER_SEEN
 

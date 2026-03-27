@@ -2,14 +2,6 @@
  * SPDX-License-Identifier: LicenseRef-CSSL-1.0
  */
 
-/*! \file pcf_nrf.hpp
- \brief
- \author  Rohan Kharade
- \company Openairinterface Software Allianse
- \date 2021
- \email: rohan.kharade@openairinterface.org
- */
-
 #pragma once
 
 #include <boost/atomic.hpp>

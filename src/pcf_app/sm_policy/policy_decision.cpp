@@ -2,14 +2,6 @@
  * SPDX-License-Identifier: LicenseRef-CSSL-1.0
  */
 
-/*! \file policy_decision.cpp
- \brief
- \author  Stefan Spettel
- \company Openairinterface Software Allianse
- \date 2022
- \email: stefan.spettel@eurecom.fr
- */
-
 #include "policy_decision.hpp"
 #include "PolicyControlRequestTrigger_anyOf.h"
 #include "logger.hpp"

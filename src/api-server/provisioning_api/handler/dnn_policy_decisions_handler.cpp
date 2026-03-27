@@ -2,14 +2,6 @@
  * SPDX-License-Identifier: LicenseRef-CSSL-1.0
  */
 
-/*! \file dnn_policy_decisions_handler.cpp
- \brief
- \author  Lukas Rotheneder
- \company phine.tech
- \date 2024
- \email: lukas.rotheneder@phine.tech
- */
-
 #include "dnn_policy_decisions_handler.h"
 #include <nlohmann/json.hpp>
 #include "database_wrapper_abstraction.hpp"

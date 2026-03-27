@@ -2,14 +2,6 @@
  * SPDX-License-Identifier: LicenseRef-CSSL-1.0
  */
 
-/*! \file individual_sm_policy_document_api_handler.cpp
- \brief
- \author  Stefan Spettel
- \company phine.tech
- \date 2023
- \email: stefan.spettel@phine.tech
- */
-
 #include "individual_sm_policy_document_api_handler.h"
 #include "ProblemDetails.h"
 

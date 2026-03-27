@@ -2,14 +2,6 @@
  * SPDX-License-Identifier: LicenseRef-CSSL-1.0
  */
 
-/*! \file pcf_config_types.cpp
- \brief
- \author  Stefan Spettel
- \company phine.tech
- \date 2023
- \email: stefan.spettel@phine.tech
-*/
-
 #include "pcf_config.hpp"
 
 oai::config::pcf::pcf_config::pcf_config(

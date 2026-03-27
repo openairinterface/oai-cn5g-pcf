@@ -2,14 +2,6 @@
  * SPDX-License-Identifier: LicenseRef-CSSL-1.0
  */
 
-/*! \file policy_storage_yaml.cpp
- \brief
- \author  Stefan Spettel
- \company Openairinterface Software Allianse
- \date 2022
- \email: stefan.spettel@eurecom.fr
- */
-
 #include "policy_storage_yaml.hpp"
 #include "logger.hpp"
 #include <string>

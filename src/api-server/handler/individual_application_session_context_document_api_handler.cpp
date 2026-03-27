@@ -2,14 +2,6 @@
  * SPDX-License-Identifier: LicenseRef-CSSL-1.0
  */
 
-/*! \file individual_application_session_context_document_api_handler.cpp
- \brief
- \author  Tariro Mukute
- \company University of Cape Town
- \date 2024
- \email: mkttar001@myuct.ac.za
- */
-
 #include "individual_application_session_context_document_api_handler.h"
 #include "ProblemDetails.h"
 #include "AppSessionContext.h"

@@ -3,14 +3,6 @@
  * SPDX-License-Identifier: LicenseRef-CSSL-1.0
  */
 
-/*! \file sm_policies_collection_api_handler.h
- \brief
- \author  Stefan Spettel
- \company phine.tech
- \date 2023
- \email: stefan.spettel@phine.tech
- */
-
 #pragma once
 
 #include "3gpp_29.500.h"

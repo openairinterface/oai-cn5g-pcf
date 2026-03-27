@@ -2,14 +2,6 @@
  * SPDX-License-Identifier: LicenseRef-CSSL-1.0
  */
 
-/*! \file pcscf_restoration_indication_api_handler.h
- \brief
- \author  Tariro Mukute
- \company University of Cape Town
- \date 2024
- \email: mkttar001@myuct.ac.za
- */
-
 #pragma once
 
 #include "PcscfRestorationRequestData.h"

@@ -2,14 +2,6 @@
  * SPDX-License-Identifier: LicenseRef-CSSL-1.0
  */
 
-/*! \file app_session.hpp
- \brief
- \author  Tariro Mukute
- \company University of Cape Town
- \date 2024
- \email: mkttar001@myuct.ac.za
- */
-
 #ifndef FILE_APP_SESSION_SEEN
 #define FILE_APP_SESSION_SEEN
 

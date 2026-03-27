@@ -2,14 +2,6 @@
  * SPDX-License-Identifier: LicenseRef-CSSL-1.0
  */
 
-/*! \file pcf_event.cpp
- \brief
- \author Tien-Thinh NGUYEN (EURECOM)
- \company
- \date 2022
- \email: contact@openairinterface.org
- */
-
 #include "pcf_event.hpp"
 using namespace oai::pcf::app;
 

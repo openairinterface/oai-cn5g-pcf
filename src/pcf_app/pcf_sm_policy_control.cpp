@@ -2,14 +2,6 @@
  * SPDX-License-Identifier: LicenseRef-CSSL-1.0
  */
 
-/*! \file pcf_sm_policy_control.cpp
- \brief
- \author  Rohan Kharade
- \company Openairinterface Software Allianse
- \date 2021
- \email: rohan.kharade@openairinterface.org
- */
-
 #include "pcf_sm_policy_control.hpp"
 #include "logger.hpp"
 #include "pcf_config.hpp"

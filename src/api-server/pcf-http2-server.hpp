@@ -2,14 +2,6 @@
  * SPDX-License-Identifier: LicenseRef-CSSL-1.0
  */
 
-/*! \file pcf_http2-server.h
- \brief
- \author  Rohan Kharade, Stefan Spettel
- \company Openairinterface Software Allianse
- \date 2022
- \email: rohan.kharade@openairinterface.org
- */
-
 #pragma once
 
 #include "pcf_app.hpp"

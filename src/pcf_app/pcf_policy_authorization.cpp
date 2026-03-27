@@ -2,14 +2,6 @@
  * SPDX-License-Identifier: LicenseRef-CSSL-1.0
  */
 
-/*! \file pcf_policy_authorization.cpp
- \brief
- \author  Tariro Mukute
- \company University of Cape Town
- \date 2024
- \email: mkttar001@myuct.ac.za
- */
-
 #include "pcf_policy_authorization.hpp"
 #include "logger.hpp"
 #include "pcf_config.hpp"

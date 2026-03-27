@@ -2,14 +2,6 @@
  * SPDX-License-Identifier: LicenseRef-CSSL-1.0
  */
 
-/*! \file policy_storage_db.cpp
- \brief
- \author  Lukas Rotheneder
- \company phine.tech
- \date 2024
- \email: lukas.rotheneder@phine.tech
- */
-
 #include "policy_storage_db.hpp"
 #include <string>
 #include <sstream>

@@ -2,14 +2,6 @@
  * SPDX-License-Identifier: LicenseRef-CSSL-1.0
  */
 
-/*! \file supi_policy_decisions_handler.h
- \brief
- \author  Lukas Rotheneder
- \company phine.tech
- \date 2024
- \email: lukas.rotheneder@phine.tech
- */
-
 #pragma once
 
 #include <string>

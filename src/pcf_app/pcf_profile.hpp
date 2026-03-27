@@ -2,14 +2,6 @@
  * SPDX-License-Identifier: LicenseRef-CSSL-1.0
  */
 
-/*! \file pcf_profile.hpp
- \brief
- \author  Tien-Thinh NGUYEN
- \company Eurecom
- \date 2021
- \email: Tien-Thinh.Nguyen@eurecom.fr
- */
-
 #ifndef FILE_PCF_PROFILE_HPP_SEEN
 #define FILE_PCF_PROFILE_HPP_SEEN
 

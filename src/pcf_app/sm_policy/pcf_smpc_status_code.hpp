@@ -2,14 +2,6 @@
  * SPDX-License-Identifier: LicenseRef-CSSL-1.0
  */
 
-/*! \file pcf_sm_policy_control_errors.hpp
- \brief
- \author  Stefan Spettel
- \company Openairinterface Software Allianse
- \date 2022
- \email: stefan.spettel@eurecom.fr
- */
-
 #ifndef FILE_PCF_SMPC_STATUS_CODE_H_SEEN
 #define FILE_PCF_SMPC_STATUS_CODE_H_SEEN
 

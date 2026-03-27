@@ -2,14 +2,6 @@
  * SPDX-License-Identifier: LicenseRef-CSSL-1.0
  */
 
-/*! \file launch.cpp
-\brief
-\author  Stefan Spettel
-\company OpenAirInterface Software Alliance
-\date 2022
-\email: stefan.spettel@eurecom.fr
-*/
-
 #include "nf_launch.hpp"
 
 #include <boost/filesystem.hpp>
