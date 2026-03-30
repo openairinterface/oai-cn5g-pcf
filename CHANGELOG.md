@@ -1,6 +1,15 @@
-# RELEASE NOTES: #
+<!-- SPDX-License-Identifier: CC-BY-4.0 -->
 
-## v2.2.0 -- December 2025 ##
+# RELEASE NOTES:
+
+## v2.2.1 -- March 2026
+
+* Change of license from OAI Public License v1.1 to CSSL v1.0
+* Re-license documentation to the CC-BY-4.0 License
+* Re-license orchestration files (docker compose yaml files, health scripts, openshift build files)
+  and CI-scripts under the MIT License
+
+## v2.2.0 -- December 2025
 
 * Features
   - PCF Provisioning API: Introduced support for provisioning Policy Decisions,
@@ -13,7 +22,7 @@
   - Add support for RHEL 10, update container images to UBI 10
   - Fix build issue in non-containerized environment
 
-## v2.1.0 -- August 2024 ##
+## v2.1.0 -- August 2024
 
 * Features
   - Add possibility to read QoS values from file
@@ -25,7 +34,7 @@
   - HTTP client cpr library refactoring effort
   - Resynch PCF with common source git-submodule and use utils from there
 
-## v2.0.0 -- December 2023 ##
+## v2.0.0 -- December 2023
 
 * Features
   - Support YAML configuration file
@@ -41,7 +50,7 @@
   - Published image on Docker-Hub is using now Ubuntu-22 as base image
     * Ubuntu-18 is no longer supported
 
-## v1.5.1 -- May 2023 ##
+## v1.5.1 -- May 2023
 
 * Add HTTP/2 support
 * Code Refactoring for:
@@ -51,7 +60,7 @@
 * Published image on Docker-Hub is using now Ubuntu-20 as base image
   * We will soon obsolete the build system for Ubuntu18.04
 
-## v1.5.0 -- January 2023 ##
+## v1.5.0 -- January 2023
 
 * Initial release
 * NRF registration
