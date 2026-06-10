@@ -193,11 +193,11 @@ handler_result validate_and_merge_decision(
   }
   current_decision.setPccRules(pccRulesMap);
 
-  // TODO [QOS] Merge QoS-related decision data
-  // Merge QosData entries from request_decision to current_decision
-  // Handle QosChars (QoS Characteristics) for non-standard 5QIs
-  // Merge QosMonDecs (QoS Monitoring Data) entries
-  // Validate QoS parameter consistency across merged rules
+  // TODO [QOS] Merge QoS-related decision data [TS 29.512 §4.2.6.2.3, §5.6.2.4]
+  // Merge QosData entries from request_decision to current_decision [TS 29.512 §5.6.2.8]
+  // Handle QosChars (QoS Characteristics) for non-standard 5QIs [TS 29.512 §5.6.2.16]
+  // Merge QosMonDecs (QoS Monitoring Data) entries [TS 29.512 §5.6.2.40]
+  // Validate QoS parameter consistency across merged rules [TS 23.503 §6.1.3.7]
 
   // Merge Traffic Control Data
   auto trafficControlMap = current_decision.getTraffContDecs();
@@ -229,7 +229,7 @@ handler_result validate_and_merge_decision(
 
   current_decision.setTraffContDecs(trafficControlMap);
 
-  // TODO [QOS] Apply merged QoS data to current_decision
+  // TODO [QOS] Apply merged QoS data to current_decision [TS 29.512 §4.2.6.2.3, §5.6.2.8]
   // if (request_decision.qosDataIsSet()) {
   //   auto qosDataMap = current_decision.getQosData();
   //   for (const auto& [key, value] : request_decision.getQosData()) {
@@ -238,7 +238,7 @@ handler_result validate_and_merge_decision(
   //   current_decision.setQosData(qosDataMap);
   // }
 
-  // TODO [QOS] Apply merged QoS Characteristics to current_decision
+  // TODO [QOS] Apply merged QoS Characteristics to current_decision [TS 29.512 §4.2.6.6.3, §5.6.2.16]
   // if (request_decision.qosCharsIsSet()) {
   //   auto qosCharsMap = current_decision.getQosChars();
   //   for (const auto& [key, value] : request_decision.getQosChars()) {
@@ -247,7 +247,7 @@ handler_result validate_and_merge_decision(
   //   current_decision.setQosChars(qosCharsMap);
   // }
 
-  // TODO [QOS] Apply merged QoS Monitoring Data to current_decision
+  // TODO [QOS] Apply merged QoS Monitoring Data to current_decision [TS 29.512 §4.2.3.25.1, §5.6.2.40]
   // if (request_decision.qosMonDecsIsSet()) {
   //   auto qosMonDecsMap = current_decision.getQosMonDecs();
   //   for (const auto& [key, value] : request_decision.getQosMonDecs()) {
@@ -263,21 +263,21 @@ handler_result authorize_service_info(
     const oai::model::pcf::AppSessionContextReqData& reqData) {
   // TODO: Implement service authorization
 
-  // TODO [QOS] Add QoS authorization checks
+  // TODO [QOS] Add QoS authorization checks [TS 29.514 §4.1.3.1, TS 23.503 §6.1.3.2.3]
   // Validate QoS requirements in MediaComponents against:
-  // - User subscription QoS profile
-  // - Network slice QoS limits
-  // - Current network resource availability
-  // - Service level agreements
+  // - User subscription QoS profile [TS 29.512 §4.2.6.6.1]
+  // - Network slice QoS limits [TS 29.512 §4.2.6.7, TS 23.503 §6.1.4]
+  // - Current network resource availability [TS 23.503 §6.1.3.2.3]
+  // - Service level agreements [TS 23.503 §6.1.3.2.3]
 
   return handler_result{.status = status_code::OK};
 }
 
-// TODO [QOS] Implement QoS handling functions
+// TODO [QOS] Implement QoS handling functions [TS 29.514 §4.2.2.2, TS 29.513 §7.3, TS 29.512 §4.2.6.6]
 // The following functions need to be implemented to handle QoS requirements
 // as specified in 3GPP TS 29.514:
 
-// TODO [QOS] handler_result handle_qos_requirements(
+// TODO [QOS] handler_result handle_qos_requirements( [TS 29.514 §4.2.2.2, TS 29.513 §7.3.3]
 //     const oai::model::pcf::MediaComponent& media_component,
 //     oai::model::pcf::SmPolicyDecision& decision) {
 //   Logger::pcf_app().info("Processing QoS requirements for MediaComponent");
@@ -307,7 +307,7 @@ handler_result authorize_service_info(
 //   return handler_result{.status = status_code::OK};
 // }
 
-// TODO [QOS] handler_result setup_qos_monitoring(
+// TODO [QOS-MON] handler_result setup_qos_monitoring( [TS 29.512 §4.1.4.4.6, TS 29.514 §4.2.2.23]
 //     const oai::model::pcf::MediaComponent& media_component,
 //     oai::model::pcf::SmPolicyDecision& decision) {
 //   Logger::pcf_app().info("Setting up QoS monitoring for MediaComponent");

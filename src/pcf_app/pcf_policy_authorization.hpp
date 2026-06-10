@@ -79,52 +79,52 @@ class pcf_policy_authorization {
   // for Event Handling
   pcf_event& m_event_sub;
 
-  // TODO [QOS-AF] Application Function notification infrastructure
+  // TODO [QOS-SUB] Application Function notification infrastructure [TS 29.514 §4.2.5, TS 29.500 §6.2]
   // Add data structures and methods for AF monitoring and notifications as per 3GPP TS 29.514:
   //
-  // 1. AF NOTIFICATION CLIENT:
+  // 1. AF NOTIFICATION CLIENT [TS 29.500 §5.2.6, TS 29.514 §4.2.5]:
   //    - std::unique_ptr<af_notification_client> m_af_notif_client;
-  //    - HTTP/2 client for sending notifications to Application Functions
-  //    - Support for both secured (HTTPS) and unsecured (HTTP) connections
-  //    - Connection pooling and retry mechanisms for AF endpoints
+  //    - HTTP/2 client for sending notifications to Application Functions [TS 29.500 §5.2.6]
+  //    - Support for both secured (HTTPS) and unsecured (HTTP) connections [TS 33.501 §13.1.0]
+  //    - Connection pooling and retry mechanisms for AF endpoints [TS 29.500 §5.2.8]
   //
-  // 2. SUBSCRIPTION MANAGEMENT:
+  // 2. SUBSCRIPTION MANAGEMENT [TS 29.514 §4.2.6, §5.3.4.1]:
   //    - std::unordered_map<std::string, af_subscription> m_af_subscriptions;
   //    - Maps session_id to AF notification subscription details
   //    - std::unordered_map<std::string, af_endpoint_info> m_af_endpoints;
-  //    - AF endpoint health monitoring and authentication credentials
+  //    - AF endpoint health monitoring and authentication credentials [TS 29.500 §5.2.6]
   //
-  // 3. NOTIFICATION QUEUE SYSTEM:
+  // 3. NOTIFICATION QUEUE SYSTEM [TS 29.500 §6.8]:
   //    - std::queue<af_notification_event> m_notification_queue;
-  //    - std::queue<af_notification_event> m_priority_notification_queue;
-  //    - std::queue<af_notification_event> m_failed_notification_queue;
-  //    - Asynchronous notification processing with priority handling
+  //    - std::queue<af_notification_event> m_priority_notification_queue; [TS 29.500 §6.8.2]
+  //    - std::queue<af_notification_event> m_failed_notification_queue; [TS 29.500 §5.2.8]
+  //    - Asynchronous notification processing with priority handling [TS 29.500 §6.8.5]
   //
-  // 4. MONITORING EVENT HANDLERS:
+  // 4. MONITORING EVENT HANDLERS [TS 29.514 §4.2.5]:
   //    - void handle_qos_flow_update(session_id, qos_flow_info);
   //    - void handle_pdu_session_event(session_id, session_event);
   //    - void handle_monitoring_report(session_id, monitoring_data);
   //    - void handle_policy_decision_update(session_id, policy_changes);
   //
-  // 5. AF NOTIFICATION METHODS:
-  //    - status_code notify_af_qos_status(af_endpoint, qos_notification);
-  //    - status_code notify_af_session_event(af_endpoint, session_notification);
-  //    - status_code notify_af_monitoring_report(af_endpoint, monitoring_report);
-  //    - status_code notify_af_policy_update(af_endpoint, policy_notification);
+  // 5. AF NOTIFICATION METHODS [TS 29.514 §4.2.5]:
+  //    - status_code notify_af_qos_status(af_endpoint, qos_notification); [TS 29.514 §4.2.5.4]
+  //    - status_code notify_af_session_event(af_endpoint, session_notification); [TS 29.514 §4.2.5.22]
+  //    - status_code notify_af_monitoring_report(af_endpoint, monitoring_report); [TS 29.514 §4.2.5.14]
+  //    - status_code notify_af_policy_update(af_endpoint, policy_notification); [TS 29.514 §4.2.5.2]
   //
-  // 6. SUBSCRIPTION LIFECYCLE:
-  //    - status_code register_af_subscription(session_id, af_subscription_info);
+  // 6. SUBSCRIPTION LIFECYCLE [TS 29.514 §4.2.6]:
+  //    - status_code register_af_subscription(session_id, af_subscription_info); [TS 29.514 §4.2.6.2]
   //    - status_code update_af_subscription(session_id, subscription_updates);
-  //    - status_code remove_af_subscription(session_id);
+  //    - status_code remove_af_subscription(session_id); [TS 29.514 §4.2.7.1]
   //    - void cleanup_expired_subscriptions();
   //
-  // TODO [QOS-MON] QoS monitoring infrastructure
+  // TODO [QOS-MON] QoS monitoring infrastructure [TS 29.512 §4.1.4.4.6, TS 23.503 §6.1.3.21]
   // Add comprehensive QoS monitoring framework:
   //
-  // 7. MONITORING INFRASTRUCTURE:
+  // 7. MONITORING INFRASTRUCTURE [TS 29.512 §4.2.3.25, TS 23.503 §6.1.3.21]:
   //    - std::unordered_map<std::string, qos_monitoring_context> m_qos_monitors;
-  //    - Timer-based monitoring report generation for subscribed sessions
-  //    - Threshold-based event triggering for QoS violations and improvements
+  //    - Timer-based monitoring report generation for subscribed sessions [TS 29.512 §5.6.2.40]
+  //    - Threshold-based event triggering for QoS violations and improvements [TS 29.514 §4.2.5.14]
 };
 
 }  // namespace oai::pcf::app

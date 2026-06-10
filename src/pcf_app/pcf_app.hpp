@@ -23,46 +23,46 @@
 
 namespace oai::pcf::app {
 
-// TODO [QOS] PCF QoS Coordination Architecture Overview
+// TODO [QOS] PCF QoS Coordination Architecture Overview [TS 29.513 §5.2.2.2, TS 29.512 §4.2.6]
 // =====================================================
 //
 // This PCF implementation needs comprehensive QoS coordination between two main services:
-// 1. Policy Authorization Service (pcf_policy_authorization) - Handles application QoS requests
-// 2. SM Policy Control Service (pcf_sm_policy_control) - Handles session management QoS policies
+// 1. Policy Authorization Service (pcf_policy_authorization) - Handles application QoS requests [TS 29.514]
+// 2. SM Policy Control Service (pcf_sm_policy_control) - Handles session management QoS policies [TS 29.512]
 //
 // KEY QOS COORDINATION CHALLENGES TO ADDRESS:
 //
-// A. PCC RULE MANAGEMENT:
-//    - Unique PCC rule ID generation across services (prefix-based: "pa-" for Policy Auth, "sm-" for SM)
-//    - Precedence value coordination to avoid conflicts (Policy Auth: 1-100, SM Policy: 101-255)
-//    - Rule lifecycle management and cleanup coordination
+// A. PCC RULE MANAGEMENT [TS 23.503 §6.1.3.7, TS 29.512 §4.1.4.2]:
+//    - Unique PCC rule ID generation across services (prefix-based: "PA-QOS-" for Policy Auth, "SM-" for SM) [TS 29.512 §4.1.4.2.1]
+//    - Precedence value coordination to avoid conflicts (Policy Auth: 1000-1999, SM Policy: 2000-2999) [TS 23.503 §6.3.1]
+//    - Rule lifecycle management and cleanup coordination [TS 29.512 §4.2.6.2.1]
 //
-// B. QOS DATA CONSISTENCY:
-//    - QosData merging between Policy Authorization and SM Policy decisions
-//    - QosCharacteristics coordination for non-standard 5QI values
-//    - QosMonitoringData synchronization across services
+// B. QOS DATA CONSISTENCY [TS 29.512 §4.2.6.6]:
+//    - QosData merging between Policy Authorization and SM Policy decisions [TS 29.512 §4.2.6.6.2, §5.6.2.8]
+//    - QosCharacteristics coordination for non-standard 5QI values [TS 29.512 §4.2.6.6.3, §5.6.2.16]
+//    - QosMonitoringData synchronization across services [TS 29.512 §4.2.3.25, §5.6.2.40]
 //
-// C. RESOURCE MANAGEMENT:
-//    - Bandwidth allocation tracking across both services
-//    - QoS flow identifier allocation and management
-//    - Priority level and ARP coordination
+// C. RESOURCE MANAGEMENT [TS 29.512 §4.2.6.8, TS 23.503 §6.1.4]:
+//    - Bandwidth allocation tracking across both services [TS 29.512 §4.2.6.8.2]
+//    - QoS flow identifier allocation and management [TS 23.501 §5.7.1.1]
+//    - Priority level and ARP coordination [TS 23.501 §5.7.3.3]
 //
-// D. NOTIFICATION COORDINATION:
-//    - SMF notification consolidation for combined policy updates
-//    - Event-driven coordination via pcf_event system
-//    - Error handling and rollback mechanisms for failed updates
+// D. NOTIFICATION COORDINATION [TS 29.512 §4.2.3.2, TS 29.513 §5.2.2.3]:
+//    - SMF notification consolidation for combined policy updates [TS 29.512 §4.2.3.2]
+//    - Event-driven coordination via pcf_event system (boost::signals2)
+//    - Error handling and rollback mechanisms for failed updates [TS 29.500 §5.2.8]
 //
-// E. VALIDATION AND AUTHORIZATION:
-//    - Cross-service QoS requirement validation
-//    - Subscription and slice policy compliance checking
-//    - Resource availability verification
+// E. VALIDATION AND AUTHORIZATION [TS 29.514 §4.1.3.1, TS 23.503 §6.1.3.2.3]:
+//    - Cross-service QoS requirement validation [TS 29.513 §7.3.3]
+//    - Subscription and slice policy compliance checking [TS 29.512 §4.2.6.6.1, §4.2.6.7]
+//    - Resource availability verification [TS 23.503 §6.1.3.2.3]
 //
 // IMPLEMENTATION APPROACH:
 // - Use pcf_event system for real-time coordination between services
 // - Implement shared QoS coordination functions in both service classes
-// - Create unified PCC rule and QoS data management framework
-// - Establish clear precedence and ID allocation schemes
-// - Design comprehensive validation and conflict resolution mechanisms
+// - Create unified PCC rule and QoS data management framework [TS 29.512 §4.2.6.2]
+// - Establish clear precedence and ID allocation schemes [TS 23.503 §6.3.1]
+// - Design comprehensive validation and conflict resolution mechanisms [TS 23.503 §6.1.3.7]
 
 class pcf_app {
  public:
