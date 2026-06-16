@@ -277,16 +277,13 @@ add_executable(pcf
   )
 
 ## Common modules
-include(${BUILD_TOP_DIR}/pcf/used_common_files.cmake)
 include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/http/http.cmake)
 include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/logger/logger.cmake)
 include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/config/config.cmake)
 include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/utils/utils.cmake)
-include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/model/pcf/pcf_model.cmake)
-include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/model/common_model/common_model.cmake)
+include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/model/pcf_model.cmake)
 include_directories(${SRC_TOP_DIR}/${MOUNTED_COMMON}/utils)
-include_directories(${SRC_TOP_DIR}/${MOUNTED_COMMON}/model/pcf)
-include_directories(${SRC_TOP_DIR}/${MOUNTED_COMMON}/model/common_model)
+include_directories(${SRC_TOP_DIR}/${MOUNTED_COMMON}/model)
 
 IF(STATIC_LINKING)
     SET(CMAKE_EXE_LINKER_FLAGS "-static")

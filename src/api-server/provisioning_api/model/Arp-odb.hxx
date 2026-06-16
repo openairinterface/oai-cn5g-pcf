@@ -48,9 +48,9 @@ namespace odb {
 // Arp
 //
 template<>
-class access::composite_value_traits< ::oai::model::common::Arp, id_mysql> {
+class access::composite_value_traits< ::oai::_3gpp::model::Arp, id_mysql> {
  public:
-  typedef ::oai::model::common::Arp value_type;
+  typedef ::oai::_3gpp::model::Arp value_type;
 
   struct image_type {
     // m_PriorityLevel
@@ -61,13 +61,13 @@ class access::composite_value_traits< ::oai::model::common::Arp, id_mysql> {
     // m_PreemptCap
     //
     composite_value_traits<
-        ::oai::model::common::PreemptionCapability, id_mysql>::image_type
+        ::oai::_3gpp::model::PreemptionCapability, id_mysql>::image_type
         m_PreemptCap_value;
 
     // m_PreemptVuln
     //
     composite_value_traits<
-        ::oai::model::common::PreemptionVulnerability, id_mysql>::image_type
+        ::oai::_3gpp::model::PreemptionVulnerability, id_mysql>::image_type
         m_PreemptVuln_value;
   };
 

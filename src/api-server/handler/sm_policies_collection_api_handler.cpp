@@ -14,8 +14,8 @@
 
 namespace oai::pcf::api {
 
-using namespace oai::model::pcf;
-using namespace oai::model::common;
+using namespace oai::_3gpp::model;
+using namespace oai::_3gpp::model;
 using namespace oai::pcf::app::sm_policy;
 using namespace oai::common::sbi;
 

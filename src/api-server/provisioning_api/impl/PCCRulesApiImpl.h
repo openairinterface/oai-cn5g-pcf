@@ -34,7 +34,7 @@
 
 namespace oai::pcf::provisioning::api {
 
-using namespace oai::model::pcf;
+using namespace oai::_3gpp::model;
 
 class PCCRulesApiImpl : public oai::pcf::provisioning::api::PCCRulesApi {
  public:

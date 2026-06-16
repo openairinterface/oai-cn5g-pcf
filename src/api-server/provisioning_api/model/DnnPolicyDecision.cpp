@@ -27,7 +27,7 @@ DnnPolicyDecision::DnnPolicyDecision() {
 void DnnPolicyDecision::validate() const {
   std::stringstream msg;
   if (!validate(msg)) {
-    throw oai::model::common::helpers::ValidationException(msg.str());
+    throw oai::_3gpp::model::helpers::ValidationException(msg.str());
   }
 }
 

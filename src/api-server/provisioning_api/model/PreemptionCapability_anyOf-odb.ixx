@@ -11,7 +11,7 @@ namespace odb {
 //
 
 inline bool access::composite_value_traits<
-    ::oai::model::common::PreemptionCapability_anyOf,
+    ::oai::_3gpp::model::PreemptionCapability_anyOf,
     id_mysql>::get_null(const image_type& i) {
   bool r(true);
   r = r && i.m_value_null;
@@ -19,7 +19,7 @@ inline bool access::composite_value_traits<
 }
 
 inline void access::composite_value_traits<
-    ::oai::model::common::PreemptionCapability_anyOf,
+    ::oai::_3gpp::model::PreemptionCapability_anyOf,
     id_mysql>::set_null(image_type& i, mysql::statement_kind sk) {
   ODB_POTENTIALLY_UNUSED(sk);
 

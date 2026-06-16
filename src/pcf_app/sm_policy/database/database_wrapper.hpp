@@ -140,7 +140,7 @@ class database_wrapper : public database_wrapper_abstraction {
   }
 
   oai::pcf::provisioning::model::SlicePolicyDecision getSlicePolicyDecision(
-      const oai::model::common::Snssai& slice) override {
+      const oai::_3gpp::model::Snssai& slice) override {
     Logger::pcf_app().debug("Get slicePolicyDecision by slice");
     auto derived = static_cast<DerivedT*>(this);
     return derived->getSlicePolicyDecision(slice);
@@ -155,7 +155,7 @@ class database_wrapper : public database_wrapper_abstraction {
   }
 
   bool deleteSlicePolicyDecision(
-      const oai::model::common::Snssai& slice) override {
+      const oai::_3gpp::model::Snssai& slice) override {
     Logger::pcf_app().debug("Delete slicePolicyDecision by slice");
     auto derived = static_cast<DerivedT*>(this);
     return derived->deleteSlicePolicyDecision(slice);
@@ -168,19 +168,19 @@ class database_wrapper : public database_wrapper_abstraction {
     return derived->getAllSlicePolicyDecisions();
   }
 
-  bool createQosData(const oai::model::pcf::QosData& qosData) override {
+  bool createQosData(const oai::_3gpp::model::QosData& qosData) override {
     Logger::pcf_app().debug("Create qosData");
     auto derived = static_cast<DerivedT*>(this);
     return derived->createQosData(qosData);
   }
 
-  oai::model::pcf::QosData getQosData(const std::string& qosId) override {
+  oai::_3gpp::model::QosData getQosData(const std::string& qosId) override {
     Logger::pcf_app().debug("Get qosData by qosId");
     auto derived = static_cast<DerivedT*>(this);
     return derived->getQosData(qosId);
   }
 
-  bool updateQosData(const oai::model::pcf::QosData& qosData) override {
+  bool updateQosData(const oai::_3gpp::model::QosData& qosData) override {
     Logger::pcf_app().debug("Update qosData");
     auto derived = static_cast<DerivedT*>(this);
     return derived->updateQosData(qosData);
@@ -192,28 +192,28 @@ class database_wrapper : public database_wrapper_abstraction {
     return derived->deleteQosData(qosId);
   }
 
-  std::vector<oai::model::pcf::QosData> getAllQosData() override {
+  std::vector<oai::_3gpp::model::QosData> getAllQosData() override {
     Logger::pcf_app().debug("Get all qosData");
     auto derived = static_cast<DerivedT*>(this);
     return derived->getAllQosData();
   }
 
-  bool createTrafficControlData(
-      const oai::model::pcf::TrafficControlData& trafficControlData) override {
+  bool createTrafficControlData(const oai::_3gpp::model::TrafficControlData&
+                                    trafficControlData) override {
     Logger::pcf_app().debug("Create TrafficControlData");
     auto derived = static_cast<DerivedT*>(this);
     return derived->createTrafficControlData(trafficControlData);
   }
 
-  oai::model::pcf::TrafficControlData getTrafficControlData(
+  oai::_3gpp::model::TrafficControlData getTrafficControlData(
       const std::string& tcId) override {
     Logger::pcf_app().debug("Get TrafficControlData by tcId");
     auto derived = static_cast<DerivedT*>(this);
     return derived->getTrafficControlData(tcId);
   }
 
-  bool updateTrafficControlData(
-      const oai::model::pcf::TrafficControlData& trafficControlData) override {
+  bool updateTrafficControlData(const oai::_3gpp::model::TrafficControlData&
+                                    trafficControlData) override {
     Logger::pcf_app().debug("Update trafficControlData");
     auto derived = static_cast<DerivedT*>(this);
     return derived->updateTrafficControlData(trafficControlData);
@@ -225,26 +225,26 @@ class database_wrapper : public database_wrapper_abstraction {
     return derived->deleteTrafficControlData(tcId);
   }
 
-  std::vector<oai::model::pcf::TrafficControlData> getAllTrafficControlData()
+  std::vector<oai::_3gpp::model::TrafficControlData> getAllTrafficControlData()
       override {
     Logger::pcf_app().debug("Get all trafficControlData");
     auto derived = static_cast<DerivedT*>(this);
     return derived->getAllTrafficControlData();
   }
 
-  bool createPccRule(const oai::model::pcf::PccRule& pccRule) override {
+  bool createPccRule(const oai::_3gpp::model::PccRule& pccRule) override {
     Logger::pcf_app().debug("Create PccRule");
     auto derived = static_cast<DerivedT*>(this);
     return derived->createPccRule(pccRule);
   }
 
-  oai::model::pcf::PccRule getPccRule(const std::string& pccRuleId) override {
+  oai::_3gpp::model::PccRule getPccRule(const std::string& pccRuleId) override {
     Logger::pcf_app().debug("Get PccRule by pccRuleId");
     auto derived = static_cast<DerivedT*>(this);
     return derived->getPccRule(pccRuleId);
   }
 
-  bool updatePccRule(const oai::model::pcf::PccRule& pccRule) override {
+  bool updatePccRule(const oai::_3gpp::model::PccRule& pccRule) override {
     Logger::pcf_app().debug("Update pccRule");
     auto derived = static_cast<DerivedT*>(this);
     return derived->updatePccRule(pccRule);
@@ -256,13 +256,13 @@ class database_wrapper : public database_wrapper_abstraction {
     return derived->deletePccRule(pccRuleId);
   }
 
-  std::vector<oai::model::pcf::PccRule> getAllPccRules() override {
+  std::vector<oai::_3gpp::model::PccRule> getAllPccRules() override {
     Logger::pcf_app().debug("Get all pccRules");
     auto derived = static_cast<DerivedT*>(this);
     return derived->getAllPccRules();
   }
 
-  virtual oai::model::pcf::SmPolicyDecision getSmPolicyDecision(
+  virtual oai::_3gpp::model::SmPolicyDecision getSmPolicyDecision(
       const std::vector<std::string>& pccRuleIds) override {
     Logger::pcf_app().debug("get SmPolicyDecision");
     auto derived = static_cast<DerivedT*>(this);

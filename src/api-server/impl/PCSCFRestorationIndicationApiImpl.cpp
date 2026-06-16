@@ -15,7 +15,7 @@
 
 namespace oai::pcf::api {
 
-using namespace oai::model::pcf;
+using namespace oai::_3gpp::model;
 
 PCSCFRestorationIndicationApiImpl::PCSCFRestorationIndicationApiImpl(
     const std::shared_ptr<Pistache::Rest::Router>& rtr,

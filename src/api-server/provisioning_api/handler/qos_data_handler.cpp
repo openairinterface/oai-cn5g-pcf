@@ -33,7 +33,7 @@ oai::pcf::api::api_response qos_data_handler::qos_data_qos_id_get(
 }
 
 oai::pcf::api::api_response qos_data_handler::qos_data_qos_id_put(
-    const std::string& qosId, const oai::model::pcf::QosData& qosData) {
+    const std::string& qosId, const oai::_3gpp::model::QosData& qosData) {
   if (qosId != qosData.getQosId()) {
     api_response response;
     response.status_code = http_status_code::BAD_REQUEST;
@@ -49,7 +49,7 @@ oai::pcf::api::api_response qos_data_handler::qos_data_qos_id_put(
 }
 
 oai::pcf::api::api_response qos_data_handler::qos_data_post(
-    const oai::model::pcf::QosData& qosData) {
+    const oai::_3gpp::model::QosData& qosData) {
   return handle_request_with_error_handling([&]() -> bool {
     nlohmann::json json_data = qosData;
     Logger::pcf_db().info("Creating QosData:  %s", json_data.dump());

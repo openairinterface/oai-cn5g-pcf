@@ -47,7 +47,7 @@ class pcf_policy_authorization {
    * @return policy_auth::status_code
    */
   policy_auth::status_code post_app_sessions_handler(
-      const oai::model::pcf::AppSessionContext& context,
+      const oai::_3gpp::model::AppSessionContext& context,
       std::string& app_session_id, std::string& problem_details);
 
   /**
@@ -63,9 +63,9 @@ class pcf_policy_authorization {
    */
   policy_auth::status_code mod_app_session_handler(
       const std::string& app_session_id,
-      const oai::model::pcf::AppSessionContextUpdateDataPatch&
+      const oai::_3gpp::model::AppSessionContextUpdateDataPatch&
           app_session_context_update_data_patch,
-      const oai::model::pcf::AppSessionContext& context,
+      const oai::_3gpp::model::AppSessionContext& context,
       std::string& problem_details);
 
  private:

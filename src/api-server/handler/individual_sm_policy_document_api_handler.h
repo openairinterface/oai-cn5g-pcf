@@ -27,7 +27,7 @@ class individual_sm_policy_document_api_handler {
    */
   api_response delete_sm_policy(
       const std::string& sm_policy_id,
-      const oai::model::pcf::SmPolicyDeleteData& sm_policy_delete_data);
+      const oai::_3gpp::model::SmPolicyDeleteData& sm_policy_delete_data);
 
   /**
    * Get SM Policy by ID
@@ -44,7 +44,7 @@ class individual_sm_policy_document_api_handler {
    */
   api_response update_sm_policy(
       const std::string& sm_policy_id,
-      const oai::model::pcf::SmPolicyUpdateContextData&
+      const oai::_3gpp::model::SmPolicyUpdateContextData&
           smPolicyUpdateContextData);
 
  private:

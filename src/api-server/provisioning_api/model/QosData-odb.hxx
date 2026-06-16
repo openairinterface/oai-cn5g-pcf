@@ -40,15 +40,15 @@ namespace odb {
 // QosData
 //
 template<>
-struct class_traits< ::oai::model::pcf::QosData> {
+struct class_traits< ::oai::_3gpp::model::QosData> {
   static const class_kind kind = class_object;
 };
 
 template<>
-class access::object_traits< ::oai::model::pcf::QosData> {
+class access::object_traits< ::oai::_3gpp::model::QosData> {
  public:
-  typedef ::oai::model::pcf::QosData object_type;
-  typedef ::oai::model::pcf::QosData* pointer_type;
+  typedef ::oai::_3gpp::model::QosData object_type;
+  typedef ::oai::_3gpp::model::QosData* pointer_type;
   typedef odb::pointer_traits<pointer_type> pointer_traits;
 
   static const bool polymorphic = false;
@@ -83,7 +83,7 @@ namespace odb {
 // QosData
 //
 template<typename A>
-struct query_columns< ::oai::model::pcf::QosData, id_mysql, A> {
+struct query_columns< ::oai::_3gpp::model::QosData, id_mysql, A> {
   // QosId
   //
   typedef mysql::query_column<
@@ -206,7 +206,7 @@ struct query_columns< ::oai::model::pcf::QosData, id_mysql, A> {
         //
         typedef mysql::query_column<
             mysql::value_traits<
-                ::oai::model::common::PreemptionCapability_anyOf::
+                ::oai::_3gpp::model::PreemptionCapability_anyOf::
                     ePreemptionCapability_anyOf,
                 mysql::id_enum>::query_type,
             mysql::id_enum>
@@ -234,7 +234,7 @@ struct query_columns< ::oai::model::pcf::QosData, id_mysql, A> {
         //
         typedef mysql::query_column<
             mysql::value_traits<
-                ::oai::model::common::PreemptionVulnerability_anyOf::
+                ::oai::_3gpp::model::PreemptionVulnerability_anyOf::
                     ePreemptionVulnerability_anyOf,
                 mysql::id_enum>::query_type,
             mysql::id_enum>
@@ -479,284 +479,284 @@ struct query_columns< ::oai::model::pcf::QosData, id_mysql, A> {
 };
 
 template<typename A>
-const typename query_columns< ::oai::model::pcf::QosData, id_mysql, A>::
-    QosId_type_ query_columns< ::oai::model::pcf::QosData, id_mysql, A>::QosId(
+const typename query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::
+    QosId_type_ query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::QosId(
         A::table_name, "`QosId`", 0);
 
 template<typename A>
-const typename query_columns< ::oai::model::pcf::QosData, id_mysql, A>::
-    r_5qi_type_ query_columns< ::oai::model::pcf::QosData, id_mysql, A>::r_5qi(
+const typename query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::
+    r_5qi_type_ query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::r_5qi(
         A::table_name, "`r_5qi`", 0);
 
 template<typename A>
 const typename query_columns<
-    ::oai::model::pcf::QosData, id_mysql, A>::r_5qiIsSet_type_
-    query_columns< ::oai::model::pcf::QosData, id_mysql, A>::r_5qiIsSet(
+    ::oai::_3gpp::model::QosData, id_mysql, A>::r_5qiIsSet_type_
+    query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::r_5qiIsSet(
         A::table_name, "`r_5qiIsSet`", 0);
 
 template<typename A>
 const typename query_columns<
-    ::oai::model::pcf::QosData, id_mysql, A>::MaxbrUl_type_
-    query_columns< ::oai::model::pcf::QosData, id_mysql, A>::MaxbrUl(
+    ::oai::_3gpp::model::QosData, id_mysql, A>::MaxbrUl_type_
+    query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::MaxbrUl(
         A::table_name, "`MaxbrUl`", 0);
 
 template<typename A>
 const typename query_columns<
-    ::oai::model::pcf::QosData, id_mysql, A>::MaxbrUlIsSet_type_
-    query_columns< ::oai::model::pcf::QosData, id_mysql, A>::MaxbrUlIsSet(
+    ::oai::_3gpp::model::QosData, id_mysql, A>::MaxbrUlIsSet_type_
+    query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::MaxbrUlIsSet(
         A::table_name, "`MaxbrUlIsSet`", 0);
 
 template<typename A>
 const typename query_columns<
-    ::oai::model::pcf::QosData, id_mysql, A>::MaxbrDl_type_
-    query_columns< ::oai::model::pcf::QosData, id_mysql, A>::MaxbrDl(
+    ::oai::_3gpp::model::QosData, id_mysql, A>::MaxbrDl_type_
+    query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::MaxbrDl(
         A::table_name, "`MaxbrDl`", 0);
 
 template<typename A>
 const typename query_columns<
-    ::oai::model::pcf::QosData, id_mysql, A>::MaxbrDlIsSet_type_
-    query_columns< ::oai::model::pcf::QosData, id_mysql, A>::MaxbrDlIsSet(
+    ::oai::_3gpp::model::QosData, id_mysql, A>::MaxbrDlIsSet_type_
+    query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::MaxbrDlIsSet(
         A::table_name, "`MaxbrDlIsSet`", 0);
 
 template<typename A>
-const typename query_columns< ::oai::model::pcf::QosData, id_mysql, A>::
-    GbrUl_type_ query_columns< ::oai::model::pcf::QosData, id_mysql, A>::GbrUl(
+const typename query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::
+    GbrUl_type_ query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::GbrUl(
         A::table_name, "`GbrUl`", 0);
 
 template<typename A>
 const typename query_columns<
-    ::oai::model::pcf::QosData, id_mysql, A>::GbrUlIsSet_type_
-    query_columns< ::oai::model::pcf::QosData, id_mysql, A>::GbrUlIsSet(
+    ::oai::_3gpp::model::QosData, id_mysql, A>::GbrUlIsSet_type_
+    query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::GbrUlIsSet(
         A::table_name, "`GbrUlIsSet`", 0);
 
 template<typename A>
-const typename query_columns< ::oai::model::pcf::QosData, id_mysql, A>::
-    GbrDl_type_ query_columns< ::oai::model::pcf::QosData, id_mysql, A>::GbrDl(
+const typename query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::
+    GbrDl_type_ query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::GbrDl(
         A::table_name, "`GbrDl`", 0);
 
 template<typename A>
 const typename query_columns<
-    ::oai::model::pcf::QosData, id_mysql, A>::GbrDlIsSet_type_
-    query_columns< ::oai::model::pcf::QosData, id_mysql, A>::GbrDlIsSet(
+    ::oai::_3gpp::model::QosData, id_mysql, A>::GbrDlIsSet_type_
+    query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::GbrDlIsSet(
         A::table_name, "`GbrDlIsSet`", 0);
 
 template<typename A>
 const typename query_columns<
-    ::oai::model::pcf::QosData, id_mysql, A>::Arp_class_::PriorityLevel_type_
-    query_columns< ::oai::model::pcf::QosData, id_mysql, A>::Arp_class_::
+    ::oai::_3gpp::model::QosData, id_mysql, A>::Arp_class_::PriorityLevel_type_
+    query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::Arp_class_::
         PriorityLevel(A::table_name, "`Arp_PriorityLevel`", 0);
 
 template<typename A>
-const typename query_columns< ::oai::model::pcf::QosData, id_mysql, A>::
+const typename query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::
     Arp_class_::PreemptCap_class_1_::value_class_2_::value_type_
-        query_columns< ::oai::model::pcf::QosData, id_mysql, A>::Arp_class_::
+        query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::Arp_class_::
             PreemptCap_class_1_::value_class_2_::value(
                 A::table_name, "`Arp_PreemptCap_value_value`", 0);
 
 template<typename A>
-const typename query_columns< ::oai::model::pcf::QosData, id_mysql, A>::
+const typename query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::
     Arp_class_::PreemptCap_class_1_::value_class_2_ query_columns<
-        ::oai::model::pcf::QosData, id_mysql,
+        ::oai::_3gpp::model::QosData, id_mysql,
         A>::Arp_class_::PreemptCap_class_1_::value;
 
 template<typename A>
-const typename query_columns< ::oai::model::pcf::QosData, id_mysql, A>::
+const typename query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::
     Arp_class_::PreemptCap_class_1_ query_columns<
-        ::oai::model::pcf::QosData, id_mysql, A>::Arp_class_::PreemptCap;
+        ::oai::_3gpp::model::QosData, id_mysql, A>::Arp_class_::PreemptCap;
 
 template<typename A>
-const typename query_columns< ::oai::model::pcf::QosData, id_mysql, A>::
+const typename query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::
     Arp_class_::PreemptVuln_class_1_::value_class_2_::value_type_
-        query_columns< ::oai::model::pcf::QosData, id_mysql, A>::Arp_class_::
+        query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::Arp_class_::
             PreemptVuln_class_1_::value_class_2_::value(
                 A::table_name, "`Arp_PreemptVuln_value_value`", 0);
 
 template<typename A>
-const typename query_columns< ::oai::model::pcf::QosData, id_mysql, A>::
+const typename query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::
     Arp_class_::PreemptVuln_class_1_::value_class_2_ query_columns<
-        ::oai::model::pcf::QosData, id_mysql,
+        ::oai::_3gpp::model::QosData, id_mysql,
         A>::Arp_class_::PreemptVuln_class_1_::value;
 
 template<typename A>
-const typename query_columns< ::oai::model::pcf::QosData, id_mysql, A>::
+const typename query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::
     Arp_class_::PreemptVuln_class_1_ query_columns<
-        ::oai::model::pcf::QosData, id_mysql, A>::Arp_class_::PreemptVuln;
+        ::oai::_3gpp::model::QosData, id_mysql, A>::Arp_class_::PreemptVuln;
 
 template<typename A>
-const typename query_columns< ::oai::model::pcf::QosData, id_mysql, A>::
-    Arp_class_ query_columns< ::oai::model::pcf::QosData, id_mysql, A>::Arp;
+const typename query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::
+    Arp_class_ query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::Arp;
 
 template<typename A>
 const typename query_columns<
-    ::oai::model::pcf::QosData, id_mysql, A>::ArpIsSet_type_
-    query_columns< ::oai::model::pcf::QosData, id_mysql, A>::ArpIsSet(
+    ::oai::_3gpp::model::QosData, id_mysql, A>::ArpIsSet_type_
+    query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::ArpIsSet(
         A::table_name, "`ArpIsSet`", 0);
 
 template<typename A>
-const typename query_columns< ::oai::model::pcf::QosData, id_mysql, A>::
-    Qnc_type_ query_columns< ::oai::model::pcf::QosData, id_mysql, A>::Qnc(
+const typename query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::
+    Qnc_type_ query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::Qnc(
         A::table_name, "`Qnc`", 0);
 
 template<typename A>
 const typename query_columns<
-    ::oai::model::pcf::QosData, id_mysql, A>::QncIsSet_type_
-    query_columns< ::oai::model::pcf::QosData, id_mysql, A>::QncIsSet(
+    ::oai::_3gpp::model::QosData, id_mysql, A>::QncIsSet_type_
+    query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::QncIsSet(
         A::table_name, "`QncIsSet`", 0);
 
 template<typename A>
 const typename query_columns<
-    ::oai::model::pcf::QosData, id_mysql, A>::PriorityLevel_type_
-    query_columns< ::oai::model::pcf::QosData, id_mysql, A>::PriorityLevel(
+    ::oai::_3gpp::model::QosData, id_mysql, A>::PriorityLevel_type_
+    query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::PriorityLevel(
         A::table_name, "`PriorityLevel`", 0);
 
 template<typename A>
 const typename query_columns<
-    ::oai::model::pcf::QosData, id_mysql, A>::PriorityLevelIsSet_type_
-    query_columns< ::oai::model::pcf::QosData, id_mysql, A>::PriorityLevelIsSet(
+    ::oai::_3gpp::model::QosData, id_mysql, A>::PriorityLevelIsSet_type_
+    query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::PriorityLevelIsSet(
         A::table_name, "`PriorityLevelIsSet`", 0);
 
 template<typename A>
 const typename query_columns<
-    ::oai::model::pcf::QosData, id_mysql, A>::AverWindow_type_
-    query_columns< ::oai::model::pcf::QosData, id_mysql, A>::AverWindow(
+    ::oai::_3gpp::model::QosData, id_mysql, A>::AverWindow_type_
+    query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::AverWindow(
         A::table_name, "`AverWindow`", 0);
 
 template<typename A>
 const typename query_columns<
-    ::oai::model::pcf::QosData, id_mysql, A>::AverWindowIsSet_type_
-    query_columns< ::oai::model::pcf::QosData, id_mysql, A>::AverWindowIsSet(
+    ::oai::_3gpp::model::QosData, id_mysql, A>::AverWindowIsSet_type_
+    query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::AverWindowIsSet(
         A::table_name, "`AverWindowIsSet`", 0);
 
 template<typename A>
 const typename query_columns<
-    ::oai::model::pcf::QosData, id_mysql, A>::MaxDataBurstVol_type_
-    query_columns< ::oai::model::pcf::QosData, id_mysql, A>::MaxDataBurstVol(
+    ::oai::_3gpp::model::QosData, id_mysql, A>::MaxDataBurstVol_type_
+    query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::MaxDataBurstVol(
         A::table_name, "`MaxDataBurstVol`", 0);
 
 template<typename A>
 const typename query_columns<
-    ::oai::model::pcf::QosData, id_mysql, A>::MaxDataBurstVolIsSet_type_
-    query_columns< ::oai::model::pcf::QosData, id_mysql, A>::
+    ::oai::_3gpp::model::QosData, id_mysql, A>::MaxDataBurstVolIsSet_type_
+    query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::
         MaxDataBurstVolIsSet(A::table_name, "`MaxDataBurstVolIsSet`", 0);
 
 template<typename A>
 const typename query_columns<
-    ::oai::model::pcf::QosData, id_mysql, A>::ReflectiveQos_type_
-    query_columns< ::oai::model::pcf::QosData, id_mysql, A>::ReflectiveQos(
+    ::oai::_3gpp::model::QosData, id_mysql, A>::ReflectiveQos_type_
+    query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::ReflectiveQos(
         A::table_name, "`ReflectiveQos`", 0);
 
 template<typename A>
 const typename query_columns<
-    ::oai::model::pcf::QosData, id_mysql, A>::ReflectiveQosIsSet_type_
-    query_columns< ::oai::model::pcf::QosData, id_mysql, A>::ReflectiveQosIsSet(
+    ::oai::_3gpp::model::QosData, id_mysql, A>::ReflectiveQosIsSet_type_
+    query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::ReflectiveQosIsSet(
         A::table_name, "`ReflectiveQosIsSet`", 0);
 
 template<typename A>
 const typename query_columns<
-    ::oai::model::pcf::QosData, id_mysql, A>::SharingKeyDl_type_
-    query_columns< ::oai::model::pcf::QosData, id_mysql, A>::SharingKeyDl(
+    ::oai::_3gpp::model::QosData, id_mysql, A>::SharingKeyDl_type_
+    query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::SharingKeyDl(
         A::table_name, "`SharingKeyDl`", 0);
 
 template<typename A>
 const typename query_columns<
-    ::oai::model::pcf::QosData, id_mysql, A>::SharingKeyDlIsSet_type_
-    query_columns< ::oai::model::pcf::QosData, id_mysql, A>::SharingKeyDlIsSet(
+    ::oai::_3gpp::model::QosData, id_mysql, A>::SharingKeyDlIsSet_type_
+    query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::SharingKeyDlIsSet(
         A::table_name, "`SharingKeyDlIsSet`", 0);
 
 template<typename A>
 const typename query_columns<
-    ::oai::model::pcf::QosData, id_mysql, A>::SharingKeyUl_type_
-    query_columns< ::oai::model::pcf::QosData, id_mysql, A>::SharingKeyUl(
+    ::oai::_3gpp::model::QosData, id_mysql, A>::SharingKeyUl_type_
+    query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::SharingKeyUl(
         A::table_name, "`SharingKeyUl`", 0);
 
 template<typename A>
 const typename query_columns<
-    ::oai::model::pcf::QosData, id_mysql, A>::SharingKeyUlIsSet_type_
-    query_columns< ::oai::model::pcf::QosData, id_mysql, A>::SharingKeyUlIsSet(
+    ::oai::_3gpp::model::QosData, id_mysql, A>::SharingKeyUlIsSet_type_
+    query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::SharingKeyUlIsSet(
         A::table_name, "`SharingKeyUlIsSet`", 0);
 
 template<typename A>
 const typename query_columns<
-    ::oai::model::pcf::QosData, id_mysql, A>::MaxPacketLossRateDl_type_
-    query_columns< ::oai::model::pcf::QosData, id_mysql, A>::
+    ::oai::_3gpp::model::QosData, id_mysql, A>::MaxPacketLossRateDl_type_
+    query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::
         MaxPacketLossRateDl(A::table_name, "`MaxPacketLossRateDl`", 0);
 
 template<typename A>
 const typename query_columns<
-    ::oai::model::pcf::QosData, id_mysql, A>::MaxPacketLossRateDlIsSet_type_
-    query_columns< ::oai::model::pcf::QosData, id_mysql, A>::
+    ::oai::_3gpp::model::QosData, id_mysql, A>::MaxPacketLossRateDlIsSet_type_
+    query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::
         MaxPacketLossRateDlIsSet(
             A::table_name, "`MaxPacketLossRateDlIsSet`", 0);
 
 template<typename A>
 const typename query_columns<
-    ::oai::model::pcf::QosData, id_mysql, A>::MaxPacketLossRateUl_type_
-    query_columns< ::oai::model::pcf::QosData, id_mysql, A>::
+    ::oai::_3gpp::model::QosData, id_mysql, A>::MaxPacketLossRateUl_type_
+    query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::
         MaxPacketLossRateUl(A::table_name, "`MaxPacketLossRateUl`", 0);
 
 template<typename A>
 const typename query_columns<
-    ::oai::model::pcf::QosData, id_mysql, A>::MaxPacketLossRateUlIsSet_type_
-    query_columns< ::oai::model::pcf::QosData, id_mysql, A>::
+    ::oai::_3gpp::model::QosData, id_mysql, A>::MaxPacketLossRateUlIsSet_type_
+    query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::
         MaxPacketLossRateUlIsSet(
             A::table_name, "`MaxPacketLossRateUlIsSet`", 0);
 
 template<typename A>
 const typename query_columns<
-    ::oai::model::pcf::QosData, id_mysql, A>::DefQosFlowIndication_type_
-    query_columns< ::oai::model::pcf::QosData, id_mysql, A>::
+    ::oai::_3gpp::model::QosData, id_mysql, A>::DefQosFlowIndication_type_
+    query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::
         DefQosFlowIndication(A::table_name, "`DefQosFlowIndication`", 0);
 
 template<typename A>
 const typename query_columns<
-    ::oai::model::pcf::QosData, id_mysql, A>::DefQosFlowIndicationIsSet_type_
-    query_columns< ::oai::model::pcf::QosData, id_mysql, A>::
+    ::oai::_3gpp::model::QosData, id_mysql, A>::DefQosFlowIndicationIsSet_type_
+    query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::
         DefQosFlowIndicationIsSet(
             A::table_name, "`DefQosFlowIndicationIsSet`", 0);
 
 template<typename A>
 const typename query_columns<
-    ::oai::model::pcf::QosData, id_mysql, A>::ExtMaxDataBurstVol_type_
-    query_columns< ::oai::model::pcf::QosData, id_mysql, A>::ExtMaxDataBurstVol(
+    ::oai::_3gpp::model::QosData, id_mysql, A>::ExtMaxDataBurstVol_type_
+    query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::ExtMaxDataBurstVol(
         A::table_name, "`ExtMaxDataBurstVol`", 0);
 
 template<typename A>
 const typename query_columns<
-    ::oai::model::pcf::QosData, id_mysql, A>::ExtMaxDataBurstVolIsSet_type_
-    query_columns< ::oai::model::pcf::QosData, id_mysql, A>::
+    ::oai::_3gpp::model::QosData, id_mysql, A>::ExtMaxDataBurstVolIsSet_type_
+    query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::
         ExtMaxDataBurstVolIsSet(A::table_name, "`ExtMaxDataBurstVolIsSet`", 0);
 
 template<typename A>
 const typename query_columns<
-    ::oai::model::pcf::QosData, id_mysql, A>::PacketDelayBudget_type_
-    query_columns< ::oai::model::pcf::QosData, id_mysql, A>::PacketDelayBudget(
+    ::oai::_3gpp::model::QosData, id_mysql, A>::PacketDelayBudget_type_
+    query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::PacketDelayBudget(
         A::table_name, "`PacketDelayBudget`", 0);
 
 template<typename A>
 const typename query_columns<
-    ::oai::model::pcf::QosData, id_mysql, A>::PacketDelayBudgetIsSet_type_
-    query_columns< ::oai::model::pcf::QosData, id_mysql, A>::
+    ::oai::_3gpp::model::QosData, id_mysql, A>::PacketDelayBudgetIsSet_type_
+    query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::
         PacketDelayBudgetIsSet(A::table_name, "`PacketDelayBudgetIsSet`", 0);
 
 template<typename A>
 const typename query_columns<
-    ::oai::model::pcf::QosData, id_mysql, A>::PacketErrorRate_type_
-    query_columns< ::oai::model::pcf::QosData, id_mysql, A>::PacketErrorRate(
+    ::oai::_3gpp::model::QosData, id_mysql, A>::PacketErrorRate_type_
+    query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::PacketErrorRate(
         A::table_name, "`PacketErrorRate`", 0);
 
 template<typename A>
 const typename query_columns<
-    ::oai::model::pcf::QosData, id_mysql, A>::PacketErrorRateIsSet_type_
-    query_columns< ::oai::model::pcf::QosData, id_mysql, A>::
+    ::oai::_3gpp::model::QosData, id_mysql, A>::PacketErrorRateIsSet_type_
+    query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>::
         PacketErrorRateIsSet(A::table_name, "`PacketErrorRateIsSet`", 0);
 
 template<typename A>
-struct pointer_query_columns< ::oai::model::pcf::QosData, id_mysql, A>
-    : query_columns< ::oai::model::pcf::QosData, id_mysql, A> {};
+struct pointer_query_columns< ::oai::_3gpp::model::QosData, id_mysql, A>
+    : query_columns< ::oai::_3gpp::model::QosData, id_mysql, A> {};
 
 template<>
-class access::object_traits_impl< ::oai::model::pcf::QosData, id_mysql>
-    : public access::object_traits< ::oai::model::pcf::QosData> {
+class access::object_traits_impl< ::oai::_3gpp::model::QosData, id_mysql>
+    : public access::object_traits< ::oai::_3gpp::model::QosData> {
  public:
   struct id_image_type {
     details::buffer id_value;
@@ -829,7 +829,7 @@ class access::object_traits_impl< ::oai::model::pcf::QosData, id_mysql>
 
     // m_Arp
     //
-    composite_value_traits< ::oai::model::common::Arp, id_mysql>::image_type
+    composite_value_traits< ::oai::_3gpp::model::Arp, id_mysql>::image_type
         m_Arp_value;
 
     // m_ArpIsSet
@@ -1040,8 +1040,8 @@ class access::object_traits_impl< ::oai::model::pcf::QosData, id_mysql>
 };
 
 template<>
-class access::object_traits_impl< ::oai::model::pcf::QosData, id_common>
-    : public access::object_traits_impl< ::oai::model::pcf::QosData, id_mysql> {
+class access::object_traits_impl< ::oai::_3gpp::model::QosData, id_common>
+    : public access::object_traits_impl< ::oai::_3gpp::model::QosData, id_mysql> {
 };
 
 // QosData

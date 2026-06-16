@@ -98,7 +98,7 @@ class EventsSubscriptionDocumentApi : public ApiBase {
   /// modification of an Events Subscription resource.</param>
   virtual void update_events_subsc(
       const std::string& appSessionId,
-      const oai::model::pcf::EventsSubscReqData& eventsSubscReqData,
+      const oai::_3gpp::model::EventsSubscReqData& eventsSubscReqData,
       Pistache::Http::ResponseWriter& response) = 0;
 };
 

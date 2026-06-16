@@ -8,8 +8,8 @@
 #include <sstream>
 
 using namespace oai::pcf::app::sm_policy;
-using namespace oai::model::pcf;
-using namespace oai::model::common;
+using namespace oai::_3gpp::model;
+using namespace oai::_3gpp::model;
 
 void policy_storage_yaml::set_default_decision(
     const SmPolicyDecision& decision) {
@@ -121,7 +121,7 @@ void policy_storage_yaml::subscribe_to_decision_change(
 }
 
 void policy_storage_yaml::insert_associations(
-    const oai::model::pcf::SmPolicyContextData& context,
+    const oai::_3gpp::model::SmPolicyContextData& context,
     const std::string& association_id) {
   Logger::pcf_app().debug(
       "Inserting into association maps [IPv4 -> %s, SUPI -> %s, DNN -> %s] : "

@@ -13,7 +13,7 @@
 
 using namespace oai::pcf::app;
 using namespace oai::config::pcf;
-using namespace oai::model::pcf;
+using namespace oai::_3gpp::model;
 
 extern std::unique_ptr<pcf_config> pcf_cfg;
 extern std::unique_ptr<database_wrapper_abstraction> db_connector;

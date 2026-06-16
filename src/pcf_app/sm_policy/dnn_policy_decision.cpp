@@ -3,15 +3,16 @@
  */
 
 #include "dnn_policy_decision.hpp"
+#include <nlohmann/json.hpp>
 #include <sstream>
 
-using namespace oai::model::pcf;
+using namespace oai::_3gpp::model;
 using namespace oai::pcf::app::sm_policy;
 using namespace oai::pcf::app;
 
 status_code dnn_policy_decision::decide(
     const SmPolicyContextData& context,
-    oai::model::pcf::SmPolicyDecision& decision) const {
+    oai::_3gpp::model::SmPolicyDecision& decision) const {
   if (context.getDnn() != m_dnn) {
     return status_code::CONTEXT_DENIED;
   }
@@ -27,7 +28,9 @@ std::string dnn_policy_decision::get_dnn() const {
 std::string dnn_policy_decision::to_string() const {
   std::stringstream ss;
   ss << "DNN: " << m_dnn << "\n";
-  ss << " -- " << m_decision;
+  nlohmann::json j;
+  to_json(j, m_decision);
+  ss << " -- " << j.dump();
   return ss.str();
 }
 

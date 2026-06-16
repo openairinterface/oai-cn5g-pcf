@@ -33,7 +33,7 @@ oai::pcf::api::api_response pcc_rules_handler::pcc_rule_pcc_rule_id_get(
 }
 
 oai::pcf::api::api_response pcc_rules_handler::pcc_rule_pcc_rule_id_put(
-    const std::string& pccRuleId, const oai::model::pcf::PccRule& pccRule) {
+    const std::string& pccRuleId, const oai::_3gpp::model::PccRule& pccRule) {
   if (pccRuleId != pccRule.getPccRuleId()) {
     api_response response;
     response.status_code = http_status_code::BAD_REQUEST;
@@ -49,7 +49,7 @@ oai::pcf::api::api_response pcc_rules_handler::pcc_rule_pcc_rule_id_put(
 }
 
 oai::pcf::api::api_response pcc_rules_handler::pcc_rule_post(
-    const oai::model::pcf::PccRule& pccRule) {
+    const oai::_3gpp::model::PccRule& pccRule) {
   return handle_request_with_error_handling([&]() -> bool {
     nlohmann::json json_data = pccRule;
     Logger::pcf_db().info("Creating PccRule: %s", json_data.dump());

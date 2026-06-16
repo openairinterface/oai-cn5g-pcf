@@ -11,20 +11,20 @@ namespace odb {
 //
 
 inline bool access::composite_value_traits<
-    ::oai::model::common::Arp, id_mysql>::get_null(const image_type& i) {
+    ::oai::_3gpp::model::Arp, id_mysql>::get_null(const image_type& i) {
   bool r(true);
   r = r && i.m_PriorityLevel_null;
   r = r && composite_value_traits<
-               ::oai::model::common::PreemptionCapability,
+               ::oai::_3gpp::model::PreemptionCapability,
                id_mysql>::get_null(i.m_PreemptCap_value);
   r = r && composite_value_traits<
-               ::oai::model::common::PreemptionVulnerability,
+               ::oai::_3gpp::model::PreemptionVulnerability,
                id_mysql>::get_null(i.m_PreemptVuln_value);
   return r;
 }
 
 inline void
-access::composite_value_traits< ::oai::model::common::Arp, id_mysql>::set_null(
+access::composite_value_traits< ::oai::_3gpp::model::Arp, id_mysql>::set_null(
     image_type& i, mysql::statement_kind sk) {
   ODB_POTENTIALLY_UNUSED(sk);
 
@@ -32,10 +32,10 @@ access::composite_value_traits< ::oai::model::common::Arp, id_mysql>::set_null(
 
   i.m_PriorityLevel_null = 1;
   composite_value_traits<
-      ::oai::model::common::PreemptionCapability,
+      ::oai::_3gpp::model::PreemptionCapability,
       id_mysql>::set_null(i.m_PreemptCap_value, sk);
   composite_value_traits<
-      ::oai::model::common::PreemptionVulnerability,
+      ::oai::_3gpp::model::PreemptionVulnerability,
       id_mysql>::set_null(i.m_PreemptVuln_value, sk);
 }
 }  // namespace odb

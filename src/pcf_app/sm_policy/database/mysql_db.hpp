@@ -101,13 +101,13 @@ class mysql_db : public database_wrapper<mysql_db> {
           slicePolicyDecision);
 
   oai::pcf::provisioning::model::SlicePolicyDecision getSlicePolicyDecision(
-      const oai::model::common::Snssai& slice);
+      const oai::_3gpp::model::Snssai& slice);
 
   bool updateSlicePolicyDecision(
       const oai::pcf::provisioning::model::SlicePolicyDecision&
           slicePolicyDecision);
 
-  bool deleteSlicePolicyDecision(const oai::model::common::Snssai& slice);
+  bool deleteSlicePolicyDecision(const oai::_3gpp::model::Snssai& slice);
 
   std::vector<oai::pcf::provisioning::model::SlicePolicyDecision>
   getAllSlicePolicyDecisions();
@@ -116,48 +116,48 @@ class mysql_db : public database_wrapper<mysql_db> {
    * QosData CRUD functions
    */
 
-  bool createQosData(const oai::model::pcf::QosData& qosData);
+  bool createQosData(const oai::_3gpp::model::QosData& qosData);
 
-  oai::model::pcf::QosData getQosData(const std::string& qosId);
+  oai::_3gpp::model::QosData getQosData(const std::string& qosId);
 
-  bool updateQosData(const oai::model::pcf::QosData& qosData);
+  bool updateQosData(const oai::_3gpp::model::QosData& qosData);
 
   bool deleteQosData(const std::string& qosId);
 
-  std::vector<oai::model::pcf::QosData> getAllQosData();
+  std::vector<oai::_3gpp::model::QosData> getAllQosData();
 
   /**
    * TrafficControlData CRUD functions
    */
 
   bool createTrafficControlData(
-      const oai::model::pcf::TrafficControlData& trafficControlData);
+      const oai::_3gpp::model::TrafficControlData& trafficControlData);
 
-  oai::model::pcf::TrafficControlData getTrafficControlData(
+  oai::_3gpp::model::TrafficControlData getTrafficControlData(
       const std::string& tcId);
 
   bool updateTrafficControlData(
-      const oai::model::pcf::TrafficControlData& trafficControlData);
+      const oai::_3gpp::model::TrafficControlData& trafficControlData);
 
   bool deleteTrafficControlData(const std::string& tcId);
 
-  std::vector<oai::model::pcf::TrafficControlData> getAllTrafficControlData();
+  std::vector<oai::_3gpp::model::TrafficControlData> getAllTrafficControlData();
 
   /**
    * PccRule CRUD functions
    */
 
-  bool createPccRule(const oai::model::pcf::PccRule& pccRule);
+  bool createPccRule(const oai::_3gpp::model::PccRule& pccRule);
 
-  oai::model::pcf::PccRule getPccRule(const std::string& pccRuleId);
+  oai::_3gpp::model::PccRule getPccRule(const std::string& pccRuleId);
 
-  bool updatePccRule(const oai::model::pcf::PccRule& pccRule);
+  bool updatePccRule(const oai::_3gpp::model::PccRule& pccRule);
 
   bool deletePccRule(const std::string& pccRuleId);
 
-  std::vector<oai::model::pcf::PccRule> getAllPccRules();
+  std::vector<oai::_3gpp::model::PccRule> getAllPccRules();
 
-  oai::model::pcf::SmPolicyDecision getSmPolicyDecision(
+  oai::_3gpp::model::SmPolicyDecision getSmPolicyDecision(
       const std::vector<std::string>& pccRuleIds);
 
  private:

@@ -22,8 +22,8 @@
 using namespace oai::pcf::app;
 using namespace oai::pcf::app::sm_policy;
 using namespace oai::config::pcf;
-using namespace oai::model::pcf;
-using namespace oai::model::common;
+using namespace oai::_3gpp::model;
+using namespace oai::_3gpp::model;
 using namespace oai::http;
 
 using namespace std;
@@ -130,7 +130,7 @@ void pcf_smpc::handle_session_binding_request(
     const std::optional<std::string>& ipv4,
     const std::optional<std::string>& supi,
     const std::optional<std::string>& dnn, std::optional<std::string>& assoc_id,
-    oai::model::pcf::SmPolicyDecision& decision) {
+    oai::_3gpp::model::SmPolicyDecision& decision) {
   // TODO: support multiple sessions
 
   std::shared_ptr<std::string> association_id =
@@ -160,7 +160,7 @@ void pcf_smpc::handle_session_binding_request(
 
 void pcf_smpc::handle_update_decision_request(
     std::optional<std::string>& association_id,
-    oai::model::pcf::SmPolicyDecision& decision) {
+    oai::_3gpp::model::SmPolicyDecision& decision) {
   // Fetch the association related to the decision
   std::unique_lock lock_assocations(m_associations_mutex);
   auto iter = m_associations.find(association_id.value());

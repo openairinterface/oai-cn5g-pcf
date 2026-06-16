@@ -32,7 +32,7 @@ class events_subscription_document_api_handler {
    */
   api_response update_events_subsc(
       const std::string& app_session_id,
-      const oai::model::pcf::EventsSubscReqData& events_subsc_req_data);
+      const oai::_3gpp::model::EventsSubscReqData& events_subsc_req_data);
 
  private:
   std::shared_ptr<oai::pcf::app::pcf_policy_authorization> m_pa_service;

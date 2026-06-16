@@ -20,7 +20,7 @@
 using namespace oai::pcf::app;
 using namespace oai::pcf::app::policy_auth;
 using namespace oai::config::pcf;
-using namespace oai::model::pcf;
+using namespace oai::_3gpp::model;
 
 using namespace std;
 
@@ -30,14 +30,14 @@ pcf_policy_authorization::pcf_policy_authorization(pcf_event& ev)
 
 //------------------------------------------------------------------------------
 status_code pcf_policy_authorization::post_app_sessions_handler(
-    const oai::model::pcf::AppSessionContext& context,
+    const oai::_3gpp::model::AppSessionContext& context,
     std::string& app_session_id, std::string& problem_details) {
-  oai::model::pcf::SmPolicyDecision current_decision = {};
-  oai::model::pcf::SmPolicyDecision request_decision = {};
+  oai::_3gpp::model::SmPolicyDecision current_decision = {};
+  oai::_3gpp::model::SmPolicyDecision request_decision = {};
 
   Logger::pcf_app().info("POST /app-sessions");
 
-  const oai::model::pcf::AppSessionContextReqData reqContext =
+  const oai::_3gpp::model::AppSessionContextReqData reqContext =
       context.getAscReqData();
   std::optional<std::string> association_id = {};
   try {
@@ -69,50 +69,9 @@ status_code pcf_policy_authorization::post_app_sessions_handler(
   // rejected, return HTTP "403 Forbidden" response message the cause for the
   // rejection
 
-  /**
-   * Handle Initial provisioning of service function chaining information
-   *
-   * the "afSfcReq" attribute of "AfSfcRequirement" data type with specific
-   * N6-LAN traffic steering requirements for the application traffic flows
-   * either within "AppSessionContextReqData" data type for the service
-   * indicated in the "afAppId" attribute, or within the "medComponents"
-   * attribute. When provided at both levels, the "afSfcReq" attribute value in
-   * the "medComponents" attribute shall have precedence over the "afSfcReq"
-   * attribute included in the "AppSessionContextReqData" data type
-   */
-
-  // Check if the request contains the "afSfcReq" attribute or medComponents is
-  // present. Pick medComponents if both are present
-  if (context.getAscReqData().medComponentsIsSet()) {
-    Logger::pcf_app().info("MedComponents is set");
-    // TODO [PAS] handle multiple medComponents
-    for (const auto& medComponent :
-         context.getAscReqData().getMedComponents()) {
-      if (medComponent.second.afSfcReqIsSet()) {
-        handler_result result = policy_auth::handle_service_function_chaining(
-            medComponent.second.getAfSfcReq(), request_decision);
-        if (result.problem_details.has_value()) {
-          problem_details = result.problem_details.value();
-          Logger::pcf_app().error(
-              "Service function chaining failed. Problem details: {}",
-              result.problem_details.value());
-          return result.status.value();
-        }
-        break;
-      }
-    }
-  } else if (context.getAscReqData().afSfcReqIsSet()) {
-    Logger::pcf_app().info("AfSfcReq is set");
-    handler_result result = policy_auth::handle_service_function_chaining(
-        context.getAscReqData().getAfSfcReq(), request_decision);
-    if (result.problem_details.has_value()) {
-      problem_details = result.problem_details.value();
-      Logger::pcf_app().error(
-          "Service function chaining failed. Problem details: {}",
-          result.problem_details.value());
-      return result.status.value();
-    }
-  }
+  // TODO: Restore SFC provisioning once AfSfcRequirement and
+  // AppSessionContextReqData::afSfcReq are regenerated. Ref: 3GPP TS 29.514
+  // §4.2.2.8.
 
   // Validate the request decision against the current decision
   // merge the request decision with the current decision if the request
@@ -147,14 +106,14 @@ status_code pcf_policy_authorization::post_app_sessions_handler(
 //------------------------------------------------------------------------------
 policy_auth::status_code pcf_policy_authorization::mod_app_session_handler(
     const std::string& app_session_id,
-    const oai::model::pcf::AppSessionContextUpdateDataPatch&
+    const oai::_3gpp::model::AppSessionContextUpdateDataPatch&
         app_session_context_update_data_patch,
-    const oai::model::pcf::AppSessionContext& context,
+    const oai::_3gpp::model::AppSessionContext& context,
     std::string& problem_details) {
-  oai::model::pcf::SmPolicyDecision current_decision = {};
-  oai::model::pcf::SmPolicyDecision request_decision = {};
+  oai::_3gpp::model::SmPolicyDecision current_decision = {};
+  oai::_3gpp::model::SmPolicyDecision request_decision = {};
 
-  const oai::model::pcf::AppSessionContextUpdateData reqContext =
+  const oai::_3gpp::model::AppSessionContextUpdateData reqContext =
       app_session_context_update_data_patch.getAscReqData();
   std::optional<std::string> association_id = {};
 
@@ -179,57 +138,9 @@ policy_auth::status_code pcf_policy_authorization::mod_app_session_handler(
     return status_code::INTERNAL_SERVER_ERROR;
   }
 
-  /**
-   * Handle Initial provisioning of service function chaining information
-   *
-   * the "afSfcReq" attribute of "AfSfcRequirement" data type with specific
-   * N6-LAN traffic steering requirements for the application traffic flows
-   * either within "AppSessionContextReqData" data type for the service
-   * indicated in the "afAppId" attribute, or within the "medComponents"
-   * attribute. When provided at both levels, the "afSfcReq" attribute value in
-   * the "medComponents" attribute shall have precedence over the "afSfcReq"
-   * attribute included in the "AppSessionContextReqData" data type
-   */
-
-  // Check if the request contains the "afSfcReq" attribute or medComponents is
-  // present. Pick medComponents if both are present
-  if (app_session_context_update_data_patch.getAscReqData()
-          .medComponentsIsSet()) {
-    Logger::pcf_app().info("MedComponents is set");
-    // TODO [PAS] handle multiple medComponents
-    for (const auto& medComponent :
-         app_session_context_update_data_patch.getAscReqData()
-             .getMedComponents()) {
-      if (medComponent.second.afSfcReqIsSet()) {
-        handler_result result =
-            policy_auth::handle_service_function_chaining_update(
-                medComponent.second.getAfSfcReq(), request_decision,
-                app_session_context);
-        if (result.problem_details.has_value()) {
-          problem_details = result.problem_details.value();
-          Logger::pcf_app().error(
-              "Service function chaining failed. Problem details: {}",
-              result.problem_details.value());
-          return result.status.value();
-        }
-        break;
-      }
-    }
-
-  } else if (app_session_context_update_data_patch.getAscReqData()
-                 .afSfcReqIsSet()) {
-    handler_result result =
-        policy_auth::handle_service_function_chaining_update(
-            app_session_context_update_data_patch.getAscReqData().getAfSfcReq(),
-            request_decision, app_session_context);
-    if (result.problem_details.has_value()) {
-      problem_details = result.problem_details.value();
-      Logger::pcf_app().error(
-          "Service function chaining failed. Problem details: {}",
-          result.problem_details.value());
-      return result.status.value();
-    }
-  }
+  // TODO: Restore SFC update once AfSfcRequirement and
+  // AppSessionContextReqData::afSfcReq are regenerated. Ref: 3GPP TS 29.514
+  // §4.2.2.8.
 
   // Validate the request decision against the current decision
   // merge the request decision with the current decision if the request

@@ -8,19 +8,19 @@ namespace odb {
 // QosData
 //
 
-inline access::object_traits< ::oai::model::pcf::QosData>::id_type
-access::object_traits< ::oai::model::pcf::QosData>::id(const object_type& o) {
+inline access::object_traits< ::oai::_3gpp::model::QosData>::id_type
+access::object_traits< ::oai::_3gpp::model::QosData>::id(const object_type& o) {
   return o.m_QosId;
 }
 
-inline void access::object_traits< ::oai::model::pcf::QosData>::callback(
+inline void access::object_traits< ::oai::_3gpp::model::QosData>::callback(
     database& db, object_type& x, callback_event e) {
   ODB_POTENTIALLY_UNUSED(db);
   ODB_POTENTIALLY_UNUSED(x);
   ODB_POTENTIALLY_UNUSED(e);
 }
 
-inline void access::object_traits< ::oai::model::pcf::QosData>::callback(
+inline void access::object_traits< ::oai::_3gpp::model::QosData>::callback(
     database& db, const object_type& x, callback_event e) {
   ODB_POTENTIALLY_UNUSED(db);
   ODB_POTENTIALLY_UNUSED(x);
@@ -33,7 +33,7 @@ namespace odb {
 //
 
 inline void
-access::object_traits_impl< ::oai::model::pcf::QosData, id_mysql>::erase(
+access::object_traits_impl< ::oai::_3gpp::model::QosData, id_mysql>::erase(
     database& db, const object_type& obj) {
   callback(db, obj, callback_event::pre_erase);
   erase(db, id(obj));
@@ -41,7 +41,7 @@ access::object_traits_impl< ::oai::model::pcf::QosData, id_mysql>::erase(
 }
 
 inline void
-access::object_traits_impl< ::oai::model::pcf::QosData, id_mysql>::load_(
+access::object_traits_impl< ::oai::_3gpp::model::QosData, id_mysql>::load_(
     statements_type& sts, object_type& obj, bool) {
   ODB_POTENTIALLY_UNUSED(sts);
   ODB_POTENTIALLY_UNUSED(obj);

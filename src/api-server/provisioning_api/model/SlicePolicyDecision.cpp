@@ -26,7 +26,7 @@ SlicePolicyDecision::SlicePolicyDecision() {
 void SlicePolicyDecision::validate() const {
   std::stringstream msg;
   if (!validate(msg)) {
-    throw oai::model::common::helpers::ValidationException(msg.str());
+    throw oai::_3gpp::model::helpers::ValidationException(msg.str());
   }
 }
 
@@ -95,10 +95,10 @@ void from_json(const nlohmann::json& j, SlicePolicyDecision& o) {
   }
 }
 
-oai::model::common::Snssai SlicePolicyDecision::getSnssai() const {
+oai::_3gpp::model::Snssai SlicePolicyDecision::getSnssai() const {
   return m_Snssai;
 }
-void SlicePolicyDecision::setSnssai(oai::model::common::Snssai const& value) {
+void SlicePolicyDecision::setSnssai(oai::_3gpp::model::Snssai const& value) {
   m_Snssai      = value;
   m_SnssaiIsSet = true;
 }

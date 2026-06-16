@@ -96,7 +96,7 @@ class QOSDataApi {
   /// </remarks>
   /// <param name="qosData">QoS data to create</param>
   virtual void qos_data_post(
-      const oai::model::pcf::QosData& qosData,
+      const oai::_3gpp::model::QosData& qosData,
       Pistache::Http::ResponseWriter& response) = 0;
   /// <summary>
   /// Delete QoS data by ID
@@ -125,7 +125,7 @@ class QOSDataApi {
   /// <param name="qosId"></param>
   /// <param name="qosData">QoS data to update</param>
   virtual void qos_data_qos_id_put(
-      const std::string& qosId, const oai::model::pcf::QosData& qosData,
+      const std::string& qosId, const oai::_3gpp::model::QosData& qosData,
       Pistache::Http::ResponseWriter& response) = 0;
 };
 

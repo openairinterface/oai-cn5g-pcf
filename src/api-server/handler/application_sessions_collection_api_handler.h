@@ -26,7 +26,7 @@ class application_sessions_collection_api_handler {
    * @return api_response
    */
   api_response post_app_sessions(
-      const oai::model::pcf::AppSessionContext& app_session_context);
+      const oai::_3gpp::model::AppSessionContext& app_session_context);
 
  private:
   std::shared_ptr<oai::pcf::app::pcf_policy_authorization> m_pa_service;

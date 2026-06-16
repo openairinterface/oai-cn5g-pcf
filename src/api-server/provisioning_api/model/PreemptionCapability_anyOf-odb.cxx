@@ -26,7 +26,7 @@ namespace odb {
 //
 
 bool access::composite_value_traits<
-    ::oai::model::common::PreemptionCapability_anyOf,
+    ::oai::_3gpp::model::PreemptionCapability_anyOf,
     id_mysql>::grow(image_type& i, my_bool* t) {
   ODB_POTENTIALLY_UNUSED(i);
   ODB_POTENTIALLY_UNUSED(t);
@@ -46,7 +46,7 @@ bool access::composite_value_traits<
 }
 
 void access::composite_value_traits<
-    ::oai::model::common::PreemptionCapability_anyOf,
+    ::oai::_3gpp::model::PreemptionCapability_anyOf,
     id_mysql>::bind(MYSQL_BIND* b, image_type& i, mysql::statement_kind sk) {
   ODB_POTENTIALLY_UNUSED(b);
   ODB_POTENTIALLY_UNUSED(i);
@@ -65,7 +65,7 @@ void access::composite_value_traits<
 }
 
 bool access::composite_value_traits<
-    ::oai::model::common::PreemptionCapability_anyOf, id_mysql>::
+    ::oai::_3gpp::model::PreemptionCapability_anyOf, id_mysql>::
     init(image_type& i, const value_type& o, mysql::statement_kind sk) {
   ODB_POTENTIALLY_UNUSED(i);
   ODB_POTENTIALLY_UNUSED(o);
@@ -78,7 +78,7 @@ bool access::composite_value_traits<
   // m_value
   //
   {
-    ::oai::model::common::PreemptionCapability_anyOf::
+    ::oai::_3gpp::model::PreemptionCapability_anyOf::
         ePreemptionCapability_anyOf const& v = o.m_value;
 
     bool is_null(false);
@@ -93,7 +93,7 @@ bool access::composite_value_traits<
 }
 
 void access::composite_value_traits<
-    ::oai::model::common::PreemptionCapability_anyOf,
+    ::oai::_3gpp::model::PreemptionCapability_anyOf,
     id_mysql>::init(value_type& o, const image_type& i, database* db) {
   ODB_POTENTIALLY_UNUSED(o);
   ODB_POTENTIALLY_UNUSED(i);
@@ -102,7 +102,7 @@ void access::composite_value_traits<
   // m_value
   //
   {
-    ::oai::model::common::PreemptionCapability_anyOf::
+    ::oai::_3gpp::model::PreemptionCapability_anyOf::
         ePreemptionCapability_anyOf& v = o.m_value;
 
     mysql::enum_traits::set_value(

@@ -13,8 +13,9 @@ namespace oai::pcf::app::policy_auth {
 class app_session {
  public:
   explicit app_session(
-      const oai::model::pcf::AppSessionContextReqData& context,
-      const oai::model::pcf::SmPolicyDecision& decision, const std::string& id)
+      const oai::_3gpp::model::AppSessionContextReqData& context,
+      const oai::_3gpp::model::SmPolicyDecision& decision,
+      const std::string& id)
       : m_decision(decision) {
     m_context = context;
     // TODO [PAS] add association id to be used during update
@@ -23,19 +24,19 @@ class app_session {
 
   virtual ~app_session() = default;
 
-  [[nodiscard]] virtual const oai::model::pcf::AppSessionContextReqData&
+  [[nodiscard]] virtual const oai::_3gpp::model::AppSessionContextReqData&
   get_app_session_context() const;
 
   [[nodiscard]] virtual void set_app_session_context(
-      oai::model::pcf::AppSessionContextReqData& context);
+      oai::_3gpp::model::AppSessionContextReqData& context);
 
   [[nodiscard]] virtual std::string get_id() const;
 
  private:
   // TODO: create a struct only for attributes that need to be stored?
-  oai::model::pcf::AppSessionContextReqData m_context;
+  oai::_3gpp::model::AppSessionContextReqData m_context;
   // TODO: create a struct only for attributes that need to be stored?
-  oai::model::pcf::SmPolicyDecision m_decision;
+  oai::_3gpp::model::SmPolicyDecision m_decision;
   // attributes that need to be stored
   // reference session
   // reference pcc rules
@@ -48,41 +49,22 @@ class app_session {
  * 3GPP TS 29.514 4.2.x
  */
 
-/**
- * Extracts the N6-LAN Traffic Steering Requirements from the given
- * AfSfcRequirement object. 3GPP TS 29.514 4.2.2.8.
- *
- * @param af_sfc           The AfSfcRequirement object containing the SFC
- * requirements.
- * @param traffic_control_data The TrafficControlData object to store the
- * extracted requirements.
- * @param problem_details  A reference string to hold any error details if
- * extraction fails.
- *
- * @return status_code::OK on success or a failure code if an issue occurs
- * during extraction.
- */
-oai::pcf::app::policy_auth::handler_result handle_service_function_chaining(
-    const oai::model::pcf::AfSfcRequirement& af_sfc,
-    oai::model::pcf::SmPolicyDecision& decision);
-
-oai::pcf::app::policy_auth::handler_result
-handle_service_function_chaining_update(
-    const oai::model::pcf::AfSfcRequirement& af_sfc,
-    oai::model::pcf::SmPolicyDecision& decision,
-    oai::model::pcf::AppSessionContextReqData& context);
+// TODO: Restore handle_service_function_chaining and
+// handle_service_function_chaining_update once AfSfcRequirement and
+// AppSessionContextReqData::afSfcReq are regenerated in the new model.
+// Ref: 3GPP TS 29.514 §4.2.2.8 N6-LAN traffic steering (SFC).
 
 //   oai::pcf::app::policy_auth::status_code handle_traffic_routing(
-//       oai::model::pcf::SmPolicyContextData& orig_context,
-//       const oai::model::pcf::SmPolicyUpdateContextData& update,
+//       oai::_3gpp::model::SmPolicyContextData& orig_context,
+//       const oai::_3gpp::model::SmPolicyUpdateContextData& update,
 //       std::string& problem_details);
 
 oai::pcf::app::policy_auth::handler_result authorize_service_info(
-    const oai::model::pcf::AppSessionContextReqData& reqData);
+    const oai::_3gpp::model::AppSessionContextReqData& reqData);
 
 oai::pcf::app::policy_auth::handler_result validate_and_merge_decision(
-    const oai::model::pcf::SmPolicyDecision& request_decision,
-    oai::model::pcf::SmPolicyDecision& current_decision, bool update = false);
+    const oai::_3gpp::model::SmPolicyDecision& request_decision,
+    oai::_3gpp::model::SmPolicyDecision& current_decision, bool update = false);
 
 }  // namespace oai::pcf::app::policy_auth
 

@@ -46,15 +46,15 @@ namespace odb {
 //
 template<>
 class access::composite_value_traits<
-    ::oai::model::common::PreemptionCapability, id_mysql> {
+    ::oai::_3gpp::model::PreemptionCapability, id_mysql> {
  public:
-  typedef ::oai::model::common::PreemptionCapability value_type;
+  typedef ::oai::_3gpp::model::PreemptionCapability value_type;
 
   struct image_type {
     // m_value
     //
     composite_value_traits<
-        ::oai::model::common::PreemptionCapability_anyOf, id_mysql>::image_type
+        ::oai::_3gpp::model::PreemptionCapability_anyOf, id_mysql>::image_type
         m_value_value;
   };
 

@@ -82,7 +82,7 @@ class PCSCFRestorationIndicationApi : public ApiBase {
   /// <param name="pcscfRestorationRequestData">PCSCF Restoration
   /// Indication.</param>
   virtual void pcscf_restoration(
-      const oai::model::pcf::PcscfRestorationRequestData&
+      const oai::_3gpp::model::PcscfRestorationRequestData&
           pcscfRestorationRequestData,
       Pistache::Http::ResponseWriter& response) = 0;
 };

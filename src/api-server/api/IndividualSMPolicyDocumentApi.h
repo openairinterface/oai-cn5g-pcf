@@ -35,7 +35,7 @@
 
 namespace oai::pcf::api {
 
-using namespace oai::model::pcf;
+using namespace oai::_3gpp::model;
 
 class IndividualSMPolicyDocumentApi {
  public:
@@ -90,7 +90,7 @@ class IndividualSMPolicyDocumentApi {
   /// <param name="smPolicyDeleteData"></param>
   virtual void delete_sm_policy(
       const std::string& smPolicyId,
-      const oai::model::pcf::SmPolicyDeleteData& smPolicyDeleteData,
+      const oai::_3gpp::model::SmPolicyDeleteData& smPolicyDeleteData,
       Pistache::Http::ResponseWriter& response) = 0;
   /// <summary>
   /// Read an Individual SM Policy
@@ -112,7 +112,7 @@ class IndividualSMPolicyDocumentApi {
   /// <param name="smPolicyUpdateContextData"></param>
   virtual void update_sm_policy(
       const std::string& smPolicyId,
-      const oai::model::pcf::SmPolicyUpdateContextData&
+      const oai::_3gpp::model::SmPolicyUpdateContextData&
           smPolicyUpdateContextData,
       Pistache::Http::ResponseWriter& response) = 0;
 };

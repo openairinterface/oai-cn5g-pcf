@@ -16,10 +16,10 @@
 #include "pcf_config.hpp"
 
 using namespace oai::pcf::app;
-using namespace oai::model::common;
+using namespace oai::_3gpp::model;
 using namespace oai::config::pcf;
 using namespace oai::pcf::provisioning::model;
-using namespace oai::model::pcf;
+using namespace oai::_3gpp::model;
 
 extern std::unique_ptr<pcf_config> pcf_cfg;
 
@@ -790,7 +790,7 @@ std::vector<TrafficControlData> mysql_db::getAllTrafficControlData() {
  * PccRule CRUD functions
  */
 
-bool mysql_db::createPccRule(const oai::model::pcf::PccRule& pccRule) {
+bool mysql_db::createPccRule(const oai::_3gpp::model::PccRule& pccRule) {
   check_db_connection();
 
   //  Validate that all Qos and TrafficControl Data exist in the database
@@ -821,7 +821,7 @@ bool mysql_db::createPccRule(const oai::model::pcf::PccRule& pccRule) {
   return true;
 }
 
-oai::model::pcf::PccRule mysql_db::getPccRule(const std::string& pccRuleId) {
+oai::_3gpp::model::PccRule mysql_db::getPccRule(const std::string& pccRuleId) {
   check_db_connection();
 
   try {
@@ -844,7 +844,7 @@ oai::model::pcf::PccRule mysql_db::getPccRule(const std::string& pccRuleId) {
   }
 }
 
-bool mysql_db::updatePccRule(const oai::model::pcf::PccRule& pccRule) {
+bool mysql_db::updatePccRule(const oai::_3gpp::model::PccRule& pccRule) {
   check_db_connection();
 
   //  Validate that all Qos and TrafficControl Data exist in the database
@@ -895,17 +895,17 @@ bool mysql_db::deletePccRule(const std::string& pccRuleId) {
   return true;
 }
 
-std::vector<oai::model::pcf::PccRule> mysql_db::getAllPccRules() {
+std::vector<oai::_3gpp::model::PccRule> mysql_db::getAllPccRules() {
   check_db_connection();
 
-  std::vector<oai::model::pcf::PccRule> results;
+  std::vector<oai::_3gpp::model::PccRule> results;
   try {
     odb::transaction t(db->begin());
     odb::result<PccRuleODB> r(db->query<PccRuleODB>());
 
     for (auto& obj : r) {
-      nlohmann::json json_pccRuleODB   = std::move(obj);
-      oai::model::pcf::PccRule pccRule = std::move(json_pccRuleODB);
+      nlohmann::json json_pccRuleODB     = std::move(obj);
+      oai::_3gpp::model::PccRule pccRule = std::move(json_pccRuleODB);
       results.push_back(std::move(pccRule));
     }
 
@@ -918,7 +918,7 @@ std::vector<oai::model::pcf::PccRule> mysql_db::getAllPccRules() {
   return results;
 }
 
-oai::model::pcf::SmPolicyDecision mysql_db::getSmPolicyDecision(
+oai::_3gpp::model::SmPolicyDecision mysql_db::getSmPolicyDecision(
     const std::vector<std::string>& pccRuleIds) {
   check_db_connection();
   SmPolicyDecision decision = {};

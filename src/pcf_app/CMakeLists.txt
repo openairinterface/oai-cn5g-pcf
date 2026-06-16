@@ -22,12 +22,8 @@ include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/common/common.cmake)
 include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/utils/utils.cmake)
 include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/logger/logger.cmake)
 include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/config/config.cmake)
-include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/model/pcf/pcf_model.cmake)
-include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/model/common_model/common_model.cmake)
+include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/model/pcf_model.cmake)
 include(${SRC_TOP_DIR}/common/utils/utils.cmake)
-
-
-include(${BUILD_TOP_DIR}/pcf/used_common_files.cmake)
 
 add_library (PCF STATIC
   pcf_config_types.cpp

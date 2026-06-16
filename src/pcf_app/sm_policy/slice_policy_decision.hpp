@@ -19,8 +19,8 @@ namespace oai::pcf::app::sm_policy {
 class slice_policy_decision : public oai::pcf::app::sm_policy::policy_decision {
  public:
   explicit slice_policy_decision(
-      const oai::model::common::Snssai& snssai,
-      const oai::model::pcf::SmPolicyDecision& decision)
+      const oai::_3gpp::model::Snssai& snssai,
+      const oai::_3gpp::model::SmPolicyDecision& decision)
       : policy_decision(decision) {
     m_snssai = snssai;
   }
@@ -37,20 +37,20 @@ class slice_policy_decision : public oai::pcf::app::sm_policy::policy_decision {
    * success
    */
   [[nodiscard]] oai::pcf::app::sm_policy::status_code decide(
-      const oai::model::pcf::SmPolicyContextData& context,
-      oai::model::pcf::SmPolicyDecision& decision) const override;
+      const oai::_3gpp::model::SmPolicyContextData& context,
+      oai::_3gpp::model::SmPolicyDecision& decision) const override;
 
   /**
    * @brief Get the snssai object
    *
-   * @return oai::model::pcf::Snssai
+   * @return oai::_3gpp::model::Snssai
    */
-  [[nodiscard]] oai::model::common::Snssai get_snssai() const;
+  [[nodiscard]] oai::_3gpp::model::Snssai get_snssai() const;
 
   [[nodiscard]] std::string to_string() const override;
 
  private:
-  oai::model::common::Snssai m_snssai;
+  oai::_3gpp::model::Snssai m_snssai;
 };
 }  // namespace oai::pcf::app::sm_policy
 

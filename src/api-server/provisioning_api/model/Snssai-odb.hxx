@@ -43,9 +43,9 @@ namespace odb {
 // Snssai
 //
 template<>
-class access::composite_value_traits< ::oai::model::common::Snssai, id_mysql> {
+class access::composite_value_traits< ::oai::_3gpp::model::Snssai, id_mysql> {
  public:
-  typedef ::oai::model::common::Snssai value_type;
+  typedef ::oai::_3gpp::model::Snssai value_type;
 
   struct image_type {
     // m_Sst

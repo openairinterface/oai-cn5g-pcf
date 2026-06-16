@@ -25,8 +25,8 @@
 
 using namespace nghttp2::asio_http2;
 using namespace nghttp2::asio_http2::server;
-using namespace oai::model::pcf;
-using namespace oai::model::common;
+using namespace oai::_3gpp::model;
+using namespace oai::_3gpp::model;
 using namespace oai::config::pcf;
 using namespace oai::pcf::api;
 using namespace oai::common::sbi;
@@ -513,7 +513,7 @@ void pcf_http2_server::start() {
           if (query_params.find("sd") != query_params.end()) {
             sd = query_params["sd"];
           } else {
-            sd = oai::model::common::SD_DEFAULT_VALUE;
+            sd = oai::_3gpp::model::SD_DEFAULT_VALUE;
           }
           api_response resp;
           // slice = split_result[split_result.size() - 1];

@@ -17,9 +17,9 @@
 using namespace oai::pcf::app;
 using namespace oai::config::pcf;
 using namespace oai::pcf::app::sm_policy;
-using namespace oai::model::pcf;
+using namespace oai::_3gpp::model;
 using namespace boost::filesystem;
-using namespace oai::model::common;
+using namespace oai::_3gpp::model;
 
 extern std::unique_ptr<pcf_config> pcf_cfg;
 

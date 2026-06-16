@@ -33,7 +33,7 @@ class policy_storage_yaml : public policy_storage {
   void notify_subscribers(const std::shared_ptr<policy_decision>& decision);
 
   std::unordered_map<
-      oai::model::common::Snssai,
+      oai::_3gpp::model::Snssai,
       std::shared_ptr<oai::pcf::app::sm_policy::slice_policy_decision>,
       oai::pcf::app::sm_policy::snssai_hasher>
       m_slice_policy_decisions;
@@ -74,17 +74,18 @@ class policy_storage_yaml : public policy_storage {
   // TODO methods to update and delete policies
   void insert_supi_decision(
       const std::string& supi,
-      const oai::model::pcf::SmPolicyDecision& decision);
+      const oai::_3gpp::model::SmPolicyDecision& decision);
 
   void insert_dnn_decision(
       const std::string& dnn,
-      const oai::model::pcf::SmPolicyDecision& decision);
+      const oai::_3gpp::model::SmPolicyDecision& decision);
 
   void insert_slice_decision(
-      const oai::model::common::Snssai&,
-      const oai::model::pcf::SmPolicyDecision& decision);
+      const oai::_3gpp::model::Snssai&,
+      const oai::_3gpp::model::SmPolicyDecision& decision);
 
-  void set_default_decision(const oai::model::pcf::SmPolicyDecision& decision);
+  void set_default_decision(
+      const oai::_3gpp::model::SmPolicyDecision& decision);
 
   /**
    * @brief Finds a policy based on the existing supi, dnn, slice and default
@@ -97,7 +98,7 @@ class policy_storage_yaml : public policy_storage {
    * decision can be found
    */
   std::shared_ptr<policy_decision> find_policy(
-      const oai::model::pcf::SmPolicyContextData& context);
+      const oai::_3gpp::model::SmPolicyContextData& context);
 
   /**
    * @brief Calls the callback when any of the policies have been updated
@@ -111,7 +112,7 @@ class policy_storage_yaml : public policy_storage {
 
   // TODO methods to update and delete
   void insert_associations(
-      const oai::model::pcf::SmPolicyContextData& context,
+      const oai::_3gpp::model::SmPolicyContextData& context,
       const std::string& association_id);
   void insert_ip_association(
       const std::string& dnn, const std::string& association_id);

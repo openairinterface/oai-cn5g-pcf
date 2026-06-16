@@ -98,7 +98,7 @@ class TrafficControlDataApi {
   /// </remarks>
   /// <param name="trafficControlData">Traffic control data to create</param>
   virtual void traffic_control_data_post(
-      const oai::model::pcf::TrafficControlData& trafficControlData,
+      const oai::_3gpp::model::TrafficControlData& trafficControlData,
       Pistache::Http::ResponseWriter& response) = 0;
   /// <summary>
   /// Delete traffic control data by ID
@@ -128,7 +128,7 @@ class TrafficControlDataApi {
   /// <param name="trafficControlData">Traffic control data to update</param>
   virtual void traffic_control_data_tc_id_put(
       const std::string& tcId,
-      const oai::model::pcf::TrafficControlData& trafficControlData,
+      const oai::_3gpp::model::TrafficControlData& trafficControlData,
       Pistache::Http::ResponseWriter& response) = 0;
 };
 

@@ -43,7 +43,7 @@
 
 namespace oai::pcf::api {
 
-using namespace oai::model::pcf;
+using namespace oai::_3gpp::model;
 using namespace pcf;
 
 class ApplicationSessionsCollectionApiImpl
