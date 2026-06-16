@@ -25,7 +25,7 @@ namespace odb {
 // Arp
 //
 
-bool access::composite_value_traits< ::oai::model::common::Arp, id_mysql>::grow(
+bool access::composite_value_traits< ::oai::_3gpp::model::Arp, id_mysql>::grow(
     image_type& i, my_bool* t) {
   ODB_POTENTIALLY_UNUSED(i);
   ODB_POTENTIALLY_UNUSED(t);
@@ -39,21 +39,21 @@ bool access::composite_value_traits< ::oai::model::common::Arp, id_mysql>::grow(
   // m_PreemptCap
   //
   if (composite_value_traits<
-          ::oai::model::common::PreemptionCapability,
+          ::oai::_3gpp::model::PreemptionCapability,
           id_mysql>::grow(i.m_PreemptCap_value, t + 1UL))
     grew = true;
 
   // m_PreemptVuln
   //
   if (composite_value_traits<
-          ::oai::model::common::PreemptionVulnerability,
+          ::oai::_3gpp::model::PreemptionVulnerability,
           id_mysql>::grow(i.m_PreemptVuln_value, t + 2UL))
     grew = true;
 
   return grew;
 }
 
-void access::composite_value_traits< ::oai::model::common::Arp, id_mysql>::bind(
+void access::composite_value_traits< ::oai::_3gpp::model::Arp, id_mysql>::bind(
     MYSQL_BIND* b, image_type& i, mysql::statement_kind sk) {
   ODB_POTENTIALLY_UNUSED(b);
   ODB_POTENTIALLY_UNUSED(i);
@@ -75,19 +75,19 @@ void access::composite_value_traits< ::oai::model::common::Arp, id_mysql>::bind(
   // m_PreemptCap
   //
   composite_value_traits<
-      ::oai::model::common::PreemptionCapability,
+      ::oai::_3gpp::model::PreemptionCapability,
       id_mysql>::bind(b + n, i.m_PreemptCap_value, sk);
   n += 1UL;
 
   // m_PreemptVuln
   //
   composite_value_traits<
-      ::oai::model::common::PreemptionVulnerability,
+      ::oai::_3gpp::model::PreemptionVulnerability,
       id_mysql>::bind(b + n, i.m_PreemptVuln_value, sk);
   n += 1UL;
 }
 
-bool access::composite_value_traits< ::oai::model::common::Arp, id_mysql>::init(
+bool access::composite_value_traits< ::oai::_3gpp::model::Arp, id_mysql>::init(
     image_type& i, const value_type& o, mysql::statement_kind sk) {
   ODB_POTENTIALLY_UNUSED(i);
   ODB_POTENTIALLY_UNUSED(o);
@@ -111,10 +111,10 @@ bool access::composite_value_traits< ::oai::model::common::Arp, id_mysql>::init(
   // m_PreemptCap
   //
   {
-    ::oai::model::common::PreemptionCapability const& v = o.m_PreemptCap;
+    ::oai::_3gpp::model::PreemptionCapability const& v = o.m_PreemptCap;
 
     if (composite_value_traits<
-            ::oai::model::common::PreemptionCapability,
+            ::oai::_3gpp::model::PreemptionCapability,
             id_mysql>::init(i.m_PreemptCap_value, v, sk))
       grew = true;
   }
@@ -122,10 +122,10 @@ bool access::composite_value_traits< ::oai::model::common::Arp, id_mysql>::init(
   // m_PreemptVuln
   //
   {
-    ::oai::model::common::PreemptionVulnerability const& v = o.m_PreemptVuln;
+    ::oai::_3gpp::model::PreemptionVulnerability const& v = o.m_PreemptVuln;
 
     if (composite_value_traits<
-            ::oai::model::common::PreemptionVulnerability,
+            ::oai::_3gpp::model::PreemptionVulnerability,
             id_mysql>::init(i.m_PreemptVuln_value, v, sk))
       grew = true;
   }
@@ -133,7 +133,7 @@ bool access::composite_value_traits< ::oai::model::common::Arp, id_mysql>::init(
   return grew;
 }
 
-void access::composite_value_traits< ::oai::model::common::Arp, id_mysql>::init(
+void access::composite_value_traits< ::oai::_3gpp::model::Arp, id_mysql>::init(
     value_type& o, const image_type& i, database* db) {
   ODB_POTENTIALLY_UNUSED(o);
   ODB_POTENTIALLY_UNUSED(i);
@@ -151,20 +151,20 @@ void access::composite_value_traits< ::oai::model::common::Arp, id_mysql>::init(
   // m_PreemptCap
   //
   {
-    ::oai::model::common::PreemptionCapability& v = o.m_PreemptCap;
+    ::oai::_3gpp::model::PreemptionCapability& v = o.m_PreemptCap;
 
     composite_value_traits<
-        ::oai::model::common::PreemptionCapability,
+        ::oai::_3gpp::model::PreemptionCapability,
         id_mysql>::init(v, i.m_PreemptCap_value, db);
   }
 
   // m_PreemptVuln
   //
   {
-    ::oai::model::common::PreemptionVulnerability& v = o.m_PreemptVuln;
+    ::oai::_3gpp::model::PreemptionVulnerability& v = o.m_PreemptVuln;
 
     composite_value_traits<
-        ::oai::model::common::PreemptionVulnerability,
+        ::oai::_3gpp::model::PreemptionVulnerability,
         id_mysql>::init(v, i.m_PreemptVuln_value, db);
   }
 }

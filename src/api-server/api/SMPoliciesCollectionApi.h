@@ -36,8 +36,8 @@ namespace oai {
 namespace pcf {
 namespace api {
 
-using namespace oai::model::common::helpers;
-using namespace oai::model::pcf;
+using namespace oai::_3gpp::model::helpers;
+using namespace oai::_3gpp::model;
 
 class SMPoliciesCollectionApi {
  public:
@@ -84,7 +84,7 @@ class SMPoliciesCollectionApi {
   /// </remarks>
   /// <param name="smPolicyContextData"></param>
   virtual void create_sm_policy(
-      const oai::model::pcf::SmPolicyContextData& smPolicyContextData,
+      const oai::_3gpp::model::SmPolicyContextData& smPolicyContextData,
       Pistache::Http::ResponseWriter& response) = 0;
 };
 

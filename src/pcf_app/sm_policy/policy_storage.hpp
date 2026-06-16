@@ -29,7 +29,7 @@ class policy_storage {
    * decision can be found
    */
   virtual std::shared_ptr<policy_decision> find_policy(
-      const oai::model::pcf::SmPolicyContextData& context) = 0;
+      const oai::_3gpp::model::SmPolicyContextData& context) = 0;
 
   /**
    * @brief Calls the callback when any of the policies have been updated
@@ -41,18 +41,18 @@ class policy_storage {
 
   virtual void insert_supi_decision(
       const std::string& supi,
-      const oai::model::pcf::SmPolicyDecision& decision) = 0;
+      const oai::_3gpp::model::SmPolicyDecision& decision) = 0;
 
   virtual void insert_dnn_decision(
       const std::string& dnn,
-      const oai::model::pcf::SmPolicyDecision& decision) = 0;
+      const oai::_3gpp::model::SmPolicyDecision& decision) = 0;
 
   virtual void insert_slice_decision(
-      const oai::model::common::Snssai&,
-      const oai::model::pcf::SmPolicyDecision& decision) = 0;
+      const oai::_3gpp::model::Snssai&,
+      const oai::_3gpp::model::SmPolicyDecision& decision) = 0;
 
   virtual void insert_associations(
-      const oai::model::pcf::SmPolicyContextData& context,
+      const oai::_3gpp::model::SmPolicyContextData& context,
       const std::string& association_id) = 0;
 
   virtual void insert_ip_association(

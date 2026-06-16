@@ -51,9 +51,9 @@ class pcf_smpc {
    * @return sm_policy::status_code
    */
   sm_policy::status_code create_sm_policy_handler(
-      const oai::model::pcf::SmPolicyContextData& context,
-      oai::model::pcf::SmPolicyDecision& decision, std::string& association_id,
-      std::string& problem_details);
+      const oai::_3gpp::model::SmPolicyContextData& context,
+      oai::_3gpp::model::SmPolicyDecision& decision,
+      std::string& association_id, std::string& problem_details);
 
   /**
    * @brief Handler for deleting an existing SM policy association, as defined
@@ -67,7 +67,7 @@ class pcf_smpc {
    */
   sm_policy::status_code delete_sm_policy_handler(
       const std::string& id,
-      const oai::model::pcf::SmPolicyDeleteData& delete_data,
+      const oai::_3gpp::model::SmPolicyDeleteData& delete_data,
       std::string& problem_details);
 
   /**
@@ -82,7 +82,7 @@ class pcf_smpc {
    * @return sm_policy::status_code
    */
   sm_policy::status_code get_sm_policy_handler(
-      const std::string& id, oai::model::pcf::SmPolicyControl& control,
+      const std::string& id, oai::_3gpp::model::SmPolicyControl& control,
       std::string& problem_details);
 
   /**
@@ -98,8 +98,8 @@ class pcf_smpc {
    */
   sm_policy::status_code update_sm_policy_handler(
       const std::string& id,
-      const oai::model::pcf::SmPolicyUpdateContextData& update_context,
-      oai::model::pcf::SmPolicyDecision& decision,
+      const oai::_3gpp::model::SmPolicyUpdateContextData& update_context,
+      oai::_3gpp::model::SmPolicyDecision& decision,
       std::string& problem_details);
 
  private:
@@ -125,11 +125,11 @@ class pcf_smpc {
       const std::optional<std::string>& supi,
       const std::optional<std::string>& dnn,
       std::optional<std::string>& assoc_id,
-      oai::model::pcf::SmPolicyDecision& decision);
+      oai::_3gpp::model::SmPolicyDecision& decision);
 
   void handle_update_decision_request(
       std::optional<std::string>& association_id,
-      oai::model::pcf::SmPolicyDecision& decision);
+      oai::_3gpp::model::SmPolicyDecision& decision);
 
   // for Event Handling
   pcf_event& m_event_sub;

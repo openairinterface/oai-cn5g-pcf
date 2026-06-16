@@ -110,7 +110,7 @@ class PCCRulesApi {
   /// <param name="pccRuleId"></param>
   /// <param name="pccRule">PCC rule to update</param>
   virtual void pcc_rule_pcc_rule_id_put(
-      const std::string& pccRuleId, const oai::model::pcf::PccRule& pccRule,
+      const std::string& pccRuleId, const oai::_3gpp::model::PccRule& pccRule,
       Pistache::Http::ResponseWriter& response) = 0;
   /// <summary>
   /// Create a new PCC rule
@@ -120,7 +120,7 @@ class PCCRulesApi {
   /// </remarks>
   /// <param name="pccRule">PCC rule to create</param>
   virtual void pcc_rule_post(
-      const oai::model::pcf::PccRule& pccRule,
+      const oai::_3gpp::model::PccRule& pccRule,
       Pistache::Http::ResponseWriter& response) = 0;
   /// <summary>
   /// List all PCC rules

@@ -14,7 +14,7 @@ namespace oai::pcf::provisioning::api {
 using namespace oai::pcf::api;
 using namespace oai::common::sbi;
 using namespace oai::pcf::provisioning::model;
-using namespace oai::model::common;
+using namespace oai::_3gpp::model;
 
 oai::pcf::api::api_response
 slice_policy_decisions_handler::slice_policy_decision_get(

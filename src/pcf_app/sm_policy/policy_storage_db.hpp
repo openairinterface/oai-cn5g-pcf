@@ -22,7 +22,7 @@ class policy_storage_db : public policy_storage {
   policy_storage_db();
 
   std::shared_ptr<policy_decision> find_policy(
-      const oai::model::pcf::SmPolicyContextData& context);
+      const oai::_3gpp::model::SmPolicyContextData& context);
 
   void notify_subscribers(const std::shared_ptr<policy_decision>& decision);
 
@@ -31,18 +31,18 @@ class policy_storage_db : public policy_storage {
 
   void insert_supi_decision(
       const std::string& supi,
-      const oai::model::pcf::SmPolicyDecision& decision);
+      const oai::_3gpp::model::SmPolicyDecision& decision);
 
   void insert_dnn_decision(
       const std::string& dnn,
-      const oai::model::pcf::SmPolicyDecision& decision);
+      const oai::_3gpp::model::SmPolicyDecision& decision);
 
   void insert_slice_decision(
-      const oai::model::common::Snssai&,
-      const oai::model::pcf::SmPolicyDecision& decision);
+      const oai::_3gpp::model::Snssai&,
+      const oai::_3gpp::model::SmPolicyDecision& decision);
 
   void insert_associations(
-      const oai::model::pcf::SmPolicyContextData& context,
+      const oai::_3gpp::model::SmPolicyContextData& context,
       const std::string& association_id);
 
   void insert_ip_association(

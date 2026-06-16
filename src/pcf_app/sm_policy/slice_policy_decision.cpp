@@ -3,12 +3,13 @@
  */
 
 #include "slice_policy_decision.hpp"
+#include <nlohmann/json.hpp>
 #include <sstream>
 
-using namespace oai::model::pcf;
+using namespace oai::_3gpp::model;
 using namespace oai::pcf::app::sm_policy;
 using namespace oai::pcf::app;
-using namespace oai::model::common;
+using namespace oai::_3gpp::model;
 
 status_code slice_policy_decision::decide(
     const SmPolicyContextData& context, SmPolicyDecision& decision) const {
@@ -28,7 +29,9 @@ std::string slice_policy_decision::to_string() const {
   std::stringstream ss;
   ss << "Slice: Sd: " << m_snssai.getSd()
      << " Sst: " << std::to_string(m_snssai.getSst()) << "\n";
-  ss << " -- " << m_decision;
+  nlohmann::json j;
+  to_json(j, m_decision);
+  ss << " -- " << j.dump();
   return ss.str();
 }
 

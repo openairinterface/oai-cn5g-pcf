@@ -63,8 +63,8 @@ class SlicePolicyDecision {
   /// <summary>
   ///
   /// </summary>
-  oai::model::common::Snssai getSnssai() const;
-  void setSnssai(oai::model::common::Snssai const& value);
+  oai::_3gpp::model::Snssai getSnssai() const;
+  void setSnssai(oai::_3gpp::model::Snssai const& value);
   bool snssaiIsSet() const;
   void unsetSnssai();
   /// <summary>
@@ -80,7 +80,7 @@ class SlicePolicyDecision {
 
  protected:
 #pragma db id
-  oai::model::common::Snssai m_Snssai;
+  oai::_3gpp::model::Snssai m_Snssai;
   bool m_SnssaiIsSet;
   std::vector<std::string> m_PccRuleIds;
   bool m_PccRuleIdsIsSet;

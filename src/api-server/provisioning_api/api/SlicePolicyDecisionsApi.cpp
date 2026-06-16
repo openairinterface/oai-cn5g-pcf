@@ -19,7 +19,7 @@
 
 namespace oai::pcf::provisioning::api {
 
-using namespace oai::model::common::helpers;
+using namespace oai::_3gpp::model::helpers;
 using namespace oai::pcf::provisioning::model;
 using namespace oai::pcf::api;
 
@@ -79,7 +79,7 @@ SlicePolicyDecisionsApi::handleParsingException(
     throw;
   } catch (nlohmann::detail::exception& e) {
     return std::make_pair(Pistache::Http::Code::Bad_Request, e.what());
-  } catch (oai::model::common::helpers::ValidationException& e) {
+  } catch (oai::_3gpp::model::helpers::ValidationException& e) {
     return std::make_pair(Pistache::Http::Code::Bad_Request, e.what());
   } catch (std::exception& e) {
     return std::make_pair(
@@ -117,7 +117,7 @@ void SlicePolicyDecisionsApi::slice_policy_decision_delete_handler(
         sd = valueQuery_instance;
       }
     } else {
-      sd = oai::model::common::SD_DEFAULT_VALUE;
+      sd = oai::_3gpp::model::SD_DEFAULT_VALUE;
     }
 
     try {
@@ -160,7 +160,7 @@ void SlicePolicyDecisionsApi::slice_policy_decision_get_handler(
         sd = valueQuery_instance;
       }
     } else {
-      sd = oai::model::common::SD_DEFAULT_VALUE;
+      sd = oai::_3gpp::model::SD_DEFAULT_VALUE;
     }
 
     try {
@@ -241,7 +241,7 @@ void SlicePolicyDecisionsApi::slice_policy_decision_put_handler(
         sd = valueQuery_instance;
       }
     } else {
-      sd = oai::model::common::SD_DEFAULT_VALUE;
+      sd = oai::_3gpp::model::SD_DEFAULT_VALUE;
     }
 
     try {

@@ -14,8 +14,8 @@
 #include "pcf_config.hpp"
 
 using namespace oai::pcf::app::sm_policy;
-using namespace oai::model::pcf;
-using namespace oai::model::common;
+using namespace oai::_3gpp::model;
+using namespace oai::_3gpp::model;
 using namespace oai::pcf::provisioning::model;
 using namespace oai::pcf::app;
 
@@ -125,26 +125,27 @@ void policy_storage_db::subscribe_to_decision_change(
 
 void policy_storage_db::insert_supi_decision(
     const std::string& supi,
-    const oai::model::pcf::SmPolicyDecision& decision) {
+    const oai::_3gpp::model::SmPolicyDecision& decision) {
   // TODO implement
   Logger::pcf_app().debug("Not implemented: Inserting SUPI decision into DB");
 }
 
 void policy_storage_db::insert_dnn_decision(
-    const std::string& dnn, const oai::model::pcf::SmPolicyDecision& decision) {
+    const std::string& dnn,
+    const oai::_3gpp::model::SmPolicyDecision& decision) {
   // TODO implement
   Logger::pcf_app().debug("Not implemented: Inserting DNN decision into DB");
 }
 
 void policy_storage_db::insert_slice_decision(
-    const oai::model::common::Snssai&,
-    const oai::model::pcf::SmPolicyDecision& decision) {
+    const oai::_3gpp::model::Snssai&,
+    const oai::_3gpp::model::SmPolicyDecision& decision) {
   // TODO implement
   Logger::pcf_app().debug("Not implemented: Inserting Slice decision into DB");
 }
 
 void policy_storage_db::insert_associations(
-    const oai::model::pcf::SmPolicyContextData& context,
+    const oai::_3gpp::model::SmPolicyContextData& context,
     const std::string& association_id) {
   // TODO implement
   Logger::pcf_app().debug("Not implemented: Inserting associations into DB");

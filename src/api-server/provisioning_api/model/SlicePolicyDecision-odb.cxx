@@ -312,7 +312,7 @@ access::object_traits_impl<
 
   id_type id;
   {
-    composite_value_traits< ::oai::model::common::Snssai, id_mysql>::init(
+    composite_value_traits< ::oai::_3gpp::model::Snssai, id_mysql>::init(
         id, i.m_Snssai_value, db);
   }
 
@@ -329,7 +329,7 @@ bool access::object_traits_impl<
 
   // m_Snssai
   //
-  if (composite_value_traits< ::oai::model::common::Snssai, id_mysql>::grow(
+  if (composite_value_traits< ::oai::_3gpp::model::Snssai, id_mysql>::grow(
           i.m_Snssai_value, t + 0UL))
     grew = true;
 
@@ -356,7 +356,7 @@ void access::object_traits_impl<
   // m_Snssai
   //
   if (sk != statement_update) {
-    composite_value_traits< ::oai::model::common::Snssai, id_mysql>::bind(
+    composite_value_traits< ::oai::_3gpp::model::Snssai, id_mysql>::bind(
         b + n, i.m_Snssai_value, sk);
     n += 3UL;
   }
@@ -383,7 +383,7 @@ void access::object_traits_impl<
     id_mysql>::bind(MYSQL_BIND* b, id_image_type& i) {
   std::size_t n(0);
   mysql::statement_kind sk(mysql::statement_select);
-  composite_value_traits< ::oai::model::common::Snssai, id_mysql>::bind(
+  composite_value_traits< ::oai::_3gpp::model::Snssai, id_mysql>::bind(
       b + n, i.id_value, sk);
 }
 
@@ -401,9 +401,9 @@ bool access::object_traits_impl<
   // m_Snssai
   //
   if (sk == statement_insert) {
-    ::oai::model::common::Snssai const& v = o.m_Snssai;
+    ::oai::_3gpp::model::Snssai const& v = o.m_Snssai;
 
-    if (composite_value_traits< ::oai::model::common::Snssai, id_mysql>::init(
+    if (composite_value_traits< ::oai::_3gpp::model::Snssai, id_mysql>::init(
             i.m_Snssai_value, v, sk))
       grew = true;
   }
@@ -443,9 +443,9 @@ void access::object_traits_impl<
   // m_Snssai
   //
   {
-    ::oai::model::common::Snssai& v = o.m_Snssai;
+    ::oai::_3gpp::model::Snssai& v = o.m_Snssai;
 
-    composite_value_traits< ::oai::model::common::Snssai, id_mysql>::init(
+    composite_value_traits< ::oai::_3gpp::model::Snssai, id_mysql>::init(
         v, i.m_Snssai_value, db);
   }
 
@@ -474,7 +474,7 @@ void access::object_traits_impl<
   bool grew(false);
   mysql::statement_kind sk(mysql::statement_select);
   {
-    if (composite_value_traits< ::oai::model::common::Snssai, id_mysql>::init(
+    if (composite_value_traits< ::oai::_3gpp::model::Snssai, id_mysql>::init(
             i.id_value, id, sk))
       grew = true;
   }

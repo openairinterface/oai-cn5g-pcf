@@ -27,7 +27,7 @@ class individual_application_session_context_document_api_handler {
    */
   api_response delete_app_session(
       const std::string& app_session_id,
-      const oai::model::pcf::EventsSubscReqData& events_subsc_req_data);
+      const oai::_3gpp::model::EventsSubscReqData& events_subsc_req_data);
 
   /**
    * Delete Individual Application Session Context based on ID
@@ -45,7 +45,7 @@ class individual_application_session_context_document_api_handler {
    */
   api_response mod_app_session(
       const std::string& app_session_id,
-      const oai::model::pcf::AppSessionContextUpdateDataPatch&
+      const oai::_3gpp::model::AppSessionContextUpdateDataPatch&
           app_session_context_update_data_patch);
 
  private:

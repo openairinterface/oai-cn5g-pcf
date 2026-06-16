@@ -16,10 +16,10 @@
 
 namespace oai::pcf::api {
 
-using namespace oai::model::pcf;
+using namespace oai::_3gpp::model;
 using namespace oai::pcf::app;
 using namespace oai::pcf::app::sm_policy;
-using namespace oai::model::common;
+using namespace oai::_3gpp::model;
 
 IndividualSMPolicyDocumentApiImpl::IndividualSMPolicyDocumentApiImpl(
     const std::shared_ptr<Pistache::Rest::Router>& rtr,

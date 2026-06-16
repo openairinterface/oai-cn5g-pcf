@@ -69,53 +69,54 @@ class database_wrapper_abstraction {
           slicePolicyDecision) = 0;
 
   virtual oai::pcf::provisioning::model::SlicePolicyDecision
-  getSlicePolicyDecision(const oai::model::common::Snssai& slice) = 0;
+  getSlicePolicyDecision(const oai::_3gpp::model::Snssai& slice) = 0;
 
   virtual bool updateSlicePolicyDecision(
       const oai::pcf::provisioning::model::SlicePolicyDecision&
           slicePolicyDecision) = 0;
 
   virtual bool deleteSlicePolicyDecision(
-      const oai::model::common::Snssai& slice) = 0;
+      const oai::_3gpp::model::Snssai& slice) = 0;
 
   virtual std::vector<oai::pcf::provisioning::model::SlicePolicyDecision>
   getAllSlicePolicyDecisions() = 0;
 
-  virtual bool createQosData(const oai::model::pcf::QosData& qosData) = 0;
+  virtual bool createQosData(const oai::_3gpp::model::QosData& qosData) = 0;
 
-  virtual oai::model::pcf::QosData getQosData(const std::string& qosId) = 0;
+  virtual oai::_3gpp::model::QosData getQosData(const std::string& qosId) = 0;
 
-  virtual bool updateQosData(const oai::model::pcf::QosData& qosData) = 0;
+  virtual bool updateQosData(const oai::_3gpp::model::QosData& qosData) = 0;
 
   virtual bool deleteQosData(const std::string& qosId) = 0;
 
-  virtual std::vector<oai::model::pcf::QosData> getAllQosData() = 0;
+  virtual std::vector<oai::_3gpp::model::QosData> getAllQosData() = 0;
 
   virtual bool createTrafficControlData(
-      const oai::model::pcf::TrafficControlData& trafficControlData) = 0;
+      const oai::_3gpp::model::TrafficControlData& trafficControlData) = 0;
 
-  virtual oai::model::pcf::TrafficControlData getTrafficControlData(
+  virtual oai::_3gpp::model::TrafficControlData getTrafficControlData(
       const std::string& tcId) = 0;
 
   virtual bool updateTrafficControlData(
-      const oai::model::pcf::TrafficControlData& trafficControlData) = 0;
+      const oai::_3gpp::model::TrafficControlData& trafficControlData) = 0;
 
   virtual bool deleteTrafficControlData(const std::string& tcId) = 0;
 
-  virtual std::vector<oai::model::pcf::TrafficControlData>
+  virtual std::vector<oai::_3gpp::model::TrafficControlData>
   getAllTrafficControlData() = 0;
 
-  virtual bool createPccRule(const oai::model::pcf::PccRule& pccRule) = 0;
+  virtual bool createPccRule(const oai::_3gpp::model::PccRule& pccRule) = 0;
 
-  virtual oai::model::pcf::PccRule getPccRule(const std::string& pccRuleId) = 0;
+  virtual oai::_3gpp::model::PccRule getPccRule(
+      const std::string& pccRuleId) = 0;
 
-  virtual bool updatePccRule(const oai::model::pcf::PccRule& pccRule) = 0;
+  virtual bool updatePccRule(const oai::_3gpp::model::PccRule& pccRule) = 0;
 
   virtual bool deletePccRule(const std::string& pccRuleId) = 0;
 
-  virtual std::vector<oai::model::pcf::PccRule> getAllPccRules() = 0;
+  virtual std::vector<oai::_3gpp::model::PccRule> getAllPccRules() = 0;
 
-  virtual oai::model::pcf::SmPolicyDecision getSmPolicyDecision(
+  virtual oai::_3gpp::model::SmPolicyDecision getSmPolicyDecision(
       const std::vector<std::string>& pccRuleIds) = 0;
 };
 

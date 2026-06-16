@@ -26,7 +26,7 @@ traffic_control_data_handler::traffic_control_data_tc_id_delete(
 oai::pcf::api::api_response
 traffic_control_data_handler::traffic_control_data_tc_id_put(
     const std::string& tcId,
-    const oai::model::pcf::TrafficControlData& trafficControlData) {
+    const oai::_3gpp::model::TrafficControlData& trafficControlData) {
   if (tcId != trafficControlData.getTcId()) {
     api_response response;
     response.status_code = http_status_code::BAD_REQUEST;
@@ -54,7 +54,7 @@ traffic_control_data_handler::traffic_control_data_tc_id_get(
 
 oai::pcf::api::api_response
 traffic_control_data_handler::traffic_control_data_post(
-    const oai::model::pcf::TrafficControlData& trafficControlData) {
+    const oai::_3gpp::model::TrafficControlData& trafficControlData) {
   return handle_request_with_error_handling([&]() -> bool {
     nlohmann::json json_data = trafficControlData;
     Logger::pcf_db().info("Creating TrafficControlData: %s", json_data.dump());

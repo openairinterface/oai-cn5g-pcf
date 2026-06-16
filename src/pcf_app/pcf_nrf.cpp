@@ -17,7 +17,7 @@
 
 using namespace oai::pcf::app;
 using namespace oai::config::pcf;
-using namespace oai::model::common;
+using namespace oai::_3gpp::model;
 using namespace boost::placeholders;
 using namespace std;
 

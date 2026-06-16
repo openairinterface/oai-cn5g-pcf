@@ -15,7 +15,7 @@
 
 namespace oai::pcf::api {
 
-using namespace oai::model::pcf;
+using namespace oai::_3gpp::model;
 
 EventsSubscriptionDocumentApiImpl::EventsSubscriptionDocumentApiImpl(
     const std::shared_ptr<Pistache::Rest::Router>& rtr,

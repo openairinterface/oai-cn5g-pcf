@@ -26,7 +26,7 @@ class qos_data_handler : public handler_base {
    * @return
    */
   oai::pcf::api::api_response qos_data_post(
-      const oai::model::pcf::QosData& qosData);
+      const oai::_3gpp::model::QosData& qosData);
 
   /**
    *
@@ -49,6 +49,6 @@ class qos_data_handler : public handler_base {
    * @return
    */
   oai::pcf::api::api_response qos_data_qos_id_put(
-      const std::string& qosId, const oai::model::pcf::QosData& qosData);
+      const std::string& qosId, const oai::_3gpp::model::QosData& qosData);
 };
 }  // namespace oai::pcf::provisioning::api

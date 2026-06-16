@@ -15,9 +15,9 @@
 
 namespace oai::pcf::api {
 
-using namespace oai::model::pcf;
+using namespace oai::_3gpp::model;
 using namespace oai::pcf::app;
-using namespace oai::model::common;
+using namespace oai::_3gpp::model;
 
 ApplicationSessionsCollectionApiImpl::ApplicationSessionsCollectionApiImpl(
     const std::shared_ptr<Pistache::Rest::Router>& rtr,

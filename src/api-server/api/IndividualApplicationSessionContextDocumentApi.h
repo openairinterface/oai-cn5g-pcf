@@ -93,7 +93,7 @@ class IndividualApplicationSessionContextDocumentApi : public ApiBase {
   /// Context resource, req notification.  (optional)</param>
   virtual void delete_app_session(
       const std::string& appSessionId,
-      const oai::model::pcf::EventsSubscReqData& eventsSubscReqData,
+      const oai::_3gpp::model::EventsSubscReqData& eventsSubscReqData,
       Pistache::Http::ResponseWriter& response) = 0;
   /// <summary>
   /// Reads an existing Individual Application Session Context
@@ -116,7 +116,7 @@ class IndividualApplicationSessionContextDocumentApi : public ApiBase {
   /// resource.</param>
   virtual void mod_app_session(
       const std::string& appSessionId,
-      const oai::model::pcf::AppSessionContextUpdateDataPatch&
+      const oai::_3gpp::model::AppSessionContextUpdateDataPatch&
           appSessionContextUpdateDataPatch,
       Pistache::Http::ResponseWriter& response) = 0;
 };

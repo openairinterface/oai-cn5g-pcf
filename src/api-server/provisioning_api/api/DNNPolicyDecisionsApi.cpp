@@ -75,7 +75,7 @@ DNNPolicyDecisionsApi::handleParsingException(
     throw;
   } catch (nlohmann::detail::exception& e) {
     return std::make_pair(Pistache::Http::Code::Bad_Request, e.what());
-  } catch (oai::model::common::helpers::ValidationException& e) {
+  } catch (oai::_3gpp::model::helpers::ValidationException& e) {
     return std::make_pair(Pistache::Http::Code::Bad_Request, e.what());
   } catch (std::exception& e) {
     return std::make_pair(

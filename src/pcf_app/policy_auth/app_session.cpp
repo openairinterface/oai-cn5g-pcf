@@ -9,7 +9,6 @@
 #include "TrafficControlData.h"
 #include "PccRule.h"
 #include "SmPolicyDecision.h"
-#include "AfSfcRequirement.h"
 #include "policy_auth/pcf_policy_authorization_status_code.hpp"
 #include "logger.hpp"
 #include "app_session.hpp"
@@ -19,7 +18,7 @@
 namespace oai::pcf::app {
 namespace policy_auth {
 
-using namespace oai::model::pcf;
+using namespace oai::_3gpp::model;
 using namespace oai::pcf::app;
 using namespace oai::utils;
 
@@ -27,106 +26,24 @@ std::string app_session::get_id() const {
   return m_id;
 }
 
-const oai::model::pcf::AppSessionContextReqData&
+const oai::_3gpp::model::AppSessionContextReqData&
 app_session::get_app_session_context() const {
   return m_context;
 }
 
 void app_session::set_app_session_context(
-    oai::model::pcf::AppSessionContextReqData& context) {
+    oai::_3gpp::model::AppSessionContextReqData& context) {
   m_context = context;
 }
 
-handler_result handle_service_function_chaining(
-    const oai::model::pcf::AfSfcRequirement& af_sfc,
-    oai::model::pcf::SmPolicyDecision& decision) {
-  // Extract N6-LAN Traffic Steering Requirements
-  std::shared_ptr<oai::model::pcf::TrafficControlData> traffic_control_data =
-      std::make_shared<oai::model::pcf::TrafficControlData>();
-
-  if (!af_sfc.sfcIdDlIsSet() && !af_sfc.sfcIdUlIsSet()) {
-    Logger::pcf_app().error(
-        "Failed either UL SFC ID or DL SFC ID should be set");
-    return handler_result{
-        .status          = status_code::BAD_REQUEST,
-        .problem_details = "INVALID_SERVICE_INFORMATION"};
-  }
-
-  // Set Traffic Steering Policy ID for DL and/or UL based on the presence of
-  // corresponding SFC IDs
-  if (af_sfc.sfcIdDlIsSet()) {
-    traffic_control_data->setTrafficSteeringPolIdDl(af_sfc.getSfcIdDl());
-  }
-
-  if (af_sfc.sfcIdUlIsSet()) {
-    traffic_control_data->setTrafficSteeringPolIdUl(af_sfc.getSfcIdUl());
-  }
-
-  // TODO [PAS]: Transparently include SFC Metadata if available
-
-  // Add the traffic control to PCC rules
-  std::shared_ptr<oai::model::pcf::PccRule> pcc_rule =
-      std::make_shared<oai::model::pcf::PccRule>();
-  // Generate Id using id generator
-  auto& uid_generator =
-      oai::utils::uint_uid_generator<uint32_t>::get_instance();
-  uint32_t uid = uid_generator.get_uid();
-  Logger::pcf_app().debug(fmt::format("Generated PCC Rule ID: {}", uid));
-
-  std::string pcc_rule_id            = std::to_string(uid);
-  std::string rcId                   = "rc-" + pcc_rule_id;
-  std::vector<std::string> refTcData = {rcId};
-
-  pcc_rule->setRefTcData(refTcData);
-  pcc_rule->setPccRuleId(pcc_rule_id);
-
-  // // Create and set TCId on traffic control data and add it as RefTc to PCC
-  traffic_control_data->setTcId(rcId);
-
-  // Set traffic control to decision
-  // decision.setTraffContDecs(used_traffic_control);
-  auto traffic_control_map = decision.getTraffContDecs();
-  traffic_control_map.insert(std::make_pair(rcId, *traffic_control_data));
-  decision.setTraffContDecs(traffic_control_map);
-
-  // Set PCC rule to decision
-  auto pcc_rules_map = decision.getPccRules();
-  pcc_rules_map.insert(std::make_pair(pcc_rule_id, *pcc_rule));
-  decision.setPccRules(pcc_rules_map);
-
-  return handler_result{.status = status_code::OK};
-}
-
-handler_result handle_service_function_chaining_update(
-    const oai::model::pcf::AfSfcRequirement& af_sfc,
-    oai::model::pcf::SmPolicyDecision& decision,
-    oai::model::pcf::AppSessionContextReqData& context) {
-  Logger::pcf_app().info("Handling Service Function Chaining Update");
-  auto result = handle_service_function_chaining(af_sfc, decision);
-  if (result.problem_details.has_value()) {
-    return result;
-  }
-
-  auto af_sfc_req = context.getAfSfcReq();
-
-  if (af_sfc.sfcIdDlIsSet()) {
-    af_sfc_req.setSfcIdDl(af_sfc.getSfcIdDl());
-  }
-
-  if (af_sfc.sfcIdUlIsSet()) {
-    af_sfc_req.setSfcIdUl(af_sfc.getSfcIdUl());
-  }
-
-  // TODO [PAS] Transparently include SFC Metadata if available
-
-  context.setAfSfcReq(af_sfc_req);
-
-  return handler_result{.status = status_code::OK};
-}
+// TODO: Restore handle_service_function_chaining and
+// handle_service_function_chaining_update once AfSfcRequirement and
+// AppSessionContextReqData::afSfcReq are regenerated in the new model.
+// Ref: 3GPP TS 29.514 §4.2.2.8 N6-LAN traffic steering (SFC).
 
 handler_result validate_and_merge_decision(
-    const oai::model::pcf::SmPolicyDecision& request_decision,
-    oai::model::pcf::SmPolicyDecision& current_decision, bool update) {
+    const oai::_3gpp::model::SmPolicyDecision& request_decision,
+    oai::_3gpp::model::SmPolicyDecision& current_decision, bool update) {
   Logger::pcf_app().info("Validating and Merging Decision");
 
   // TODO [PAS] Discuss with team how to handle creation of new PCC rules for
@@ -227,7 +144,7 @@ handler_result validate_and_merge_decision(
 }
 
 handler_result authorize_service_info(
-    const oai::model::pcf::AppSessionContextReqData& reqData) {
+    const oai::_3gpp::model::AppSessionContextReqData& reqData) {
   // TODO: Implement service authorization
 
   return handler_result{.status = status_code::OK};

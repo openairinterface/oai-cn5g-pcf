@@ -4,7 +4,7 @@
 
 #include "individual_sm_association.hpp"
 
-using namespace oai::model::pcf;
+using namespace oai::_3gpp::model;
 using namespace oai::pcf::app::sm_policy;
 
 const SmPolicyContextData&
@@ -18,7 +18,7 @@ const SmPolicyDecision& individual_sm_association::get_sm_policy_decision_dto()
 }
 
 const void individual_sm_association::set_sm_policy_decision(
-    oai::model::pcf::SmPolicyDecision& new_decision) {
+    oai::_3gpp::model::SmPolicyDecision& new_decision) {
   m_decision.set_sm_policy_decision(new_decision);
 }
 

@@ -28,14 +28,14 @@ namespace odb {
 //
 
 struct access::object_traits_impl<
-    ::oai::model::pcf::QosData, id_mysql>::extra_statement_cache_type {
+    ::oai::_3gpp::model::QosData, id_mysql>::extra_statement_cache_type {
   extra_statement_cache_type(
       mysql::connection&, image_type&, id_image_type&, mysql::binding&,
       mysql::binding&) {}
 };
 
-access::object_traits_impl< ::oai::model::pcf::QosData, id_mysql>::id_type
-access::object_traits_impl< ::oai::model::pcf::QosData, id_mysql>::id(
+access::object_traits_impl< ::oai::_3gpp::model::QosData, id_mysql>::id_type
+access::object_traits_impl< ::oai::_3gpp::model::QosData, id_mysql>::id(
     const image_type& i) {
   mysql::database* db(0);
   ODB_POTENTIALLY_UNUSED(db);
@@ -49,7 +49,7 @@ access::object_traits_impl< ::oai::model::pcf::QosData, id_mysql>::id(
   return id;
 }
 
-bool access::object_traits_impl< ::oai::model::pcf::QosData, id_mysql>::grow(
+bool access::object_traits_impl< ::oai::_3gpp::model::QosData, id_mysql>::grow(
     image_type& i, my_bool* t) {
   ODB_POTENTIALLY_UNUSED(i);
   ODB_POTENTIALLY_UNUSED(t);
@@ -117,7 +117,7 @@ bool access::object_traits_impl< ::oai::model::pcf::QosData, id_mysql>::grow(
 
   // m_Arp
   //
-  if (composite_value_traits< ::oai::model::common::Arp, id_mysql>::grow(
+  if (composite_value_traits< ::oai::_3gpp::model::Arp, id_mysql>::grow(
           i.m_Arp_value, t + 11UL))
     grew = true;
 
@@ -241,7 +241,7 @@ bool access::object_traits_impl< ::oai::model::pcf::QosData, id_mysql>::grow(
   return grew;
 }
 
-void access::object_traits_impl< ::oai::model::pcf::QosData, id_mysql>::bind(
+void access::object_traits_impl< ::oai::_3gpp::model::QosData, id_mysql>::bind(
     MYSQL_BIND* b, image_type& i, mysql::statement_kind sk) {
   ODB_POTENTIALLY_UNUSED(sk);
 
@@ -346,7 +346,7 @@ void access::object_traits_impl< ::oai::model::pcf::QosData, id_mysql>::bind(
 
   // m_Arp
   //
-  composite_value_traits< ::oai::model::common::Arp, id_mysql>::bind(
+  composite_value_traits< ::oai::_3gpp::model::Arp, id_mysql>::bind(
       b + n, i.m_Arp_value, sk);
   n += 3UL;
 
@@ -573,7 +573,7 @@ void access::object_traits_impl< ::oai::model::pcf::QosData, id_mysql>::bind(
   n++;
 }
 
-void access::object_traits_impl< ::oai::model::pcf::QosData, id_mysql>::bind(
+void access::object_traits_impl< ::oai::_3gpp::model::QosData, id_mysql>::bind(
     MYSQL_BIND* b, id_image_type& i) {
   std::size_t n(0);
   b[n].buffer_type   = MYSQL_TYPE_STRING;
@@ -583,7 +583,7 @@ void access::object_traits_impl< ::oai::model::pcf::QosData, id_mysql>::bind(
   b[n].is_null       = &i.id_null;
 }
 
-bool access::object_traits_impl< ::oai::model::pcf::QosData, id_mysql>::init(
+bool access::object_traits_impl< ::oai::_3gpp::model::QosData, id_mysql>::init(
     image_type& i, const object_type& o, mysql::statement_kind sk) {
   ODB_POTENTIALLY_UNUSED(i);
   ODB_POTENTIALLY_UNUSED(o);
@@ -737,9 +737,9 @@ bool access::object_traits_impl< ::oai::model::pcf::QosData, id_mysql>::init(
   // m_Arp
   //
   {
-    ::oai::model::common::Arp const& v = o.m_Arp;
+    ::oai::_3gpp::model::Arp const& v = o.m_Arp;
 
-    if (composite_value_traits< ::oai::model::common::Arp, id_mysql>::init(
+    if (composite_value_traits< ::oai::_3gpp::model::Arp, id_mysql>::init(
             i.m_Arp_value, v, sk))
       grew = true;
   }
@@ -1056,7 +1056,7 @@ bool access::object_traits_impl< ::oai::model::pcf::QosData, id_mysql>::init(
   return grew;
 }
 
-void access::object_traits_impl< ::oai::model::pcf::QosData, id_mysql>::init(
+void access::object_traits_impl< ::oai::_3gpp::model::QosData, id_mysql>::init(
     object_type& o, const image_type& i, database* db) {
   ODB_POTENTIALLY_UNUSED(o);
   ODB_POTENTIALLY_UNUSED(i);
@@ -1164,9 +1164,9 @@ void access::object_traits_impl< ::oai::model::pcf::QosData, id_mysql>::init(
   // m_Arp
   //
   {
-    ::oai::model::common::Arp& v = o.m_Arp;
+    ::oai::_3gpp::model::Arp& v = o.m_Arp;
 
-    composite_value_traits< ::oai::model::common::Arp, id_mysql>::init(
+    composite_value_traits< ::oai::_3gpp::model::Arp, id_mysql>::init(
         v, i.m_Arp_value, db);
   }
 
@@ -1420,7 +1420,7 @@ void access::object_traits_impl< ::oai::model::pcf::QosData, id_mysql>::init(
   }
 }
 
-void access::object_traits_impl< ::oai::model::pcf::QosData, id_mysql>::init(
+void access::object_traits_impl< ::oai::_3gpp::model::QosData, id_mysql>::init(
     id_image_type& i, const id_type& id) {
   bool grew(false);
   {
@@ -1438,7 +1438,7 @@ void access::object_traits_impl< ::oai::model::pcf::QosData, id_mysql>::init(
 }
 
 const char access::object_traits_impl<
-    ::oai::model::pcf::QosData, id_mysql>::persist_statement[] =
+    ::oai::_3gpp::model::QosData, id_mysql>::persist_statement[] =
     "INSERT INTO `QosData` "
     "(`QosId`, "
     "`r_5qi`, "
@@ -1486,7 +1486,7 @@ const char access::object_traits_impl<
     "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
 const char access::object_traits_impl<
-    ::oai::model::pcf::QosData, id_mysql>::find_statement[] =
+    ::oai::_3gpp::model::QosData, id_mysql>::find_statement[] =
     "SELECT "
     "`QosData`.`QosId`, "
     "`QosData`.`r_5qi`, "
@@ -1535,7 +1535,7 @@ const char access::object_traits_impl<
     "WHERE `QosData`.`QosId`=?";
 
 const char access::object_traits_impl<
-    ::oai::model::pcf::QosData, id_mysql>::update_statement[] =
+    ::oai::_3gpp::model::QosData, id_mysql>::update_statement[] =
     "UPDATE `QosData` "
     "SET "
     "`r_5qi`=?, "
@@ -1581,12 +1581,12 @@ const char access::object_traits_impl<
     "WHERE `QosId`=?";
 
 const char access::object_traits_impl<
-    ::oai::model::pcf::QosData, id_mysql>::erase_statement[] =
+    ::oai::_3gpp::model::QosData, id_mysql>::erase_statement[] =
     "DELETE FROM `QosData` "
     "WHERE `QosId`=?";
 
 const char access::object_traits_impl<
-    ::oai::model::pcf::QosData, id_mysql>::query_statement[] =
+    ::oai::_3gpp::model::QosData, id_mysql>::query_statement[] =
     "SELECT "
     "`QosData`.`QosId`, "
     "`QosData`.`r_5qi`, "
@@ -1634,13 +1634,13 @@ const char access::object_traits_impl<
     "FROM `QosData`";
 
 const char access::object_traits_impl<
-    ::oai::model::pcf::QosData, id_mysql>::erase_query_statement[] =
+    ::oai::_3gpp::model::QosData, id_mysql>::erase_query_statement[] =
     "DELETE FROM `QosData`";
 
 const char access::object_traits_impl<
-    ::oai::model::pcf::QosData, id_mysql>::table_name[] = "`QosData`";
+    ::oai::_3gpp::model::QosData, id_mysql>::table_name[] = "`QosData`";
 
-void access::object_traits_impl< ::oai::model::pcf::QosData, id_mysql>::persist(
+void access::object_traits_impl< ::oai::_3gpp::model::QosData, id_mysql>::persist(
     database& db, const object_type& obj) {
   using namespace mysql;
 
@@ -1666,7 +1666,7 @@ void access::object_traits_impl< ::oai::model::pcf::QosData, id_mysql>::persist(
   callback(db, obj, callback_event::post_persist);
 }
 
-void access::object_traits_impl< ::oai::model::pcf::QosData, id_mysql>::update(
+void access::object_traits_impl< ::oai::_3gpp::model::QosData, id_mysql>::update(
     database& db, const object_type& obj) {
   ODB_POTENTIALLY_UNUSED(db);
 
@@ -1714,7 +1714,7 @@ void access::object_traits_impl< ::oai::model::pcf::QosData, id_mysql>::update(
   pointer_cache_traits::update(db, obj);
 }
 
-void access::object_traits_impl< ::oai::model::pcf::QosData, id_mysql>::erase(
+void access::object_traits_impl< ::oai::_3gpp::model::QosData, id_mysql>::erase(
     database& db, const id_type& id) {
   using namespace mysql;
 
@@ -1736,8 +1736,8 @@ void access::object_traits_impl< ::oai::model::pcf::QosData, id_mysql>::erase(
   pointer_cache_traits::erase(db, id);
 }
 
-access::object_traits_impl< ::oai::model::pcf::QosData, id_mysql>::pointer_type
-access::object_traits_impl< ::oai::model::pcf::QosData, id_mysql>::find(
+access::object_traits_impl< ::oai::_3gpp::model::QosData, id_mysql>::pointer_type
+access::object_traits_impl< ::oai::_3gpp::model::QosData, id_mysql>::find(
     database& db, const id_type& id) {
   using namespace mysql;
 
@@ -1783,7 +1783,7 @@ access::object_traits_impl< ::oai::model::pcf::QosData, id_mysql>::find(
   return p;
 }
 
-bool access::object_traits_impl< ::oai::model::pcf::QosData, id_mysql>::find(
+bool access::object_traits_impl< ::oai::_3gpp::model::QosData, id_mysql>::find(
     database& db, const id_type& id, object_type& obj) {
   using namespace mysql;
 
@@ -1813,7 +1813,7 @@ bool access::object_traits_impl< ::oai::model::pcf::QosData, id_mysql>::find(
   return true;
 }
 
-bool access::object_traits_impl< ::oai::model::pcf::QosData, id_mysql>::reload(
+bool access::object_traits_impl< ::oai::_3gpp::model::QosData, id_mysql>::reload(
     database& db, object_type& obj) {
   using namespace mysql;
 
@@ -1838,7 +1838,7 @@ bool access::object_traits_impl< ::oai::model::pcf::QosData, id_mysql>::reload(
   return true;
 }
 
-bool access::object_traits_impl< ::oai::model::pcf::QosData, id_mysql>::find_(
+bool access::object_traits_impl< ::oai::_3gpp::model::QosData, id_mysql>::find_(
     statements_type& sts, const id_type* id) {
   using namespace mysql;
 
@@ -1882,8 +1882,8 @@ bool access::object_traits_impl< ::oai::model::pcf::QosData, id_mysql>::find_(
 }
 
 result<access::object_traits_impl<
-    ::oai::model::pcf::QosData, id_mysql>::object_type>
-access::object_traits_impl< ::oai::model::pcf::QosData, id_mysql>::query(
+    ::oai::_3gpp::model::QosData, id_mysql>::object_type>
+access::object_traits_impl< ::oai::_3gpp::model::QosData, id_mysql>::query(
     database& db, const query_base_type& q) {
   using namespace mysql;
   using odb::details::shared;
@@ -1921,7 +1921,7 @@ access::object_traits_impl< ::oai::model::pcf::QosData, id_mysql>::query(
 }
 
 unsigned long long
-access::object_traits_impl< ::oai::model::pcf::QosData, id_mysql>::erase_query(
+access::object_traits_impl< ::oai::_3gpp::model::QosData, id_mysql>::erase_query(
     database& db, const query_base_type& q) {
   using namespace mysql;
 

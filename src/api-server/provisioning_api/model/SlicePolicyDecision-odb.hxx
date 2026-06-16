@@ -50,7 +50,7 @@ class access::object_traits<
 
   static const bool polymorphic = false;
 
-  typedef ::oai::model::common::Snssai id_type;
+  typedef ::oai::_3gpp::model::Snssai id_type;
 
   static const bool auto_id = false;
 
@@ -194,7 +194,7 @@ class access::object_traits_impl<
           ::oai::pcf::provisioning::model::SlicePolicyDecision> {
  public:
   struct id_image_type {
-    composite_value_traits< ::oai::model::common::Snssai, id_mysql>::image_type
+    composite_value_traits< ::oai::_3gpp::model::Snssai, id_mysql>::image_type
         id_value;
 
     std::size_t version;
@@ -203,7 +203,7 @@ class access::object_traits_impl<
   struct image_type {
     // m_Snssai
     //
-    composite_value_traits< ::oai::model::common::Snssai, id_mysql>::image_type
+    composite_value_traits< ::oai::_3gpp::model::Snssai, id_mysql>::image_type
         m_Snssai_value;
 
     // m_SnssaiIsSet

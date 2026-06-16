@@ -81,7 +81,7 @@ class ApplicationSessionsCollectionApi : public ApiBase {
   /// <param name="appSessionContext">Contains the information for the creation
   /// the resource.</param>
   virtual void post_app_sessions(
-      const oai::model::pcf::AppSessionContext& appSessionContext,
+      const oai::_3gpp::model::AppSessionContext& appSessionContext,
       Pistache::Http::ResponseWriter& response) = 0;
 };
 

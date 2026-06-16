@@ -36,7 +36,7 @@ class pcc_rules_handler : public handler_base {
    * @return
    */
   oai::pcf::api::api_response pcc_rule_pcc_rule_id_put(
-      const std::string& pccRuleId, const oai::model::pcf::PccRule& pccRule);
+      const std::string& pccRuleId, const oai::_3gpp::model::PccRule& pccRule);
 
   /**
    *
@@ -44,7 +44,7 @@ class pcc_rules_handler : public handler_base {
    * @return
    */
   oai::pcf::api::api_response pcc_rule_post(
-      const oai::model::pcf::PccRule& pccRule);
+      const oai::_3gpp::model::PccRule& pccRule);
   /**
    *
    * @return

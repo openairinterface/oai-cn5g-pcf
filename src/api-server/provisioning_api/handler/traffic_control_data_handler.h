@@ -26,7 +26,7 @@ class traffic_control_data_handler : public handler_base {
    * @return
    */
   oai::pcf::api::api_response traffic_control_data_post(
-      const oai::model::pcf::TrafficControlData& trafficControlData);
+      const oai::_3gpp::model::TrafficControlData& trafficControlData);
 
   /**
    *
@@ -52,6 +52,6 @@ class traffic_control_data_handler : public handler_base {
    */
   oai::pcf::api::api_response traffic_control_data_tc_id_put(
       const std::string& tcId,
-      const oai::model::pcf::TrafficControlData& trafficControlData);
+      const oai::_3gpp::model::TrafficControlData& trafficControlData);
 };
 }  // namespace oai::pcf::provisioning::api

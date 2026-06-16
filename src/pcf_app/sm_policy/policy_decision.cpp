@@ -5,9 +5,10 @@
 #include "policy_decision.hpp"
 #include "PolicyControlRequestTrigger_anyOf.h"
 #include "logger.hpp"
+#include <nlohmann/json.hpp>
 #include <sstream>
 
-using namespace oai::model::pcf;
+using namespace oai::_3gpp::model;
 using namespace oai::pcf::app::sm_policy;
 using namespace oai::pcf::app;
 
@@ -251,9 +252,9 @@ status_code policy_decision::redecide(
 }
 
 std::string policy_decision::to_string() const {
-  std::stringstream ss;
-  ss << m_decision;
-  return ss.str();
+  nlohmann::json j;
+  to_json(j, m_decision);
+  return j.dump();
 }
 
 std::ostream& operator<<(

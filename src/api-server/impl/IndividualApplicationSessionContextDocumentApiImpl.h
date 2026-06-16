@@ -41,7 +41,7 @@
 
 namespace oai::pcf::api {
 
-using namespace oai::model::pcf;
+using namespace oai::_3gpp::model;
 
 class IndividualApplicationSessionContextDocumentApiImpl
     : public oai::pcf::api::IndividualApplicationSessionContextDocumentApi {

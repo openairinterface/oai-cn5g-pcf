@@ -26,7 +26,7 @@ namespace odb {
 //
 
 bool access::composite_value_traits<
-    ::oai::model::common::Snssai, id_mysql>::grow(image_type& i, my_bool* t) {
+    ::oai::_3gpp::model::Snssai, id_mysql>::grow(image_type& i, my_bool* t) {
   ODB_POTENTIALLY_UNUSED(i);
   ODB_POTENTIALLY_UNUSED(t);
 
@@ -50,7 +50,7 @@ bool access::composite_value_traits<
   return grew;
 }
 
-void access::composite_value_traits< ::oai::model::common::Snssai, id_mysql>::
+void access::composite_value_traits< ::oai::_3gpp::model::Snssai, id_mysql>::
     bind(MYSQL_BIND* b, image_type& i, mysql::statement_kind sk) {
   ODB_POTENTIALLY_UNUSED(b);
   ODB_POTENTIALLY_UNUSED(i);
@@ -87,7 +87,7 @@ void access::composite_value_traits< ::oai::model::common::Snssai, id_mysql>::
   n++;
 }
 
-bool access::composite_value_traits< ::oai::model::common::Snssai, id_mysql>::
+bool access::composite_value_traits< ::oai::_3gpp::model::Snssai, id_mysql>::
     init(image_type& i, const value_type& o, mysql::statement_kind sk) {
   ODB_POTENTIALLY_UNUSED(i);
   ODB_POTENTIALLY_UNUSED(o);
@@ -137,7 +137,7 @@ bool access::composite_value_traits< ::oai::model::common::Snssai, id_mysql>::
   return grew;
 }
 
-void access::composite_value_traits< ::oai::model::common::Snssai, id_mysql>::
+void access::composite_value_traits< ::oai::_3gpp::model::Snssai, id_mysql>::
     init(value_type& o, const image_type& i, database* db) {
   ODB_POTENTIALLY_UNUSED(o);
   ODB_POTENTIALLY_UNUSED(i);

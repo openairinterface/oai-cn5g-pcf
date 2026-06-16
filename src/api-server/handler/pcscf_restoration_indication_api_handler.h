@@ -25,7 +25,7 @@ class pcscf_restoration_indication_api_handler {
    * @return api_response
    */
   api_response pcscf_restoration(
-      const oai::model::pcf::PcscfRestorationRequestData&
+      const oai::_3gpp::model::PcscfRestorationRequestData&
           pcscf_restoration_request_data);
 
  private:
