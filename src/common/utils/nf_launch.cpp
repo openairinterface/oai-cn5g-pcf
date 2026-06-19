@@ -5,6 +5,7 @@
 #include "nf_launch.hpp"
 
 #include <boost/filesystem.hpp>
+#include <fstream>
 #include <iostream>
 #include <sstream>
 #include <cstdlib>

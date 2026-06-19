@@ -96,15 +96,17 @@ RUN apt-get update && \
 # Ubuntu 20 --> libasan5
 # Ubuntu 22 --> libasan6
 #      libasan? \
-# Ubuntu 20 --> boost71
-# Ubuntu 22 --> boost74
-      libboost-filesystem1.7?.0 \
+# Ubuntu 20 --> boost 1.71
+# Ubuntu 22 --> boost 1.74
+# Ubuntu 24 --> boost 1.83
+      libboost-filesystem1.??.0 \
       libcurl?-gnutls \
       librtmp1 \
       libpsl5 \
 # Ubuntu 20 --> gcc-9-plugin-dev
 # Ubuntu 22 --> gcc-11-plugin-dev
-      gcc-?-plugin-dev \
+# Ubuntu 24 --> gcc-13-plugin-dev or gcc-14-plugin-dev
+      gcc-*-plugin-dev \
       libmysqlclient2? \
 # lttng
   && if [ "$ENABLE_LTTNG" = "true" ]; then DEBIAN_FRONTEND=noninteractive apt-get install --yes liblttng-ust-dev; fi \
