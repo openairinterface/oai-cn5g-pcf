@@ -22,14 +22,18 @@
 #include <string>
 #include <vector>
 #include <nlohmann/json.hpp>
+#ifdef USE_ODB
 #include <odb/core.hxx>
+#endif
 
 namespace oai::pcf::provisioning::model {
 
 /// <summary>
 ///
 /// </summary>
+#ifdef USE_ODB
 #pragma db object
+#endif
 class SupiPolicyDecision {
  public:
   SupiPolicyDecision();
@@ -78,14 +82,18 @@ class SupiPolicyDecision {
   friend void from_json(const nlohmann::json& j, SupiPolicyDecision& o);
 
  protected:
+#ifdef USE_ODB
 #pragma db id
+#endif
   std::string m_Supi;
   bool m_SupiIsSet;
   std::vector<std::string> m_PccRuleIds;
   bool m_PccRuleIdsIsSet;
 
  private:
+#ifdef USE_ODB
   friend class odb::access;
+#endif
 };
 
 }  // namespace oai::pcf::provisioning::model

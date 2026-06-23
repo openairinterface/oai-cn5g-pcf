@@ -6,7 +6,10 @@
 #include <string>
 #include <sstream>
 #include <boost/algorithm/string/predicate.hpp>
+#include "database/database_wrapper.hpp"
+#ifdef USE_ODB
 #include <mysql_db.hpp>
+#endif
 #include "SupiPolicyDecision.h"
 #include "supi_policy_decision.hpp"
 #include "dnn_policy_decision.hpp"
@@ -23,6 +26,7 @@ extern std::unique_ptr<oai::config::pcf::pcf_config> pcf_cfg;
 extern std::unique_ptr<database_wrapper_abstraction> db_connector;
 
 policy_storage_db::policy_storage_db() {
+#ifdef USE_ODB
   // Use the appropriate DB connector to initialize the connection to the DB
   if (boost::iequals(
           pcf_cfg->get_database_config().get_database_type(), "mysql")) {
@@ -39,6 +43,10 @@ policy_storage_db::policy_storage_db() {
     Logger::pcf_app().error("Could not establish the connection to the DB");
     exit(-1);
   }
+#else
+  Logger::pcf_app().error("PCF was built without ODB/MySQL support!");
+  exit(-1);
+#endif
 }
 
 std::shared_ptr<policy_decision> policy_storage_db::find_policy(

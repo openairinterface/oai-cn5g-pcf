@@ -26,7 +26,7 @@ class app_session {
   [[nodiscard]] virtual const oai::model::pcf::AppSessionContextReqData&
   get_app_session_context() const;
 
-  [[nodiscard]] virtual void set_app_session_context(
+  virtual void set_app_session_context(
       oai::model::pcf::AppSessionContextReqData& context);
 
   [[nodiscard]] virtual std::string get_id() const;
@@ -92,32 +92,33 @@ handle_service_function_chaining_update(
     oai::model::pcf::AppSessionContextReqData& context);
 
 // TODO [QOS] Add QoS handling functions [TS 29.514 §4.2.2.2, TS 29.513 §7.3, TS 29.512 §4.2.6.6]
-// Implement the following QoS processing functions:
 
-// TODO [QOS] Extract and process QoS requirements from MediaComponent [TS 29.514 §4.2.2.2, TS 29.513 §7.3]
-// oai::pcf::app::policy_auth::handler_result handle_qos_requirements(
-//     const oai::model::pcf::MediaComponent& media_component,
-//     oai::model::pcf::SmPolicyDecision& decision);
+// TODO [QOS] Extract and process QoS requirements from a MediaComponent
+// [TS 29.514 §4.2.2.2, TS 29.513 §7.3]. Internally calls
+// create_qos_data_from_media_component, create_qos_characteristics, and
+// setup_qos_monitoring in sequence.
+oai::pcf::app::policy_auth::handler_result handle_qos_requirements(
+    oai::model::pcf::SmPolicyDecision& decision);
 
-// TODO [QOS] Create QosData entries from MediaComponent QoS parameters [TS 29.512 §5.6.2.8, TS 29.513 §7.3.3]
-// oai::pcf::app::policy_auth::handler_result create_qos_data_from_media_component(
-//     const oai::model::pcf::MediaComponent& media_component,
-//     oai::model::pcf::QosData& qos_data);
+// TODO [QOS] Create QosData entries from MediaComponent QoS parameters
+// [TS 29.512 §5.6.2.8, TS 29.513 §7.3.3]
+oai::pcf::app::policy_auth::handler_result
+create_qos_data_from_media_component(
+    oai::model::pcf::SmPolicyDecision& decision);
 
-// TODO [QOS] Generate QoS characteristics for non-standard 5QI values [TS 29.512 §5.6.2.16, §4.2.6.6.3]
-// oai::pcf::app::policy_auth::handler_result create_qos_characteristics(
-//     const oai::model::pcf::MediaComponent& media_component,
-//     oai::model::pcf::QosCharacteristics& qos_chars);
+// TODO [QOS] Generate QoS characteristics for non-standard 5QI values
+// [TS 29.512 §5.6.2.16, §4.2.6.6.3]
+oai::pcf::app::policy_auth::handler_result create_qos_characteristics(
+    oai::model::pcf::SmPolicyDecision& decision);
 
-// TODO [QOS-MON] Setup QoS monitoring based on MediaComponent requirements [TS 29.512 §4.1.4.4.6, TS 29.514 §4.2.2.23]
-// oai::pcf::app::policy_auth::handler_result setup_qos_monitoring(
-//     const oai::model::pcf::MediaComponent& media_component,
-//     oai::model::pcf::SmPolicyDecision& decision);
+// TODO [QOS-MON] Setup QoS monitoring based on MediaComponent requirements
+// [TS 29.512 §4.1.4.4.6, TS 29.514 §4.2.2.23]
+oai::pcf::app::policy_auth::handler_result setup_qos_monitoring(
+    oai::model::pcf::SmPolicyDecision& decision);
 
-// TODO [QOS] Validate QoS requirements against policies and subscription [TS 29.514 §4.1.3.1, TS 23.503 §6.1.3.2.3]
-// oai::pcf::app::policy_auth::handler_result validate_qos_authorization(
-//     const oai::model::pcf::AppSessionContextReqData& req_data,
-//     const oai::model::pcf::SmPolicyDecision& current_decision);
+// TODO [QOS] Validate QoS requirements against policies and subscription
+// [TS 29.514 §4.1.3.1, TS 23.503 §6.1.3.2.3]
+oai::pcf::app::policy_auth::handler_result validate_qos_authorization();
 
 // TODO [QOS] Handle QoS parameter updates during session modification [TS 29.514 §4.2.3.2, TS 29.512 §4.2.6.2.1]
 // oai::pcf::app::policy_auth::handler_result handle_qos_update(

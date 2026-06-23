@@ -54,8 +54,7 @@ pcf_smpc::pcf_smpc(
       m_event_sub.subscribe_sm_update_decision(boost::bind(
           &pcf_smpc::handle_update_decision_request, this,
           boost::placeholders::_1, boost::placeholders::_2));
-  // m_sm_session_binding_connection =
-  //     m_event_sub.subscribe_sm_session_binding(f2);
+
 }
 
 void pcf_smpc::handle_policy_change(
@@ -65,15 +64,23 @@ void pcf_smpc::handle_policy_change(
 
 sm_policy::status_code pcf_smpc::send_sm_policy_control_update_notify(
     const oai::pcf::app::sm_policy::individual_sm_association& association) {
-  // TODO [QOS] Enhanced notification for QoS policy updates to SMF [TS 29.512 §4.2.3.2, §5.6.2.5]
-  // This function sends updated policy decisions including QoS-related changes from
-  // Policy Authorization Service to SMF. Key QoS elements to include:
-  // 1. Updated PCC rules with QoS enforcement actions [TS 29.512 §4.1.4.2]
-  // 2. QoS Data entries for flow-specific QoS parameters [TS 29.512 §5.6.2.8]
-  // 3. QoS Characteristics for non-standard 5QI values [TS 29.512 §5.6.2.16]
-  // 4. QoS Monitoring Data configurations [TS 29.512 §5.6.2.40]
-  // 5. Traffic Control Data with QoS steering information [TS 29.512 §5.6.2.3]
-  // 6. Updated QoS flow identifiers and bindings [TS 23.501 §5.7.1.1]
+  // TODO [QOS] Enhanced notification for QoS policy updates to SMF
+  // [TS 29.512 §4.2.3.2, §5.6.2.5]
+  // Tasks:
+  //   1. Include updated PCC rules with QoS enforcement actions [TS 29.512 §4.1.4.2]
+  //   2. Include QoS Data entries for flow-specific QoS parameters [TS 29.512 §5.6.2.8]
+  //   3. Include QoS Characteristics for non-standard 5QI values [TS 29.512 §5.6.2.16]
+  //   4. Include QoS Monitoring Data configurations [TS 29.512 §5.6.2.40]
+  //   5. Include Traffic Control Data with QoS steering information [TS 29.512 §5.6.2.3]
+  //   6. Include updated QoS flow identifiers and bindings [TS 23.501 §5.7.1.1]
+  //
+  // [QOS-MOCK] Phase 1 — SM policy update notification (partially mocked).
+  // Mocks the TODO [QOS] task above:
+  //   - Tasks 1–2 are partially fulfilled: the SmPolicyDecision serialised
+  //     below contains the mock PccRule and QosData written by
+  //     create_qos_data_from_media_component() (5QI=9, ARP, permit-all filter).
+  //   - Tasks 3–6 are not yet populated (QosChars, QosMonDecs, TcData stubs
+  //     only log).
 
   std::string uri =
       association.get_sm_policy_context_data().getNotificationUri() + "/update";
@@ -311,7 +318,7 @@ void pcf_smpc::handle_update_decision_request(
 
   // Send a notification to the SMF related to the updated decision
   const auto& association_ref = iter->second;
-  auto ret = send_sm_policy_control_update_notify(association_ref);
+  auto ret                    = send_sm_policy_control_update_notify(association_ref);
   if (ret != status_code::CREATED) {
     Logger::pcf_app().error("Policy update notification failed");
 

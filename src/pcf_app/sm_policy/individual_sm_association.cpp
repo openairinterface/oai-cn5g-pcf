@@ -17,7 +17,7 @@ const SmPolicyDecision& individual_sm_association::get_sm_policy_decision_dto()
   return m_decision.get_sm_policy_decision();
 }
 
-const void individual_sm_association::set_sm_policy_decision(
+void individual_sm_association::set_sm_policy_decision(
     oai::model::pcf::SmPolicyDecision& new_decision) {
   m_decision.set_sm_policy_decision(new_decision);
 }

@@ -65,7 +65,7 @@ class policy_decision {
   [[nodiscard]] virtual const oai::model::pcf::SmPolicyDecision&
   get_sm_policy_decision() const;
 
-  [[nodiscard]] virtual const void set_sm_policy_decision(
+  virtual void set_sm_policy_decision(
       oai::model::pcf::SmPolicyDecision& decision);
 
   [[nodiscard]] virtual std::string to_string() const;

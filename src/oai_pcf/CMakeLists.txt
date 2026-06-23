@@ -241,6 +241,17 @@ find_package(Threads REQUIRED)
 find_package(cpr REQUIRED)
 
 ################################################################
+# Optional ODB/MySQL database persistence support
+################################################################
+# Defined centrally so the flag (and -DUSE_ODB compile definition) applies
+# globally to every target: api-server, pcf_app and the pcf executable. When
+# OFF, no ODB code is compiled, no *-odb.cxx is built and no ODB libs are linked.
+option(USE_ODB "Build ODB-based database persistence support" OFF)
+if (USE_ODB)
+    add_compile_definitions(USE_ODB)
+endif (USE_ODB)
+
+################################################################
 # Add sub modules
 ################################################################
 if(STATIC_LINKING)
@@ -296,7 +307,11 @@ IF(STATIC_LINKING)
 ENDIF(STATIC_LINKING)
 
 target_link_libraries (pcf ${ASAN}  -Wl,--start-group PCF PCF_API ${CRYPTO_LIBRARIES} -lnghttp2_asio -lboost_system -lboost_thread -lssl -lcrypto -lfmt -lspdlog dl -Wl,--end-group
-pthread m rt event boost_system -lboost_filesystem pistache curl -lyaml-cpp cpr::cpr -lodb -lodb-mysql -lmysqlclient odb odb-mysql)
+pthread m rt event boost_system -lboost_filesystem pistache curl -lyaml-cpp cpr::cpr)
+
+if (USE_ODB)
+    target_link_libraries(pcf -lodb -lodb-mysql -lmysqlclient odb odb-mysql)
+endif (USE_ODB)
 
 add_boolean_option(USE_LTTNG  False "Activate the LTTNG tracer, a debugging/monitoring framework" ON)
 if (USE_LTTNG)

@@ -8,6 +8,10 @@
 #include "AppSessionContext.h"
 #include "TrafficControlData.h"
 #include "PccRule.h"
+#include "QosData.h"
+#include "Arp.h"
+#include "FlowInformation.h"
+#include "FlowDirectionRm.h"
 #include "SmPolicyDecision.h"
 #include "AfSfcRequirement.h"
 #include "policy_auth/pcf_policy_authorization_status_code.hpp"
@@ -194,10 +198,20 @@ handler_result validate_and_merge_decision(
   current_decision.setPccRules(pccRulesMap);
 
   // TODO [QOS] Merge QoS-related decision data [TS 29.512 §4.2.6.2.3, §5.6.2.4]
-  // Merge QosData entries from request_decision to current_decision [TS 29.512 §5.6.2.8]
-  // Handle QosChars (QoS Characteristics) for non-standard 5QIs [TS 29.512 §5.6.2.16]
-  // Merge QosMonDecs (QoS Monitoring Data) entries [TS 29.512 §5.6.2.40]
-  // Validate QoS parameter consistency across merged rules [TS 23.503 §6.1.3.7]
+  // Tasks:
+  //   - Merge QosData entries from request_decision into current_decision [TS 29.512 §5.6.2.8]
+  //   - Merge QosChars (QoS Characteristics) for non-standard 5QIs [TS 29.512 §5.6.2.16]
+  //   - Merge QosMonDecs (QoS Monitoring Data) entries [TS 29.512 §5.6.2.40]
+  //   - Validate QoS parameter consistency across merged rules [TS 23.503 §6.1.3.7]
+  //
+  // [QOS-MOCK] Mocks the TODO [QOS] task above:
+  //   - QosData is written directly to current_decision by
+  //     create_qos_data_from_media_component() before this call, so no merge
+  //     from request_decision is needed on the QoS mock path.
+  //   - QosChars and QosMonDecs merge is not performed (stubs only log).
+  Logger::pcf_app().debug(
+      "validate_and_merge_decision() [mock]: QoS data merge "
+      "(QosData, QosChars, QosMonDecs)");
 
   // Merge Traffic Control Data
   auto trafficControlMap = current_decision.getTraffContDecs();
@@ -273,51 +287,152 @@ handler_result authorize_service_info(
   return handler_result{.status = status_code::OK};
 }
 
-// TODO [QOS] Implement QoS handling functions [TS 29.514 §4.2.2.2, TS 29.513 §7.3, TS 29.512 §4.2.6.6]
-// The following functions need to be implemented to handle QoS requirements
-// as specified in 3GPP TS 29.514:
+// ---------------------------------------------------------------------------
+// Phase 1 QoS stub implementations
+// Each stub is preceded by the TODO [QOS/QOS-MON] task it mocks and a
+// [QOS-MOCK] block that states what is hardcoded vs. done for real.
+// ---------------------------------------------------------------------------
 
-// TODO [QOS] handler_result handle_qos_requirements( [TS 29.514 §4.2.2.2, TS 29.513 §7.3.3]
-//     const oai::model::pcf::MediaComponent& media_component,
-//     oai::model::pcf::SmPolicyDecision& decision) {
-//   Logger::pcf_app().info("Processing QoS requirements for MediaComponent");
+// TODO [QOS] Extract and process QoS requirements from a MediaComponent
+// [TS 29.514 §4.2.2.2, TS 29.513 §7.3.3]
+// Tasks:
+//   - Read bandwidth params (marBwDl/Ul, mirBwDl/Ul) from MediaComponent [TS 29.514 §5.6.2.7]
+//   - Read latency param (desMaxLatency) to map to 5QI [TS 29.514 §5.6.2.7]
+//   - Read packet-loss params (desMaxLoss, maxPacketLossRateDl/Ul) [TS 29.514 §5.6.2.7]
+//   - Map resPrio to arp.priorityLevel [TS 29.514 §5.6.2.7]
+//   - Call create_qos_data_from_media_component, create_qos_characteristics,
+//     and setup_qos_monitoring in sequence [TS 29.513 §7.3.3]
 //
-//   // Extract bandwidth requirements
-//   if (media_component.marBwDlIsSet() || media_component.marBwUlIsSet()) {
-//     // Process maximum bandwidth requirements
-//   }
-//
-//   if (media_component.mirBwDlIsSet() || media_component.mirBwUlIsSet()) {
-//     // Process minimum bandwidth requirements
-//   }
-//
-//   // Extract latency requirements
-//   if (media_component.desMaxLatencyIsSet()) {
-//     // Process maximum latency requirements
-//   }
-//
-//   // Extract packet loss requirements
-//   if (media_component.desMaxLossIsSet()) {
-//     // Process maximum packet loss requirements
-//   }
-//
-//   // Create QosData entries and update decision
-//   // Generate appropriate PCC rules for QoS enforcement
-//
-//   return handler_result{.status = status_code::OK};
-// }
+// [QOS-MOCK] Phase 1 — QoS requirements orchestration (mock; no business logic).
+// Mocks the TODO [QOS] task above:
+//   - MediaComponent params are not read; hardcoded QosData and PccRule are
+//     written to decision inside create_qos_data_from_media_component().
+//   - create_qos_characteristics() and setup_qos_monitoring() only log.
+handler_result handle_qos_requirements(SmPolicyDecision& decision) {
+  Logger::pcf_app().debug("handle_qos_requirements() [mock]");
+  create_qos_data_from_media_component(decision);
+  create_qos_characteristics(decision);
+  setup_qos_monitoring(decision);
+  return handler_result{.status = status_code::OK};
+}
 
-// TODO [QOS-MON] handler_result setup_qos_monitoring( [TS 29.512 §4.1.4.4.6, TS 29.514 §4.2.2.23]
-//     const oai::model::pcf::MediaComponent& media_component,
-//     oai::model::pcf::SmPolicyDecision& decision) {
-//   Logger::pcf_app().info("Setting up QoS monitoring for MediaComponent");
+// TODO [QOS] Create QosData and PccRule entries from MediaComponent QoS parameters
+// [TS 29.512 §5.6.2.8, TS 29.513 §7.3.3, TS 29.514 §5.6.2.7]
+// Tasks:
+//   - Derive 5QI from MediaComponent latency/bandwidth requirements [TS 29.513 §7.3.3]
+//   - Map resPrio to arp.priorityLevel (Arp) [TS 29.514 §5.6.2.7]
+//   - Set QoS flow priorityLevel from 5QI defaults [TS 23.501 Table 5.7.4-1]
+//   - Build SDF filters (flowInfos) from medSubComponents [TS 29.512 §4.1.4.2.1]
+//   - Assign PCC rule precedence from operator policy [TS 29.512 §4.1.4.2.1]
+//   - Write QosData and PccRule entries to SmPolicyDecision [TS 29.512 §5.6.2.8]
 //
-//   // Create QosMonitoringData entries based on MediaComponent requirements
-//   // Configure monitoring parameters (thresholds, reporting frequency)
-//   // Add monitoring data to SmPolicyDecision
+// [QOS-MOCK] Phase 1 — QosData and PccRule creation (mock; hardcoded values).
+// Mocks the TODO [QOS] task above:
+//   - 5QI: hardcoded to 9 (best-effort) instead of derived from latency/BW.
+//   - ARP: hardcoded priorityLevel=8, NOT_PREEMPT/NOT_PREEMPTABLE instead of
+//     mapped from MediaComponent.resPrio.
+//   - priorityLevel: hardcoded to 9 (TS 23.501 Table 5.7.4-1 default for 5QI=9).
+//   - flowInfos: permit-all bidirectional filter instead of SDF filters from
+//     medSubComponents.
+//   - precedence: hardcoded to 100 instead of policy-assigned.
+handler_result create_qos_data_from_media_component(SmPolicyDecision& decision) {
+  Logger::pcf_app().debug("create_qos_data_from_media_component() [mock]");
+
+  const std::string qos_id = "qos-mock-1";
+  QosData qos_data;
+  qos_data.setQosId(qos_id);
+  qos_data.setR5qi(9);
+
+  oai::model::common::Arp arp;
+  arp.setPriorityLevel(8);
+  oai::model::common::PreemptionCapability preempt_cap;
+  preempt_cap.setEnumValue(
+      oai::model::common::PreemptionCapability_anyOf::ePreemptionCapability_anyOf::NOT_PREEMPT);
+  arp.setPreemptCap(preempt_cap);
+  oai::model::common::PreemptionVulnerability preempt_vuln;
+  preempt_vuln.setEnumValue(
+      oai::model::common::PreemptionVulnerability_anyOf::ePreemptionVulnerability_anyOf::NOT_PREEMPTABLE);
+  arp.setPreemptVuln(preempt_vuln);
+  qos_data.setArp(arp);
+
+  // 5QI=9 default scheduling priority (TS 23.501 Table 5.7.4-1)
+  qos_data.setPriorityLevel(9);
+
+  auto qos_data_map = decision.getQosDecs();
+  qos_data_map.insert(std::make_pair(qos_id, qos_data));
+  decision.setQosDecs(qos_data_map);
+
+  const std::string rule_id = "qos-rule-mock-1";
+  PccRule pcc_rule;
+  pcc_rule.setPccRuleId(rule_id);
+  pcc_rule.setPrecedence(100);
+  pcc_rule.setRefQosData({qos_id});
+
+  // Permit-all bidirectional filter — placeholder for real SDF filters
+  FlowInformation flow_info;
+  flow_info.setFlowDescription("permit out ip from any to assigned");
+  FlowDirectionRm flow_direction;
+  flow_direction.setEnumValue(
+      FlowDirection_anyOf::eFlowDirection_anyOf::BIDIRECTIONAL);
+  flow_info.setFlowDirection(flow_direction);
+  pcc_rule.setFlowInfos({flow_info});
+
+  auto pcc_rules_map = decision.getPccRules();
+  pcc_rules_map.insert(std::make_pair(rule_id, pcc_rule));
+  decision.setPccRules(pcc_rules_map);
+
+  return handler_result{.status = status_code::OK};
+}
+
+// TODO [QOS] Generate QoS characteristics for non-standard 5QI values
+// [TS 29.512 §5.6.2.16, §4.2.6.6.3]
+// Tasks:
+//   - Check if the 5QI in QosData is a non-standard (dynamic) value [TS 29.512 §5.6.2.16]
+//   - If non-standard: populate QosCharacteristics (resource type, priority,
+//     packet delay budget, packet error rate, averaging window) [TS 29.512 §5.6.2.16]
+//   - Add QosCharacteristics entry to SmPolicyDecision.qosChars [TS 29.512 §5.6.2.16]
 //
-//   return handler_result{.status = status_code::OK};
-// }
+// [QOS-MOCK] Phase 1 — QoS characteristics (mock; no-op).
+// Mocks the TODO [QOS] task above:
+//   - 5QI=9 is a standardised value; no QosCharacteristics entry is needed.
+//     This stub only logs to confirm the call order.
+handler_result create_qos_characteristics([[maybe_unused]] SmPolicyDecision& decision) {
+  Logger::pcf_app().debug("create_qos_characteristics() [mock]");
+  return handler_result{.status = status_code::OK};
+}
+
+// TODO [QOS-MON] Setup QoS monitoring based on MediaComponent requirements
+// [TS 29.512 §4.1.4.4.6, TS 29.514 §4.2.2.23]
+// Tasks:
+//   - Read monitoring thresholds from MediaComponent (if present) [TS 29.514 §4.2.2.23]
+//   - Create QosMonitoringData entries with threshold and reporting params [TS 29.512 §5.6.2.40]
+//   - Add QosMonitoringData to SmPolicyDecision.qosMonDecs [TS 29.512 §5.6.2.40]
+//   - Link QosMonitoringData to the PccRule via refQosMon [TS 29.512 §5.6.2.6]
+//
+// [QOS-MOCK] Phase 1 — QoS monitoring setup (mock; no-op).
+// Mocks the TODO [QOS-MON] task above:
+//   - No monitoring thresholds are read and no QosMonitoringData is created.
+//     This stub only logs to confirm the call order.
+handler_result setup_qos_monitoring([[maybe_unused]] SmPolicyDecision& decision) {
+  Logger::pcf_app().debug("setup_qos_monitoring() [mock]");
+  return handler_result{.status = status_code::OK};
+}
+
+// TODO [QOS] Validate QoS requirements against policies and subscription
+// [TS 29.514 §4.1.3.1, TS 23.503 §6.1.3.2.3]
+// Tasks:
+//   - Check QoS params against user subscription QoS profile [TS 29.512 §4.2.6.6.1]
+//   - Verify cumulative bandwidth against network slice limits [TS 29.512 §4.2.6.7, TS 23.503 §6.1.4]
+//   - Validate resource availability for requested QoS [TS 23.503 §6.1.3.2.3]
+//   - Return FORBIDDEN if any check fails [TS 29.514 §4.1.3.1]
+//
+// [QOS-MOCK] Phase 1 — QoS authorization (mock; always approved).
+// Mocks the TODO [QOS] task above:
+//   - No subscription or resource checks are performed; always returns OK.
+handler_result validate_qos_authorization() {
+  Logger::pcf_app().debug("validate_qos_authorization() [mock]");
+  return handler_result{.status = status_code::OK};
+}
 
 }  // namespace policy_auth
 

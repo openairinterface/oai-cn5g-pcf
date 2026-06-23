@@ -135,21 +135,12 @@ status_code pcf_policy_authorization::post_app_sessions_handler(
 
   // Check if the request contains the "afSfcReq" attribute or medComponents is
   // present. Pick medComponents if both are present
+  bool qos_flow_processed = false;
   if (context.getAscReqData().medComponentsIsSet()) {
     Logger::pcf_app().info("MedComponents is set");
     // TODO [PAS] handle multiple medComponents
     for (const auto& medComponent :
          context.getAscReqData().getMedComponents()) {
-
-      // TODO [QOS] Process QoS parameters from each MediaComponent [TS 29.514 §4.2.2.2, TS 29.513 §7.3.3]
-      // Extract and validate QoS requirements:
-      // - Check bandwidth parameters (marBwDl, marBwUl, mirBwDl, mirBwUl) [TS 29.514 §5.6.2.7]
-      // - Process latency constraints (desMaxLatency) [TS 29.514 §5.6.2.7]
-      // - Handle packet loss limits (desMaxLoss, maxPacketLossRateDl/Ul) [TS 29.514 §5.6.2.7, TS 29.512 §5.6.2.8]
-      // - Extract priority settings (resPrio, preemptCap, preemptVuln) [TS 29.514 §5.6.2.7]
-      // - Process QoS reference if set (qosReference) [TS 29.514 §5.6.2.7]
-      // Create corresponding QosData and QosCharacteristics objects [TS 29.512 §5.6.2.8, §5.6.2.16]
-      // Update request_decision with QoS-specific PCC rules and QoS monitoring data [TS 29.512 §4.1.4.2, §4.1.4.4.6]
 
       if (medComponent.second.afSfcReqIsSet()) {
         handler_result result = policy_auth::handle_service_function_chaining(
@@ -162,6 +153,21 @@ status_code pcf_policy_authorization::post_app_sessions_handler(
           return result.status.value();
         }
         break;
+      } else if (medComponent.second.qosReferenceIsSet()) {
+        // TODO [QOS] Process QoS parameters from each MediaComponent
+        // [TS 29.514 §4.2.2.2, TS 29.513 §7.3.3]
+        // Tasks: extract bandwidth/latency/loss params and resPrio from
+        // MediaComponent; derive 5QI and ARP; create QosData + PccRule.
+        // Also mocks TODO [QOS] Handle Initial provisioning of QoS information.
+        //
+        // [QOS-MOCK] Phase 1 — per-MediaComponent QoS processing (mock).
+        // Mocks the TODO [QOS] tasks above:
+        //   - MediaComponent fields are not read; handle_qos_requirements()
+        //     delegates to create_qos_data_from_media_component() which writes
+        //     hardcoded mock QosData (5QI=9, ARP priorityLevel=8) and a
+        //     permit-all PccRule to current_decision.
+        policy_auth::handle_qos_requirements(current_decision);
+        qos_flow_processed = true;
       }
     }
   } else if (context.getAscReqData().afSfcReqIsSet()) {
@@ -178,17 +184,23 @@ status_code pcf_policy_authorization::post_app_sessions_handler(
   }
 
   // TODO [QOS] Handle QoS requirements at AppSessionContextReqData level [TS 29.514 §4.2.2.2, §5.6.2.6]
-  // Check for global QoS requirements that apply to the entire application session
-  // Process any QoS monitoring requirements (qosMonitoringInfo) [TS 29.514 §4.2.2.23]
-  // Validate against operator QoS policies and subscription limits [TS 23.503 §6.1.3.2.3]
 
-  // TODO [QOS] Validate QoS decision compatibility [TS 29.514 §4.1.3.1, TS 23.503 §6.1.3.2.3]
-  // Check that QoS requirements are feasible and compatible with:
-  // - Current session QoS configuration [TS 29.512 §4.2.6.2.3]
-  // - Network slice QoS policies [TS 29.512 §4.2.6.7, TS 23.503 §6.1.4]
-  // - Subscription QoS profiles [TS 29.512 §4.2.6.6.1]
-  // - Available network resources [TS 23.503 §6.1.3.2.3]
-  // Resolve conflicts between different QoS requirements [TS 23.503 §6.1.3.7]
+  // TODO [QOS] Validate QoS requirements against policies and subscription
+  // [TS 29.514 §4.1.3.1, TS 23.503 §6.1.3.2.3]
+  // Tasks: check subscription QoS profile, network slice limits, resource
+  // availability; return FORBIDDEN if any check fails.
+  //
+  // [QOS-MOCK] Phase 1 — post-loop QoS authorization (mock; always approved).
+  // Mocks the TODO [QOS] task above:
+  //   - No subscription or resource checks performed; validate_qos_authorization()
+  //     always returns OK.
+  if (qos_flow_processed) {
+    handler_result qos_auth_result = policy_auth::validate_qos_authorization();
+    if (qos_auth_result.problem_details.has_value()) {
+      problem_details = qos_auth_result.problem_details.value();
+      return qos_auth_result.status.value();
+    }
+  }
 
   // Validate the request decision against the current decision
   // merge the request decision with the current decision if the request
@@ -211,7 +223,7 @@ status_code pcf_policy_authorization::post_app_sessions_handler(
   m_app_sessions.insert(std::make_pair(app_session_id, app_session));
   context.getAscReqData().setAfAppId(app_session_id);
 
-  // Event with updated decision
+  // Event with updated decision (contains QoS data when qos_flow_processed)
   m_event_sub.sm_update_decision(association_id, current_decision);
 
   // TODO [QOS] Send QoS policy decision notifications [TS 29.512 §4.2.3.2, TS 29.513 §5.2.2.2.1]
