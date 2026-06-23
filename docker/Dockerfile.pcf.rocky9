@@ -15,6 +15,9 @@
 FROM docker.io/rockylinux:9 AS oai-pcf-builder
 
 ENV IS_DOCKERFILE=1
+# ODB/MySQL database persistence is optional and disabled by default. Set to 1
+# to build and package the ODB stack. When 0 the image carries no ODB artifacts.
+ARG USE_ODB=0
 
 RUN dnf install 'dnf-command(config-manager)' -y && \
     dnf install epel-release -y && crb enable && \
@@ -42,11 +45,23 @@ COPY . /openair-pcf
 
 # Installing and Building PCF
 WORKDIR /openair-pcf/build/scripts
-RUN ./build_pcf --install-deps --force
-RUN ldconfig && \
-    ./build_pcf --clean --Verbose --build-type Release --jobs && \
+RUN ODB_FLAG=""; [ "$USE_ODB" = "1" ] && ODB_FLAG="--odb"; \
+    ./build_pcf --install-deps --force $ODB_FLAG
+RUN ODB_FLAG=""; [ "$USE_ODB" = "1" ] && ODB_FLAG="--odb"; \
+    ldconfig && \
+    ./build_pcf --clean --Verbose --build-type Release --jobs $ODB_FLAG && \
     ldd /openair-pcf/build/pcf/build/pcf && \
     mv /openair-pcf/build/pcf/build/pcf /openair-pcf/build/pcf/build/oai_pcf
+
+# Stage the optional ODB/MySQL runtime libraries only when ODB is enabled. When
+# disabled the directory stays empty so the runtime image carries no ODB libs.
+RUN mkdir -p /openair-pcf/odb-libs && \
+    if [ "$USE_ODB" = "1" ]; then \
+        cp -a /usr/lib64/mysql/libmysqlclient.so.21 \
+              /usr/local/lib/libodb-2.5.so \
+              /usr/local/lib/libodb-mysql-2.5.so \
+              /openair-pcf/odb-libs/; \
+    fi
 
 FROM mikefarah/yq:latest as yq-source
 
@@ -55,6 +70,7 @@ FROM mikefarah/yq:latest as yq-source
 #---------------------------------------------------------------------
 FROM docker.io/rockylinux:9-minimal as oai-pcf
 ENV TZ=Europe/Paris
+ARG USE_ODB=0
 
 # We install some debug tools for the moment in addition of mandatory libraries
 RUN microdnf update -y && \
@@ -92,12 +108,11 @@ COPY --from=oai-pcf-builder \
     /usr/local/lib64/libfmt.so \
     /usr/local/lib64/libyaml-cpp.so.0.* \
     /usr/local/lib64/libcpr.so.1 \
-    /usr/lib64/mysql/libmysqlclient.so.21 \
-    /usr/local/lib/libssl-1.1.so \
-    /usr/local/lib/libcrypto-1.1.so \
-    /usr/local/lib/libodb-2.5.so \
-    /usr/local/lib/libodb-mysql-2.5.so \
     /usr/lib64/
+
+# Optional ODB/MySQL libraries: this directory is empty unless the image was
+# built with --build-arg USE_ODB=1, so a default build stays free of ODB.
+COPY --from=oai-pcf-builder /openair-pcf/odb-libs/ /usr/lib64/
 
 RUN ldconfig && \
     ldd /openair-pcf/bin/oai_pcf

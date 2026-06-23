@@ -26,7 +26,7 @@ const SmPolicyDecision& policy_decision::get_sm_policy_decision() const {
   return m_decision;
 }
 
-const void policy_decision::set_sm_policy_decision(SmPolicyDecision& decision) {
+void policy_decision::set_sm_policy_decision(SmPolicyDecision& decision) {
   m_decision = decision;
 }
 

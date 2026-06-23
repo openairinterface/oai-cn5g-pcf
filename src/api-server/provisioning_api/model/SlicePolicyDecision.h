@@ -23,14 +23,18 @@
 #include <vector>
 #include <nlohmann/json.hpp>
 #include "Snssai.h"
+#ifdef USE_ODB
 #include <odb/core.hxx>
+#endif
 
 namespace oai::pcf::provisioning::model {
 
 /// <summary>
 ///
 /// </summary>
+#ifdef USE_ODB
 #pragma db object
+#endif
 class SlicePolicyDecision {
  public:
   SlicePolicyDecision();
@@ -79,6 +83,7 @@ class SlicePolicyDecision {
   friend void from_json(const nlohmann::json& j, SlicePolicyDecision& o);
 
  protected:
+#ifdef USE_ODB
 #pragma db id
   oai::_3gpp::model::Snssai m_Snssai;
   bool m_SnssaiIsSet;
@@ -86,7 +91,9 @@ class SlicePolicyDecision {
   bool m_PccRuleIdsIsSet;
 
  private:
+#ifdef USE_ODB
   friend class odb::access;
+#endif
 };
 
 }  // namespace oai::pcf::provisioning::model

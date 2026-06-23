@@ -19,7 +19,6 @@
 #include "pcf_nrf.hpp"
 #include "pcf_policy_authorization.hpp"
 #include "sm_policy/database/database_wrapper.hpp"
-#include "sm_policy/database/mysql_db.hpp"
 
 namespace oai::pcf::app {
 

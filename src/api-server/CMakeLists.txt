@@ -31,11 +31,17 @@ file(GLOB PCF_API_SERVER_src_files
     ${PCF_API_SERVER_DIR}/impl/*.cpp
     ${PCF_API_SERVER_DIR}/handler/*.cpp
     ${PCF_API_SERVER_DIR}/provisioning_api/model/*.cpp
-    ${PCF_API_SERVER_DIR}/provisioning_api/model/*.cxx
     ${PCF_API_SERVER_DIR}/provisioning_api/handler/*.cpp
     ${PCF_API_SERVER_DIR}/provisioning_api/api/*.cpp
     ${PCF_API_SERVER_DIR}/provisioning_api/impl/*.cpp
 )
- 
+
+if (USE_ODB)
+    file(GLOB PCF_API_SERVER_odb_files
+        ${PCF_API_SERVER_DIR}/provisioning_api/model/*.cxx
+    )
+    list(APPEND PCF_API_SERVER_src_files ${PCF_API_SERVER_odb_files})
+endif (USE_ODB)
+
 add_library(PCF_API STATIC
            ${PCF_API_SERVER_src_files})
