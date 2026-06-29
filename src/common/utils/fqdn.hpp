@@ -4,6 +4,7 @@
 
 #ifndef FILE_FQDN_HPP_SEEN
 #define FILE_FQDN_HPP_SEEN
+#include <cstdint>
 #include <string>
 class fqdn {
  public:
