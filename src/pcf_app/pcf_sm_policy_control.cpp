@@ -316,6 +316,12 @@ void pcf_smpc::handle_update_decision_request(
   // 3. Include QoS monitoring setup parameters if required [TS 29.512 §4.2.3.25.1]
   // 4. Provide clear indication of which QoS flows are new/modified/deleted [TS 29.512 §5.6.2.5]
 
+  // TODO [QOS][REFACTOR] CP.22: m_associations_mutex is still held here while
+  // send_sm_policy_control_update_notify() makes a blocking SMF HTTP call, so
+  // all associations serialize behind one network round-trip. Snapshot what the
+  // notify needs under the lock, release it, then notify. Left as a
+  // recommendation this phase to avoid churning SM Policy Control; fold into the
+  // Phase 2 delta refactor (see pcf_event_sig.hpp).
   // Send a notification to the SMF related to the updated decision
   const auto& association_ref = iter->second;
   auto ret                    = send_sm_policy_control_update_notify(association_ref);

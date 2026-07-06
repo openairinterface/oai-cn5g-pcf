@@ -5,60 +5,83 @@
 #ifndef FILE_APP_SESSION_SEEN
 #define FILE_APP_SESSION_SEEN
 
+#include <atomic>
+#include <chrono>
+#include <cstdint>
+#include <memory>
+#include <optional>
+#include <string>
+
 #include "AppSessionContext.h"
 #include "AppSessionContextReqData.h"
+#include "SmPolicyDecision.h"
+#include "app_session_record.hpp"
+#include "guarded.hpp"
+#include "pcf_policy_authorization_status_code.hpp"
+#include "qos_context.hpp"
+#include "qos_types.hpp"
 
 namespace oai::pcf::app::policy_auth {
 
+/**
+ * @brief Aggregate root for an application session (3GPP TS 29.514).
+ *
+ * Deliberately thin: each cross-cutting concern is a self-contained "aspect"
+ * object with its own lock (qos_context; AF-subscription and monitoring),
+ * so this class never accretes unrelated state.
+ * The full SmPolicyDecision is NOT stored here -- it is owned by the SM
+ * policy association; this object keeps only a ledger (via qos_context) of the
+ * ids it contributed, plus the app-session <-> association binding.
+ *
+ * AF-subscription and monitoring state become their own aspect classes,
+ * added as one member line -- not fields on this class.
+ */
 class app_session {
  public:
-  explicit app_session(
-      const oai::model::pcf::AppSessionContextReqData& context,
-      const oai::model::pcf::SmPolicyDecision& decision, const std::string& id)
-      : m_decision(decision) {
-    m_context = context;
-    // TODO [PAS] add association id to be used during update
-    m_id = id;
+  app_session(
+      std::string id, oai::model::pcf::AppSessionContextReqData context,
+      std::optional<std::string> association_id);
+
+  app_session(const app_session&)            = delete;
+  app_session& operator=(const app_session&) = delete;
+  virtual ~app_session()                     = default;
+
+  [[nodiscard]] const std::string& id() const { return m_id; }
+
+  [[nodiscard]] app_session_state state() const { return m_state.load(); }
+  void set_state(app_session_state state) { m_state.store(state); }
+
+  // Monotonic version stamped on each update; lets stale notifications be
+  // detected once cross-service coordination is delta-based (plan §4.7).
+  uint64_t next_version() { return ++m_version; }
+  [[nodiscard]] uint64_t version() const { return m_version.load(); }
+
+  // app-session <-> SM policy association binding (set at construction).
+  [[nodiscard]] const std::optional<std::string>& association_id() const {
+    return m_association_id;
   }
 
-  virtual ~app_session() = default;
+  // QoS aspect (Phase 1). Phase 3 adds af(), Phase 4 adds mon() the same way.
+  [[nodiscard]] qos_context& qos() { return m_qos; }
+  [[nodiscard]] const qos_context& qos() const { return m_qos; }
 
-  [[nodiscard]] virtual const oai::model::pcf::AppSessionContextReqData&
-  get_app_session_context() const;
+  [[nodiscard]] oai::model::pcf::AppSessionContextReqData context_snapshot()
+      const;
+  void update_context(
+      const oai::model::pcf::AppSessionContextReqData& context);
 
-  virtual void set_app_session_context(
-      oai::model::pcf::AppSessionContextReqData& context);
-
-  [[nodiscard]] virtual std::string get_id() const;
+  // Durable projection (documents the app_session_binding schema). from_record()
+  // ships with the future DB storage backend.
+  [[nodiscard]] app_session_record to_record() const;
 
  private:
-  // TODO: create a struct only for attributes that need to be stored?
-  oai::model::pcf::AppSessionContextReqData m_context;
-  // TODO: create a struct only for attributes that need to be stored?
-  oai::model::pcf::SmPolicyDecision m_decision;
-  // attributes that need to be stored
-  // reference session
-  // reference pcc rules
-  std::string m_id;
-
-  // TODO [QOS-SUB] Application Function subscription and notification state [TS 29.514 §4.2.6, §5.3.4.1]
-  // Add member variables for AF monitoring and notification management:
-
-  // TODO [QOS-SUB] AF notification subscription information [TS 29.514 §4.2.2.2, §5.6.2.6]
-  // std::string m_af_notification_uri;           // AF callback URI for notifications [TS 29.514 §5.6.2.6]
-  // std::vector<std::string> m_subscribed_events; // List of events AF wants to receive [TS 29.514 §5.6.2.6]
-  // std::string m_af_app_identifier;              // AF application identifier [TS 29.514 §3.1]
-  // std::chrono::system_clock::time_point m_subscription_expiry; // Subscription validity
-
-  // TODO [QOS-MON] QoS monitoring configuration for AF notifications [TS 29.512 §5.6.2.40, TS 29.514 §4.2.2.23]
-  // std::map<std::string, uint32_t> m_qos_monitoring_thresholds; // QoS parameter thresholds [TS 29.512 §5.6.2.40]
-  // std::chrono::milliseconds m_monitoring_report_interval;       // Periodic report frequency [TS 29.512 §5.6.2.40]
-  // bool m_monitoring_enabled;                                   // Enable/disable monitoring [TS 23.503 §6.1.3.21]
-
-  // TODO [QOS-SUB] AF notification delivery tracking [TS 29.500 §5.2.8, §6.8]
-  // std::queue<std::string> m_pending_notifications;             // Queue of pending notifications [TS 29.500 §6.8.1]
-  // std::map<std::string, std::chrono::system_clock::time_point> m_notification_history; // Delivery tracking [TS 29.500 §5.2.8]
-  // uint32_t m_failed_notification_count;                       // Count of failed deliveries [TS 29.500 §5.2.8]
+  const std::string m_id;
+  const std::chrono::system_clock::time_point m_created_at;
+  std::atomic<app_session_state> m_state{app_session_state::pending};
+  std::atomic<uint64_t> m_version{0};
+  oai::utils::guarded<oai::model::pcf::AppSessionContextReqData> m_context;
+  std::optional<std::string> m_association_id;
+  qos_context m_qos;
 };
 
 /**
@@ -98,13 +121,13 @@ handle_service_function_chaining_update(
 // create_qos_data_from_media_component, create_qos_characteristics, and
 // setup_qos_monitoring in sequence.
 oai::pcf::app::policy_auth::handler_result handle_qos_requirements(
-    oai::model::pcf::SmPolicyDecision& decision);
+    oai::model::pcf::SmPolicyDecision& decision, qos_context& qos_ctx);
 
 // TODO [QOS] Create QosData entries from MediaComponent QoS parameters
 // [TS 29.512 §5.6.2.8, TS 29.513 §7.3.3]
 oai::pcf::app::policy_auth::handler_result
 create_qos_data_from_media_component(
-    oai::model::pcf::SmPolicyDecision& decision);
+    oai::model::pcf::SmPolicyDecision& decision, qos_context& qos_ctx);
 
 // TODO [QOS] Generate QoS characteristics for non-standard 5QI values
 // [TS 29.512 §5.6.2.16, §4.2.6.6.3]

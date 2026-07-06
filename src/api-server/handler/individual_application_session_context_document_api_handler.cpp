@@ -18,17 +18,37 @@ individual_application_session_context_document_api_handler::delete_app_session(
     const std::string& app_session_id,
     const EventsSubscReqData& events_subsc_req_data) {
   api_response response;
-  std::string content_type = "application/problem+json";
-
+  ProblemDetails problem_details;
+  std::string problem_description;
   nlohmann::json json_data;
+  uint16_t http_code;
 
-  json_data["error"] = "API endpoint not implemented";
+  // TODO [QOS-SUB] events_subsc_req_data (subscription to the termination
+  // EventsNotification) is not handled yet; AF termination notifications land
+  // in Phase 3 [TS 29.514 §4.2.4].
+  status_code res = m_pa_service->delete_app_session_handler(
+      app_session_id, problem_description);
 
+  switch (res) {
+    case status_code::OK:
+      // 3GPP TS 29.514 §4.2.4: successful termination returns 204 No Content.
+      response.status_code = http_status_code::NO_CONTENT;
+      return response;
+    case status_code::NOT_FOUND:
+      problem_details.setCause("CONTEXT_NOT_FOUND");
+      http_code = http_status_code::NOT_FOUND;
+      break;
+    default:
+      problem_details.setCause("INTERNAL_ERROR");
+      http_code = http_status_code::INTERNAL_SERVER_ERROR;
+  }
+
+  problem_details.setDetail(problem_description);
+  to_json(json_data, problem_details);
   response.headers.add<Pistache::Http::Header::ContentType>(
-      Pistache::Http::Mime::MediaType(content_type));
+      Pistache::Http::Mime::MediaType(std::string("application/problem+json")));
   response.body        = json_data.dump();
-  response.status_code = http_status_code::NOT_FOUND;
-
+  response.status_code = http_code;
   return response;
 }
 

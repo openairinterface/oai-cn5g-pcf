@@ -18,6 +18,7 @@
 #include "sm_policy/policy_provisioning_file.hpp"
 #include "pcf_nrf.hpp"
 #include "pcf_policy_authorization.hpp"
+#include "policy_auth/app_session_storage.hpp"
 #include "sm_policy/database/database_wrapper.hpp"
 
 namespace oai::pcf::app {
@@ -95,6 +96,8 @@ class pcf_app {
   std::shared_ptr<oai::pcf::app::sm_policy::policy_provisioning_file>
       m_provisioning_file;
 
+  std::shared_ptr<oai::pcf::app::policy_auth::app_session_storage>
+      m_app_session_storage;
   std::shared_ptr<pcf_policy_authorization> m_pcf_policy_authorization_service;
 };
 }  // namespace oai::pcf::app

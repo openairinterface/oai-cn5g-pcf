@@ -12,10 +12,11 @@
 #include "policy_auth/app_session.hpp"
 
 #include <boost/uuid/uuid_io.hpp>
-#include <unordered_map>
 #include <map>
 #include <memory>
 #include <string>
+#include <unordered_map>
+#include <utility>
 
 using namespace oai::pcf::app;
 using namespace oai::pcf::app::policy_auth;
@@ -25,8 +26,10 @@ using namespace oai::model::pcf;
 using namespace std;
 
 //------------------------------------------------------------------------------
-pcf_policy_authorization::pcf_policy_authorization(pcf_event& ev)
-    : m_event_sub(ev) {
+pcf_policy_authorization::pcf_policy_authorization(
+    std::shared_ptr<policy_auth::app_session_storage> app_session_storage,
+    pcf_event& ev)
+    : m_app_session_storage(std::move(app_session_storage)), m_event_sub(ev) {
 
   // TODO [QOS-SUB] Initialize Application Function monitoring and notification infrastructure [TS 29.514 §4.2.5, TS 29.500 §6.2]
   // Set up comprehensive AF communication framework as per 3GPP TS 29.514:
@@ -135,6 +138,13 @@ status_code pcf_policy_authorization::post_app_sessions_handler(
 
   // Check if the request contains the "afSfcReq" attribute or medComponents is
   // present. Pick medComponents if both are present
+  // Create the app-session up front (storage-generated, restart-safe id) so QoS
+  // processing can record the ids it contributes into this session's ledger
+  // . The full decision is not stored on the session.
+  app_session_id = m_app_session_storage->generate_id();
+  auto session   = std::make_shared<policy_auth::app_session>(
+      app_session_id, reqContext, association_id);
+
   bool qos_flow_processed = false;
   if (context.getAscReqData().medComponentsIsSet()) {
     Logger::pcf_app().info("MedComponents is set");
@@ -166,7 +176,7 @@ status_code pcf_policy_authorization::post_app_sessions_handler(
         //     delegates to create_qos_data_from_media_component() which writes
         //     hardcoded mock QosData (5QI=9, ARP priorityLevel=8) and a
         //     permit-all PccRule to current_decision.
-        policy_auth::handle_qos_requirements(current_decision);
+        policy_auth::handle_qos_requirements(current_decision, session->qos());
         qos_flow_processed = true;
       }
     }
@@ -215,16 +225,15 @@ status_code pcf_policy_authorization::post_app_sessions_handler(
     return decision_result.status.value();
   }
 
-  app_session_id = std::to_string(m_app_sessions_id_generator.get_uid());
-  policy_auth::app_session app_session(
-      reqContext, current_decision, app_session_id);
+  // Persist the app-session (working set + app-session <-> association binding).
+  m_app_session_storage->insert(session);
 
-  // Create an association
-  m_app_sessions.insert(std::make_pair(app_session_id, app_session));
-  context.getAscReqData().setAfAppId(app_session_id);
-
-  // Event with updated decision (contains QoS data when qos_flow_processed)
+  // The SM policy association is the single owner of the SmPolicyDecision; push
+  // the merged decision to it (contains QoS data when qos_flow_processed). The
+  // SmPolicyDelta optimization is deferred (TODO)
   m_event_sub.sm_update_decision(association_id, current_decision);
+
+  session->set_state(app_session_state::established);
 
   // TODO [QOS] Send QoS policy decision notifications [TS 29.512 §4.2.3.2, TS 29.513 §5.2.2.2.1]
   // Notify relevant network functions about QoS policy updates:
@@ -294,14 +303,18 @@ policy_auth::status_code pcf_policy_authorization::mod_app_session_handler(
   std::optional<std::string> association_id = {};
 
   // Get app session
-  auto iter = m_app_sessions.find(app_session_id);
-  if (iter == m_app_sessions.end()) {
+  auto session = m_app_session_storage->find(app_session_id);
+  if (!session) {
     Logger::pcf_app().error("App session not found");
     return status_code::NOT_FOUND;
   }
+  // Zombie-session guard: abort if a concurrent DELETE released it.
+  if (session->state() == app_session_state::released) {
+    Logger::pcf_app().error("App session already released");
+    return status_code::NOT_FOUND;
+  }
 
-  auto& app_session        = iter->second;
-  auto app_session_context = app_session.get_app_session_context();
+  auto app_session_context = session->context_snapshot();
 
   try {
     // Perform session binding
@@ -443,19 +456,66 @@ policy_auth::status_code pcf_policy_authorization::mod_app_session_handler(
   //    - Send resource allocation updates for modified sessions
   //    - Provide operator policy override notifications
 
-  // Update app session
-  // m_app_sessions[app_session_id] = app_session;
-  std::shared_lock lock_associations(m_app_sessions_mutex);
-  app_session.set_app_session_context(app_session_context);
-  // Get mutex
+  // Persist the updated request context on the session and advance lifecycle.
+  session->update_context(app_session_context);
+  session->next_version();
+  session->set_state(app_session_state::modified);
 
-  auto iter2 = m_app_sessions.find(app_session_id);
-  if (iter2 == m_app_sessions.end()) {
+  // TODO [PAS] send notification if notifcation is required
+
+  return status_code::OK;
+}
+
+//------------------------------------------------------------------------------
+policy_auth::status_code pcf_policy_authorization::delete_app_session_handler(
+    const std::string& app_session_id, std::string& problem_details) {
+  Logger::pcf_app().info("DELETE /app-sessions/{}", app_session_id);
+
+  auto session = m_app_session_storage->find(app_session_id);
+  if (!session) {
     Logger::pcf_app().error("App session not found");
+    problem_details = "APP_SESSION_CONTEXT_NOT_FOUND";
+    return status_code::NOT_FOUND;
+  }
+  if (session->state() == app_session_state::released) {
+    Logger::pcf_app().error("App session already released");
+    problem_details = "APP_SESSION_CONTEXT_NOT_FOUND";
     return status_code::NOT_FOUND;
   }
 
-  // TODO [PAS] send notification if notifcation is required
+  // Mark released first so a concurrent PATCH aborts (plan §5.5).
+  session->set_state(app_session_state::released);
+
+  // Re-fetch the bound association's current decision (existing binding signal,
+  // keyed by the session's stored context), remove exactly the entries this
+  // session contributed (from its ledger), and push the reduced decision back
+  // to the SM policy association (the single owner). CP.22: no storage lock is
+  // held across the emits below.
+  const auto app_session_context = session->context_snapshot();
+  std::optional<std::string> association_id      = {};
+  oai::model::pcf::SmPolicyDecision current_decision = {};
+  try {
+    m_event_sub.sm_session_binding(
+        app_session_context.getUeIpv4(), app_session_context.getSupi(),
+        app_session_context.getDnn(), association_id, current_decision);
+  } catch (const std::exception& e) {
+    // The PDU session/association may already be gone; still drop the
+    // app-session from storage below.
+    Logger::pcf_app().info(e.what());
+  }
+
+  if (association_id.has_value()) {
+    session->qos().erase_owned_from(current_decision);
+    m_event_sub.sm_update_decision(association_id, current_decision);
+  } else {
+    Logger::pcf_app().debug(
+        "No SM policy association bound; skipping SMF decision update");
+  }
+
+  // TODO [QOS-SUB] If the DELETE carried an EventsSubscReqData, send the
+  // termination EventsNotification to the AF here (Phase 3) [TS 29.514 §4.2.4].
+
+  m_app_session_storage->remove(app_session_id);
 
   return status_code::OK;
 }

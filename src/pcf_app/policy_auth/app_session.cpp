@@ -2,8 +2,10 @@
  * SPDX-License-Identifier: LicenseRef-CSSL-1.0
  */
 
-#include <string>
+#include <chrono>
 #include <sstream>
+#include <string>
+#include <utility>
 
 #include "AppSessionContext.h"
 #include "TrafficControlData.h"
@@ -27,18 +29,44 @@ using namespace oai::model::pcf;
 using namespace oai::pcf::app;
 using namespace oai::utils;
 
-std::string app_session::get_id() const {
-  return m_id;
+app_session::app_session(
+    std::string id, oai::model::pcf::AppSessionContextReqData context,
+    std::optional<std::string> association_id)
+    : m_id(std::move(id)),
+      m_created_at(std::chrono::system_clock::now()),
+      m_context(std::move(context)),
+      m_association_id(std::move(association_id)) {}
+
+oai::model::pcf::AppSessionContextReqData app_session::context_snapshot()
+    const {
+  auto context = m_context.read();
+  return *context;
 }
 
-const oai::model::pcf::AppSessionContextReqData&
-app_session::get_app_session_context() const {
-  return m_context;
+void app_session::update_context(
+    const oai::model::pcf::AppSessionContextReqData& context) {
+  auto handle = m_context.write();
+  *handle     = context;
 }
 
-void app_session::set_app_session_context(
-    oai::model::pcf::AppSessionContextReqData& context) {
-  m_context = context;
+app_session_record app_session::to_record() const {
+  app_session_record record;
+  record.app_session_id     = m_id;
+  record.association_id      = m_association_id;
+  record.state              = m_state.load();
+  record.owned_qos_ids      = m_qos.owned_qos_ids();
+  record.owned_pcc_rule_ids = m_qos.owned_rule_ids();
+  record.created_at         = m_created_at;
+  record.updated_at         = std::chrono::system_clock::now();
+  {
+    auto context   = m_context.read();
+    record.supi    = context->getSupi();
+    record.dnn     = context->getDnn();
+    record.ue_ipv4 = context->getUeIpv4();
+  }
+  // af_app_id and context_json are serialized when the DB storage backend lands
+  // the in-memory backend does not use to_record().
+  return record;
 }
 
 handler_result handle_service_function_chaining(
@@ -308,9 +336,10 @@ handler_result authorize_service_info(
 //   - MediaComponent params are not read; hardcoded QosData and PccRule are
 //     written to decision inside create_qos_data_from_media_component().
 //   - create_qos_characteristics() and setup_qos_monitoring() only log.
-handler_result handle_qos_requirements(SmPolicyDecision& decision) {
+handler_result handle_qos_requirements(
+    SmPolicyDecision& decision, qos_context& qos_ctx) {
   Logger::pcf_app().debug("handle_qos_requirements() [mock]");
-  create_qos_data_from_media_component(decision);
+  create_qos_data_from_media_component(decision, qos_ctx);
   create_qos_characteristics(decision);
   setup_qos_monitoring(decision);
   return handler_result{.status = status_code::OK};
@@ -335,7 +364,8 @@ handler_result handle_qos_requirements(SmPolicyDecision& decision) {
 //   - flowInfos: permit-all bidirectional filter instead of SDF filters from
 //     medSubComponents.
 //   - precedence: hardcoded to 100 instead of policy-assigned.
-handler_result create_qos_data_from_media_component(SmPolicyDecision& decision) {
+handler_result create_qos_data_from_media_component(
+    SmPolicyDecision& decision, qos_context& qos_ctx) {
   Logger::pcf_app().debug("create_qos_data_from_media_component() [mock]");
 
   const std::string qos_id = "qos-mock-1";
@@ -380,6 +410,12 @@ handler_result create_qos_data_from_media_component(SmPolicyDecision& decision) 
   auto pcc_rules_map = decision.getPccRules();
   pcc_rules_map.insert(std::make_pair(rule_id, pcc_rule));
   decision.setPccRules(pcc_rules_map);
+
+  // Record the ids this app-session contributed into its ledger so PATCH/DELETE
+  // can later edit exactly these entries. The QosData/PccRule
+  // payload itself lives in the decision owned by the SM policy association.
+  qos_ctx.record_qos_flow(qos_id);
+  qos_ctx.record_pcc_rule(rule_id, 100, {qos_id});
 
   return handler_result{.status = status_code::OK};
 }
