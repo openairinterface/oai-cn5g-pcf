@@ -32,7 +32,14 @@ class individual_sm_association {
   [[nodiscard]] virtual const oai::_3gpp::model::SmPolicyDecision&
   get_sm_policy_decision_dto() const;
 
-  [[nodiscard]] virtual const void set_sm_policy_decision(
+  // TODO [QOS][REFACTOR] The full SmPolicyDecision is re-stored on every update.
+  // Prefer copy-on-write: hold the authoritative decision as
+  // shared_ptr<const SmPolicyDecision>, apply an sm_policy_delta to a copy, then
+  // atomically swap and bump a version. Readers then get cheap, consistent
+  // snapshots and concurrent updates cannot lose writes. Deferred to Phase 2
+  // together with the sm_update_decision -> delta signal change (see
+  // pcf_event_sig.hpp).
+  virtual void set_sm_policy_decision(
       oai::_3gpp::model::SmPolicyDecision& new_decision);
 
   [[nodiscard]] virtual oai::pcf::app::sm_policy::status_code redecide_policy(

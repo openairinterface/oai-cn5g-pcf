@@ -12,10 +12,11 @@
 #include "policy_auth/app_session.hpp"
 
 #include <boost/uuid/uuid_io.hpp>
-#include <unordered_map>
 #include <map>
 #include <memory>
 #include <string>
+#include <unordered_map>
+#include <utility>
 
 using namespace oai::pcf::app;
 using namespace oai::pcf::app::policy_auth;
@@ -25,8 +26,41 @@ using namespace oai::_3gpp::model;
 using namespace std;
 
 //------------------------------------------------------------------------------
-pcf_policy_authorization::pcf_policy_authorization(pcf_event& ev)
-    : m_event_sub(ev) {}
+pcf_policy_authorization::pcf_policy_authorization(
+    std::shared_ptr<policy_auth::app_session_storage> app_session_storage,
+    pcf_event& ev)
+    : m_app_session_storage(std::move(app_session_storage)), m_event_sub(ev) {
+
+  // TODO [QOS-SUB] Initialize Application Function monitoring and notification infrastructure [TS 29.514 §4.2.5, TS 29.500 §6.2]
+  // Set up comprehensive AF communication framework as per 3GPP TS 29.514:
+  //
+  // 1. NOTIFICATION CLIENT SETUP [TS 29.500 §5.2.6]:
+  //    - Initialize HTTP/2 client for AF notifications (support both HTTP and HTTPS) [TS 29.500 §5.2.6]
+  //    - Configure retry mechanisms for failed AF notifications [TS 29.500 §5.2.8]
+  //    - Setup connection pooling for multiple AF endpoints [TS 29.500 §5.2.6]
+  //    - Implement authentication/authorization for AF callbacks [TS 29.514 §5.9, TS 33.501 §13.4.1]
+  //
+  // 2. SUBSCRIPTION REGISTRY [TS 29.514 §4.2.6]:
+  //    - Create registry for AF notification subscriptions by session [TS 29.514 §5.3.4.1]
+  //    - Implement subscription filtering by event types and QoS parameters [TS 29.514 §5.6.2.6]
+  //    - Setup automatic subscription cleanup on session termination [TS 29.514 §4.2.7.1]
+  //    - Maintain AF endpoint health status and availability [TS 29.500 §5.2.6]
+  //
+  // 3. NOTIFICATION QUEUING AND DELIVERY [TS 29.500 §6.8]:
+  //    - Create notification queue with priority handling (critical vs informational) [TS 29.500 §6.8.2, §6.8.5]
+  //    - Implement batching for non-urgent notifications to same AF
+  //    - Setup dead letter queue for failed notifications with retry logic [TS 29.500 §5.2.8]
+  //    - Provide notification delivery status tracking and reporting [TS 29.500 §5.2.8]
+
+  // TODO [QOS-MON] Initialize QoS monitoring infrastructure [TS 29.512 §4.2.3.25, TS 23.503 §6.1.3.21]
+  // Set up QoS monitoring framework for AF reporting:
+  //
+  // 1. MONITORING EVENT TRIGGERS [TS 29.512 §4.2.3.25.1, TS 23.503 §6.1.3.21]:
+  //    - Register for SM Policy Control service events (QoS flow changes) [TS 29.512 §4.2.3.2]
+  //    - Subscribe to UPF monitoring reports via N4 interface [TS 29.244 §5.39.2]
+  //    - Setup periodic monitoring report generation timers [TS 29.244 §5.24.4.2]
+  //    - Implement threshold-based event triggering for QoS violations [TS 29.244 §5.39.3]
+}
 
 //------------------------------------------------------------------------------
 status_code pcf_policy_authorization::post_app_sessions_handler(
@@ -92,6 +126,13 @@ status_code pcf_policy_authorization::post_app_sessions_handler(
 
   // Check if the request contains the "afSfcReq" attribute or medComponents is
   // present. Pick medComponents if both are present
+  // Create the app-session up front (storage-generated, restart-safe id) so QoS
+  // processing can record the ids it contributes into this session's ledger
+  // . The full decision is not stored on the session.
+  app_session_id = m_app_session_storage->generate_id();
+  auto session   = std::make_shared<policy_auth::app_session>(
+      app_session_id, reqContext, association_id);
+
   bool qos_flow_processed = false;
   if (context.getAscReqData().medComponentsIsSet()) {
     Logger::pcf_app().info("MedComponents is set");
@@ -123,7 +164,7 @@ status_code pcf_policy_authorization::post_app_sessions_handler(
         //     delegates to create_qos_data_from_media_component() which writes
         //     hardcoded mock QosData (5QI=9, ARP priorityLevel=8) and a
         //     permit-all PccRule to current_decision.
-        policy_auth::handle_qos_requirements(current_decision);
+        policy_auth::handle_qos_requirements(current_decision, session->qos());
         qos_flow_processed = true;
       }
     }
@@ -172,16 +213,51 @@ status_code pcf_policy_authorization::post_app_sessions_handler(
     return decision_result.status.value();
   }
 
-  app_session_id = std::to_string(m_app_sessions_id_generator.get_uid());
-  policy_auth::app_session app_session(
-      reqContext, current_decision, app_session_id);
+  // Persist the app-session (working set + app-session <-> association binding).
+  m_app_session_storage->insert(session);
 
-  // Create an association
-  m_app_sessions.insert(std::make_pair(app_session_id, app_session));
-  context.getAscReqData().setAfAppId(app_session_id);
-
-  // Event with updated decision (contains QoS data when qos_flow_processed)
+  // The SM policy association is the single owner of the SmPolicyDecision; push
+  // the merged decision to it (contains QoS data when qos_flow_processed). The
+  // SmPolicyDelta optimization is deferred (TODO)
   m_event_sub.sm_update_decision(association_id, current_decision);
+
+  session->set_state(app_session_state::established);
+
+  // TODO [QOS] Send QoS policy decision notifications [TS 29.512 §4.2.3.2, TS 29.513 §5.2.2.2.1]
+  // Notify relevant network functions about QoS policy updates:
+  // - SMF about new QoS flows and QoS rules [TS 29.512 §4.2.3.2]
+  // - UPF about traffic control and forwarding rules [via SMF N4]
+  // - UE about QoS flow establishment (via AMF/gNB) [TS 23.502 §4.3.3.2]
+  // Include QoS monitoring setup if required [TS 29.512 §4.2.3.25.1]
+
+  // TODO [QOS-SUB] Setup Application Function monitoring and notification framework [TS 29.514 §4.2.6, TS 29.500 §6.2]
+  // As per 3GPP TS 29.514, implement bidirectional communication with Application Functions:
+  //
+  // 1. AF SUBSCRIPTION MANAGEMENT [TS 29.514 §4.2.6]:
+  //    - Register AF notification endpoints from AppSessionContextReqData [TS 29.514 §5.6.2.6]
+  //    - Store AF callback URIs for different event types (QoS changes, session events) [TS 29.514 §5.6.2.6]
+  //    - Implement subscription lifecycle management for AF notifications [TS 29.514 §4.2.6.2]
+
+  // TODO [QOS-MON] Setup QoS monitoring reports to Application Functions [TS 29.514 §4.2.5.14, TS 23.503 §6.1.3.21]
+  // Implement QoS measurement and threshold monitoring for AF notifications:
+  //
+  // 1. QOS MONITORING REPORTS TO AF [TS 29.514 §4.2.5.14]:
+  //    - Send QoS flow status updates (established, modified, released) [TS 29.514 §4.2.5.4]
+  //    - Report QoS monitoring measurements when thresholds are exceeded [TS 29.514 §5.6.2.37]
+  //    - Notify about QoS guarantee failures or degradation [TS 29.514 §4.2.5.4]
+  //    - Provide bandwidth utilization and congestion status updates [TS 29.514 §5.6.2.37]
+  //
+  // 3. PDU SESSION EVENT NOTIFICATIONS [TS 29.514 §4.2.5.22]:
+  //    - Notify AF about PDU session establishment/termination [TS 29.514 §5.6.3.24]
+  //    - Report session modification events affecting QoS [TS 29.514 §4.2.5.2]
+  //    - Send UE mobility events that impact application QoS [TS 29.514 §5.6.3.7]
+  //    - Provide session binding status updates [TS 29.514 §4.2.5.22]
+  //
+  // 4. POLICY DECISION NOTIFICATIONS [TS 29.514 §4.2.5.2]:
+  //    - Inform AF when policy decisions are updated by operator
+  //    - Report conflicts between AF requests and network policies
+  //    - Notify about resource availability changes affecting QoS [TS 29.514 §5.6.3.7]
+  //    - Send charging policy updates if applicable
 
   // TODO [PAS] send notification if notifcation is required
 
@@ -204,14 +280,18 @@ policy_auth::status_code pcf_policy_authorization::mod_app_session_handler(
   std::optional<std::string> association_id = {};
 
   // Get app session
-  auto iter = m_app_sessions.find(app_session_id);
-  if (iter == m_app_sessions.end()) {
+  auto session = m_app_session_storage->find(app_session_id);
+  if (!session) {
     Logger::pcf_app().error("App session not found");
     return status_code::NOT_FOUND;
   }
+  // Zombie-session guard: abort if a concurrent DELETE released it.
+  if (session->state() == app_session_state::released) {
+    Logger::pcf_app().error("App session already released");
+    return status_code::NOT_FOUND;
+  }
 
-  auto& app_session        = iter->second;
-  auto app_session_context = app_session.get_app_session_context();
+  auto app_session_context = session->context_snapshot();
 
   try {
     // Perform session binding
@@ -245,19 +325,102 @@ policy_auth::status_code pcf_policy_authorization::mod_app_session_handler(
   // Event with updated decision
   m_event_sub.sm_update_decision(association_id, current_decision);
 
-  // Update app session
-  // m_app_sessions[app_session_id] = app_session;
-  std::shared_lock lock_associations(m_app_sessions_mutex);
-  app_session.set_app_session_context(app_session_context);
-  // Get mutex
+  // TODO [QOS] Send QoS policy update notifications [TS 29.512 §4.2.3.2, §5.6.2.5]
+  // Notify network functions about QoS policy changes:
+  // - Send updated QoS rules to SMF [TS 29.512 §4.2.3.2]
+  // - Update QoS monitoring configurations [TS 29.512 §4.2.3.25.1]
+  // - Trigger QoS flow modification procedures [TS 23.502 §4.3.3.2]
 
-  auto iter2 = m_app_sessions.find(app_session_id);
-  if (iter2 == m_app_sessions.end()) {
+  // TODO [QOS-SUB] Send Application Function update notifications for session modifications [TS 29.514 §4.2.5.2]
+  // As per 3GPP TS 29.514, notify AF about QoS and session changes:
+  //
+  // 1. QOS MODIFICATION NOTIFICATIONS [TS 29.514 §4.2.5.2, §5.6.2.9]:
+  //    - Report successful QoS parameter changes (bandwidth, latency updates)
+  //    - Notify about rejected QoS modification requests with reasons
+  //    - Send QoS flow reconfiguration status (success/failure) [TS 29.514 §4.2.5.4]
+  //    - Provide updated QoS characteristics after network optimization
+
+  // TODO [QOS-MON] Handle monitoring threshold updates during session modifications [TS 29.514 §4.2.3.2, §4.2.2.23]
+  // Implement QoS monitoring parameter updates and threshold management:
+  //
+  // 1. MONITORING THRESHOLD UPDATES [TS 29.514 §4.2.2.23.1, §4.2.5.14]:
+  //    - Notify when QoS monitoring parameters change
+  //    - Report threshold breach events for modified QoS flows [TS 29.514 §5.6.2.37]
+  //    - Send congestion status updates affecting modified sessions [TS 29.514 §5.6.2.37]
+  //    - Provide packet loss and latency measurement reports [TS 29.514 §5.6.2.37]
+  //
+  // 3. SESSION MODIFICATION EVENTS [TS 29.514 §4.2.5.2]:
+  //    - Report session context updates to subscribed AFs
+  //    - Notify about media component changes and their QoS impact
+  //    - Send service function chain modification results
+  //    - Provide updated charging correlation information
+  //
+  // 4. POLICY ENFORCEMENT NOTIFICATIONS [TS 29.514 §4.2.5.2]:
+  //    - Report policy rule activation/deactivation status
+  //    - Notify about conflicts resolved during modification
+  //    - Send resource allocation updates for modified sessions
+  //    - Provide operator policy override notifications
+
+  // Persist the updated request context on the session and advance lifecycle.
+  session->update_context(app_session_context);
+  session->next_version();
+  session->set_state(app_session_state::modified);
+
+  // TODO [PAS] send notification if notifcation is required
+
+  return status_code::OK;
+}
+
+//------------------------------------------------------------------------------
+policy_auth::status_code pcf_policy_authorization::delete_app_session_handler(
+    const std::string& app_session_id, std::string& problem_details) {
+  Logger::pcf_app().info("DELETE /app-sessions/{}", app_session_id);
+
+  auto session = m_app_session_storage->find(app_session_id);
+  if (!session) {
     Logger::pcf_app().error("App session not found");
+    problem_details = "APP_SESSION_CONTEXT_NOT_FOUND";
+    return status_code::NOT_FOUND;
+  }
+  if (session->state() == app_session_state::released) {
+    Logger::pcf_app().error("App session already released");
+    problem_details = "APP_SESSION_CONTEXT_NOT_FOUND";
     return status_code::NOT_FOUND;
   }
 
-  // TODO [PAS] send notification if notifcation is required
+  // Mark released first so a concurrent PATCH aborts (plan §5.5).
+  session->set_state(app_session_state::released);
+
+  // Re-fetch the bound association's current decision (existing binding signal,
+  // keyed by the session's stored context), remove exactly the entries this
+  // session contributed (from its ledger), and push the reduced decision back
+  // to the SM policy association (the single owner). CP.22: no storage lock is
+  // held across the emits below.
+  const auto app_session_context = session->context_snapshot();
+  std::optional<std::string> association_id      = {};
+  oai::model::pcf::SmPolicyDecision current_decision = {};
+  try {
+    m_event_sub.sm_session_binding(
+        app_session_context.getUeIpv4(), app_session_context.getSupi(),
+        app_session_context.getDnn(), association_id, current_decision);
+  } catch (const std::exception& e) {
+    // The PDU session/association may already be gone; still drop the
+    // app-session from storage below.
+    Logger::pcf_app().info(e.what());
+  }
+
+  if (association_id.has_value()) {
+    session->qos().erase_owned_from(current_decision);
+    m_event_sub.sm_update_decision(association_id, current_decision);
+  } else {
+    Logger::pcf_app().debug(
+        "No SM policy association bound; skipping SMF decision update");
+  }
+
+  // TODO [QOS-SUB] If the DELETE carried an EventsSubscReqData, send the
+  // termination EventsNotification to the AF here (Phase 3) [TS 29.514 §4.2.4].
+
+  m_app_session_storage->remove(app_session_id);
 
   return status_code::OK;
 }

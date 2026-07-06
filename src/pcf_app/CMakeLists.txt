@@ -43,6 +43,8 @@ add_library (PCF STATIC
   sm_policy/policy_storage_db.cpp
   sm_policy/policy_provisioning_file.cpp
   policy_auth/app_session.cpp
+  policy_auth/qos_context.cpp
+  policy_auth/app_session_storage_memory.cpp
   pcf_policy_authorization.cpp
   sm_policy/database/mysql_db.cpp
   )

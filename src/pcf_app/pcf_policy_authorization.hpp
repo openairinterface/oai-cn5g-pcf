@@ -6,8 +6,6 @@
 #define FILE_PCF_POLICY_AUTHORIZATION_SEEN
 
 #include <string>
-#include <unordered_map>
-#include <shared_mutex>
 #include <memory>
 #include <optional>
 
@@ -19,7 +17,7 @@
 #include "AppSessionContextReqData.h"
 #include "policy_auth/pcf_policy_authorization_status_code.hpp"
 #include "policy_auth/app_session.hpp"
-#include "uint_generator.hpp"
+#include "policy_auth/app_session_storage.hpp"
 #include "pcf_event.hpp"
 
 namespace oai::pcf::app {
@@ -30,7 +28,9 @@ namespace oai::pcf::app {
  */
 class pcf_policy_authorization {
  public:
-  explicit pcf_policy_authorization(pcf_event& ev);
+  explicit pcf_policy_authorization(
+      std::shared_ptr<policy_auth::app_session_storage> app_session_storage,
+      pcf_event& ev);
   pcf_policy_authorization(pcf_policy_authorization const&) = delete;
   void operator=(pcf_policy_authorization const&) = delete;
 
@@ -68,13 +68,26 @@ class pcf_policy_authorization {
       const oai::_3gpp::model::AppSessionContext& context,
       std::string& problem_details);
 
+  /**
+   * @brief Handler for terminating an application session context, as defined
+   * in 3GPP TS 29.514 Chapter 4.2.4.
+   *
+   * Removes the QoS entries this app-session contributed from the bound SM
+   * policy association's decision (using the session's ledger), notifies the
+   * SMF, and drops the session from storage.
+   *
+   * @param app_session_id  input: id of the session to terminate
+   * @param problem_details output: additional information in case of an error
+   * @return policy_auth::status_code::OK on success, NOT_FOUND if the session
+   * does not exist
+   */
+  policy_auth::status_code delete_app_session_handler(
+      const std::string& app_session_id, std::string& problem_details);
+
  private:
-  oai::utils::uint_generator<uint32_t> m_app_sessions_id_generator;
-
-  std::unordered_map<std::string, oai::pcf::app::policy_auth::app_session>
-      m_app_sessions;
-
-  mutable std::shared_mutex m_app_sessions_mutex;
+  // Repository for app-session working state + binding persistence (injected;
+  // in-memory backend now, DB backend later). Owns app-session id generation.
+  std::shared_ptr<policy_auth::app_session_storage> m_app_session_storage;
 
   // for Event Handling
   pcf_event& m_event_sub;

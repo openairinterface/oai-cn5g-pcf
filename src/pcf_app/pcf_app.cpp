@@ -3,6 +3,7 @@
  */
 
 #include "pcf_app.hpp"
+#include "policy_auth/app_session_storage_memory.hpp"
 #include "pcf_nrf.hpp"
 #include "logger.hpp"
 #include "pcf_config.hpp"
@@ -53,8 +54,13 @@ pcf_app::pcf_app(pcf_event& ev) : m_event_sub(ev) {
   }
 
   m_pcf_smpc_service = std::make_shared<pcf_smpc>(m_policy_storage, ev);
+
+  // In-memory app-session storage. The DB backend lands later behind the same
+  // interface; this generates restart-safe UUID app-session ids.
+  m_app_session_storage =
+      std::make_shared<policy_auth::app_session_storage_memory>();
   m_pcf_policy_authorization_service =
-      std::make_shared<pcf_policy_authorization>(ev);
+      std::make_shared<pcf_policy_authorization>(m_app_session_storage, ev);
 }
 
 //------------------------------------------------------------------------------
