@@ -32,6 +32,8 @@ check_install_pcf_deps() {
   fi
   # arg3 (optional): install ODB/MySQL persistence dependencies (0 or 1)
   local use_odb=${3:-0}
+  # arg4 (optional): install unit-test dependencies, i.e. gtest/gmock (0 or 1)
+  local use_tests=${4:-0}
 
   echo "Check supported distribution"
   check_supported_distribution
@@ -147,6 +149,19 @@ check_install_pcf_deps() {
     ret=$?;[[ $ret -ne 0 ]] && return $ret
   else
     echo "Skipping ODB/MySQL persistence dependencies (build without --odb)"
+  fi
+
+  # Unit-test dependencies are optional; only install when requested (--tests).
+  if [ "$use_tests" -eq 1 ]; then
+    echo "Install unit-test dependencies (GoogleTest/GoogleMock)"
+    if [[ $OS_DISTRO == "ubuntu" ]]; then
+      $SUDO $INSTALLER install $OPTION libgtest-dev libgmock-dev googletest-tools
+    elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
+      $SUDO $INSTALLER install $OPTION gtest-devel gmock-devel
+    fi
+    ret=$?;[[ $ret -ne 0 ]] && return $ret
+  else
+    echo "Skipping unit-test dependencies (build without --tests)"
   fi
 
   install_spdlog_from_git $1 $2
