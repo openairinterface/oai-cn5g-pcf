@@ -192,6 +192,7 @@ pcf:
     policy_decisions_path: /openair-pcf/policies/policy_decisions
     pcc_rules_path: /openair-pcf/policies/pcc_rules
     traffic_rules_path: /openair-pcf/policies/traffic_rules
+    qos_reference_path: /openair-pcf/policies/qos_references
 
 nssf:
   slice_config_path: /openair-nssf/etc/nssf_slice_config.yaml

@@ -15,6 +15,8 @@ const std::string DEFAULT_TRAFFIC_RULES_PATH =
 const std::string DEFAULT_POLICY_DECISIONS_PATH =
     "/openair-pcf/policies/policy_decisions";
 const std::string DEFAULT_QOS_DATA_PATH = "/openair-pcf/policies/qos_data";
+const std::string DEFAULT_QOS_REFERENCE_PATH =
+    "/openair-pcf/policies/qos_references";
 
 class pcf_config : public oai::config::config {
  public:
