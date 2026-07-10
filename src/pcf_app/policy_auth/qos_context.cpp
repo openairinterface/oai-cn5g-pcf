@@ -6,6 +6,8 @@
 
 #include <chrono>
 
+#include "logger.hpp"
+
 namespace oai::pcf::app::policy_auth {
 
 void qos_context::record_qos_flow(const std::string& qos_id) {
@@ -18,6 +20,9 @@ void qos_context::record_qos_flow(const std::string& qos_id) {
   meta.created_at         = now;
   meta.updated_at         = now;
   ledger->qos_flows[qos_id] = std::move(meta);
+  Logger::pcf_app().trace(
+      "qos_context: recorded QoS flow %s (owned flows: %zu)", qos_id.c_str(),
+      ledger->qos_flows.size());
 }
 
 void qos_context::record_pcc_rule(
@@ -34,6 +39,9 @@ void qos_context::record_pcc_rule(
   ctx.created_at             = now;
   ctx.updated_at             = now;
   ledger->pcc_rules[rule_id] = std::move(ctx);
+  Logger::pcf_app().trace(
+      "qos_context: recorded PCC rule %s (precedence %u, owned rules: %zu)",
+      rule_id.c_str(), precedence, ledger->pcc_rules.size());
 }
 
 std::vector<std::string> qos_context::owned_qos_ids() const {
@@ -63,6 +71,10 @@ void qos_context::erase_owned_from(
   auto qos_decs = decision.getQosDecs();
   for (const auto& entry : ledger->qos_flows) qos_decs.erase(entry.first);
   decision.setQosDecs(qos_decs);
+
+  Logger::pcf_app().debug(
+      "qos_context: erased %zu PCC rule(s) and %zu QoS flow(s) from decision",
+      ledger->pcc_rules.size(), ledger->qos_flows.size());
 
   // qos_mon_ids -> decision.getQosMonDecs()/setQosMonDecs() when monitoring
   // lands (Phase 4).

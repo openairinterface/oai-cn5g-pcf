@@ -27,9 +27,8 @@ using namespace std;
 
 //------------------------------------------------------------------------------
 pcf_policy_authorization::pcf_policy_authorization(
-    std::shared_ptr<policy_auth::app_session_storage> app_session_storage,
-    pcf_event& ev)
-    : m_app_session_storage(std::move(app_session_storage)), m_event_sub(ev) {
+    std::shared_ptr<policy_auth::policy_auth_context> context, pcf_event& ev)
+    : m_context(std::move(context)), m_event_sub(ev) {
 
   // TODO [QOS-SUB] Initialize Application Function monitoring and notification infrastructure [TS 29.514 §4.2.5, TS 29.500 §6.2]
   // Set up comprehensive AF communication framework as per 3GPP TS 29.514:
@@ -141,7 +140,7 @@ status_code pcf_policy_authorization::post_app_sessions_handler(
   // Create the app-session up front (storage-generated, restart-safe id) so QoS
   // processing can record the ids it contributes into this session's ledger
   // . The full decision is not stored on the session.
-  app_session_id = m_app_session_storage->generate_id();
+  app_session_id = m_context->app_sessions().generate_id();
   auto session   = std::make_shared<policy_auth::app_session>(
       app_session_id, reqContext, association_id);
 
@@ -152,9 +151,11 @@ status_code pcf_policy_authorization::post_app_sessions_handler(
     for (const auto& medComponent :
          context.getAscReqData().getMedComponents()) {
 
-      if (medComponent.second.afSfcReqIsSet()) {
+      const auto& med_component = medComponent.second;
+
+      if (med_component.afSfcReqIsSet()) {
         handler_result result = policy_auth::handle_service_function_chaining(
-            medComponent.second.getAfSfcReq(), request_decision);
+            med_component.getAfSfcReq(), request_decision);
         if (result.problem_details.has_value()) {
           problem_details = result.problem_details.value();
           Logger::pcf_app().error(
@@ -163,20 +164,27 @@ status_code pcf_policy_authorization::post_app_sessions_handler(
           return result.status.value();
         }
         break;
-      } else if (medComponent.second.qosReferenceIsSet()) {
-        // TODO [QOS] Process QoS parameters from each MediaComponent
-        // [TS 29.514 §4.2.2.2, TS 29.513 §7.3.3]
-        // Tasks: extract bandwidth/latency/loss params and resPrio from
-        // MediaComponent; derive 5QI and ARP; create QosData + PccRule.
-        // Also mocks TODO [QOS] Handle Initial provisioning of QoS information.
-        //
-        // [QOS-MOCK] Phase 1 — per-MediaComponent QoS processing (mock).
-        // Mocks the TODO [QOS] tasks above:
-        //   - MediaComponent fields are not read; handle_qos_requirements()
-        //     delegates to create_qos_data_from_media_component() which writes
-        //     hardcoded mock QosData (5QI=9, ARP priorityLevel=8) and a
-        //     permit-all PccRule to current_decision.
-        policy_auth::handle_qos_requirements(current_decision, session->qos());
+      } else if (
+          // Process QoS for any MediaComponent bearing QoS intent
+          // [TS 29.513 §7.3.3]: an explicit qosReference, service data flows to
+          // authorize, or an AF-requested bandwidth.
+          med_component.qosReferenceIsSet() ||
+          med_component.medSubCompsIsSet() || med_component.marBwUlIsSet() ||
+          med_component.marBwDlIsSet() || med_component.mirBwUlIsSet() ||
+          med_component.mirBwDlIsSet()) {
+        // Derive QosData + PccRule (SDF filters) from the MediaComponent per
+        // TS 29.513 §7.3.3 and write them into current_decision; the ids are
+        // recorded in the session ledger.
+        handler_result result = policy_auth::handle_qos_requirements(
+            med_component, app_session_id, current_decision, session->qos(),
+            m_context->qos_references());
+        if (result.problem_details.has_value()) {
+          problem_details = result.problem_details.value();
+          Logger::pcf_app().error(
+              "QoS requirements processing failed. Problem details: {}",
+              result.problem_details.value());
+          return result.status.value();
+        }
         qos_flow_processed = true;
       }
     }
@@ -226,7 +234,7 @@ status_code pcf_policy_authorization::post_app_sessions_handler(
   }
 
   // Persist the app-session (working set + app-session <-> association binding).
-  m_app_session_storage->insert(session);
+  m_context->app_sessions().insert(session);
 
   // The SM policy association is the single owner of the SmPolicyDecision; push
   // the merged decision to it (contains QoS data when qos_flow_processed). The
@@ -303,7 +311,7 @@ policy_auth::status_code pcf_policy_authorization::mod_app_session_handler(
   std::optional<std::string> association_id = {};
 
   // Get app session
-  auto session = m_app_session_storage->find(app_session_id);
+  auto session = m_context->app_sessions().find(app_session_id);
   if (!session) {
     Logger::pcf_app().error("App session not found");
     return status_code::NOT_FOUND;
@@ -471,7 +479,7 @@ policy_auth::status_code pcf_policy_authorization::delete_app_session_handler(
     const std::string& app_session_id, std::string& problem_details) {
   Logger::pcf_app().info("DELETE /app-sessions/{}", app_session_id);
 
-  auto session = m_app_session_storage->find(app_session_id);
+  auto session = m_context->app_sessions().find(app_session_id);
   if (!session) {
     Logger::pcf_app().error("App session not found");
     problem_details = "APP_SESSION_CONTEXT_NOT_FOUND";
@@ -515,7 +523,7 @@ policy_auth::status_code pcf_policy_authorization::delete_app_session_handler(
   // TODO [QOS-SUB] If the DELETE carried an EventsSubscReqData, send the
   // termination EventsNotification to the AF here (Phase 3) [TS 29.514 §4.2.4].
 
-  m_app_session_storage->remove(app_session_id);
+  m_context->app_sessions().remove(app_session_id);
 
   return status_code::OK;
 }

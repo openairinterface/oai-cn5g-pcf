@@ -17,7 +17,7 @@
 #include "AppSessionContextReqData.h"
 #include "policy_auth/pcf_policy_authorization_status_code.hpp"
 #include "policy_auth/app_session.hpp"
-#include "policy_auth/app_session_storage.hpp"
+#include "policy_auth/policy_auth_context.hpp"
 #include "pcf_event.hpp"
 
 namespace oai::pcf::app {
@@ -29,8 +29,7 @@ namespace oai::pcf::app {
 class pcf_policy_authorization {
  public:
   explicit pcf_policy_authorization(
-      std::shared_ptr<policy_auth::app_session_storage> app_session_storage,
-      pcf_event& ev);
+      std::shared_ptr<policy_auth::policy_auth_context> context, pcf_event& ev);
   pcf_policy_authorization(pcf_policy_authorization const&) = delete;
   void operator=(pcf_policy_authorization const&) = delete;
 
@@ -85,9 +84,10 @@ class pcf_policy_authorization {
       const std::string& app_session_id, std::string& problem_details);
 
  private:
-  // Repository for app-session working state + binding persistence (injected;
-  // in-memory backend now, DB backend later). Owns app-session id generation.
-  std::shared_ptr<policy_auth::app_session_storage> m_app_session_storage;
+  // Aggregate of the injected Policy Authorization stores (app-session working
+  // set + binding index, and the operator-preconfigured QoS reference sets).
+  // New stores are added on policy_auth_context, not here.
+  std::shared_ptr<policy_auth::policy_auth_context> m_context;
 
   // for Event Handling
   pcf_event& m_event_sub;

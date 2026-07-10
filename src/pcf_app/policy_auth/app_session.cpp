@@ -3,25 +3,39 @@
  */
 
 #include <chrono>
+#include <optional>
+#include <set>
 #include <sstream>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "AppSessionContext.h"
 #include "TrafficControlData.h"
 #include "PccRule.h"
 #include "QosData.h"
+#include "QosCharacteristics.h"
+#include "QosResourceType.h"
 #include "Arp.h"
 #include "FlowInformation.h"
 #include "FlowDirectionRm.h"
+#include "MediaComponent.h"
+#include "MediaSubComponent.h"
 #include "SmPolicyDecision.h"
 #include "AfSfcRequirement.h"
 #include "policy_auth/pcf_policy_authorization_status_code.hpp"
 #include "logger.hpp"
 #include "app_session.hpp"
+#include "bitrate.hpp"
 #include "uint_generator.hpp"
 
 #define DEFAULT_PCC_RULE_PRECEDENCE 255
+
+// Base precedence for Policy-Authorization-derived PCC rules. TS 23.503 §6.3.1
+// requires PCC rule precedence to be unambiguous and leaves the numeric range to
+// operator/PCF configuration; we reserve the 1000-1999 band for PA-derived rules
+// (distinct from the SM Policy Control side) per the QoS implementation plan.
+#define PA_QOS_PRECEDENCE_BASE 1000
 namespace oai::pcf::app {
 namespace policy_auth {
 
@@ -316,124 +330,430 @@ handler_result authorize_service_info(
 }
 
 // ---------------------------------------------------------------------------
-// Phase 1 QoS stub implementations
-// Each stub is preceded by the TODO [QOS/QOS-MON] task it mocks and a
-// [QOS-MOCK] block that states what is hardcoded vs. done for real.
+// QoS parameter mapping (TS 29.513 clause 7.3.3 — AF/N5 -> QoS policy).
+// Each rule is annotated with the 3GPP section it derives from.
 // ---------------------------------------------------------------------------
 
-// TODO [QOS] Extract and process QoS requirements from a MediaComponent
-// [TS 29.514 §4.2.2.2, TS 29.513 §7.3.3]
-// Tasks:
-//   - Read bandwidth params (marBwDl/Ul, mirBwDl/Ul) from MediaComponent [TS 29.514 §5.6.2.7]
-//   - Read latency param (desMaxLatency) to map to 5QI [TS 29.514 §5.6.2.7]
-//   - Read packet-loss params (desMaxLoss, maxPacketLossRateDl/Ul) [TS 29.514 §5.6.2.7]
-//   - Map resPrio to arp.priorityLevel [TS 29.514 §5.6.2.7]
-//   - Call create_qos_data_from_media_component, create_qos_characteristics,
-//     and setup_qos_monitoring in sequence [TS 29.513 §7.3.3]
-//
-// [QOS-MOCK] Phase 1 — QoS requirements orchestration (mock; no business logic).
-// Mocks the TODO [QOS] task above:
-//   - MediaComponent params are not read; hardcoded QosData and PccRule are
-//     written to decision inside create_qos_data_from_media_component().
-//   - create_qos_characteristics() and setup_qos_monitoring() only log.
+namespace {
+
+// Default ARP priority level for PA-derived flows. TS 29.513 Table 7.3.3-2 leaves
+// ARP "as defined by application specific algorithm" (from resPrio) / "as
+// configured by operator" (from qosReference); resPrio is currently unreadable
+// (empty model), so a fixed operator default is used. ARP priorityLevel range is
+// 1-15 (TS 29.571); 1-8 denote prioritized services (TS 29.513 Table 7.3.3-2
+// NOTE 1).
+constexpr int32_t DEFAULT_ARP_PRIORITY_LEVEL = 8;
+
+// FlowDirection for an SDF filter, inferred from the IPFilterRule direction
+// token. TS 29.212 clause 5.4.2 / TS 29.514 FlowDescription: "permit out ..." is
+// downlink (gateway -> UE), "permit in ..." is uplink (UE -> gateway). Defaults
+// to BIDIRECTIONAL when the token can't be determined.
+FlowDirectionRm flow_direction_from_desc(const std::string& desc) {
+  FlowDirectionRm dir;
+  if (desc.find(" out ") != std::string::npos ||
+      desc.rfind("permit out", 0) == 0) {
+    dir.setEnumValue(FlowDirection_anyOf::eFlowDirection_anyOf::DOWNLINK);
+  } else if (
+      desc.find(" in ") != std::string::npos ||
+      desc.rfind("permit in", 0) == 0) {
+    dir.setEnumValue(FlowDirection_anyOf::eFlowDirection_anyOf::UPLINK);
+  } else {
+    dir.setEnumValue(FlowDirection_anyOf::eFlowDirection_anyOf::BIDIRECTIONAL);
+  }
+  return dir;
+}
+
+// Build one FlowInformation (SDF filter) from an IPFilterRule flow-description
+// string. TS 29.512 §4.1.4.2.1 / §5.6.2.3: PCC rule SDF template carries the
+// flow descriptions; TS 29.514 §5.6.2.7: MediaSubComponent.fDescs.
+FlowInformation flow_info_from_desc(const std::string& desc) {
+  FlowInformation flow_info;
+  flow_info.setFlowDescription(desc);
+  flow_info.setFlowDirection(flow_direction_from_desc(desc));
+  return flow_info;
+}
+
+// True when the SDF (MediaSubComponent) is flagged REMOVED. TS 29.513
+// Table 7.3.3-1: for a removed flow the authorized data rate is 0, i.e. the flow
+// contributes nothing to the aggregate and installs no filter.
+bool sub_component_removed(const MediaSubComponent& sub) {
+  return sub.fStatusIsSet() &&
+         sub.getFStatus().getEnumValue() ==
+             FlowStatus_anyOf::eFlowStatus_anyOf::REMOVED;
+}
+
+// Derive the ARP. TS 29.513 Table 7.3.3-2: ARP is computed at PCC-rule level.
+// resPrio -> priorityLevel is deferred (ReservPriority is an empty generated
+// model, so the value is unreadable); preemptCap/preemptVuln are taken from the
+// request when present (TS 29.514 §5.6.2.7), else safe defaults.
+oai::model::common::Arp derive_arp(const MediaComponent& mc) {
+  oai::model::common::Arp arp;
+  // TODO [QOS] Map MediaComponent.resPrio -> arp.priorityLevel once the
+  // ReservPriority model exposes its value [TS 29.513 Table 7.3.3-2].
+  arp.setPriorityLevel(DEFAULT_ARP_PRIORITY_LEVEL);
+
+  if (mc.preemptCapIsSet()) {
+    arp.setPreemptCap(mc.getPreemptCap());
+  } else {
+    oai::model::common::PreemptionCapability cap;
+    cap.setEnumValue(oai::model::common::PreemptionCapability_anyOf::
+                         ePreemptionCapability_anyOf::NOT_PREEMPT);
+    arp.setPreemptCap(cap);
+  }
+  if (mc.preemptVulnIsSet()) {
+    arp.setPreemptVuln(mc.getPreemptVuln());
+  } else {
+    oai::model::common::PreemptionVulnerability vuln;
+    vuln.setEnumValue(oai::model::common::PreemptionVulnerability_anyOf::
+                          ePreemptionVulnerability_anyOf::NOT_PREEMPTABLE);
+    arp.setPreemptVuln(vuln);
+  }
+  return arp;
+}
+
+}  // namespace
+
+// TS 23.501 §5.7.4 Table 5.7.4-1: the set of standardized 5QI values (GBR,
+// delay-critical GBR and non-GBR). A standardized 5QI has preconfigured 5G QoS
+// characteristics, so the PCF does not signal a QosCharacteristics entry for it
+// (TS 29.512 §4.2.6.6.2); a value outside this set is dynamically assigned and
+// requires explicitly signalled characteristics (§4.2.6.6.3).
+bool is_standardized_5qi(int32_t r5qi) {
+  static const std::set<int32_t> kStandardized5qi = {
+      1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 65, 66, 67, 69, 70,
+      71, 72, 73, 74, 75, 76, 79, 80, 82, 83, 84, 85, 86, 87};
+  return kStandardized5qi.count(r5qi) > 0;
+}
+
+// TS 29.513 §7.3.3 NOTE 15/17: when desMaxLatency is present, the 5QI "may be
+// done according to table 5.7.4-1 in TS 23.501". That authoritative table is not
+// available in-repo, so this is an operator-tunable approximation: pick a
+// standardized 5QI whose packet delay budget fits the requested latency, GBR vs
+// non-GBR selected by whether a guaranteed rate was requested. Falls back to the
+// best-effort default 5QI=9 (TS 29.513 §7.3.3: OTHERWISE 5QI=9).
+int32_t derive_5qi(std::optional<float> des_max_latency_ms, bool has_gbr) {
+  if (!des_max_latency_ms.has_value()) {
+    return 9;  // best-effort default
+  }
+  const float ms = des_max_latency_ms.value();
+  if (has_gbr) {
+    if (ms <= 50.0f) return 3;   // 5QI 3  (PDB 50ms, e.g. real-time gaming)
+    if (ms <= 150.0f) return 2;  // 5QI 2  (PDB 150ms, e.g. live video)
+    return 4;                    // 5QI 4  (PDB 300ms, non-conversational video)
+  }
+  if (ms <= 100.0f) return 7;    // 5QI 7  (PDB 100ms, voice/interactive)
+  if (ms <= 300.0f) return 6;    // 5QI 6  (PDB 300ms, buffered streaming)
+  return 9;                      // 5QI 9  (best-effort default)
+}
+
+// Extract and process the QoS requirements of one MediaComponent, orchestrating
+// QosData creation, QoS characteristics and monitoring [TS 29.513 §7.3.3].
 handler_result handle_qos_requirements(
-    SmPolicyDecision& decision, qos_context& qos_ctx) {
-  Logger::pcf_app().debug("handle_qos_requirements() [mock]");
-  create_qos_data_from_media_component(decision, qos_ctx);
-  create_qos_characteristics(decision);
+    const MediaComponent& media_component, const std::string& app_session_id,
+    SmPolicyDecision& decision, qos_context& qos_ctx,
+    const qos_reference_store& qos_ref_store) {
+  Logger::pcf_app().info(fmt::format(
+      "Handling QoS requirements for app-session {}", app_session_id));
+
+  QosData derived_qos_data;
+  handler_result result = create_qos_data_from_media_component(
+      media_component, app_session_id, decision, qos_ctx, qos_ref_store,
+      derived_qos_data);
+  if (result.problem_details.has_value()) {
+    Logger::pcf_app().error(fmt::format(
+        "QoS requirements for app-session {} rejected: {}", app_session_id,
+        result.problem_details.value()));
+    return result;
+  }
+
+  create_qos_characteristics(derived_qos_data, decision);
   setup_qos_monitoring(decision);
+  Logger::pcf_app().debug(fmt::format(
+      "QoS requirements for app-session {} handled successfully",
+      app_session_id));
   return handler_result{.status = status_code::OK};
 }
 
-// TODO [QOS] Create QosData and PccRule entries from MediaComponent QoS parameters
-// [TS 29.512 §5.6.2.8, TS 29.513 §7.3.3, TS 29.514 §5.6.2.7]
-// Tasks:
-//   - Derive 5QI from MediaComponent latency/bandwidth requirements [TS 29.513 §7.3.3]
-//   - Map resPrio to arp.priorityLevel (Arp) [TS 29.514 §5.6.2.7]
-//   - Set QoS flow priorityLevel from 5QI defaults [TS 23.501 Table 5.7.4-1]
-//   - Build SDF filters (flowInfos) from medSubComponents [TS 29.512 §4.1.4.2.1]
-//   - Assign PCC rule precedence from operator policy [TS 29.512 §4.1.4.2.1]
-//   - Write QosData and PccRule entries to SmPolicyDecision [TS 29.512 §5.6.2.8]
-//
-// [QOS-MOCK] Phase 1 — QosData and PccRule creation (mock; hardcoded values).
-// Mocks the TODO [QOS] task above:
-//   - 5QI: hardcoded to 9 (best-effort) instead of derived from latency/BW.
-//   - ARP: hardcoded priorityLevel=8, NOT_PREEMPT/NOT_PREEMPTABLE instead of
-//     mapped from MediaComponent.resPrio.
-//   - priorityLevel: hardcoded to 9 (TS 23.501 Table 5.7.4-1 default for 5QI=9).
-//   - flowInfos: permit-all bidirectional filter instead of SDF filters from
-//     medSubComponents.
-//   - precedence: hardcoded to 100 instead of policy-assigned.
+// Create the QosData + PccRule (with SDF filters) for one MediaComponent
+// [TS 29.512 §5.6.2.8, §4.1.4.2.1; TS 29.513 §7.3.3].
 handler_result create_qos_data_from_media_component(
-    SmPolicyDecision& decision, qos_context& qos_ctx) {
-  Logger::pcf_app().debug("create_qos_data_from_media_component() [mock]");
+    const MediaComponent& media_component, const std::string& app_session_id,
+    SmPolicyDecision& decision, qos_context& qos_ctx,
+    const qos_reference_store& qos_ref_store, QosData& out_qos_data) {
+  Logger::pcf_app().debug("create_qos_data_from_media_component()");
 
-  const std::string qos_id = "qos-mock-1";
+  // PA-QOS-{app_session_id}-{seq} id convention [TS 29.512 §4.1.4.2.1]. The
+  // shared uid generator guarantees uniqueness of {seq} across the process.
+  auto& uid_generator = uint_uid_generator<uint32_t>::get_instance();
+  const uint32_t seq   = uid_generator.get_uid();
+  const std::string qos_id =
+      "PA-QOS-" + app_session_id + "-qos-" + std::to_string(seq);
+  const std::string rule_id =
+      "PA-QOS-" + app_session_id + "-" + std::to_string(seq);
+  Logger::pcf_app().debug(fmt::format(
+      "Deriving QoS: qosId='{}', pccRuleId='{}' (seq={})", qos_id, rule_id,
+      seq));
+
   QosData qos_data;
   qos_data.setQosId(qos_id);
-  qos_data.setR5qi(9);
 
-  oai::model::common::Arp arp;
-  arp.setPriorityLevel(8);
-  oai::model::common::PreemptionCapability preempt_cap;
-  preempt_cap.setEnumValue(
-      oai::model::common::PreemptionCapability_anyOf::ePreemptionCapability_anyOf::NOT_PREEMPT);
-  arp.setPreemptCap(preempt_cap);
-  oai::model::common::PreemptionVulnerability preempt_vuln;
-  preempt_vuln.setEnumValue(
-      oai::model::common::PreemptionVulnerability_anyOf::ePreemptionVulnerability_anyOf::NOT_PREEMPTABLE);
-  arp.setPreemptVuln(preempt_vuln);
-  qos_data.setArp(arp);
+  // TS 29.513 §7.3.3 (Table 7.3.3-1/-2): if the qosReference resolves to an
+  // operator-preconfigured QoS set, take 5QI/MBR/GBR/ARP "as configured by
+  // operator" rather than deriving them from the request.
+  bool from_reference = false;
+  if (media_component.qosReferenceIsSet()) {
+    std::shared_ptr<const QosData> ref =
+        qos_ref_store.find(media_component.getQosReference());
+    if (ref) {
+      qos_data = *ref;
+      qos_data.setQosId(qos_id);  // preserve our generated id
+      from_reference = true;
+      Logger::pcf_app().info(fmt::format(
+          "Using operator-preconfigured QoS reference '{}' for qosId '{}'",
+          media_component.getQosReference(), qos_id));
+    } else {
+      Logger::pcf_app().warn(fmt::format(
+          "qosReference '{}' not found in the QoS reference store; deriving QoS "
+          "from the MediaComponent instead",
+          media_component.getQosReference()));
+    }
+  }
 
-  // 5QI=9 default scheduling priority (TS 23.501 Table 5.7.4-1)
-  qos_data.setPriorityLevel(9);
+  // Build SDF filters from the request's flow descriptions regardless of whether
+  // QoS was taken from a reference set [TS 29.512 §4.1.4.2.1, TS 29.514 §5.6.2.7].
+  // Also accumulate the per-SDF Maximum Authorized Data Rate (MBR) as the sum
+  // over service data flows [TS 29.513 Table 7.3.3-2].
+  std::vector<FlowInformation> flow_infos;
+  std::optional<std::string> mbr_ul;
+  std::optional<std::string> mbr_dl;
+  bool has_sub_components = media_component.medSubCompsIsSet();
 
+  if (has_sub_components) {
+    Logger::pcf_app().trace(fmt::format(
+        "MediaComponent has {} sub-component(s) (SDFs)",
+        media_component.getMedSubComps().size()));
+    for (const auto& [key, sub] : media_component.getMedSubComps()) {
+      // Removed flows contribute 0 data rate and install no filter [Table 7.3.3-1].
+      if (sub_component_removed(sub)) {
+        Logger::pcf_app().trace(fmt::format(
+            "Sub-component fNum={} is REMOVED; skipping (0 data rate)", key));
+        continue;
+      }
+
+      // Per-SDF MBR: MediaSubComponent bandwidth if present, else fall back to
+      // the MediaComponent-level value [TS 29.513 Table 7.3.3-1].
+      if (sub.marBwUlIsSet()) {
+        mbr_ul = oai::utils::bitrate::sum(mbr_ul, sub.getMarBwUl());
+      } else if (media_component.marBwUlIsSet()) {
+        mbr_ul = oai::utils::bitrate::sum(mbr_ul, media_component.getMarBwUl());
+      }
+      if (sub.marBwDlIsSet()) {
+        mbr_dl = oai::utils::bitrate::sum(mbr_dl, sub.getMarBwDl());
+      } else if (media_component.marBwDlIsSet()) {
+        mbr_dl = oai::utils::bitrate::sum(mbr_dl, media_component.getMarBwDl());
+      }
+
+      if (sub.fDescsIsSet()) {
+        for (const auto& desc : sub.getFDescs()) {
+          Logger::pcf_app().trace(
+              fmt::format("SDF filter (fNum={}): '{}'", key, desc));
+          flow_infos.push_back(flow_info_from_desc(desc));
+        }
+      }
+    }
+    Logger::pcf_app().debug(fmt::format(
+        "Aggregated per-SDF MBR from request: ul='{}', dl='{}'{}",
+        mbr_ul.value_or("<none>"), mbr_dl.value_or("<none>"),
+        from_reference
+            ? " (ignored: MBR/GBR are taken from the qosReference set)"
+            : ""));
+  } else {
+    // No service data flows described: use the component-level MBR directly.
+    if (media_component.marBwUlIsSet()) mbr_ul = media_component.getMarBwUl();
+    if (media_component.marBwDlIsSet()) mbr_dl = media_component.getMarBwDl();
+    Logger::pcf_app().debug(fmt::format(
+        "No sub-components; using component-level MBR: ul='{}', dl='{}'",
+        mbr_ul.value_or("<none>"), mbr_dl.value_or("<none>")));
+  }
+
+  if (!from_reference) {
+    // Guaranteed Authorized Data Rate (GBR): derived only when the AF requested
+    // a minimum/guaranteed rate (mirBw). GBR is not derived for non-GBR flows
+    // [TS 29.513 Table 7.3.3-1, NOTE 6].
+    const bool has_gbr =
+        media_component.mirBwUlIsSet() || media_component.mirBwDlIsSet();
+
+    if (mbr_ul) qos_data.setMaxbrUl(*mbr_ul);
+    if (mbr_dl) qos_data.setMaxbrDl(*mbr_dl);
+    if (has_gbr) {
+      if (media_component.mirBwUlIsSet())
+        qos_data.setGbrUl(media_component.getMirBwUl());
+      if (media_component.mirBwDlIsSet())
+        qos_data.setGbrDl(media_component.getMirBwDl());
+      Logger::pcf_app().debug(fmt::format(
+          "GBR requested (mirBw present): gbrUl='{}', gbrDl='{}'",
+          media_component.mirBwUlIsSet() ? media_component.getMirBwUl()
+                                         : "<none>",
+          media_component.mirBwDlIsSet() ? media_component.getMirBwDl()
+                                         : "<none>"));
+    }
+
+    // 5QI from desired latency [TS 29.513 §7.3.3 NOTE 15/17].
+    std::optional<float> latency =
+        media_component.desMaxLatencyIsSet()
+            ? std::optional<float>(media_component.getDesMaxLatency())
+            : std::nullopt;
+    const int32_t r5qi = derive_5qi(latency, has_gbr);
+    qos_data.setR5qi(r5qi);
+    Logger::pcf_app().debug(fmt::format(
+        "Derived 5QI={} (desMaxLatency={}, has_gbr={})", r5qi,
+        latency.has_value() ? std::to_string(latency.value()) : "<unset>",
+        has_gbr));
+
+    // ARP at PCC-rule level [TS 29.513 Table 7.3.3-2].
+    qos_data.setArp(derive_arp(media_component));
+
+    // Maximum Packet Loss Rate is authorized only for 5QI=1 flows
+    // [TS 29.512 §4.2.6.6.2].
+    if (r5qi == 1) {
+      if (media_component.maxPacketLossRateUlIsSet())
+        qos_data.setMaxPacketLossRateUl(
+            media_component.getMaxPacketLossRateUl());
+      if (media_component.maxPacketLossRateDlIsSet())
+        qos_data.setMaxPacketLossRateDl(
+            media_component.getMaxPacketLossRateDl());
+    }
+  } else {
+    // QoS came from the operator-preconfigured qosReference set; the request's
+    // MBR/GBR/5QI/ARP are not consulted. Log the effective values that will be
+    // sent to the SMF so the reference-vs-request distinction is visible.
+    Logger::pcf_app().debug(fmt::format(
+        "Effective QoS from qosReference: 5QI={}, maxbrUl='{}', maxbrDl='{}', "
+        "gbrUl='{}', gbrDl='{}'",
+        qos_data.r5qiIsSet() ? std::to_string(qos_data.getR5qi()) : "<unset>",
+        qos_data.maxbrUlIsSet() ? qos_data.getMaxbrUl() : "<none>",
+        qos_data.maxbrDlIsSet() ? qos_data.getMaxbrDl() : "<none>",
+        qos_data.gbrUlIsSet() ? qos_data.getGbrUl() : "<none>",
+        qos_data.gbrDlIsSet() ? qos_data.getGbrDl() : "<none>"));
+  }
+
+  // A PCC rule with an SDF template must carry at least one filter
+  // [TS 29.512 §4.1.4.2.1]. Fall back to a permit-all bidirectional filter when
+  // the request described no service data flows.
+  if (flow_infos.empty()) {
+    Logger::pcf_app().debug(
+        "No SDF filters described; installing permit-all fallback filter");
+    flow_infos.push_back(flow_info_from_desc("permit out ip from any to assigned"));
+  }
+
+  // Write the QosData [TS 29.512 §5.6.2.8].
   auto qos_data_map = decision.getQosDecs();
   qos_data_map.insert(std::make_pair(qos_id, qos_data));
   decision.setQosDecs(qos_data_map);
 
-  const std::string rule_id = "qos-rule-mock-1";
+  // Write the PccRule referencing the QosData, with the SDF filters and a
+  // precedence in the PA band [TS 29.512 §4.1.4.2.1, TS 23.503 §6.3.1].
+  const int32_t precedence = PA_QOS_PRECEDENCE_BASE + static_cast<int32_t>(seq);
   PccRule pcc_rule;
   pcc_rule.setPccRuleId(rule_id);
-  pcc_rule.setPrecedence(100);
+  pcc_rule.setPrecedence(precedence);
   pcc_rule.setRefQosData({qos_id});
-
-  // Permit-all bidirectional filter — placeholder for real SDF filters
-  FlowInformation flow_info;
-  flow_info.setFlowDescription("permit out ip from any to assigned");
-  FlowDirectionRm flow_direction;
-  flow_direction.setEnumValue(
-      FlowDirection_anyOf::eFlowDirection_anyOf::BIDIRECTIONAL);
-  flow_info.setFlowDirection(flow_direction);
-  pcc_rule.setFlowInfos({flow_info});
+  pcc_rule.setFlowInfos(flow_infos);
 
   auto pcc_rules_map = decision.getPccRules();
   pcc_rules_map.insert(std::make_pair(rule_id, pcc_rule));
   decision.setPccRules(pcc_rules_map);
 
   // Record the ids this app-session contributed into its ledger so PATCH/DELETE
-  // can later edit exactly these entries. The QosData/PccRule
-  // payload itself lives in the decision owned by the SM policy association.
+  // can later edit exactly these entries; the payload lives in the decision
+  // owned by the SM policy association.
   qos_ctx.record_qos_flow(qos_id);
-  qos_ctx.record_pcc_rule(rule_id, 100, {qos_id});
+  qos_ctx.record_pcc_rule(
+      rule_id, static_cast<uint32_t>(precedence), {qos_id});
 
+  Logger::pcf_app().info(fmt::format(
+      "Created QosData '{}' ({}) and PccRule '{}' (precedence={}, {} SDF "
+      "filter(s))",
+      qos_id, from_reference ? "from qosReference" : "derived", rule_id,
+      precedence, flow_infos.size()));
+
+  out_qos_data = qos_data;
   return handler_result{.status = status_code::OK};
 }
 
-// TODO [QOS] Generate QoS characteristics for non-standard 5QI values
-// [TS 29.512 §5.6.2.16, §4.2.6.6.3]
-// Tasks:
-//   - Check if the 5QI in QosData is a non-standard (dynamic) value [TS 29.512 §5.6.2.16]
-//   - If non-standard: populate QosCharacteristics (resource type, priority,
-//     packet delay budget, packet error rate, averaging window) [TS 29.512 §5.6.2.16]
-//   - Add QosCharacteristics entry to SmPolicyDecision.qosChars [TS 29.512 §5.6.2.16]
-//
-// [QOS-MOCK] Phase 1 — QoS characteristics (mock; no-op).
-// Mocks the TODO [QOS] task above:
-//   - 5QI=9 is a standardised value; no QosCharacteristics entry is needed.
-//     This stub only logs to confirm the call order.
-handler_result create_qos_characteristics([[maybe_unused]] SmPolicyDecision& decision) {
-  Logger::pcf_app().debug("create_qos_characteristics() [mock]");
+// Generate an explicitly-signalled QosCharacteristics entry for a dynamically
+// assigned (non-standardized) 5QI [TS 29.512 §4.2.6.6.3, §5.6.2.16]. Standardized
+// 5QI values carry preconfigured characteristics and need no entry
+// [TS 29.512 §4.2.6.6.2].
+handler_result create_qos_characteristics(
+    const QosData& qos_data, SmPolicyDecision& decision) {
+  if (!qos_data.r5qiIsSet() || is_standardized_5qi(qos_data.getR5qi())) {
+    Logger::pcf_app().trace(fmt::format(
+        "No QosCharacteristics signalled (5QI {} is standardized or unset)",
+        qos_data.r5qiIsSet() ? std::to_string(qos_data.getR5qi()) : "<unset>"));
+    return handler_result{.status = status_code::OK};
+  }
+
+  const int32_t r5qi = qos_data.getR5qi();
+  Logger::pcf_app().debug(fmt::format(
+      "create_qos_characteristics(): signalling characteristics for "
+      "non-standardized 5QI {}",
+      r5qi));
+
+  QosCharacteristics qos_char;
+  qos_char.setR5qi(r5qi);
+
+  // Resource type inferred from the presence of a guaranteed bit rate
+  // [TS 29.512 §5.6.2.16; QosResourceType per TS 29.571].
+  const bool is_gbr = qos_data.gbrUlIsSet() || qos_data.gbrDlIsSet();
+  oai::model::common::QosResourceType resource_type;
+  resource_type.setEnumValue(
+      is_gbr ? oai::model::common::QosResourceType_anyOf::
+                   eQosResourceType_anyOf::NON_CRITICAL_GBR
+             : oai::model::common::QosResourceType_anyOf::
+                   eQosResourceType_anyOf::NON_GBR);
+  qos_char.setResourceType(resource_type);
+
+  // priorityLevel / packetDelayBudget / packetErrorRate are mandatory for a
+  // signalled QosCharacteristics [TS 29.512 §5.6.2.16]. They come from the
+  // operator-preconfigured set (carried on the QosData); fall back to defensive
+  // defaults with a warning if the operator omitted them.
+  qos_char.setPriorityLevel(
+      qos_data.priorityLevelIsSet() ? qos_data.getPriorityLevel()
+                                    : DEFAULT_ARP_PRIORITY_LEVEL);
+  if (qos_data.packetDelayBudgetIsSet()) {
+    qos_char.setPacketDelayBudget(qos_data.getPacketDelayBudget());
+  } else {
+    Logger::pcf_app().warn(fmt::format(
+        "QoS reference for non-standardized 5QI {} has no packetDelayBudget; "
+        "using default 300ms",
+        r5qi));
+    qos_char.setPacketDelayBudget(300);
+  }
+  if (qos_data.packetErrorRateIsSet()) {
+    qos_char.setPacketErrorRate(qos_data.getPacketErrorRate());
+  } else {
+    Logger::pcf_app().warn(fmt::format(
+        "QoS reference for non-standardized 5QI {} has no packetErrorRate; "
+        "using default 1E-6",
+        r5qi));
+    qos_char.setPacketErrorRate("1E-6");
+  }
+  // Averaging window applies only to (delay-critical) GBR flows
+  // [TS 29.512 §5.6.2.16].
+  if (is_gbr && qos_data.averWindowIsSet()) {
+    qos_char.setAveragingWindow(qos_data.getAverWindow());
+  }
+
+  // QosCharacteristics are keyed by the (dynamic) 5QI value [TS 29.512 §5.6.2.4].
+  auto qos_chars_map = decision.getQosChars();
+  qos_chars_map.insert(std::make_pair(std::to_string(r5qi), qos_char));
+  decision.setQosChars(qos_chars_map);
+
+  Logger::pcf_app().info(fmt::format(
+      "Signalled QosCharacteristics for dynamic 5QI {} (resourceType={})", r5qi,
+      is_gbr ? "NON_CRITICAL_GBR" : "NON_GBR"));
+
   return handler_result{.status = status_code::OK};
 }
 
