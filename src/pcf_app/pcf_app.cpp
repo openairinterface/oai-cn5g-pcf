@@ -3,7 +3,11 @@
  */
 
 #include "pcf_app.hpp"
-#include "policy_auth/app_session_storage_memory.hpp"
+#include "policy_auth/app_session.hpp"
+#include "policy_auth/app_session_storage.hpp"
+#include "policy_auth/qos_reference_loader.hpp"
+#include "policy_auth/policy_auth_context.hpp"
+#include "crud_store.hpp"
 #include "pcf_nrf.hpp"
 #include "logger.hpp"
 #include "pcf_config.hpp"
@@ -55,12 +59,26 @@ pcf_app::pcf_app(pcf_event& ev) : m_event_sub(ev) {
 
   m_pcf_smpc_service = std::make_shared<pcf_smpc>(m_policy_storage, ev);
 
-  // In-memory app-session storage. The DB backend lands later behind the same
-  // interface; this generates restart-safe UUID app-session ids.
-  m_app_session_storage =
-      std::make_shared<policy_auth::app_session_storage_memory>();
+  // App-session storage backed by the generic in-memory store (swap in a
+  // DB-backed crud_store here later); it generates restart-safe UUID ids and
+  // maintains the association index.
+  auto app_sessions = std::make_shared<policy_auth::app_session_storage>(
+      std::make_shared<oai::utils::crud_store_memory<policy_auth::app_session>>());
+
+  // Operator-preconfigured QoS reference sets [TS 29.513 §7.3.3]. The store is
+  // just the generic in-memory backend (a DB backend can be swapped in here
+  // later); loading is a separate provisioning step through the store interface.
+  auto qos_ref_store = std::make_shared<
+      oai::utils::crud_store_memory<const oai::model::pcf::QosData>>();
+  policy_auth::load_qos_references_from_directory(
+      *qos_ref_store, pcf_cfg->get_pcf_policy().get_qos_reference_path());
+
+  // Aggregate the Policy Authorization stores into a single injected context.
+  m_policy_auth_context = std::make_shared<policy_auth::policy_auth_context>(
+      app_sessions, qos_ref_store);
+
   m_pcf_policy_authorization_service =
-      std::make_shared<pcf_policy_authorization>(m_app_session_storage, ev);
+      std::make_shared<pcf_policy_authorization>(m_policy_auth_context, ev);
 }
 
 //------------------------------------------------------------------------------
