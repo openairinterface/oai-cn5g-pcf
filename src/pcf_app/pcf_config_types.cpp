@@ -12,7 +12,8 @@ using namespace oai::config::pcf;
 
 policy_config::policy_config(
     const std::string& policy_decisions_path, const std::string& pcc_rules_path,
-    const std::string& traffic_rules_path, const std::string& qos_data_path) {
+    const std::string& traffic_rules_path, const std::string& qos_data_path,
+    const std::string& qos_reference_path) {
   m_config_name = "Policy";
   m_traffic_rules_path =
       string_config_value("Traffic Rules", traffic_rules_path);
@@ -20,7 +21,9 @@ policy_config::policy_config(
   m_policy_decisions_path =
       string_config_value("Policy Decisions", policy_decisions_path);
   m_qos_data_path = string_config_value("QoS Data", qos_data_path);
-  m_set           = true;
+  m_qos_reference_path =
+      string_config_value("QoS References", qos_reference_path);
+  m_set = true;
 }
 
 void policy_config::from_yaml(const YAML::Node& node) {
@@ -35,6 +38,9 @@ void policy_config::from_yaml(const YAML::Node& node) {
   }
   if (node["qos_data_path"]) {
     m_qos_data_path.from_yaml(node["qos_data_path"]);
+  }
+  if (node["qos_reference_path"]) {
+    m_qos_reference_path.from_yaml(node["qos_reference_path"]);
   }
 }
 
@@ -57,6 +63,9 @@ std::string policy_config::to_string(const std::string& indent) const {
   out.append(indent).append(fmt::format(
       value_fmt, m_qos_data_path.get_config_name(),
       m_qos_data_path.get_value()));
+  out.append(indent).append(fmt::format(
+      value_fmt, m_qos_reference_path.get_config_name(),
+      m_qos_reference_path.get_value()));
 
   return out;
 }
@@ -75,6 +84,10 @@ const std::string& policy_config::get_traffic_rules_path() const {
 
 const std::string& policy_config::get_qos_data_path() const {
   return m_qos_data_path.get_value();
+}
+
+const std::string& policy_config::get_qos_reference_path() const {
+  return m_qos_reference_path.get_value();
 }
 
 pcf_config_type::pcf_config_type(

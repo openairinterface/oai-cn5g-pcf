@@ -20,7 +20,8 @@ oai::config::pcf::pcf_config::pcf_config(
       sbi_interface("SBI", "oai-pcf", 80, "v1", "eth0"), false,
       policy_config(
           DEFAULT_POLICY_DECISIONS_PATH, DEFAULT_PCC_RULES_PATH,
-          DEFAULT_TRAFFIC_RULES_PATH, DEFAULT_QOS_DATA_PATH));
+          DEFAULT_TRAFFIC_RULES_PATH, DEFAULT_QOS_DATA_PATH,
+          DEFAULT_QOS_REFERENCE_PATH));
 
   auto nrf = std::make_shared<nf>(
       NRF_CONFIG_NAME, "oai-nrf",
