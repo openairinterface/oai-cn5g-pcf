@@ -6,44 +6,69 @@
 #define FILE_APP_SESSION_STORAGE_HPP_SEEN
 
 #include <memory>
+#include <mutex>
+#include <set>
+#include <shared_mutex>
 #include <string>
+#include <unordered_map>
 #include <vector>
+
+#include <boost/uuid/uuid_generators.hpp>
+
+#include "crud_store.hpp"
 
 namespace oai::pcf::app::policy_auth {
 
 class app_session;
 
 /**
- * @brief Repository abstraction for app-session working state and binding
- * persistence.
+ * @brief Repository for app-session working state and binding persistence.
  *
- * Mirrors sm_policy::policy_storage and is injected into
- * pcf_policy_authorization the same way policy_storage is injected into
- * pcf_smpc. A single interface lets the working set be backed by an in-memory
- * map now and a database later without touching the service.
+ * A single concrete class: it composes an injected
+ * generic oai::utils::crud_store<app_session> for the actual storage -- pass a
+ * crud_store_memory now, a DB-backed crud_store later -- and adds the two
+ * app-session-specific concerns that don't fit a plain keyed CRUD:
+ *   - generate_id(): restart-safe UUID id generation;
+ *   - find_by_association(): the 1:N app-session <-> SM-policy binding index,
+ *     maintained here on insert/remove.
  *
- * The backend also owns app-session ID generation (generate_id) so the strategy
- * can be backend-specific and restart-safe: a random UUID for the in-memory
- * backend, a DB-seeded id for the future DB backend.
+ * Note: the index is updated as a separate step from the backend write (they
+ * take different locks), so there is a brief window where a just-inserted
+ * session is in the backend but not yet in the index (and vice versa on
+ * remove). This is acceptable for the control-plane lookups that use it.
  */
 class app_session_storage {
  public:
-  virtual ~app_session_storage() = default;
+  explicit app_session_storage(
+      std::shared_ptr<oai::utils::crud_store<app_session>> backend);
 
-  /** Generate a backend-specific, restart-safe app-session id. */
-  virtual std::string generate_id() = 0;
+  /** Generate a restart-safe, non-guessable app-session id (UUID). */
+  std::string generate_id();
 
-  virtual void insert(const std::shared_ptr<app_session>& session) = 0;
+  void insert(const std::shared_ptr<app_session>& session);
 
   /** @return the session, or nullptr if not found. */
-  virtual std::shared_ptr<app_session> find(
-      const std::string& app_session_id) = 0;
+  [[nodiscard]] std::shared_ptr<app_session> find(
+      const std::string& app_session_id) const;
+
+  [[nodiscard]] std::vector<std::shared_ptr<app_session>> find_all() const;
 
   /** @return all app-sessions bound to the association (1:N); empty if none. */
-  virtual std::vector<std::shared_ptr<app_session>> find_by_association(
-      const std::string& association_id) = 0;
+  [[nodiscard]] std::vector<std::shared_ptr<app_session>> find_by_association(
+      const std::string& association_id) const;
 
-  virtual void remove(const std::string& app_session_id) = 0;
+  void remove(const std::string& app_session_id);
+
+ private:
+  std::shared_ptr<oai::utils::crud_store<app_session>> m_backend;
+
+  // 1:N association_id -> {app_session_id} secondary index.
+  mutable std::shared_mutex m_index_mutex;
+  std::unordered_map<std::string, std::set<std::string>> m_by_association;
+
+  // random_generator is not thread-safe; guard it.
+  std::mutex m_id_mutex;
+  boost::uuids::random_generator m_uuid_gen;
 };
 
 }  // namespace oai::pcf::app::policy_auth
