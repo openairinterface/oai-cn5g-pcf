@@ -48,3 +48,14 @@ add_library (PCF STATIC
   pcf_policy_authorization.cpp
   sm_policy/database/mysql_db.cpp
   )
+
+################################################################################
+# Unit tests (GoogleTest + CTest). Opt-in: off by default, enabled with
+# -DBUILD_TESTING=ON. Not part of the default build; the runtime "pcf"
+# executable does not depend on this target.
+################################################################################
+option(BUILD_TESTING "Build PCF unit tests" OFF)
+if(BUILD_TESTING)
+  enable_testing()
+  ADD_SUBDIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/test ${CMAKE_CURRENT_BINARY_DIR}/test)
+endif()
