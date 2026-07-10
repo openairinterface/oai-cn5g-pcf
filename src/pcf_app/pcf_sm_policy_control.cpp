@@ -87,15 +87,37 @@ sm_policy::status_code pcf_smpc::send_sm_policy_control_update_notify(
   nlohmann::json json_data;
   // to_json(json_data, association.decsion);
   nlohmann::json decision_json;
-  to_json(decision_json, association.get_sm_policy_decision_dto());
+  const auto& decision = association.get_sm_policy_decision_dto();
+  to_json(decision_json, decision);
 
   json_data["smPolicyDecision"] = decision_json;
 
+  const std::string& supi = association.get_sm_policy_context_data().getSupi();
+
   Logger::pcf_app().info(
-      "Sending PCF SM policy association creation request: uri -> %s",
-      uri.c_str());
-  request req   = http_client_inst->prepare_json_request(uri, json_data.dump());
+      "Sending SM Policy Update Notification for SUPI %s: uri -> %s",
+      supi.c_str(), uri.c_str());
+
+  Logger::pcf_app().debug(
+      "SM Policy Update Notification payload: %zu PCC rule(s), %zu QosData, "
+      "%zu QosChars, %zu QosMonDecs, %zu TraffContDecs",
+      decision.getPccRules().size(), decision.getQosDecs().size(),
+      decision.getQosChars().size(), decision.getQosMonDecs().size(),
+      decision.getTraffContDecs().size());
+  const std::string request_body = json_data.dump();
+  Logger::pcf_app().trace(
+      "SM Policy Update Notification request body -> SMF: %s",
+      request_body.c_str());
+
+  request req   = http_client_inst->prepare_json_request(uri, request_body);
   response resp = http_client_inst->send_http_request(method_e::POST, req);
+
+  Logger::pcf_app().debug(
+      "SM Policy Update Notification response from SMF for SUPI %s: HTTP %d",
+      supi.c_str(), resp.status_code);
+  Logger::pcf_app().trace(
+      "SM Policy Update Notification response body <- SMF: %s",
+      resp.body.c_str());
 
   if (resp.status_code == http_status_code::OK) {
     // TODO [PAS] check if for required headers

@@ -14,11 +14,14 @@
 
 #include "AppSessionContext.h"
 #include "AppSessionContextReqData.h"
+#include "MediaComponent.h"
+#include "QosData.h"
 #include "SmPolicyDecision.h"
 #include "app_session_record.hpp"
 #include "guarded.hpp"
 #include "pcf_policy_authorization_status_code.hpp"
 #include "qos_context.hpp"
+#include "qos_reference_store.hpp"
 #include "qos_types.hpp"
 
 namespace oai::pcf::app::policy_auth {
@@ -114,25 +117,50 @@ handle_service_function_chaining_update(
     oai::model::pcf::SmPolicyDecision& decision,
     oai::model::pcf::AppSessionContextReqData& context);
 
-// TODO [QOS] Add QoS handling functions [TS 29.514 §4.2.2.2, TS 29.513 §7.3, TS 29.512 §4.2.6.6]
+// QoS handling functions [TS 29.514 §4.2.2.2, TS 29.513 §7.3, TS 29.512 §4.2.6.6]
 
-// TODO [QOS] Extract and process QoS requirements from a MediaComponent
-// [TS 29.514 §4.2.2.2, TS 29.513 §7.3]. Internally calls
-// create_qos_data_from_media_component, create_qos_characteristics, and
-// setup_qos_monitoring in sequence.
+// Extract and process the QoS requirements of a single MediaComponent
+// [TS 29.514 §4.2.2.2, TS 29.513 §7.3.3]. Orchestrates
+// create_qos_data_from_media_component, create_qos_characteristics and
+// setup_qos_monitoring in sequence. `app_session_id` is used to build the
+// PA-QOS-{app_session_id}-{seq} rule/qos ids; `qos_ref_store` resolves the
+// MediaComponent `qosReference` to an operator-preconfigured QoS set.
 oai::pcf::app::policy_auth::handler_result handle_qos_requirements(
-    oai::model::pcf::SmPolicyDecision& decision, qos_context& qos_ctx);
+    const oai::model::pcf::MediaComponent& media_component,
+    const std::string& app_session_id, oai::model::pcf::SmPolicyDecision& decision,
+    qos_context& qos_ctx, const qos_reference_store& qos_ref_store);
 
-// TODO [QOS] Create QosData entries from MediaComponent QoS parameters
-// [TS 29.512 §5.6.2.8, TS 29.513 §7.3.3]
+// Create the QosData + PccRule (with SDF filters) for one MediaComponent
+// [TS 29.512 §5.6.2.8, §4.1.4.2.1, TS 29.513 §7.3.3]. Returns the derived
+// QosData in `out_qos_data` so the caller can decide whether QoS characteristics
+// are required (non-standardized 5QI).
 oai::pcf::app::policy_auth::handler_result
 create_qos_data_from_media_component(
-    oai::model::pcf::SmPolicyDecision& decision, qos_context& qos_ctx);
+    const oai::model::pcf::MediaComponent& media_component,
+    const std::string& app_session_id, oai::model::pcf::SmPolicyDecision& decision,
+    qos_context& qos_ctx, const qos_reference_store& qos_ref_store,
+    oai::model::pcf::QosData& out_qos_data);
 
-// TODO [QOS] Generate QoS characteristics for non-standard 5QI values
-// [TS 29.512 §5.6.2.16, §4.2.6.6.3]
+// Generate QoS characteristics for a non-standardized (dynamically assigned)
+// 5QI [TS 29.512 §4.2.6.6.3, §5.6.2.16]. No-op for standardized 5QI values.
 oai::pcf::app::policy_auth::handler_result create_qos_characteristics(
+    const oai::model::pcf::QosData& qos_data,
     oai::model::pcf::SmPolicyDecision& decision);
+
+// --- QoS mapping helpers (pure; unit-tested directly) ---
+
+// True if `r5qi` is a standardized 5QI value per TS 23.501 §5.7.4 Table 5.7.4-1.
+// A standardized 5QI carries preconfigured characteristics, so the PCF need not
+// signal a QosCharacteristics entry for it [TS 29.512 §4.2.6.6.2].
+[[nodiscard]] bool is_standardized_5qi(int32_t r5qi);
+
+// Derive an authorized 5QI from the desired max latency and whether the flow is
+// GBR. [TS 29.513 §7.3.3 NOTE 15/17: when desMaxLatency is present, 5QI mapping
+// "may be done according to table 5.7.4-1 in TS 23.501"]. The authoritative
+// latency->5QI table is not available in-repo, so this is an operator-tunable
+// approximation that falls back to the best-effort default 5QI=9.
+[[nodiscard]] int32_t derive_5qi(
+    std::optional<float> des_max_latency_ms, bool has_gbr);
 
 // TODO [QOS-MON] Setup QoS monitoring based on MediaComponent requirements
 // [TS 29.512 §4.1.4.4.6, TS 29.514 §4.2.2.23]

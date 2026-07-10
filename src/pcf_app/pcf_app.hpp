@@ -55,8 +55,8 @@ class pcf_app {
   std::shared_ptr<oai::pcf::app::sm_policy::policy_provisioning_file>
       m_provisioning_file;
 
-  std::shared_ptr<oai::pcf::app::policy_auth::app_session_storage>
-      m_app_session_storage;
+  std::shared_ptr<oai::pcf::app::policy_auth::policy_auth_context>
+      m_policy_auth_context;
   std::shared_ptr<pcf_policy_authorization> m_pcf_policy_authorization_service;
 };
 }  // namespace oai::pcf::app

@@ -23,8 +23,10 @@ set(NF_TARGET pcf_unit_tests)
 add_executable(${NF_TARGET}
   main.cpp
   test_guarded.cpp
+  test_bitrate.cpp
+  test_crud_store.cpp
   test_qos_context.cpp
-  test_app_session_storage_memory.cpp
+  test_app_session_storage.cpp
   test_app_session.cpp
   test_qos_processing.cpp
 )
