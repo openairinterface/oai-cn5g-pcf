@@ -21,6 +21,7 @@
 #include "uint_generator.hpp"
 #include "sm_policy/policy_storage.hpp"
 #include "pcf_event.hpp"
+#include "operator_qos_policy.hpp"
 
 namespace oai::pcf::app {
 
@@ -33,7 +34,8 @@ class pcf_smpc {
   explicit pcf_smpc(
       const std::shared_ptr<oai::pcf::app::sm_policy::policy_storage>&
           policy_storage,
-      pcf_event& ev);
+      pcf_event& ev,
+      oai::pcf::app::operator_qos_policy qos_authorization_policy = {});
   pcf_smpc(pcf_smpc const&) = delete;
   void operator=(pcf_smpc const&) = delete;
 
@@ -112,6 +114,12 @@ class pcf_smpc {
   mutable std::shared_mutex m_associations_mutex;
 
   std::shared_ptr<oai::pcf::app::sm_policy::policy_storage> m_policy_storage;
+
+  // Operator QoS authorization limits used when authorizing the subscribed
+  // Session-AMBR / default QoS into a SessionRule [TS 29.512 §4.2.6.6.1].
+  // Injected at construction (default = permissive); populated from config in a
+  // later step (see N5_QoS_Phase1_§1.4 plan §7.4).
+  oai::pcf::app::operator_qos_policy m_qos_authorization_policy;
 
   void handle_policy_change(
       const std::shared_ptr<oai::pcf::app::sm_policy::policy_decision>&
