@@ -6,6 +6,7 @@
 #include "logger.hpp"
 #include "pcf_config.hpp"
 #include "sm_policy/policy_decision.hpp"
+#include "sm_policy/qos_session_authorization.hpp"
 #include "SmPolicyDecision.h"
 
 #include <boost/uuid/uuid_io.hpp>
@@ -34,9 +35,10 @@ extern std::shared_ptr<oai::http::http_client> http_client_inst;
 pcf_smpc::pcf_smpc(
     const std::shared_ptr<oai::pcf::app::sm_policy::policy_storage>&
         policy_storage,
-    pcf_event& ev)
+    pcf_event& ev, oai::pcf::app::operator_qos_policy qos_authorization_policy)
     : m_event_sub(ev) {
-  m_policy_storage = policy_storage;
+  m_policy_storage           = policy_storage;
+  m_qos_authorization_policy = std::move(qos_authorization_policy);
 
   std::function<void(const std::shared_ptr<policy_decision>& decision)> f =
       std::bind(&pcf_smpc::handle_policy_change, this, std::placeholders::_1);
@@ -433,6 +435,17 @@ status_code pcf_smpc::create_sm_policy_handler(
         context.getSupi());
     Logger::pcf_app().debug(fmt::format(problem_details));
   } else {
+    // Authorize the subscribed Session-AMBR / default 5QI/ARP (forwarded by the
+    // SMF in the context) into a SessionRule on the decision [TS 29.512
+    // §4.2.6.6.1]. Done here -- after decide_policy, before storing -- so it
+    // applies uniformly across every policy_decision subclass and lands in both
+    // the decision returned to the SMF and the copy persisted on the
+    // association (so a later sm_session_binding serves it to Policy
+    // Authorization for QoS validation, TS 29.514 §4.1.3.1).
+    sm_policy::authorize_session_rule_into(
+        decision, context, association_id, m_qos_authorization_policy);
+    assoc.set_sm_policy_decision(decision);
+
     std::unique_lock lock_assocations(m_associations_mutex);
     m_associations.insert(std::make_pair(association_id, assoc));
 
