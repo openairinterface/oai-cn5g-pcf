@@ -20,6 +20,11 @@ set (MOUNTED_COMMON      common-src)
 
 project (OpenAirInterface)
 
+option(BUILD_TESTING "Build PCF unit tests" OFF)
+if(BUILD_TESTING)
+  enable_testing()
+endif()
+
 include(${CMAKE_CURRENT_SOURCE_DIR}/../../src/oai_pcf/CMakeLists.txt)
 
 ADD_SUBDIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/../../src/pcf_app ${CMAKE_CURRENT_BINARY_DIR}/pcf_app)
