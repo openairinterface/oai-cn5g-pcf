@@ -226,6 +226,25 @@ TEST(DecisionMerging, AssignsPrecedenceAboveExistingHighest) {
   EXPECT_EQ(merged["new"].getPrecedence(), 301);
 }
 
+// TS 23.503 §6.3.1: every dynamic PCC rule shall retain an unambiguous
+// precedence value, including batches of newly inserted zero-precedence rules.
+TEST(DecisionMerging, AssignsUniquePrecedenceToMultipleZeroPrecedenceRules) {
+  SmPolicyDecision current;
+  SmPolicyDecision request;
+  auto rules   = request.getPccRules();
+  rules["r1"]  = make_pcc_rule("r1", 0);
+  rules["r2"]  = make_pcc_rule("r2", 0);
+  request.setPccRules(rules);
+
+  auto result = validate_and_merge_decision(request, current, /*update=*/false);
+
+  ASSERT_TRUE(result.status.has_value());
+  EXPECT_EQ(result.status.value(), status_code::OK);
+  ASSERT_EQ(current.getPccRules().size(), 2u);
+  EXPECT_EQ(current.getPccRules().at("r1").getPrecedence(), 256);
+  EXPECT_EQ(current.getPccRules().at("r2").getPrecedence(), 257);
+}
+
 /*
  * 3GPP TS 29.512 §4.1.4.2.1
  * PCC rules and service data flow templates.
@@ -822,8 +841,8 @@ TEST(QosDataBandwidth, ComponentLevelMbrIsUsedWhenNoSubComponents) {
 TEST(QosDataBandwidth, PerSdfMbrIsSummedAcrossSubComponents) {
   MediaComponent mc;
   std::map<std::string, MediaSubComponent> subs;
-  subs["1"] = make_sub(1, {"permit out ip from any to assigned"}, "1 Mbps");
-  subs["2"] = make_sub(2, {"permit out ip from any to assigned"}, "2 Mbps");
+  subs["1"] = make_sub(1, {"permit in ip from assigned to any"}, "1 Mbps");
+  subs["2"] = make_sub(2, {"permit in ip from assigned to any"}, "2 Mbps");
   mc.setMedSubComps(subs);
   SmPolicyDecision decision;
   qos_context qos_ctx;
@@ -907,7 +926,7 @@ TEST(QosDataBandwidth, SubComponentFallsBackToComponentBandwidthWhenSubRateMissi
   MediaComponent mc;
   mc.setMarBwUl("10 Mbps");
   std::map<std::string, MediaSubComponent> subs;
-  subs["1"] = make_sub(1, {"permit out ip from any to assigned"});
+  subs["1"] = make_sub(1, {"permit in ip from assigned to any"});
   mc.setMedSubComps(subs);
   SmPolicyDecision decision;
   qos_context qos_ctx;
@@ -923,8 +942,8 @@ TEST(QosDataBandwidth, SubComponentFallsBackToComponentBandwidthWhenSubRateMissi
 TEST(QosDataFlowStatus, RemovedSubComponentIsExcludedFromBandwidthSum) {
   MediaComponent mc;
   std::map<std::string, MediaSubComponent> subs;
-  subs["1"] = make_sub(1, {"permit out ip from any to assigned"}, "1 Mbps");
-  subs["2"] = make_sub(2, {"permit out ip from any to assigned"}, "5 Mbps",
+  subs["1"] = make_sub(1, {"permit in ip from assigned to any"}, "1 Mbps");
+  subs["2"] = make_sub(2, {"permit in ip from assigned to any"}, "5 Mbps",
                        /*removed=*/true);
   mc.setMedSubComps(subs);
   SmPolicyDecision decision;
@@ -934,6 +953,51 @@ TEST(QosDataFlowStatus, RemovedSubComponentIsExcludedFromBandwidthSum) {
   create_qos_data_from_media_component(mc, "s", decision, qos_ctx, store, out);
 
   EXPECT_EQ(only_qos_data(decision).getMaxbrUl(), "1 Mbps");
+}
+
+// TS 29.513 Table 7.3.3-1: when one traffic direction has no flow description,
+// the corresponding authorized data rate for that direction shall be zero.
+TEST(QosDataBandwidth, DirectionWithoutFlowDescriptionGetsZeroRate) {
+  MediaComponent mc;
+  std::map<std::string, MediaSubComponent> subs;
+  subs["1"] = make_sub_with_bitrates(
+      1, {"permit out ip from any to assigned"}, "5 Mbps", "9 Mbps");
+  mc.setMedSubComps(subs);
+  SmPolicyDecision decision;
+  qos_context qos_ctx;
+  fake_qos_reference_store store;
+  QosData out;
+
+  auto result = create_qos_data_from_media_component(
+      mc, "sess-direction", decision, qos_ctx, store, out);
+
+  ASSERT_TRUE(result.status.has_value());
+  EXPECT_EQ(result.status.value(), status_code::OK);
+  const QosData& qos = only_qos_data(decision);
+  EXPECT_TRUE(qos.maxbrUlIsSet());
+  EXPECT_EQ(qos.getMaxbrUl(), "0 bps");
+  EXPECT_EQ(qos.getMaxbrDl(), "9 Mbps");
+}
+
+// TS 29.513 Table 7.3.3-1 together with TS 29.512 §4.1.4.2.1: when every
+// subcomponent is REMOVED, no permit-all fallback rule should be installed.
+TEST(QosDataFlowStatus, AllRemovedSubComponentsDoNotInstallPermitAllFallback) {
+  MediaComponent mc;
+  std::map<std::string, MediaSubComponent> subs;
+  subs["1"] = make_sub(1, {"permit out ip from any to assigned"}, "1 Mbps",
+                       /*removed=*/true);
+  mc.setMedSubComps(subs);
+  SmPolicyDecision decision;
+  qos_context qos_ctx;
+  fake_qos_reference_store store;
+  QosData out;
+
+  auto result = create_qos_data_from_media_component(
+      mc, "sess-removed", decision, qos_ctx, store, out);
+
+  ASSERT_TRUE(result.status.has_value());
+  EXPECT_EQ(result.status.value(), status_code::OK);
+  EXPECT_TRUE(only_pcc_rule(decision).getFlowInfos().empty());
 }
 
 // TS 29.513 §7.3.3: when qosReference resolves to a pre-defined QoS set, the
@@ -1096,31 +1160,6 @@ TEST(QosAuthorization,
 }
 
 /*
- * Deferred: 3GPP TS 23.503 §6.3.1
- * Dynamic PCC rule precedence uniqueness.
- */
-
-// TS 23.503 §6.3.1: every dynamic PCC rule shall retain an unambiguous
-// precedence value, including batches of newly inserted zero-precedence rules.
-TEST(DecisionMerging,
-  DISABLED_AssignsUniquePrecedenceToMultipleZeroPrecedenceRules) {
-  SmPolicyDecision current;
-  SmPolicyDecision request;
-  auto rules   = request.getPccRules();
-  rules["r1"]  = make_pcc_rule("r1", 0);
-  rules["r2"]  = make_pcc_rule("r2", 0);
-  request.setPccRules(rules);
-
-  auto result = validate_and_merge_decision(request, current, /*update=*/false);
-
-  ASSERT_TRUE(result.status.has_value());
-  EXPECT_EQ(result.status.value(), status_code::OK);
-  ASSERT_EQ(current.getPccRules().size(), 2u);
-  EXPECT_EQ(current.getPccRules().at("r1").getPrecedence(), 256);
-  EXPECT_EQ(current.getPccRules().at("r2").getPrecedence(), 257);
-}
-
-/*
  * Deferred: 3GPP TS 29.512 §4.2.6.2.1 and §4.2.6.2.3
  * QoS-aware decision merge semantics.
  */
@@ -1262,33 +1301,6 @@ TEST(QosRequirementsProcessing,
 // derivation path. The generated FlowUsage model is currently opaque in C++.
 TEST(QosDataBandwidth, DISABLED_RtcpFlowUsageAppliesSpecialBandwidthRules) {
   GTEST_SKIP() << "Blocked: FlowUsage does not expose RTCP-specific values in the generated C++ model";
-}
-
-// TS 29.513 Table 7.3.3-1: when one traffic direction has no flow description,
-// the corresponding authorized data rate for that direction shall be zero.
-TEST(QosDataBandwidth, DISABLED_DirectionWithoutFlowDescriptionGetsZeroRate) {
-  GTEST_SKIP() << "Blocked: direction-specific zero-rate handling is not implemented in the current bandwidth aggregator";
-}
-
-// TS 29.513 Table 7.3.3-1 together with TS 29.512 §4.1.4.2.1: when every
-// subcomponent is REMOVED, no permit-all fallback rule should be installed.
-TEST(QosDataFlowStatus, DISABLED_AllRemovedSubComponentsDoNotInstallPermitAllFallback) {
-  MediaComponent mc;
-  std::map<std::string, MediaSubComponent> subs;
-  subs["1"] = make_sub(1, {"permit out ip from any to assigned"}, "1 Mbps",
-                       /*removed=*/true);
-  mc.setMedSubComps(subs);
-  SmPolicyDecision decision;
-  qos_context qos_ctx;
-  fake_qos_reference_store store;
-  QosData out;
-
-  auto result = create_qos_data_from_media_component(
-      mc, "sess-removed", decision, qos_ctx, store, out);
-
-  ASSERT_TRUE(result.status.has_value());
-  EXPECT_EQ(result.status.value(), status_code::OK);
-  EXPECT_TRUE(only_pcc_rule(decision).getFlowInfos().empty());
 }
 
 /*
