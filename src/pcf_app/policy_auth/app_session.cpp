@@ -194,6 +194,11 @@ handler_result validate_and_merge_decision(
     }
   }
   if (highest_precedence == 0) {
+    Logger::pcf_app().debug(fmt::format(
+        "Current decision has no explicit PCC rule precedence values. "
+        "Starting new dynamic assignments from the default precedence floor "
+        "{}.",
+        DEFAULT_PCC_RULE_PRECEDENCE));
     highest_precedence = DEFAULT_PCC_RULE_PRECEDENCE;
   }
 
@@ -204,7 +209,10 @@ handler_result validate_and_merge_decision(
       if (iter != current_decision.getPccRules().end() &&
           !iter->first.empty()) {
         Logger::pcf_app().debug(fmt::format(
-            "PCC Rule ID: {} already exists in current decision", key.c_str()));
+          "Rejecting create request because PCC Rule ID '{}' already exists "
+          "in the current decision. Existing PCC rules can only be changed "
+          "through the update path.",
+          key.c_str()));
         return handler_result{
             .status          = status_code::FORBIDDEN,
             .problem_details = "INVALID_SERVICE_INFORMATION"};
@@ -220,8 +228,10 @@ handler_result validate_and_merge_decision(
       if (iter != current_decision.getTraffContDecs().end() &&
           !iter->first.empty()) {
         Logger::pcf_app().debug(fmt::format(
-            "Traffic Cont ID: {} already exists in current decision",
-            key.c_str()));
+          "Rejecting create request because Traffic Control ID '{}' already "
+          "exists in the current decision. Existing traffic-control "
+          "entries can only be changed through the update path.",
+          key.c_str()));
         return handler_result{
             .status          = status_code::FORBIDDEN,
             .problem_details = "INVALID_SERVICE_INFORMATION"};
@@ -233,7 +243,18 @@ handler_result validate_and_merge_decision(
   auto pccRulesMap = current_decision.getPccRules();
   for (auto& [key, value] : request_decision.getPccRules()) {
     if (value.getPrecedence() == 0) {
-      value.setPrecedence(highest_precedence + 1);
+      Logger::pcf_app().debug(fmt::format(
+          "PCC Rule '{}' arrived without an explicit precedence. Assigning "
+          "the next available dynamic precedence {} so the merged decision "
+          "remains unambiguous.",
+          key, highest_precedence + 1));
+      value.setPrecedence(++highest_precedence);
+    } else if (value.getPrecedence() > highest_precedence) {
+      Logger::pcf_app().debug(fmt::format(
+          "PCC Rule '{}' keeps its explicit precedence {}. This becomes the "
+          "new highest precedence seen during merge.",
+          key, value.getPrecedence()));
+      highest_precedence = value.getPrecedence();
     }
     pccRulesMap.insert(std::make_pair(key, value));
   }
@@ -252,8 +273,10 @@ handler_result validate_and_merge_decision(
   //     from request_decision is needed on the QoS mock path.
   //   - QosChars and QosMonDecs merge is not performed (stubs only log).
   Logger::pcf_app().debug(
-      "validate_and_merge_decision() [mock]: QoS data merge "
-      "(QosData, QosChars, QosMonDecs)");
+      "Skipping QoS-specific merge work in validate_and_merge_decision(). "
+      "PCC rules and traffic-control data are merged, but QosData, "
+      "QosCharacteristics, and QosMonitoringData are still handled by the "
+      "Phase 1 mock path.");
 
   // Merge Traffic Control Data
   auto trafficControlMap = current_decision.getTraffContDecs();
@@ -269,7 +292,10 @@ handler_result validate_and_merge_decision(
         // Check if refTcData is in trafficControlMap, if not remove PCC rule
         if (trafficControlMap.find(refTcData) == trafficControlMap.end()) {
           Logger::pcf_app().debug(fmt::format(
-              "Removing PCC Rule ID: {} from current decision", key.c_str()));
+              "PCC Rule '{}' references missing Traffic Control ID '{}'. "
+              "Clearing refTcData on the rule because the referenced "
+              "traffic-control decision is not present after merge.",
+              key.c_str(), refTcData));
           auto refTcDataVector = pcc_rules[key].getRefTcData();
           // Set empty vector
           refTcDataVector.clear();
@@ -391,6 +417,10 @@ oai::model::common::Arp derive_arp(const MediaComponent& mc) {
   // TODO [QOS] Map MediaComponent.resPrio -> arp.priorityLevel once the
   // ReservPriority model exposes its value [TS 29.513 Table 7.3.3-2].
   arp.setPriorityLevel(DEFAULT_ARP_PRIORITY_LEVEL);
+  Logger::pcf_app().debug(fmt::format(
+      "Using default ARP priority level {} because MediaComponent.resPrio is "
+      "not readable from the current generated model.",
+      DEFAULT_ARP_PRIORITY_LEVEL));
 
   if (mc.preemptCapIsSet()) {
     arp.setPreemptCap(mc.getPreemptCap());
@@ -399,6 +429,9 @@ oai::model::common::Arp derive_arp(const MediaComponent& mc) {
     cap.setEnumValue(oai::model::common::PreemptionCapability_anyOf::
                          ePreemptionCapability_anyOf::NOT_PREEMPT);
     arp.setPreemptCap(cap);
+    Logger::pcf_app().debug(
+        "No pre-emption capability was provided in the request. Defaulting "
+        "ARP preemptCap to NOT_PREEMPT.");
   }
   if (mc.preemptVulnIsSet()) {
     arp.setPreemptVuln(mc.getPreemptVuln());
@@ -407,6 +440,9 @@ oai::model::common::Arp derive_arp(const MediaComponent& mc) {
     vuln.setEnumValue(oai::model::common::PreemptionVulnerability_anyOf::
                           ePreemptionVulnerability_anyOf::NOT_PREEMPTABLE);
     arp.setPreemptVuln(vuln);
+    Logger::pcf_app().debug(
+        "No pre-emption vulnerability was provided in the request. "
+        "Defaulting ARP preemptVuln to NOT_PREEMPTABLE.");
   }
   return arp;
 }
@@ -433,17 +469,57 @@ bool is_standardized_5qi(int32_t r5qi) {
 // best-effort default 5QI=9 (TS 29.513 §7.3.3: OTHERWISE 5QI=9).
 int32_t derive_5qi(std::optional<float> des_max_latency_ms, bool has_gbr) {
   if (!des_max_latency_ms.has_value()) {
+    Logger::pcf_app().debug(
+        "No desired maximum latency was provided. Falling back to "
+        "best-effort 5QI 9.");
     return 9;  // best-effort default
   }
   const float ms = des_max_latency_ms.value();
   if (has_gbr) {
-    if (ms <= 50.0f) return 3;   // 5QI 3  (PDB 50ms, e.g. real-time gaming)
-    if (ms <= 150.0f) return 2;  // 5QI 2  (PDB 150ms, e.g. live video)
-    return 4;                    // 5QI 4  (PDB 300ms, non-conversational video)
+    if (ms <= 50.0f) {
+      Logger::pcf_app().debug(fmt::format(
+          "GBR flow requested with desired latency {} ms. Selecting 5QI 3 "
+          "because it fits the lowest-latency GBR bucket in the current "
+          "heuristic.",
+          ms));
+      return 3;  // 5QI 3  (PDB 50ms, e.g. real-time gaming)
+    }
+    if (ms <= 150.0f) {
+      Logger::pcf_app().debug(fmt::format(
+          "GBR flow requested with desired latency {} ms. Selecting 5QI 2 "
+          "because it fits the medium-latency GBR bucket in the current "
+          "heuristic.",
+          ms));
+      return 2;  // 5QI 2  (PDB 150ms, e.g. live video)
+    }
+    Logger::pcf_app().debug(fmt::format(
+        "GBR flow requested with desired latency {} ms, which exceeds the "
+        "lower-latency GBR buckets. Selecting 5QI 4 in the current "
+        "heuristic.",
+        ms));
+    return 4;  // 5QI 4  (PDB 300ms, non-conversational video)
   }
-  if (ms <= 100.0f) return 7;    // 5QI 7  (PDB 100ms, voice/interactive)
-  if (ms <= 300.0f) return 6;    // 5QI 6  (PDB 300ms, buffered streaming)
-  return 9;                      // 5QI 9  (best-effort default)
+  if (ms <= 100.0f) {
+    Logger::pcf_app().debug(fmt::format(
+        "Non-GBR flow requested with desired latency {} ms. Selecting 5QI 7 "
+        "because it fits the lowest-latency non-GBR bucket in the current "
+        "heuristic.",
+        ms));
+    return 7;  // 5QI 7  (PDB 100ms, voice/interactive)
+  }
+  if (ms <= 300.0f) {
+    Logger::pcf_app().debug(fmt::format(
+        "Non-GBR flow requested with desired latency {} ms. Selecting 5QI 6 "
+        "because it fits the medium-latency non-GBR bucket in the current "
+        "heuristic.",
+        ms));
+    return 6;  // 5QI 6  (PDB 300ms, buffered streaming)
+  }
+  Logger::pcf_app().debug(fmt::format(
+      "Non-GBR flow requested with desired latency {} ms, which exceeds the "
+      "lower-latency non-GBR buckets. Falling back to best-effort 5QI 9.",
+      ms));
+  return 9;  // 5QI 9  (best-effort default)
 }
 
 // Extract and process the QoS requirements of one MediaComponent, orchestrating
@@ -511,6 +587,10 @@ handler_result create_qos_data_from_media_component(
       Logger::pcf_app().info(fmt::format(
           "Using operator-preconfigured QoS reference '{}' for qosId '{}'",
           media_component.getQosReference(), qos_id));
+        Logger::pcf_app().debug(
+          "Because the qosReference resolved successfully, operator-"
+          "configured 5QI, MBR, GBR, and ARP values override any QoS "
+          "derivation from the request.");
     } else {
       Logger::pcf_app().warn(fmt::format(
           "qosReference '{}' not found in the QoS reference store; deriving QoS "
@@ -527,6 +607,11 @@ handler_result create_qos_data_from_media_component(
   std::optional<std::string> mbr_ul;
   std::optional<std::string> mbr_dl;
   bool has_sub_components = media_component.medSubCompsIsSet();
+  bool has_non_removed_sub_components = false;
+  bool has_uplink_sdf                 = false;
+  bool has_downlink_sdf               = false;
+  bool saw_ul_rate_source             = false;
+  bool saw_dl_rate_source             = false;
 
   if (has_sub_components) {
     Logger::pcf_app().trace(fmt::format(
@@ -540,27 +625,90 @@ handler_result create_qos_data_from_media_component(
         continue;
       }
 
-      // Per-SDF MBR: MediaSubComponent bandwidth if present, else fall back to
-      // the MediaComponent-level value [TS 29.513 Table 7.3.3-1].
-      if (sub.marBwUlIsSet()) {
-        mbr_ul = oai::utils::bitrate::sum(mbr_ul, sub.getMarBwUl());
-      } else if (media_component.marBwUlIsSet()) {
-        mbr_ul = oai::utils::bitrate::sum(mbr_ul, media_component.getMarBwUl());
-      }
-      if (sub.marBwDlIsSet()) {
-        mbr_dl = oai::utils::bitrate::sum(mbr_dl, sub.getMarBwDl());
-      } else if (media_component.marBwDlIsSet()) {
-        mbr_dl = oai::utils::bitrate::sum(mbr_dl, media_component.getMarBwDl());
-      }
+      has_non_removed_sub_components = true;
 
+      bool include_ul = true;
+      bool include_dl = true;
       if (sub.fDescsIsSet()) {
+        include_ul = false;
+        include_dl = false;
         for (const auto& desc : sub.getFDescs()) {
           Logger::pcf_app().trace(
               fmt::format("SDF filter (fNum={}): '{}'", key, desc));
-          flow_infos.push_back(flow_info_from_desc(desc));
+          FlowInformation flow_info = flow_info_from_desc(desc);
+          switch (flow_info.getFlowDirection().getEnumValue()) {
+            case FlowDirection_anyOf::eFlowDirection_anyOf::UPLINK:
+              include_ul = true;
+              break;
+            case FlowDirection_anyOf::eFlowDirection_anyOf::DOWNLINK:
+              include_dl = true;
+              break;
+            default:
+              include_ul = true;
+              include_dl = true;
+              break;
+          }
+          flow_infos.push_back(std::move(flow_info));
+        }
+      } else {
+        Logger::pcf_app().debug(fmt::format(
+            "Sub-component fNum={} has no flow descriptions. Any provided "
+            "bandwidth is treated as applying to both directions because no "
+            "SDF direction can be inferred.",
+            key));
+      }
+
+      has_uplink_sdf   = has_uplink_sdf || include_ul;
+      has_downlink_sdf = has_downlink_sdf || include_dl;
+
+      // Per-SDF MBR: MediaSubComponent bandwidth if present, else fall back to
+      // the MediaComponent-level value [TS 29.513 Table 7.3.3-1].
+      if (sub.marBwUlIsSet()) {
+        saw_ul_rate_source = true;
+        if (include_ul) {
+          mbr_ul = oai::utils::bitrate::sum(mbr_ul, sub.getMarBwUl());
+        }
+      } else if (media_component.marBwUlIsSet()) {
+        saw_ul_rate_source = true;
+        if (include_ul) {
+          mbr_ul =
+              oai::utils::bitrate::sum(mbr_ul, media_component.getMarBwUl());
+        }
+      }
+      if (sub.marBwDlIsSet()) {
+        saw_dl_rate_source = true;
+        if (include_dl) {
+          mbr_dl = oai::utils::bitrate::sum(mbr_dl, sub.getMarBwDl());
+        }
+      } else if (media_component.marBwDlIsSet()) {
+        saw_dl_rate_source = true;
+        if (include_dl) {
+          mbr_dl =
+              oai::utils::bitrate::sum(mbr_dl, media_component.getMarBwDl());
         }
       }
     }
+
+    if (has_non_removed_sub_components) {
+      if (saw_ul_rate_source && !has_uplink_sdf) {
+        Logger::pcf_app().debug(
+            "Setting uplink MBR to 0 bps because the request carried uplink "
+            "bandwidth information, but none of the non-removed service data "
+            "flows included an uplink flow description. The missing uplink "
+            "direction is therefore treated as zero authorized rate.");
+        mbr_ul = oai::utils::bitrate::from_bps(0);
+      }
+      if (saw_dl_rate_source && !has_downlink_sdf) {
+        Logger::pcf_app().debug(
+            "Setting downlink MBR to 0 bps because the request carried "
+            "downlink bandwidth information, but none of the non-removed "
+            "service data flows included a downlink flow description. The "
+            "missing downlink direction is therefore treated as zero "
+            "authorized rate.");
+        mbr_dl = oai::utils::bitrate::from_bps(0);
+      }
+    }
+
     Logger::pcf_app().debug(fmt::format(
         "Aggregated per-SDF MBR from request: ul='{}', dl='{}'{}",
         mbr_ul.value_or("<none>"), mbr_dl.value_or("<none>"),
@@ -596,6 +744,10 @@ handler_result create_qos_data_from_media_component(
                                          : "<none>",
           media_component.mirBwDlIsSet() ? media_component.getMirBwDl()
                                          : "<none>"));
+      } else {
+        Logger::pcf_app().debug(
+          "No minimum or guaranteed bitrate was requested. Leaving the "
+          "authorized QoS as non-GBR and omitting GBR fields.");
     }
 
     // 5QI from desired latency [TS 29.513 §7.3.3 NOTE 15/17].
@@ -616,12 +768,25 @@ handler_result create_qos_data_from_media_component(
     // Maximum Packet Loss Rate is authorized only for 5QI=1 flows
     // [TS 29.512 §4.2.6.6.2].
     if (r5qi == 1) {
+      if (media_component.maxPacketLossRateUlIsSet() ||
+          media_component.maxPacketLossRateDlIsSet()) {
+        Logger::pcf_app().debug(
+            "Authorizing requested maximum packet loss values because the "
+            "derived QoS is 5QI 1.");
+      }
       if (media_component.maxPacketLossRateUlIsSet())
         qos_data.setMaxPacketLossRateUl(
             media_component.getMaxPacketLossRateUl());
       if (media_component.maxPacketLossRateDlIsSet())
         qos_data.setMaxPacketLossRateDl(
             media_component.getMaxPacketLossRateDl());
+    } else if (
+        media_component.maxPacketLossRateUlIsSet() ||
+        media_component.maxPacketLossRateDlIsSet()) {
+      Logger::pcf_app().debug(fmt::format(
+          "Ignoring requested maximum packet loss values because the derived "
+          "QoS is 5QI {}. Packet loss is only signalled for 5QI 1.",
+          r5qi));
     }
   } else {
     // QoS came from the operator-preconfigured qosReference set; the request's
@@ -641,9 +806,25 @@ handler_result create_qos_data_from_media_component(
   // [TS 29.512 §4.1.4.2.1]. Fall back to a permit-all bidirectional filter when
   // the request described no service data flows.
   if (flow_infos.empty()) {
-    Logger::pcf_app().debug(
-        "No SDF filters described; installing permit-all fallback filter");
-    flow_infos.push_back(flow_info_from_desc("permit out ip from any to assigned"));
+    if (!has_sub_components || has_non_removed_sub_components) {
+      if (!has_sub_components) {
+        Logger::pcf_app().debug(
+            "No media sub-components were provided, so no SDF filters could "
+            "be built. Installing a permit-all fallback filter to keep the "
+            "PCC rule valid.");
+      } else {
+        Logger::pcf_app().debug(
+            "Non-removed sub-components were present, but none of them "
+            "provided any flow descriptions. Installing a permit-all "
+            "fallback filter to keep the PCC rule valid.");
+      }
+      flow_infos.push_back(
+          flow_info_from_desc("permit out ip from any to assigned"));
+    } else {
+      Logger::pcf_app().debug(
+          "All sub-components are marked REMOVED, so no SDF filters are "
+          "installed and no permit-all fallback is created.");
+    }
   }
 
   // Write the QosData [TS 29.512 §5.6.2.8].
@@ -689,8 +870,11 @@ handler_result create_qos_characteristics(
     const QosData& qos_data, SmPolicyDecision& decision) {
   if (!qos_data.r5qiIsSet() || is_standardized_5qi(qos_data.getR5qi())) {
     Logger::pcf_app().trace(fmt::format(
-        "No QosCharacteristics signalled (5QI {} is standardized or unset)",
-        qos_data.r5qiIsSet() ? std::to_string(qos_data.getR5qi()) : "<unset>"));
+        "Skipping explicit QosCharacteristics because 5QI {} is {}. "
+        "Standardized 5QIs use preconfigured characteristics, and an unset "
+        "5QI cannot be signalled.",
+        qos_data.r5qiIsSet() ? std::to_string(qos_data.getR5qi()) : "<unset>",
+        qos_data.r5qiIsSet() ? "standardized" : "unset"));
     return handler_result{.status = status_code::OK};
   }
 
@@ -770,7 +954,9 @@ handler_result create_qos_characteristics(
 //   - No monitoring thresholds are read and no QosMonitoringData is created.
 //     This stub only logs to confirm the call order.
 handler_result setup_qos_monitoring([[maybe_unused]] SmPolicyDecision& decision) {
-  Logger::pcf_app().debug("setup_qos_monitoring() [mock]");
+  Logger::pcf_app().debug(
+      "QoS monitoring setup is not implemented in Phase 1. Returning "
+      "success without creating QosMonitoringData or linking refQosMon.");
   return handler_result{.status = status_code::OK};
 }
 
@@ -786,7 +972,9 @@ handler_result setup_qos_monitoring([[maybe_unused]] SmPolicyDecision& decision)
 // Mocks the TODO [QOS] task above:
 //   - No subscription or resource checks are performed; always returns OK.
 handler_result validate_qos_authorization() {
-  Logger::pcf_app().debug("validate_qos_authorization() [mock]");
+  Logger::pcf_app().debug(
+      "QoS authorization checks are still mocked. Returning success without "
+      "evaluating subscription, slice, or resource constraints.");
   return handler_result{.status = status_code::OK};
 }
 
