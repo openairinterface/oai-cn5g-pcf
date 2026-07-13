@@ -57,10 +57,9 @@ add_library (PCF STATIC
 ################################################################################
 # Unit tests (GoogleTest + CTest). Opt-in: off by default, enabled with
 # -DBUILD_TESTING=ON. Not part of the default build; the runtime "pcf"
-# executable does not depend on this target.
+# executable does not depend on this target. Test registration is enabled at
+# the PCF build root so root-level ctest sees these tests.
 ################################################################################
-option(BUILD_TESTING "Build PCF unit tests" OFF)
 if(BUILD_TESTING)
-  enable_testing()
   ADD_SUBDIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/test ${CMAKE_CURRENT_BINARY_DIR}/test)
 endif()
