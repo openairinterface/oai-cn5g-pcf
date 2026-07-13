@@ -29,6 +29,7 @@ add_executable(${NF_TARGET}
   test_app_session_storage.cpp
   test_app_session.cpp
   test_qos_processing.cpp
+  test_qos_session_authorization.cpp
 )
 
 ## Common modules (re-included with NF_TARGET=pcf_unit_tests so their
