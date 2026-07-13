@@ -113,11 +113,10 @@ std::set<std::string> to_set(const std::vector<std::string>& v) {
   return std::set<std::string>(v.begin(), v.end());
 }
 
-// The single QosData in a decision (tests here create exactly one per component).
-const QosData& only_qos_data(const SmPolicyDecision& decision) {
+QosData only_qos_data(const SmPolicyDecision& decision) {
   return decision.getQosDecs().begin()->second;
 }
-const PccRule& only_pcc_rule(const SmPolicyDecision& decision) {
+PccRule only_pcc_rule(const SmPolicyDecision& decision) {
   return decision.getPccRules().begin()->second;
 }
 
