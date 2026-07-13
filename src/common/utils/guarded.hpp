@@ -31,7 +31,7 @@ namespace oai::utils {
 template <typename T, typename Mutex = std::shared_mutex>
 class guarded {
  public:
-  guarded() = default;
+  guarded() : m_value() {}
   explicit guarded(T value) : m_value(std::move(value)) {}
 
   guarded(const guarded&)            = delete;
