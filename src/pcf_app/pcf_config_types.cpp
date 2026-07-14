@@ -4,11 +4,110 @@
 
 #include "pcf_config_types.hpp"
 
+#include <sstream>
 #include <utility>
 #include "config.hpp"
 
 using namespace oai::config;
 using namespace oai::config::pcf;
+
+qos_authorization_config::qos_authorization_config() {
+  m_config_name     = "QoS Authorization";
+  m_max_flow_mbr_ul = string_config_value("Max Flow MBR Uplink", "");
+  m_max_flow_mbr_dl = string_config_value("Max Flow MBR Downlink", "");
+  m_max_session_ambr_ul =
+      string_config_value("Max Session-AMBR Uplink", "");
+  m_max_session_ambr_dl =
+      string_config_value("Max Session-AMBR Downlink", "");
+  m_reject_on_missing_subscription =
+      option_config_value("reject_on_missing_subscription", false);
+  m_set = true;
+}
+
+void qos_authorization_config::from_yaml(const YAML::Node& node) {
+  if (node["allowed_dynamic_5qi"]) {
+    m_allowed_dynamic_5qi.clear();
+    for (const auto& entry : node["allowed_dynamic_5qi"]) {
+      m_allowed_dynamic_5qi.push_back(entry.as<int32_t>());
+    }
+  }
+  if (node["max_flow_mbr_ul"]) {
+    m_max_flow_mbr_ul.from_yaml(node["max_flow_mbr_ul"]);
+  }
+  if (node["max_flow_mbr_dl"]) {
+    m_max_flow_mbr_dl.from_yaml(node["max_flow_mbr_dl"]);
+  }
+  if (node["max_session_ambr_ul"]) {
+    m_max_session_ambr_ul.from_yaml(node["max_session_ambr_ul"]);
+  }
+  if (node["max_session_ambr_dl"]) {
+    m_max_session_ambr_dl.from_yaml(node["max_session_ambr_dl"]);
+  }
+  if (node["reject_on_missing_subscription"]) {
+    m_reject_on_missing_subscription.from_yaml(
+        node["reject_on_missing_subscription"]);
+  }
+}
+
+std::string qos_authorization_config::to_string(
+    const std::string& indent) const {
+  if (!m_set) return "";
+  std::string out;
+  std::string title_fmt = get_title_formatter(0);
+  std::string value_fmt = get_value_formatter(1);
+
+  out.append(indent).append(fmt::format(title_fmt, m_config_name));
+
+  std::stringstream allowed;
+  for (size_t i = 0; i < m_allowed_dynamic_5qi.size(); ++i) {
+    if (i) allowed << ", ";
+    allowed << m_allowed_dynamic_5qi[i];
+  }
+  out.append(indent).append(
+      fmt::format(value_fmt, "Allowed Dynamic 5QIs", allowed.str()));
+  out.append(indent).append(fmt::format(
+      value_fmt, m_max_flow_mbr_ul.get_config_name(),
+      m_max_flow_mbr_ul.get_value()));
+  out.append(indent).append(fmt::format(
+      value_fmt, m_max_flow_mbr_dl.get_config_name(),
+      m_max_flow_mbr_dl.get_value()));
+  out.append(indent).append(fmt::format(
+      value_fmt, m_max_session_ambr_ul.get_config_name(),
+      m_max_session_ambr_ul.get_value()));
+  out.append(indent).append(fmt::format(
+      value_fmt, m_max_session_ambr_dl.get_config_name(),
+      m_max_session_ambr_dl.get_value()));
+  out.append(indent).append(fmt::format(
+      value_fmt, m_reject_on_missing_subscription.get_config_name(),
+      m_reject_on_missing_subscription.get_value() ? "true" : "false"));
+
+  return out;
+}
+
+const std::vector<int32_t>& qos_authorization_config::get_allowed_dynamic_5qi()
+    const {
+  return m_allowed_dynamic_5qi;
+}
+
+const std::string& qos_authorization_config::get_max_flow_mbr_ul() const {
+  return m_max_flow_mbr_ul.get_value();
+}
+
+const std::string& qos_authorization_config::get_max_flow_mbr_dl() const {
+  return m_max_flow_mbr_dl.get_value();
+}
+
+const std::string& qos_authorization_config::get_max_session_ambr_ul() const {
+  return m_max_session_ambr_ul.get_value();
+}
+
+const std::string& qos_authorization_config::get_max_session_ambr_dl() const {
+  return m_max_session_ambr_dl.get_value();
+}
+
+bool qos_authorization_config::get_reject_on_missing_subscription() const {
+  return m_reject_on_missing_subscription.get_value();
+}
 
 policy_config::policy_config(
     const std::string& policy_decisions_path, const std::string& pcc_rules_path,
@@ -108,6 +207,9 @@ void pcf_config_type::from_yaml(const YAML::Node& node) {
   if (node["local_policy"]) {
     m_policy_config.from_yaml(node["local_policy"]);
   }
+  if (node["qos_authorization"]) {
+    m_qos_authorization_config.from_yaml(node["qos_authorization"]);
+  }
 }
 
 std::string pcf_config_type::to_string(const std::string& indent) const {
@@ -123,6 +225,8 @@ std::string pcf_config_type::to_string(const std::string& indent) const {
     out.append(m_policy_config.to_string(indent));
   }
 
+  out.append(m_qos_authorization_config.to_string(indent));
+
   return out;
 }
 
@@ -137,4 +241,9 @@ bool pcf_config_type::enable_policy_provisioning_api() const {
 
 const policy_config& pcf_config_type::get_policy_config() const {
   return m_policy_config;
+}
+
+const qos_authorization_config&
+pcf_config_type::get_qos_authorization_config() const {
+  return m_qos_authorization_config;
 }

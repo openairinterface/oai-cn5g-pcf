@@ -12,6 +12,8 @@
 #include <optional>
 #include <string>
 
+#include <vector>
+
 #include "AppSessionContext.h"
 #include "AppSessionContextReqData.h"
 #include "MediaComponent.h"
@@ -19,6 +21,7 @@
 #include "SmPolicyDecision.h"
 #include "app_session_record.hpp"
 #include "guarded.hpp"
+#include "operator_qos_policy.hpp"
 #include "pcf_policy_authorization_status_code.hpp"
 #include "qos_context.hpp"
 #include "qos_reference_store.hpp"
@@ -167,9 +170,22 @@ oai::pcf::app::policy_auth::handler_result create_qos_characteristics(
 oai::pcf::app::policy_auth::handler_result setup_qos_monitoring(
     oai::model::pcf::SmPolicyDecision& decision);
 
-// TODO [QOS] Validate QoS requirements against policies and subscription
-// [TS 29.514 §4.1.3.1, TS 23.503 §6.1.3.2.3]
-oai::pcf::app::policy_auth::handler_result validate_qos_authorization();
+// Validate the QoS this app-session authorized against operator policy and the
+// subscribed envelope [TS 29.514 §4.1.3.1, TS 23.503 §6.1.3.2.3].
+//
+// Checks the app-session's own QoS flows (identified by `owned_qos_ids`, keys
+// into `decision.qosDecs`): allowed 5QI, ARP priority range, per-flow MBR
+// ceiling, and GBR<=MBR structural sanity [TS 29.512 §4.2.6.6.2]. Additionally
+// checks that the cumulative non-GBR MBR of all flows in the decision does not
+// exceed the authorized Session-AMBR carried in `decision.sessRules` (populated
+// by the SM side, sm_policy::authorize_session_rule) [TS 23.503 §6.1.4,
+// TS 29.512 §4.2.6.6.1]. When no authorized Session-AMBR is available the check
+// fails open unless op_policy.reject_on_missing_subscription is set
+// [TS 29.512 §4.2.2.2]. Returns FORBIDDEN with a cause on the first violation.
+oai::pcf::app::policy_auth::handler_result validate_qos_authorization(
+    const oai::model::pcf::SmPolicyDecision& decision,
+    const std::vector<std::string>& owned_qos_ids,
+    const oai::pcf::app::operator_qos_policy& op_policy);
 
 // TODO [QOS] Handle QoS parameter updates during session modification [TS 29.514 §4.2.3.2, TS 29.512 §4.2.6.2.1]
 // oai::pcf::app::policy_auth::handler_result handle_qos_update(

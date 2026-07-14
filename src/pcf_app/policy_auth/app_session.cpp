@@ -960,21 +960,221 @@ handler_result setup_qos_monitoring([[maybe_unused]] SmPolicyDecision& decision)
   return handler_result{.status = status_code::OK};
 }
 
-// TODO [QOS] Validate QoS requirements against policies and subscription
-// [TS 29.514 §4.1.3.1, TS 23.503 §6.1.3.2.3]
-// Tasks:
-//   - Check QoS params against user subscription QoS profile [TS 29.512 §4.2.6.6.1]
-//   - Verify cumulative bandwidth against network slice limits [TS 29.512 §4.2.6.7, TS 23.503 §6.1.4]
-//   - Validate resource availability for requested QoS [TS 23.503 §6.1.3.2.3]
-//   - Return FORBIDDEN if any check fails [TS 29.514 §4.1.3.1]
+namespace {
+
+// ARP priority level range [TS 23.501 §5.7.2.2: 1 (highest) .. 15 (lowest)].
+constexpr int32_t ARP_PRIORITY_MIN = 1;
+constexpr int32_t ARP_PRIORITY_MAX = 15;
+
+handler_result forbidden(const std::string& cause, const std::string& detail) {
+  Logger::pcf_app().warn(fmt::format("QoS authorization rejected: {}", detail));
+  return handler_result{
+      .status = status_code::FORBIDDEN, .problem_details = cause};
+}
+
+// The authorized Session-AMBR (bit/s, per direction) to validate the cumulative
+// non-GBR rate against.
+struct session_ambr_limit {
+  std::optional<uint64_t> ul_bps;
+  std::optional<uint64_t> dl_bps;
+};
+
+// A SmPolicyDecision may carry several SessionRules; at most one is *active* at
+// a time, selected by the SMF from each rule's condition data [TS 29.512
+// §4.2.6.2, §5.6.2.4]. At create time we don't know which conditional rule will
+// be active, so authorize against the UNCONDITIONAL (default) rule -- the
+// baseline that always applies. If only conditional rules exist (no default),
+// fall back to the tightest AMBR so the authorized aggregate cannot exceed any
+// applicable rule.
+session_ambr_limit find_authorized_session_ambr(
+    const SmPolicyDecision& decision) {
+  session_ambr_limit unconditional;
+  session_ambr_limit tightest;
+  bool have_unconditional = false;
+  int conditional_count   = 0;
+
+  for (const auto& [sess_rule_id, rule] : decision.getSessRules()) {
+    if (!rule.authSessAmbrIsSet()) continue;
+    const auto ambr                  = rule.getAuthSessAmbr();
+    const std::optional<uint64_t> ul = bitrate::to_bps(ambr.getUplink());
+    const std::optional<uint64_t> dl = bitrate::to_bps(ambr.getDownlink());
+
+    if (!rule.refCondDataIsSet()) {
+      // The default (unconditional) rule -- the value we authorize against.
+      unconditional      = {ul, dl};
+      have_unconditional = true;
+    } else {
+      // Conservative fallback: keep the tightest AMBR seen across conditionals.
+      ++conditional_count;
+      if (ul && (!tightest.ul_bps || *ul < *tightest.ul_bps)) tightest.ul_bps = ul;
+      if (dl && (!tightest.dl_bps || *dl < *tightest.dl_bps)) tightest.dl_bps = dl;
+    }
+  }
+
+  if (have_unconditional) {
+    if (conditional_count > 0) {
+      Logger::pcf_app().debug(fmt::format(
+          "Decision carries {} conditional session rule(s); authorizing "
+          "against the unconditional Session-AMBR [TS 29.512 §4.2.6.2].",
+          conditional_count));
+    }
+    return unconditional;
+  }
+  if (conditional_count > 0) {
+    Logger::pcf_app().warn(
+        "No unconditional session rule; authorizing against the tightest "
+        "conditional Session-AMBR (conservative) [TS 29.512 §4.2.6.2].");
+  }
+  return tightest;  // both nullopt if no rule carried an AMBR
+}
+
+}  // namespace
+
+// Validate the QoS this app-session authorized against operator policy and the
+// subscribed envelope [TS 29.514 §4.1.3.1, TS 23.503 §6.1.3.2.3].
 //
-// [QOS-MOCK] Phase 1 — QoS authorization (mock; always approved).
-// Mocks the TODO [QOS] task above:
-//   - No subscription or resource checks are performed; always returns OK.
-handler_result validate_qos_authorization() {
-  Logger::pcf_app().debug(
-      "QoS authorization checks are still mocked. Returning success without "
-      "evaluating subscription, slice, or resource constraints.");
+// See app_session.hpp for the contract. Per-flow checks (5QI allow-list, ARP
+// range, per-flow MBR ceiling, GBR<=MBR) apply only to this session's own flows
+// (owned_qos_ids) -- operator-provisioned base QoS on the decision is inherently
+// authorized and must not be re-judged. The cumulative Session-AMBR check sums
+// the non-GBR MBR of ALL flows in the decision, since Session-AMBR bounds the
+// aggregate non-GBR rate of the PDU session [TS 23.503 §6.1.4].
+handler_result validate_qos_authorization(
+    const SmPolicyDecision& decision,
+    const std::vector<std::string>& owned_qos_ids,
+    const operator_qos_policy& op_policy) {
+  const std::set<std::string> owned(owned_qos_ids.begin(), owned_qos_ids.end());
+
+  // Authorized Session-AMBR to validate the cumulative non-GBR rate against.
+  // Prefers the unconditional (default) session rule when the decision carries
+  // several [TS 29.512 §4.2.6.2, §5.6.2.4].
+  const session_ambr_limit ambr = find_authorized_session_ambr(decision);
+  const std::optional<uint64_t> auth_ambr_ul = ambr.ul_bps;
+  const std::optional<uint64_t> auth_ambr_dl = ambr.dl_bps;
+
+  uint64_t cumulative_nongbr_ul_bps = 0;
+  uint64_t cumulative_nongbr_dl_bps = 0;
+
+  for (const auto& [qos_id, qos] : decision.getQosDecs()) {
+    const bool is_gbr = qos.gbrUlIsSet() || qos.gbrDlIsSet();
+    const std::optional<uint64_t> maxbr_ul =
+        qos.maxbrUlIsSet() ? bitrate::to_bps(qos.getMaxbrUl()) : std::nullopt;
+    const std::optional<uint64_t> maxbr_dl =
+        qos.maxbrDlIsSet() ? bitrate::to_bps(qos.getMaxbrDl()) : std::nullopt;
+
+    // Per-flow checks apply only to this session's own authorized flows.
+    if (owned.count(qos_id) > 0) {
+      // A. 5QI must be standardized or in the operator allow-list (empty list
+      // = allow any) [TS 29.512 §4.2.6.6.2/3].
+      if (qos.r5qiIsSet()) {
+        const int32_t r5qi = qos.getR5qi();
+        if (!is_standardized_5qi(r5qi) &&
+            !op_policy.allowed_dynamic_5qi.empty() &&
+            op_policy.allowed_dynamic_5qi.count(r5qi) == 0) {
+          return forbidden(
+              "REQUESTED_SERVICE_NOT_AUTHORIZED",
+              fmt::format(
+                  "flow '{}' uses dynamic 5QI {} which is not in the operator "
+                  "allow-list",
+                  qos_id, r5qi));
+        }
+      }
+
+      // B. ARP priority level in range [TS 23.501 §5.7.2.2].
+      if (qos.arpIsSet()) {
+        const int32_t priority = qos.getArp().getPriorityLevel();
+        if (priority < ARP_PRIORITY_MIN || priority > ARP_PRIORITY_MAX) {
+          return forbidden(
+              "REQUESTED_SERVICE_NOT_AUTHORIZED",
+              fmt::format(
+                  "flow '{}' ARP priority level {} out of range [{}..{}]",
+                  qos_id, priority, ARP_PRIORITY_MIN, ARP_PRIORITY_MAX));
+        }
+      }
+
+      // C. Per-flow MBR must not exceed the operator ceiling
+      // [TS 29.512 §4.2.6.6.2].
+      if (maxbr_ul && op_policy.max_flow_mbr_ul_bps &&
+          *maxbr_ul > *op_policy.max_flow_mbr_ul_bps) {
+        return forbidden(
+            "REQUESTED_SERVICE_NOT_AUTHORIZED",
+            fmt::format(
+                "flow '{}' uplink MBR {} bps exceeds operator per-flow cap {} "
+                "bps",
+                qos_id, *maxbr_ul, *op_policy.max_flow_mbr_ul_bps));
+      }
+      if (maxbr_dl && op_policy.max_flow_mbr_dl_bps &&
+          *maxbr_dl > *op_policy.max_flow_mbr_dl_bps) {
+        return forbidden(
+            "REQUESTED_SERVICE_NOT_AUTHORIZED",
+            fmt::format(
+                "flow '{}' downlink MBR {} bps exceeds operator per-flow cap "
+                "{} bps",
+                qos_id, *maxbr_dl, *op_policy.max_flow_mbr_dl_bps));
+      }
+
+      // E. Structural sanity: a GBR flow's GBR must not exceed its MBR.
+      if (qos.gbrUlIsSet() && maxbr_ul) {
+        if (const auto gbr_ul = bitrate::to_bps(qos.getGbrUl());
+            gbr_ul && *gbr_ul > *maxbr_ul) {
+          return forbidden(
+              "INVALID_SERVICE_INFORMATION",
+              fmt::format(
+                  "flow '{}' uplink GBR {} bps exceeds its MBR {} bps", qos_id,
+                  *gbr_ul, *maxbr_ul));
+        }
+      }
+      if (qos.gbrDlIsSet() && maxbr_dl) {
+        if (const auto gbr_dl = bitrate::to_bps(qos.getGbrDl());
+            gbr_dl && *gbr_dl > *maxbr_dl) {
+          return forbidden(
+              "INVALID_SERVICE_INFORMATION",
+              fmt::format(
+                  "flow '{}' downlink GBR {} bps exceeds its MBR {} bps",
+                  qos_id, *gbr_dl, *maxbr_dl));
+        }
+      }
+    }
+
+    // D. Accumulate non-GBR MBR across ALL flows for the Session-AMBR check.
+    if (!is_gbr) {
+      if (maxbr_ul) cumulative_nongbr_ul_bps += *maxbr_ul;
+      if (maxbr_dl) cumulative_nongbr_dl_bps += *maxbr_dl;
+    }
+  }
+
+  // D. Cumulative non-GBR MBR must not exceed the authorized Session-AMBR
+  // [TS 23.503 §6.1.4, TS 29.512 §4.2.6.6.1].
+  if (auth_ambr_ul || auth_ambr_dl) {
+    if (auth_ambr_ul && cumulative_nongbr_ul_bps > *auth_ambr_ul) {
+      return forbidden(
+          "REQUESTED_SERVICE_NOT_AUTHORIZED",
+          fmt::format(
+              "cumulative non-GBR uplink MBR {} bps exceeds authorized "
+              "Session-AMBR {} bps",
+              cumulative_nongbr_ul_bps, *auth_ambr_ul));
+    }
+    if (auth_ambr_dl && cumulative_nongbr_dl_bps > *auth_ambr_dl) {
+      return forbidden(
+          "REQUESTED_SERVICE_NOT_AUTHORIZED",
+          fmt::format(
+              "cumulative non-GBR downlink MBR {} bps exceeds authorized "
+              "Session-AMBR {} bps",
+              cumulative_nongbr_dl_bps, *auth_ambr_dl));
+    }
+  } else if (op_policy.reject_on_missing_subscription) {
+    return forbidden(
+        "REQUESTED_SERVICE_NOT_AUTHORIZED",
+        "no authorized Session-AMBR available and operator policy requires one "
+        "(reject_on_missing_subscription)");
+  } else {
+    // Fail-open: no Session-AMBR constraint available [TS 29.512 §4.2.2.2].
+    Logger::pcf_app().debug(
+        "No authorized Session-AMBR in the decision; skipping the cumulative "
+        "bandwidth check (fail-open per TS 29.512 §4.2.2.2).");
+  }
+
+  Logger::pcf_app().debug("QoS authorization checks passed.");
   return handler_result{.status = status_code::OK};
 }
 

@@ -9,6 +9,7 @@
 #include <utility>
 
 #include "app_session_storage.hpp"
+#include "operator_qos_policy.hpp"
 #include "qos_reference_store.hpp"
 
 namespace oai::pcf::app::policy_auth {
@@ -29,9 +30,11 @@ class policy_auth_context {
  public:
   policy_auth_context(
       std::shared_ptr<app_session_storage> app_sessions,
-      std::shared_ptr<qos_reference_store> qos_references)
+      std::shared_ptr<qos_reference_store> qos_references,
+      operator_qos_policy qos_authorization_policy = {})
       : m_app_sessions(std::move(app_sessions)),
-        m_qos_references(std::move(qos_references)) {}
+        m_qos_references(std::move(qos_references)),
+        m_qos_authorization_policy(std::move(qos_authorization_policy)) {}
 
   // Mutable runtime working set of app-sessions (+ binding index, id-gen).
   [[nodiscard]] app_session_storage& app_sessions() const {
@@ -43,9 +46,17 @@ class policy_auth_context {
     return *m_qos_references;
   }
 
+  // Operator QoS authorization limits used by validate_qos_authorization()
+  // [TS 29.514 §4.1.3.1]. Defaults are permissive; populated from config in a
+  // later step (see N5_QoS_Phase1_§1.4 plan §7.4).
+  [[nodiscard]] const operator_qos_policy& qos_authorization_policy() const {
+    return m_qos_authorization_policy;
+  }
+
  private:
   std::shared_ptr<app_session_storage> m_app_sessions;
   std::shared_ptr<qos_reference_store> m_qos_references;
+  operator_qos_policy m_qos_authorization_policy;
 };
 
 }  // namespace oai::pcf::app::policy_auth

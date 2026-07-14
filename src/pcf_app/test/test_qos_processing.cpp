@@ -37,12 +37,15 @@
 #include "PccRule.h"
 #include "PreemptionCapability.h"
 #include "PreemptionVulnerability.h"
+#include "Ambr.h"
 #include "QosCharacteristics.h"
 #include "QosData.h"
+#include "SessionRule.h"
 #include "SmPolicyDecision.h"
 #include "TrafficControlData.h"
 #include "app_session.hpp"
 #include "crud_store.hpp"
+#include "operator_qos_policy.hpp"
 #include "qos_context.hpp"
 #include "qos_reference_store.hpp"
 
@@ -1124,16 +1127,258 @@ TEST(QosRequirementsProcessing, DynamicReferenceAlsoEmitsQosCharacteristics) {
  * Authorization of Policy Authorization service requests.
  */
 
-// TS 29.514 §4.1.3.1: until subscription and resource checks are implemented,
-// the Phase 1 authorization stub shall not reject the QoS happy path.
-// TODO [QOS]: validate_qos_authorization() currently always returns OK. Update
-// this test to assert accepted and rejected authorization outcomes once
-// subscription, slice, and resource-availability checks are implemented.
-TEST(QosAuthorization, DoesNotRejectTheHappyPath) {
-  auto result = validate_qos_authorization();
+namespace {
+
+using oai::pcf::app::operator_qos_policy;
+
+// A QosData with 5QI + optional MBR/GBR (BitRate strings). GBR presence makes
+// the flow GBR (excluded from the Session-AMBR sum).
+QosData make_qos_data(
+    int32_t r5qi, std::optional<std::string> maxbr_ul = std::nullopt,
+    std::optional<std::string> maxbr_dl = std::nullopt,
+    std::optional<std::string> gbr_ul = std::nullopt,
+    std::optional<std::string> gbr_dl = std::nullopt) {
+  QosData qos;
+  qos.setR5qi(r5qi);
+  if (maxbr_ul) qos.setMaxbrUl(*maxbr_ul);
+  if (maxbr_dl) qos.setMaxbrDl(*maxbr_dl);
+  if (gbr_ul) qos.setGbrUl(*gbr_ul);
+  if (gbr_dl) qos.setGbrDl(*gbr_dl);
+  return qos;
+}
+
+void add_qos_data(
+    SmPolicyDecision& decision, const std::string& key, const QosData& qos) {
+  auto qos_decs = decision.getQosDecs();
+  qos_decs[key]  = qos;
+  decision.setQosDecs(qos_decs);
+}
+
+// Install the authorized Session-AMBR (as the SM side would, via a SessionRule).
+void set_authorized_session_ambr(
+    SmPolicyDecision& decision, const std::string& ul, const std::string& dl) {
+  oai::model::common::Ambr ambr;
+  ambr.setUplink(ul);
+  ambr.setDownlink(dl);
+  SessionRule rule;
+  rule.setSessRuleId("SR-test");
+  rule.setAuthSessAmbr(ambr);
+  auto rules       = decision.getSessRules();
+  rules["SR-test"] = rule;
+  decision.setSessRules(rules);
+}
+
+// Add a session rule with an authorized Session-AMBR; `conditional` marks it as
+// applying only under condition data (refCondData set) rather than as the
+// unconditional default.
+void add_session_rule(
+    SmPolicyDecision& decision, const std::string& id, const std::string& ul,
+    const std::string& dl, bool conditional) {
+  oai::model::common::Ambr ambr;
+  ambr.setUplink(ul);
+  ambr.setDownlink(dl);
+  SessionRule rule;
+  rule.setSessRuleId(id);
+  rule.setAuthSessAmbr(ambr);
+  if (conditional) rule.setRefCondData("cond-" + id);
+  auto rules = decision.getSessRules();
+  rules[id]  = rule;
+  decision.setSessRules(rules);
+}
+
+}  // namespace
+
+// TS 29.514 §4.1.3.1 / TS 29.512 §4.2.6.6: a request within the operator and
+// subscription limits is authorized.
+TEST(QosAuthorization, AcceptsQosWithinAllLimits) {
+  SmPolicyDecision decision;
+  add_qos_data(decision, "q1", make_qos_data(9, "10 Mbps", "10 Mbps"));
+  set_authorized_session_ambr(decision, "20 Mbps", "20 Mbps");
+
+  const auto result = validate_qos_authorization(decision, {"q1"}, {});
+
   ASSERT_TRUE(result.status.has_value());
   EXPECT_EQ(result.status.value(), status_code::OK);
   EXPECT_FALSE(result.problem_details.has_value());
+}
+
+// TS 29.512 §4.2.6.6.3: a non-standardized 5QI not in the operator allow-list is
+// rejected with 403.
+TEST(QosAuthorization, RejectsDisallowedDynamic5qi) {
+  operator_qos_policy op_policy;
+  op_policy.allowed_dynamic_5qi = {128};
+  SmPolicyDecision decision;
+  add_qos_data(decision, "q1", make_qos_data(200, "1 Mbps", "1 Mbps"));
+
+  const auto result = validate_qos_authorization(decision, {"q1"}, op_policy);
+
+  ASSERT_TRUE(result.status.has_value());
+  EXPECT_EQ(result.status.value(), status_code::FORBIDDEN);
+  ASSERT_TRUE(result.problem_details.has_value());
+  EXPECT_EQ(result.problem_details.value(), "REQUESTED_SERVICE_NOT_AUTHORIZED");
+}
+
+// TS 29.512 §4.2.6.6.2: a standardized 5QI is always authorized, even when an
+// allow-list (which governs dynamic 5QIs only) is configured.
+TEST(QosAuthorization, AcceptsStandardized5qiRegardlessOfAllowList) {
+  operator_qos_policy op_policy;
+  op_policy.allowed_dynamic_5qi = {128};
+  SmPolicyDecision decision;
+  add_qos_data(decision, "q1", make_qos_data(9, "1 Mbps", "1 Mbps"));
+
+  const auto result = validate_qos_authorization(decision, {"q1"}, op_policy);
+
+  EXPECT_EQ(result.status.value(), status_code::OK);
+}
+
+// TS 29.512 §4.2.6.6.2: a per-flow MBR above the operator ceiling is rejected.
+TEST(QosAuthorization, RejectsPerFlowMbrAboveOperatorCap) {
+  operator_qos_policy op_policy;
+  op_policy.max_flow_mbr_dl_bps = 5ULL * 1000 * 1000;  // 5 Mbps
+  SmPolicyDecision decision;
+  add_qos_data(decision, "q1", make_qos_data(9, "1 Mbps", "10 Mbps"));
+
+  const auto result = validate_qos_authorization(decision, {"q1"}, op_policy);
+
+  EXPECT_EQ(result.status.value(), status_code::FORBIDDEN);
+  EXPECT_EQ(result.problem_details.value(), "REQUESTED_SERVICE_NOT_AUTHORIZED");
+}
+
+// TS 23.503 §6.1.4: cumulative non-GBR MBR exceeding the authorized Session-AMBR
+// is rejected.
+TEST(QosAuthorization, RejectsCumulativeNonGbrAboveSessionAmbr) {
+  SmPolicyDecision decision;
+  add_qos_data(decision, "q1", make_qos_data(9, "1 Mbps", "10 Mbps"));
+  add_qos_data(decision, "q2", make_qos_data(9, "1 Mbps", "15 Mbps"));
+  set_authorized_session_ambr(decision, "50 Mbps", "20 Mbps");  // 25 > 20 DL
+
+  const auto result =
+      validate_qos_authorization(decision, {"q1", "q2"}, {});
+
+  EXPECT_EQ(result.status.value(), status_code::FORBIDDEN);
+  EXPECT_EQ(result.problem_details.value(), "REQUESTED_SERVICE_NOT_AUTHORIZED");
+}
+
+TEST(QosAuthorization, AcceptsCumulativeWithinSessionAmbr) {
+  SmPolicyDecision decision;
+  add_qos_data(decision, "q1", make_qos_data(9, "1 Mbps", "10 Mbps"));
+  add_qos_data(decision, "q2", make_qos_data(9, "1 Mbps", "5 Mbps"));
+  set_authorized_session_ambr(decision, "50 Mbps", "20 Mbps");  // 15 <= 20 DL
+
+  const auto result =
+      validate_qos_authorization(decision, {"q1", "q2"}, {});
+
+  EXPECT_EQ(result.status.value(), status_code::OK);
+}
+
+// TS 29.512 §4.2.6.2: when the decision carries several session rules, the check
+// uses the UNCONDITIONAL (default) rule's Session-AMBR, not an arbitrary
+// conditional one. Here a 10 Mbps DL flow fits the default (20 Mbps) even though
+// a tighter conditional rule (5 Mbps) is also present.
+TEST(QosAuthorization, PrefersUnconditionalSessionRuleAmbr) {
+  SmPolicyDecision decision;
+  add_qos_data(decision, "q1", make_qos_data(9, "1 Mbps", "10 Mbps"));
+  add_session_rule(decision, "SR-default", "20 Mbps", "20 Mbps", false);
+  add_session_rule(decision, "SR-cond", "5 Mbps", "5 Mbps", true);
+
+  const auto result = validate_qos_authorization(decision, {"q1"}, {});
+
+  EXPECT_EQ(result.status.value(), status_code::OK);
+}
+
+// With only conditional session rules (no default), the check falls back to the
+// tightest Session-AMBR so the authorized aggregate cannot exceed any rule.
+TEST(QosAuthorization, FallsBackToTightestWhenOnlyConditionalRules) {
+  SmPolicyDecision decision;
+  add_qos_data(decision, "q1", make_qos_data(9, "1 Mbps", "20 Mbps"));
+  add_session_rule(decision, "SR-a", "100 Mbps", "10 Mbps", true);  // tightest DL=10
+  add_session_rule(decision, "SR-b", "100 Mbps", "30 Mbps", true);
+
+  const auto result = validate_qos_authorization(decision, {"q1"}, {});
+
+  EXPECT_EQ(result.status.value(), status_code::FORBIDDEN);
+  EXPECT_EQ(result.problem_details.value(), "REQUESTED_SERVICE_NOT_AUTHORIZED");
+}
+
+// Session-AMBR bounds only non-GBR flows: a GBR flow's MBR is not counted.
+TEST(QosAuthorization, ExcludesGbrFlowsFromSessionAmbrSum) {
+  SmPolicyDecision decision;
+  // GBR flow with a large MBR that would blow the AMBR if wrongly counted.
+  add_qos_data(
+      decision, "q1", make_qos_data(2, "100 Mbps", "100 Mbps", "80 Mbps",
+                                    "80 Mbps"));
+  set_authorized_session_ambr(decision, "20 Mbps", "20 Mbps");
+
+  const auto result = validate_qos_authorization(decision, {"q1"}, {});
+
+  EXPECT_EQ(result.status.value(), status_code::OK);
+}
+
+// Structural sanity: a GBR flow whose GBR exceeds its MBR is malformed.
+TEST(QosAuthorization, RejectsGbrExceedingMbr) {
+  SmPolicyDecision decision;
+  add_qos_data(
+      decision, "q1", make_qos_data(2, "10 Mbps", "10 Mbps", "20 Mbps",
+                                    "5 Mbps"));
+
+  const auto result = validate_qos_authorization(decision, {"q1"}, {});
+
+  EXPECT_EQ(result.status.value(), status_code::FORBIDDEN);
+  EXPECT_EQ(result.problem_details.value(), "INVALID_SERVICE_INFORMATION");
+}
+
+// TS 23.501 §5.7.2.2: ARP priority level must be within [1..15].
+TEST(QosAuthorization, RejectsArpPriorityOutOfRange) {
+  SmPolicyDecision decision;
+  QosData qos = make_qos_data(9, "1 Mbps", "1 Mbps");
+  oai::model::common::Arp arp;
+  arp.setPriorityLevel(20);
+  qos.setArp(arp);
+  add_qos_data(decision, "q1", qos);
+
+  const auto result = validate_qos_authorization(decision, {"q1"}, {});
+
+  EXPECT_EQ(result.status.value(), status_code::FORBIDDEN);
+  EXPECT_EQ(result.problem_details.value(), "REQUESTED_SERVICE_NOT_AUTHORIZED");
+}
+
+// TS 29.512 §4.2.2.2: with no authorized Session-AMBR available the cumulative
+// check fails open (default operator policy).
+TEST(QosAuthorization, FailsOpenWhenNoSessionAmbr) {
+  SmPolicyDecision decision;
+  add_qos_data(decision, "q1", make_qos_data(9, "1 Mbps", "999 Mbps"));
+
+  const auto result = validate_qos_authorization(decision, {"q1"}, {});
+
+  EXPECT_EQ(result.status.value(), status_code::OK);
+}
+
+// Operators can opt into fail-closed when no subscribed Session-AMBR is present.
+TEST(QosAuthorization, RejectsMissingSubscriptionWhenPolicyRequires) {
+  operator_qos_policy op_policy;
+  op_policy.reject_on_missing_subscription = true;
+  SmPolicyDecision decision;
+  add_qos_data(decision, "q1", make_qos_data(9, "1 Mbps", "1 Mbps"));
+
+  const auto result = validate_qos_authorization(decision, {"q1"}, op_policy);
+
+  EXPECT_EQ(result.status.value(), status_code::FORBIDDEN);
+  EXPECT_EQ(result.problem_details.value(), "REQUESTED_SERVICE_NOT_AUTHORIZED");
+}
+
+// Per-flow checks apply only to this session's own flows: operator-provisioned
+// base QoS (not in owned_qos_ids) is inherently authorized and not re-judged.
+TEST(QosAuthorization, DoesNotJudgeNonOwnedBaseFlows) {
+  operator_qos_policy op_policy;
+  op_policy.allowed_dynamic_5qi = {128};
+  SmPolicyDecision decision;
+  // A base flow with a dynamic 5QI outside the allow-list, NOT owned here.
+  add_qos_data(decision, "base", make_qos_data(200, "1 Mbps", "1 Mbps"));
+  add_qos_data(decision, "q1", make_qos_data(9, "1 Mbps", "1 Mbps"));
+
+  const auto result = validate_qos_authorization(decision, {"q1"}, op_policy);
+
+  EXPECT_EQ(result.status.value(), status_code::OK);
 }
 
 /*
@@ -1153,9 +1398,14 @@ TEST(QosAuthorization, DoesNotRejectTheHappyPath) {
 
 // TS 23.503 §6.1.3.7: the PCF may pre-empt lower priority services or reject a
 // request when cumulative authorized QoS exceeds the subscribed guaranteed rate.
+// validate_qos_authorization() now performs the reject path (see
+// RejectsCumulativeNonGbrAboveSessionAmbr); pre-emption of lower-priority
+// services remains deferred to Phase 2.
 TEST(QosAuthorization,
-  DISABLED_RejectsUnauthorizedOrConflictingRequestsAndPreemptsLowerPriorityWhenAllowed) {
-  GTEST_SKIP() << "Blocked: validate_qos_authorization() is still a no-input mock";
+  DISABLED_PreemptsLowerPriorityServicesWhenAllowed) {
+  GTEST_SKIP() << "Deferred: pre-emption (TS 23.503 §6.1.3.7) is Phase 2; "
+                  "the reject path is covered by "
+                  "RejectsCumulativeNonGbrAboveSessionAmbr";
 }
 
 /*
