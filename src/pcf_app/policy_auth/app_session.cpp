@@ -986,6 +986,15 @@ handler_result forbidden(const std::string& cause, const std::string& detail) {
       .status = status_code::FORBIDDEN, .problem_details = cause};
 }
 
+// A fully-merged decision that is internally inconsistent is a PCF-side error,
+// not an AF-input error: refuse to notify the SMF and surface the diagnostic.
+handler_result reject_decision(const std::string& detail) {
+  Logger::pcf_app().error(fmt::format(
+      "Policy decision validation failed; not notifying the SMF: {}", detail));
+  return handler_result{
+      .status = status_code::INTERNAL_SERVER_ERROR, .problem_details = detail};
+}
+
 // The authorized Session-AMBR (bit/s, per direction) to validate the cumulative
 // non-GBR rate against.
 struct session_ambr_limit {
@@ -1189,6 +1198,70 @@ handler_result validate_qos_authorization(
   }
 
   Logger::pcf_app().debug("QoS authorization checks passed.");
+  return handler_result{.status = status_code::OK};
+}
+
+// See app_session.hpp for the contract. Referential-integrity violations are
+// fatal (the SMF cannot process a dangling reference); PCC-rule well-formedness
+// issues are logged as diagnostics only. Subscription-limit validation is not
+// repeated here -- validate_qos_authorization() runs earlier in the same
+// pre-notification window [TS 29.512 §4.2.6.6.1].
+handler_result validate_policy_decision(const SmPolicyDecision& decision) {
+  const auto qos_decs  = decision.getQosDecs();
+  const auto qos_chars = decision.getQosChars();
+  const auto traff     = decision.getTraffContDecs();
+
+  for (const auto& [rule_id, rule] : decision.getPccRules()) {
+    // Well-formedness diagnostics (not fatal: predefined/operator-provisioned
+    // rules may legitimately omit these) [TS 29.512 §5.6.2.6, TS 23.503 §6.3.1].
+    if (!rule.precedenceIsSet()) {
+      Logger::pcf_app().warn(fmt::format(
+          "Policy decision validation: PCC rule '{}' has no precedence.",
+          rule_id));
+    }
+    const bool has_flows = rule.flowInfosIsSet() && !rule.getFlowInfos().empty();
+    const bool has_app   = rule.appIdIsSet() && !rule.getAppId().empty();
+    if (!has_flows && !has_app) {
+      Logger::pcf_app().warn(fmt::format(
+          "Policy decision validation: PCC rule '{}' has neither flow "
+          "information nor an application id.",
+          rule_id));
+    }
+
+    // Referential integrity (fatal) [TS 29.512 §4.2.6.2.1, §5.6.2.6].
+    if (rule.refQosDataIsSet()) {
+      for (const auto& ref : rule.getRefQosData()) {
+        const auto it = qos_decs.find(ref);
+        if (it == qos_decs.end()) {
+          return reject_decision(fmt::format(
+              "PCC rule '{}' references missing QosData '{}'", rule_id, ref));
+        }
+        // A non-standardized 5QI must carry a signalled QosCharacteristics
+        // [TS 29.512 §4.2.6.6.3, §5.6.2.16].
+        const auto& qos = it->second;
+        if (qos.r5qiIsSet() && !is_standardized_5qi(qos.getR5qi()) &&
+            qos_chars.find(std::to_string(qos.getR5qi())) == qos_chars.end()) {
+          return reject_decision(fmt::format(
+              "QosData '{}' uses non-standardized 5QI {} without a "
+              "QosCharacteristics entry",
+              ref, qos.getR5qi()));
+        }
+      }
+    }
+    if (rule.refTcDataIsSet()) {
+      for (const auto& ref : rule.getRefTcData()) {
+        if (traff.find(ref) == traff.end()) {
+          return reject_decision(fmt::format(
+              "PCC rule '{}' references missing TrafficControlData '{}'",
+              rule_id, ref));
+        }
+      }
+    }
+  }
+
+  Logger::pcf_app().debug(
+      "Policy decision passed pre-notification validation [TS 29.512 "
+      "§4.2.6.2].");
   return handler_result{.status = status_code::OK};
 }
 
