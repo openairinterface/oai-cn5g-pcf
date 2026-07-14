@@ -266,6 +266,19 @@ oai::pcf::app::policy_auth::handler_result validate_and_merge_decision(
     const oai::_3gpp::model::SmPolicyDecision& request_decision,
     oai::_3gpp::model::SmPolicyDecision& current_decision, bool update = false);
 
+// Final structural/semantic validation of a fully-merged SmPolicyDecision,
+// run as a pre-notification gate before the decision is pushed to the SMF
+// [TS 29.512 §4.2.6.2, §5.6.2.4]. Rejects (with diagnostics logged) on
+// referential-integrity violations that the SMF cannot process -- a PCC rule
+// referencing a missing QosData/TrafficControlData, or a non-standardized 5QI
+// without a signalled QosCharacteristics [TS 29.512 §4.2.6.2.1, §5.6.2.6,
+// §5.6.2.16]. PCC-rule well-formedness issues (missing precedence, no traffic
+// identification) are logged as diagnostics but not fatal, since
+// operator-provisioned/predefined rules may legitimately omit them. Returns OK
+// when the decision is safe to notify.
+oai::pcf::app::policy_auth::handler_result validate_policy_decision(
+    const oai::model::pcf::SmPolicyDecision& decision);
+
 }  // namespace oai::pcf::app::policy_auth
 
 #endif  // FILE_APP_SESSION_SEEN

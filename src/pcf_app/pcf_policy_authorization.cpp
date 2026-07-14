@@ -218,6 +218,17 @@ status_code pcf_policy_authorization::post_app_sessions_handler(
     return decision_result.status.value();
   }
 
+  // Pre-notification validation gate: never notify the SMF with a structurally
+  // or referentially inconsistent decision [TS 29.512 §4.2.6.2, §5.6.2.4].
+  // (The same gate should guard the PATCH/DELETE pushes when that lifecycle
+  // work lands.)
+  handler_result decision_validation =
+      policy_auth::validate_policy_decision(current_decision);
+  if (decision_validation.problem_details.has_value()) {
+    problem_details = decision_validation.problem_details.value();
+    return decision_validation.status.value();
+  }
+
   // Persist the app-session (working set + app-session <-> association binding).
   m_context->app_sessions().insert(session);
 
