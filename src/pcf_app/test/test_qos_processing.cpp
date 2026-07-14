@@ -1186,6 +1186,39 @@ void add_session_rule(
   decision.setSessRules(rules);
 }
 
+// Add a PccRule with application-based traffic identification (so the
+// well-formedness diagnostics stay quiet) and optional QoS/TC references.
+void add_pcc_rule(
+    SmPolicyDecision& decision, const std::string& id,
+    const std::vector<std::string>& ref_qos = {},
+    const std::vector<std::string>& ref_tc = {}) {
+  PccRule rule;
+  rule.setPccRuleId(id);
+  rule.setPrecedence(1000);
+  rule.setAppId("app-" + id);
+  if (!ref_qos.empty()) rule.setRefQosData(ref_qos);
+  if (!ref_tc.empty()) rule.setRefTcData(ref_tc);
+  auto rules = decision.getPccRules();
+  rules[id]  = rule;
+  decision.setPccRules(rules);
+}
+
+void add_qos_characteristics(SmPolicyDecision& decision, int32_t r5qi) {
+  QosCharacteristics qc;
+  qc.setR5qi(r5qi);
+  auto chars                    = decision.getQosChars();
+  chars[std::to_string(r5qi)] = qc;
+  decision.setQosChars(chars);
+}
+
+void add_traffic_control(SmPolicyDecision& decision, const std::string& tc_id) {
+  TrafficControlData tc;
+  tc.setTcId(tc_id);
+  auto tcs   = decision.getTraffContDecs();
+  tcs[tc_id] = tc;
+  decision.setTraffContDecs(tcs);
+}
+
 }  // namespace
 
 // TS 29.514 §4.1.3.1 / TS 29.512 §4.2.6.6: a request within the operator and
@@ -1525,6 +1558,111 @@ TEST(DecisionMerging, DropsDanglingRefQosDataAfterMerge) {
   ASSERT_EQ(result.status.value(), status_code::OK);
   const auto refs = current.getPccRules().at("r1").getRefQosData();
   EXPECT_EQ(refs, std::vector<std::string>{"q1"});
+}
+
+/*
+ * 3GPP TS 29.512 §4.2.6.2, §5.6.2.4, §5.6.2.6
+ * Pre-notification policy-decision validation framework.
+ */
+
+// A referentially complete, well-formed decision passes the pre-notification
+// gate.
+TEST(PolicyDecisionValidation, AcceptsWellFormedDecision) {
+  SmPolicyDecision decision;
+  add_qos_data(decision, "q1", make_qos_data(9, "1 Mbps", "1 Mbps"));
+  add_pcc_rule(decision, "r1", /*ref_qos=*/{"q1"});
+
+  const auto result = validate_policy_decision(decision);
+
+  ASSERT_TRUE(result.status.has_value());
+  EXPECT_EQ(result.status.value(), status_code::OK);
+  EXPECT_FALSE(result.problem_details.has_value());
+}
+
+// TS 29.512 §5.6.2.6: a PCC rule referencing a QosData absent from the decision
+// is rejected before the SMF is notified.
+TEST(PolicyDecisionValidation, RejectsDanglingRefQosData) {
+  SmPolicyDecision decision;
+  add_pcc_rule(decision, "r1", /*ref_qos=*/{"q1"});  // q1 not in qosDecs
+
+  const auto result = validate_policy_decision(decision);
+
+  EXPECT_EQ(result.status.value(), status_code::INTERNAL_SERVER_ERROR);
+  EXPECT_TRUE(result.problem_details.has_value());
+}
+
+// TS 29.512 §5.6.2.6: a PCC rule referencing missing TrafficControlData is
+// rejected.
+TEST(PolicyDecisionValidation, RejectsDanglingRefTcData) {
+  SmPolicyDecision decision;
+  add_pcc_rule(decision, "r1", /*ref_qos=*/{}, /*ref_tc=*/{"tc1"});
+
+  const auto result = validate_policy_decision(decision);
+
+  EXPECT_EQ(result.status.value(), status_code::INTERNAL_SERVER_ERROR);
+}
+
+// A PCC rule whose refTcData resolves to a present TrafficControlData passes.
+TEST(PolicyDecisionValidation, AcceptsResolvableRefTcData) {
+  SmPolicyDecision decision;
+  add_traffic_control(decision, "tc1");
+  add_pcc_rule(decision, "r1", /*ref_qos=*/{}, /*ref_tc=*/{"tc1"});
+
+  const auto result = validate_policy_decision(decision);
+
+  EXPECT_EQ(result.status.value(), status_code::OK);
+}
+
+// TS 29.512 §4.2.6.6.3, §5.6.2.16: a non-standardized 5QI without a signalled
+// QosCharacteristics is rejected.
+TEST(PolicyDecisionValidation, RejectsNonStandardized5qiWithoutQosCharacteristics) {
+  SmPolicyDecision decision;
+  add_qos_data(decision, "q1", make_qos_data(128, "1 Mbps", "1 Mbps"));  // dynamic
+  add_pcc_rule(decision, "r1", /*ref_qos=*/{"q1"});
+
+  const auto result = validate_policy_decision(decision);
+
+  EXPECT_EQ(result.status.value(), status_code::INTERNAL_SERVER_ERROR);
+}
+
+TEST(PolicyDecisionValidation, AcceptsNonStandardized5qiWithQosCharacteristics) {
+  SmPolicyDecision decision;
+  add_qos_data(decision, "q1", make_qos_data(128, "1 Mbps", "1 Mbps"));
+  add_qos_characteristics(decision, 128);
+  add_pcc_rule(decision, "r1", /*ref_qos=*/{"q1"});
+
+  const auto result = validate_policy_decision(decision);
+
+  EXPECT_EQ(result.status.value(), status_code::OK);
+}
+
+// A standardized 5QI needs no QosCharacteristics entry [TS 29.512 §4.2.6.6.2].
+TEST(PolicyDecisionValidation, AcceptsStandardized5qiWithoutQosCharacteristics) {
+  SmPolicyDecision decision;
+  add_qos_data(decision, "q1", make_qos_data(9, "1 Mbps", "1 Mbps"));
+  add_pcc_rule(decision, "r1", /*ref_qos=*/{"q1"});
+
+  const auto result = validate_policy_decision(decision);
+
+  EXPECT_EQ(result.status.value(), status_code::OK);
+}
+
+// Well-formedness issues (here: a rule with no precedence) are diagnostics only,
+// not fatal, so operator-provisioned/predefined rules are not rejected.
+TEST(PolicyDecisionValidation, AcceptsRuleWithWellFormednessWarningsOnly) {
+  SmPolicyDecision decision;
+  add_qos_data(decision, "q1", make_qos_data(9, "1 Mbps", "1 Mbps"));
+  PccRule rule;  // no precedence, but has appId + resolvable refQosData
+  rule.setPccRuleId("r1");
+  rule.setAppId("app1");
+  rule.setRefQosData({"q1"});
+  auto rules  = decision.getPccRules();
+  rules["r1"] = rule;
+  decision.setPccRules(rules);
+
+  const auto result = validate_policy_decision(decision);
+
+  EXPECT_EQ(result.status.value(), status_code::OK);
 }
 
 /*
