@@ -1409,14 +1409,14 @@ TEST(QosAuthorization,
 }
 
 /*
- * Deferred: 3GPP TS 29.512 §4.2.6.2.1 and §4.2.6.2.3
+ * 3GPP TS 29.512 §4.2.6.2.1 and §4.2.6.2.3
  * QoS-aware decision merge semantics.
  */
 
 // TS 29.512 §4.2.6.2.3: merged SM policy decisions shall carry forward qosDecs,
 // qosChars, and qosMonDecs from the request decision.
 TEST(DecisionMerging,
-  DISABLED_MergesQosDataQosCharacteristicsAndQosMonitoringData) {
+  MergesQosDataQosCharacteristicsAndQosMonitoringData) {
   SmPolicyDecision current;
   SmPolicyDecision request;
 
@@ -1451,10 +1451,26 @@ TEST(DecisionMerging,
   EXPECT_EQ(current.getQosMonDecs().size(), 1u);
 }
 
+// TS 29.512 §4.2.6.6.1, TS 23.503 §4.3.3.2.2: on the update path a re-authorized
+// QosData id (a QoS upgrade/downgrade) replaces the current entry rather than
+// being ignored.
+TEST(DecisionMerging, UpdateOverwritesExistingQosDataForUpgradeDowngrade) {
+  SmPolicyDecision current;
+  add_qos_data(current, "q1", make_qos_data(9, "5 Mbps", "5 Mbps"));
+
+  SmPolicyDecision request;
+  add_qos_data(request, "q1", make_qos_data(9, "50 Mbps", "50 Mbps"));  // upgrade
+
+  auto result = validate_and_merge_decision(request, current, /*update=*/true);
+
+  ASSERT_EQ(result.status.value(), status_code::OK);
+  ASSERT_EQ(current.getQosDecs().size(), 1u);
+  EXPECT_EQ(current.getQosDecs().at("q1").getMaxbrDl(), "50 Mbps");
+}
+
 // TS 29.512 §4.2.6.2.1 and §5.6.2.6: after a QoS-aware merge, every refQosData
 // reference shall still resolve to a QosData decision inside the merged policy.
-TEST(DecisionMerging,
-     DISABLED_PreservesRefQosDataReferentialIntegrityAfterMerge) {
+TEST(DecisionMerging, PreservesRefQosDataReferentialIntegrityAfterMerge) {
   SmPolicyDecision current;
   SmPolicyDecision request;
 
@@ -1481,6 +1497,34 @@ TEST(DecisionMerging,
   for (const auto& ref : current.getPccRules().at("r1").getRefQosData()) {
     EXPECT_TRUE(known.count(ref) > 0) << "dangling refQosData " << ref;
   }
+}
+
+// TS 29.512 §5.6.2.6: a PCC rule that references a QosData id absent from the
+// merged decision has that dangling reference dropped, so the SMF never receives
+// a rule pointing at a missing QosData.
+TEST(DecisionMerging, DropsDanglingRefQosDataAfterMerge) {
+  SmPolicyDecision current;
+  SmPolicyDecision request;
+
+  QosData qos;  // present
+  qos.setQosId("q1");
+  qos.setR5qi(9);
+  auto qos_decs  = request.getQosDecs();
+  qos_decs["q1"] = qos;
+  request.setQosDecs(qos_decs);
+
+  PccRule rule;  // references one present + one missing QosData
+  rule.setPccRuleId("r1");
+  rule.setRefQosData({"q1", "missing"});
+  auto rules  = request.getPccRules();
+  rules["r1"] = rule;
+  request.setPccRules(rules);
+
+  auto result = validate_and_merge_decision(request, current, /*update=*/false);
+
+  ASSERT_EQ(result.status.value(), status_code::OK);
+  const auto refs = current.getPccRules().at("r1").getRefQosData();
+  EXPECT_EQ(refs, std::vector<std::string>{"q1"});
 }
 
 /*

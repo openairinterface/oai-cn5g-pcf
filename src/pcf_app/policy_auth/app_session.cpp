@@ -185,23 +185,35 @@ handler_result validate_and_merge_decision(
   }
   current_decision.setPccRules(pccRulesMap);
 
-  // TODO [QOS] Merge QoS-related decision data [TS 29.512 §4.2.6.2.3, §5.6.2.4]
-  // Tasks:
-  //   - Merge QosData entries from request_decision into current_decision [TS 29.512 §5.6.2.8]
-  //   - Merge QosChars (QoS Characteristics) for non-standard 5QIs [TS 29.512 §5.6.2.16]
-  //   - Merge QosMonDecs (QoS Monitoring Data) entries [TS 29.512 §5.6.2.40]
-  //   - Validate QoS parameter consistency across merged rules [TS 23.503 §6.1.3.7]
-  //
-  // [QOS-MOCK] Mocks the TODO [QOS] task above:
-  //   - QosData is written directly to current_decision by
-  //     create_qos_data_from_media_component() before this call, so no merge
-  //     from request_decision is needed on the QoS mock path.
-  //   - QosChars and QosMonDecs merge is not performed (stubs only log).
-  Logger::pcf_app().debug(
-      "Skipping QoS-specific merge work in validate_and_merge_decision(). "
-      "PCC rules and traffic-control data are merged, but QosData, "
-      "QosCharacteristics, and QosMonitoringData are still handled by the "
-      "Phase 1 mock path.");
+  // Merge QoS-related decision data from the request into the current decision
+  // [TS 29.512 §4.2.6.2.3, §5.6.2.4]: the merged decision carries forward the
+  // request's QosData, QosCharacteristics and QosMonitoringData. A colliding id
+  // means the request re-authorizes that entry (a QoS upgrade/downgrade on the
+  // update path), so the request value replaces the current one -- insert_or_assign
+  // [TS 23.503 §4.3.3.2.2, TS 29.512 §4.2.6.6.1]. When QoS was written straight
+  // into current_decision (the create path), request_decision carries no QoS and
+  // these loops are no-ops.
+  auto qosDecsMap = current_decision.getQosDecs();
+  for (const auto& [key, value] : request_decision.getQosDecs()) {
+    qosDecsMap.insert_or_assign(key, value);
+  }
+  current_decision.setQosDecs(qosDecsMap);  // [TS 29.512 §5.6.2.8]
+
+  auto qosCharsMap = current_decision.getQosChars();
+  for (const auto& [key, value] : request_decision.getQosChars()) {
+    qosCharsMap.insert_or_assign(key, value);
+  }
+  current_decision.setQosChars(qosCharsMap);  // [TS 29.512 §5.6.2.16]
+
+  auto qosMonDecsMap = current_decision.getQosMonDecs();
+  for (const auto& [key, value] : request_decision.getQosMonDecs()) {
+    qosMonDecsMap.insert_or_assign(key, value);
+  }
+  current_decision.setQosMonDecs(qosMonDecsMap);  // [TS 29.512 §5.6.2.40]
+
+  // Conflict resolution beyond last-writer-wins -- pre-empting a lower-priority
+  // service when cumulative authorized QoS is exceeded -- is deferred to Phase 2
+  // [TS 23.503 §6.1.3.7].
 
   // Merge Traffic Control Data
   auto trafficControlMap = current_decision.getTraffContDecs();
@@ -235,6 +247,35 @@ handler_result validate_and_merge_decision(
   }
 
   current_decision.setTraffContDecs(trafficControlMap);
+
+  // refQosData referential integrity: after the merge, every QoS reference on a
+  // PCC rule must resolve to a QosData decision in the merged policy. Drop
+  // dangling references so the SMF never receives a PCC rule pointing at a
+  // missing QosData [TS 29.512 §4.2.6.2.1, §5.6.2.6].
+  {
+    auto pcc_rules      = current_decision.getPccRules();
+    const auto qos_decs = current_decision.getQosDecs();
+    bool rules_changed  = false;
+    for (auto& [rule_id, rule] : pcc_rules) {
+      if (!rule.refQosDataIsSet()) continue;
+      std::vector<std::string> resolved;
+      for (const auto& ref : rule.getRefQosData()) {
+        if (qos_decs.find(ref) != qos_decs.end()) {
+          resolved.push_back(ref);
+        } else {
+          Logger::pcf_app().warn(fmt::format(
+              "PCC Rule '{}' references missing QosData '{}'; dropping the "
+              "dangling refQosData after merge [TS 29.512 §5.6.2.6].",
+              rule_id, ref));
+        }
+      }
+      if (resolved.size() != rule.getRefQosData().size()) {
+        rule.setRefQosData(resolved);
+        rules_changed = true;
+      }
+    }
+    if (rules_changed) current_decision.setPccRules(pcc_rules);
+  }
 
   return handler_result{.status = status_code::OK};
 }
