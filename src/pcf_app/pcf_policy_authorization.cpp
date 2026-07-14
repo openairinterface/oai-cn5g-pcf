@@ -191,17 +191,14 @@ status_code pcf_policy_authorization::post_app_sessions_handler(
 
   // TODO [QOS] Handle QoS requirements at AppSessionContextReqData level [TS 29.514 §4.2.2.2, §5.6.2.6]
 
-  // TODO [QOS] Validate QoS requirements against policies and subscription
-  // [TS 29.514 §4.1.3.1, TS 23.503 §6.1.3.2.3]
-  // Tasks: check subscription QoS profile, network slice limits, resource
-  // availability; return FORBIDDEN if any check fails.
-  //
-  // [QOS-MOCK] Phase 1 — post-loop QoS authorization (mock; always approved).
-  // Mocks the TODO [QOS] task above:
-  //   - No subscription or resource checks performed; validate_qos_authorization()
-  //     always returns OK.
+  // Authorize the QoS this request derived against operator policy and the
+  // subscribed envelope (the authorized Session-AMBR carried in the decision's
+  // sessRules, populated by the SM side). Returns FORBIDDEN with a cause on
+  // violation [TS 29.514 §4.1.3.1, TS 23.503 §6.1.3.2.3, TS 29.512 §4.2.6.6].
   if (qos_flow_processed) {
-    handler_result qos_auth_result = policy_auth::validate_qos_authorization();
+    handler_result qos_auth_result = policy_auth::validate_qos_authorization(
+        current_decision, session->qos().owned_qos_ids(),
+        m_context->qos_authorization_policy());
     if (qos_auth_result.problem_details.has_value()) {
       problem_details = qos_auth_result.problem_details.value();
       return qos_auth_result.status.value();

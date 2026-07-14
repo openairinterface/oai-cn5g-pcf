@@ -61,7 +61,7 @@ void pcf_http2_server::start() {
               }
               SmPolicyContextData context;
               try {
-                Logger::pcf_sbi().error(
+                Logger::pcf_sbi().debug(
                     "SM Policies request body: %s", request_body->str());
                 nlohmann::json::parse(request_body->str()).get_to(context);
                 context.validate();

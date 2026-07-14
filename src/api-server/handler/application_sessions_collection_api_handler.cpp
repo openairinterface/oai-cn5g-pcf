@@ -37,6 +37,22 @@ api_response application_sessions_collection_api_handler::post_app_sessions(
       location  = m_address + app_sessions::get_route() + "/" + app_session_id;
       http_code = http_status_code::OK;
       break;
+    // The handler returns a machine-readable 3GPP cause (e.g.
+    // REQUESTED_SERVICE_NOT_AUTHORIZED, INVALID_SERVICE_INFORMATION) in
+    // problem_description; surface it as the ProblemDetails cause with the
+    // matching HTTP status [TS 29.514 §4.2.2.2, TS 29.571 §5.2.7].
+    case status_code::FORBIDDEN:
+      problem_details.setCause(problem_description);
+      http_code = http_status_code::FORBIDDEN;
+      break;
+    case status_code::BAD_REQUEST:
+      problem_details.setCause(problem_description);
+      http_code = http_status_code::BAD_REQUEST;
+      break;
+    case status_code::NOT_FOUND:
+      problem_details.setCause(problem_description);
+      http_code = http_status_code::NOT_FOUND;
+      break;
     default:
       problem_details.setCause("INTERNAL_ERROR");
       http_code = http_status_code::INTERNAL_SERVER_ERROR;

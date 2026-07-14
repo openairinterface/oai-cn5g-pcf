@@ -28,6 +28,7 @@ include(${SRC_TOP_DIR}/common/utils/utils.cmake)
 add_library (PCF STATIC
   pcf_config_types.cpp
   pcf_config.cpp
+  operator_qos_policy_builder.cpp
   pcf_app.cpp
   pcf_nrf.cpp
   pcf_profile.cpp

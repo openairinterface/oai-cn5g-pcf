@@ -11,6 +11,8 @@
 #include "pcf_nrf.hpp"
 #include "logger.hpp"
 #include "pcf_config.hpp"
+#include "operator_qos_policy.hpp"
+#include "operator_qos_policy_builder.hpp"
 #include "SupiPolicyDecision.h"
 #include "QosData.h"
 
@@ -57,7 +59,13 @@ pcf_app::pcf_app(pcf_event& ev) : m_event_sub(ev) {
     Logger::pcf_app().info("NRF TASK Created ");
   }
 
-  m_pcf_smpc_service = std::make_shared<pcf_smpc>(m_policy_storage, ev);
+  // Operator QoS-authorization limits, shared by both services (SM-side
+  // Session-AMBR authorization and PA-side QoS validation) [TS 29.512 §4.2.6.6].
+  const operator_qos_policy qos_auth_policy =
+      make_operator_qos_policy(pcf_cfg->get_qos_authorization());
+
+  m_pcf_smpc_service =
+      std::make_shared<pcf_smpc>(m_policy_storage, ev, qos_auth_policy);
 
   // App-session storage backed by the generic in-memory store (swap in a
   // DB-backed crud_store here later); it generates restart-safe UUID ids and
@@ -75,7 +83,7 @@ pcf_app::pcf_app(pcf_event& ev) : m_event_sub(ev) {
 
   // Aggregate the Policy Authorization stores into a single injected context.
   m_policy_auth_context = std::make_shared<policy_auth::policy_auth_context>(
-      app_sessions, qos_ref_store);
+      app_sessions, qos_ref_store, qos_auth_policy);
 
   m_pcf_policy_authorization_service =
       std::make_shared<pcf_policy_authorization>(m_policy_auth_context, ev);
