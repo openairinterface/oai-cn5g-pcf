@@ -3,9 +3,45 @@
  */
 
 #pragma once
+#include <cstdint>
+#include <vector>
+
 #include "config_types.hpp"
 
 namespace oai::config::pcf {
+
+/**
+ * @brief Operator QoS-authorization limits (config view).
+ *
+ * Parses the `pcf.qos_authorization` YAML block. Bit rates are kept as 3GPP
+ * BitRate strings here (e.g. "1 Gbps"); the app layer parses them to bit/s when
+ * building oai::pcf::app::operator_qos_policy. Every field is optional; absent
+ * fields keep the permissive default (no cap / allow any 5QI / fail-open)
+ * [TS 29.514 §4.1.3.1, TS 29.512 §4.2.6.6].
+ */
+class qos_authorization_config : public config_type {
+ private:
+  std::vector<int32_t> m_allowed_dynamic_5qi;
+  string_config_value m_max_flow_mbr_ul;
+  string_config_value m_max_flow_mbr_dl;
+  string_config_value m_max_session_ambr_ul;
+  string_config_value m_max_session_ambr_dl;
+  option_config_value m_reject_on_missing_subscription;
+
+ public:
+  qos_authorization_config();
+
+  void from_yaml(const YAML::Node& node) override;
+
+  [[nodiscard]] std::string to_string(const std::string& indent) const override;
+
+  [[nodiscard]] const std::vector<int32_t>& get_allowed_dynamic_5qi() const;
+  [[nodiscard]] const std::string& get_max_flow_mbr_ul() const;
+  [[nodiscard]] const std::string& get_max_flow_mbr_dl() const;
+  [[nodiscard]] const std::string& get_max_session_ambr_ul() const;
+  [[nodiscard]] const std::string& get_max_session_ambr_dl() const;
+  [[nodiscard]] bool get_reject_on_missing_subscription() const;
+};
 
 class policy_config : public config_type {
  private:
@@ -35,6 +71,7 @@ class pcf_config_type : public nf {
  private:
   option_config_value m_enable_policy_provisioning_api;
   policy_config m_policy_config;
+  qos_authorization_config m_qos_authorization_config;
 
  public:
   explicit pcf_config_type(
@@ -50,6 +87,8 @@ class pcf_config_type : public nf {
 
   [[nodiscard]] bool enable_policy_provisioning_api() const;
   [[nodiscard]] const policy_config& get_policy_config() const;
+  [[nodiscard]] const qos_authorization_config& get_qos_authorization_config()
+      const;
 };
 
 }  // namespace oai::config::pcf

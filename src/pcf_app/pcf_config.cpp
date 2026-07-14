@@ -37,6 +37,12 @@ oai::config::pcf::pcf_config::get_pcf_policy() const {
       ->get_policy_config();
 }
 
+const oai::config::pcf::qos_authorization_config&
+oai::config::pcf::pcf_config::get_qos_authorization() const {
+  return std::dynamic_pointer_cast<pcf_config_type>(get_local())
+      ->get_qos_authorization_config();
+}
+
 bool oai::config::pcf::pcf_config::use_db_policy_storage() const {
   return std::dynamic_pointer_cast<pcf_config_type>(get_local())
       ->enable_policy_provisioning_api();
