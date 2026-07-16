@@ -122,6 +122,25 @@ class pcf_http2_server {
       const nghttp2::asio_http2::server::response& response,
       const nghttp2::asio_http2::server::request& request);
 
+  // The request's Content-Type media type, lower-cased and stripped of any
+  // parameters such as "; charset=utf-8" (empty if the header is absent).
+  static std::string request_media_type(
+      const nghttp2::asio_http2::server::request& request);
+
+  // True if the request's Content-Type is application/json, as required for JSON
+  // request bodies [TS 29.500 §6.1.3, TS 29.514 §4.2.2.2].
+  static bool is_json_content_type(
+      const nghttp2::asio_http2::server::request& request);
+
+  // True if the request's Content-Type is application/merge-patch+json, as
+  // required for the ModAppSession PATCH body [TS 29.514 §4.2.3.2, RFC 7396].
+  static bool is_merge_patch_content_type(
+      const nghttp2::asio_http2::server::request& request);
+
+  static void handle_unsupported_media_type(
+      const nghttp2::asio_http2::server::response& response,
+      const nghttp2::asio_http2::server::request& request);
+
   static void handle_parsing_error(
       const nghttp2::asio_http2::server::response& response,
       const std::exception& ex);

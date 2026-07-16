@@ -21,8 +21,14 @@
 #include "FlowDirectionRm.h"
 #include "MediaComponent.h"
 #include "MediaSubComponent.h"
+#include "MediaComponentRm.h"
+#include "MediaSubComponentRm.h"
 #include "SmPolicyDecision.h"
 #include "AfSfcRequirement.h"
+#include "AppSessionContextReqData.h"
+#include "AppSessionContextUpdateData.h"
+#include "FlowStatus.h"
+#include <nlohmann/json.hpp>
 #include "policy_auth/pcf_policy_authorization_status_code.hpp"
 #include "logger.hpp"
 #include "app_session.hpp"
@@ -416,7 +422,8 @@ FlowInformation flow_info_from_desc(const std::string& desc) {
 // True when the SDF (MediaSubComponent) is flagged REMOVED. TS 29.513
 // Table 7.3.3-1: for a removed flow the authorized data rate is 0, i.e. the flow
 // contributes nothing to the aggregate and installs no filter.
-bool sub_component_removed(const MediaSubComponent& sub) {
+template <typename MediaSubComponentT>
+bool sub_component_removed(const MediaSubComponentT& sub) {
   return sub.fStatusIsSet() &&
          sub.getFStatus().getEnumValue() ==
              FlowStatus_anyOf::eFlowStatus_anyOf::REMOVED;
@@ -426,7 +433,8 @@ bool sub_component_removed(const MediaSubComponent& sub) {
 // resPrio -> priorityLevel is deferred (ReservPriority is an empty generated
 // model, so the value is unreadable); preemptCap/preemptVuln are taken from the
 // request when present (TS 29.514 §5.6.2.7), else safe defaults.
-oai::model::common::Arp derive_arp(const MediaComponent& mc) {
+template <typename MediaComponentT>
+oai::model::common::Arp derive_arp(const MediaComponentT& mc) {
   oai::model::common::Arp arp;
   // TODO [QOS] Map MediaComponent.resPrio -> arp.priorityLevel once the
   // ReservPriority model exposes its value [TS 29.513 Table 7.3.3-2].
@@ -538,8 +546,9 @@ int32_t derive_5qi(std::optional<float> des_max_latency_ms, bool has_gbr) {
 
 // Extract and process the QoS requirements of one MediaComponent, orchestrating
 // QosData creation, QoS characteristics and monitoring [TS 29.513 §7.3.3].
+template <typename MediaComponentT>
 handler_result handle_qos_requirements(
-    const MediaComponent& media_component, const std::string& app_session_id,
+    const MediaComponentT& media_component, const std::string& app_session_id,
     SmPolicyDecision& decision, qos_context& qos_ctx,
     const qos_reference_store& qos_ref_store) {
   Logger::pcf_app().info(fmt::format(
@@ -566,23 +575,26 @@ handler_result handle_qos_requirements(
 
 // Create the QosData + PccRule (with SDF filters) for one MediaComponent
 // [TS 29.512 §5.6.2.8, §4.1.4.2.1; TS 29.513 §7.3.3].
+template <typename MediaComponentT>
 handler_result create_qos_data_from_media_component(
-    const MediaComponent& media_component, const std::string& app_session_id,
+    const MediaComponentT& media_component, const std::string& app_session_id,
     SmPolicyDecision& decision, qos_context& qos_ctx,
     const qos_reference_store& qos_ref_store, QosData& out_qos_data) {
   Logger::pcf_app().debug("create_qos_data_from_media_component()");
 
-  // PA-QOS-{app_session_id}-{seq} id convention [TS 29.512 §4.1.4.2.1]. The
-  // shared uid generator guarantees uniqueness of {seq} across the process.
-  auto& uid_generator = uint_uid_generator<uint32_t>::get_instance();
-  const uint32_t seq   = uid_generator.get_uid();
+  // Deterministic PA-QOS-{app_session_id}-{medCompN} id convention
+  // [TS 29.512 §4.1.4.2.1]. Keying on the AF's media-component number (stable
+  // across create and update) means a PATCH re-sending the same medCompN
+  // targets the same QosData/PccRule, so the merge modifies the flow in place
+  // rather than creating a duplicate [TS 29.514 §4.2.3.2].
+  const int32_t med_comp_n = media_component.getMedCompN();
   const std::string qos_id =
-      "PA-QOS-" + app_session_id + "-qos-" + std::to_string(seq);
+      "PA-QOS-" + app_session_id + "-qos-" + std::to_string(med_comp_n);
   const std::string rule_id =
-      "PA-QOS-" + app_session_id + "-" + std::to_string(seq);
+      "PA-QOS-" + app_session_id + "-" + std::to_string(med_comp_n);
   Logger::pcf_app().debug(fmt::format(
-      "Deriving QoS: qosId='{}', pccRuleId='{}' (seq={})", qos_id, rule_id,
-      seq));
+      "Deriving QoS: qosId='{}', pccRuleId='{}' (medCompN={})", qos_id, rule_id,
+      med_comp_n));
 
   QosData qos_data;
   qos_data.setQosId(qos_id);
@@ -841,22 +853,35 @@ handler_result create_qos_data_from_media_component(
     }
   }
 
-  // Write the QosData [TS 29.512 §5.6.2.8].
+  // Write the QosData [TS 29.512 §5.6.2.8]. insert_or_assign so a PATCH
+  // modification (same qosId) overwrites the existing flow in place.
   auto qos_data_map = decision.getQosDecs();
-  qos_data_map.insert(std::make_pair(qos_id, qos_data));
+  qos_data_map.insert_or_assign(qos_id, qos_data);
   decision.setQosDecs(qos_data_map);
 
-  // Write the PccRule referencing the QosData, with the SDF filters and a
-  // precedence in the PA band [TS 29.512 §4.1.4.2.1, TS 23.503 §6.3.1].
-  const int32_t precedence = PA_QOS_PRECEDENCE_BASE + static_cast<int32_t>(seq);
+  // Precedence in the PA band [TS 29.512 §4.1.4.2.1, TS 23.503 §6.3.1]. On a
+  // modify-in-place, reuse the existing rule's precedence so SMF rule ordering
+  // is stable; on a new flow, assign a fresh unique value from the uid
+  // generator.
+  auto pcc_rules_map        = decision.getPccRules();
+  const auto existing_rule  = pcc_rules_map.find(rule_id);
+  int32_t precedence;
+  if (existing_rule != pcc_rules_map.end() &&
+      existing_rule->second.precedenceIsSet()) {
+    precedence = existing_rule->second.getPrecedence();
+  } else {
+    auto& uid_generator = uint_uid_generator<uint32_t>::get_instance();
+    precedence =
+        PA_QOS_PRECEDENCE_BASE + static_cast<int32_t>(uid_generator.get_uid());
+  }
+
   PccRule pcc_rule;
   pcc_rule.setPccRuleId(rule_id);
   pcc_rule.setPrecedence(precedence);
   pcc_rule.setRefQosData({qos_id});
   pcc_rule.setFlowInfos(flow_infos);
 
-  auto pcc_rules_map = decision.getPccRules();
-  pcc_rules_map.insert(std::make_pair(rule_id, pcc_rule));
+  pcc_rules_map.insert_or_assign(rule_id, pcc_rule);
   decision.setPccRules(pcc_rules_map);
 
   // Record the ids this app-session contributed into its ledger so PATCH/DELETE
@@ -1264,6 +1289,62 @@ handler_result validate_policy_decision(const SmPolicyDecision& decision) {
       "§4.2.6.2].");
   return handler_result{.status = status_code::OK};
 }
+
+AppSessionContextReqData merge_patch_context(
+    const AppSessionContextReqData& stored,
+    const AppSessionContextUpdateData& patch) {
+  nlohmann::json merged;
+  to_json(merged, stored);
+  nlohmann::json patch_json;
+  to_json(patch_json, patch);
+
+  // RFC 7396 signals removal of a map member with a JSON null value, but the
+  // generated *Rm model types serialise to an object, never null -- so 3GPP
+  // fStatus=REMOVED is the media-component removal signal [TS 29.514 §4.2.3.2,
+  // §5.6.2.7]. Record those keys before merging, then drop them afterwards.
+  std::set<std::string> removed_components;
+  if (patch.medComponentsIsSet()) {
+    for (const auto& [key, media_component] : patch.getMedComponents()) {
+      if (media_component.fStatusIsSet() &&
+          media_component.getFStatus().getEnumValue() ==
+              FlowStatus_anyOf::eFlowStatus_anyOf::REMOVED) {
+        removed_components.insert(key);
+      }
+    }
+  }
+
+  // Add/replace every field the AF set; medComponents (and their medSubComps)
+  // merge entry by entry, so a partial update touches only what it carries.
+  merged.merge_patch(patch_json);
+
+  // Delete the removed media components from the merged representation.
+  const auto med_components = merged.find("medComponents");
+  if (med_components != merged.end()) {
+    for (const auto& key : removed_components) med_components->erase(key);
+    if (med_components->empty()) merged.erase("medComponents");
+  }
+
+  AppSessionContextReqData result;
+  from_json(merged, result);
+  return result;
+}
+
+// Explicit instantiations of the QoS-derivation templates: MediaComponent for
+// the create path (POST) and MediaComponentRm for the update path (PATCH). The
+// definitions live in this TU; these make both specializations available to
+// callers (pcf_policy_authorization.cpp, tests) at link time.
+template handler_result create_qos_data_from_media_component<MediaComponent>(
+    const MediaComponent&, const std::string&, SmPolicyDecision&, qos_context&,
+    const qos_reference_store&, QosData&);
+template handler_result create_qos_data_from_media_component<MediaComponentRm>(
+    const MediaComponentRm&, const std::string&, SmPolicyDecision&,
+    qos_context&, const qos_reference_store&, QosData&);
+template handler_result handle_qos_requirements<MediaComponent>(
+    const MediaComponent&, const std::string&, SmPolicyDecision&, qos_context&,
+    const qos_reference_store&);
+template handler_result handle_qos_requirements<MediaComponentRm>(
+    const MediaComponentRm&, const std::string&, SmPolicyDecision&,
+    qos_context&, const qos_reference_store&);
 
 }  // namespace policy_auth
 
