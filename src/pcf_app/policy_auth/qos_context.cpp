@@ -60,6 +60,16 @@ std::vector<std::string> qos_context::owned_rule_ids() const {
   return ids;
 }
 
+void qos_context::remove(
+    const std::string& qos_id, const std::string& rule_id) {
+  auto ledger = m_ledger.write();
+  ledger->qos_flows.erase(qos_id);
+  ledger->pcc_rules.erase(rule_id);
+  Logger::pcf_app().trace(
+      "qos_context: removed QoS flow %s and PCC rule %s from ledger",
+      qos_id.c_str(), rule_id.c_str());
+}
+
 void qos_context::erase_owned_from(
     oai::model::pcf::SmPolicyDecision& decision) const {
   auto ledger = m_ledger.read();

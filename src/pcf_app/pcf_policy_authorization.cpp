@@ -9,11 +9,17 @@
 #include "AppSessionContext.h"
 #include "AppSessionContextReqData.h"
 #include "AppSessionContextUpdateDataPatch.h"
+#include "MediaComponentRm.h"
+#include "FlowStatus.h"
 #include "policy_auth/app_session.hpp"
 
+#include "AppSessionContextRespData.h"
+
 #include <boost/uuid/uuid_io.hpp>
+#include <exception>
 #include <map>
 #include <memory>
+#include <sstream>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -24,6 +30,27 @@ using namespace oai::config::pcf;
 using namespace oai::_3gpp::model;
 
 using namespace std;
+
+namespace {
+// Bitwise intersection of the AF's supported features with the PCF's, formatted
+// as a 3GPP SupportedFeatures hex string [TS 29.500 §6.6.2, TS 29.571 §5.2.2].
+// Phase 1: the PCF advertises no optional Npcf_PolicyAuthorization features, so
+// the negotiated set is empty ("0"). When the PCF starts supporting a feature,
+// set the corresponding bit(s) in kPcfSupportedFeatures.
+std::string negotiate_supported_features(const std::string& af_supp_feat) {
+  static constexpr unsigned long long kPcfSupportedFeatures = 0x0ULL;
+  unsigned long long af = 0;
+  try {
+    if (!af_supp_feat.empty())
+      af = std::stoull(af_supp_feat, nullptr, /*base=*/16);
+  } catch (const std::exception&) {
+    af = 0;  // unparseable / out of range -> negotiate no features
+  }
+  std::stringstream ss;
+  ss << std::hex << std::nouppercase << (af & kPcfSupportedFeatures);
+  return ss.str();  // "0" today
+}
+}  // namespace
 
 //------------------------------------------------------------------------------
 pcf_policy_authorization::pcf_policy_authorization(
@@ -286,7 +313,7 @@ policy_auth::status_code pcf_policy_authorization::mod_app_session_handler(
     const std::string& app_session_id,
     const oai::_3gpp::model::AppSessionContextUpdateDataPatch&
         app_session_context_update_data_patch,
-    const oai::_3gpp::model::AppSessionContext& context,
+    oai::_3gpp::model::AppSessionContext& app_session_context,
     std::string& problem_details) {
   oai::_3gpp::model::SmPolicyDecision current_decision = {};
   oai::_3gpp::model::SmPolicyDecision request_decision = {};
@@ -299,30 +326,149 @@ policy_auth::status_code pcf_policy_authorization::mod_app_session_handler(
   auto session = m_context->app_sessions().find(app_session_id);
   if (!session) {
     Logger::pcf_app().error("App session not found");
+    problem_details = "APP_SESSION_CONTEXT_NOT_FOUND";
     return status_code::NOT_FOUND;
   }
   // Zombie-session guard: abort if a concurrent DELETE released it.
   if (session->state() == app_session_state::released) {
     Logger::pcf_app().error("App session already released");
+    problem_details = "APP_SESSION_CONTEXT_NOT_FOUND";
     return status_code::NOT_FOUND;
   }
 
-  auto app_session_context = session->context_snapshot();
+  auto req_context = session->context_snapshot();
 
   try {
     // Perform session binding
     m_event_sub.sm_session_binding(
-        app_session_context.getUeIpv4(), app_session_context.getSupi(),
-        app_session_context.getDnn(), association_id, current_decision);
+        req_context.getUeIpv4(), req_context.getSupi(), req_context.getDnn(),
+        association_id, current_decision);
   } catch (const std::exception& e) {
     Logger::pcf_app().info(e.what());
     problem_details = "PDU_SESSION_NOT_AVAILABLE";
     return status_code::INTERNAL_SERVER_ERROR;
   }
 
-  // TODO: Restore SFC update once AfSfcRequirement and
-  // AppSessionContextReqData::afSfcReq are regenerated. Ref: 3GPP TS 29.514
-  // §4.2.2.8.
+  // TODO [QOS] Handle QoS modification requests [TS 29.514 §4.2.3.2, TS 29.512 §4.2.6.2.1]
+  // Process QoS parameter updates from MediaComponents:
+  // - Validate QoS parameter changes against current session state [TS 29.514 §4.2.3.2]
+  // - Check for QoS degradation or improvement requests [TS 29.512 §4.2.6.6.1]
+  // - Ensure compatibility with subscription and slice policies [TS 29.512 §4.2.6.7, TS 23.503 §6.1.4]
+  // - Update existing QoS flows or create new ones as needed [TS 23.503 §6.1.3.2.4]
+  // - Handle QoS monitoring parameter changes [TS 29.512 §4.1.4.4.6]
+
+  /**
+   * Handle Initial provisioning of service function chaining information
+   *
+   * the "afSfcReq" attribute of "AfSfcRequirement" data type with specific
+   * N6-LAN traffic steering requirements for the application traffic flows
+   * either within "AppSessionContextReqData" data type for the service
+   * indicated in the "afAppId" attribute, or within the "medComponents"
+   * attribute. When provided at both levels, the "afSfcReq" attribute value in
+   * the "medComponents" attribute shall have precedence over the "afSfcReq"
+   * attribute included in the "AppSessionContextReqData" data type
+   */
+
+  // Process each updated media component: SFC, QoS removal (fStatus=REMOVED),
+  // or QoS modify/add. Because the derived ids are deterministic per medCompN,
+  // re-deriving an existing component modifies its flow in place
+  // [TS 29.514 §4.2.3.2, TS 29.512 §4.2.6.2.1].
+  bool qos_flow_processed = false;
+  if (app_session_context_update_data_patch.getAscReqData()
+          .medComponentsIsSet()) {
+    Logger::pcf_app().info("MedComponents is set");
+    for (const auto& [med_comp_key, med_component] :
+         app_session_context_update_data_patch.getAscReqData()
+             .getMedComponents()) {
+      // Service function chaining update [TS 29.514 §4.2.2.8].
+      if (med_component.afSfcReqIsSet()) {
+        handler_result result =
+            policy_auth::handle_service_function_chaining_update(
+                med_component.getAfSfcReq(), request_decision, req_context);
+        if (result.problem_details.has_value()) {
+          problem_details = result.problem_details.value();
+          Logger::pcf_app().error(
+              "Service function chaining failed. Problem details: {}",
+              result.problem_details.value());
+          return result.status.value();
+        }
+        continue;
+      }
+
+      const int32_t med_comp_n = med_component.getMedCompN();
+      const std::string qos_id =
+          "PA-QOS-" + app_session_id + "-qos-" + std::to_string(med_comp_n);
+      const std::string rule_id =
+          "PA-QOS-" + app_session_id + "-" + std::to_string(med_comp_n);
+
+      // Removal: a component flagged REMOVED deletes its QoS flow + PCC rule
+      // from the decision and the session ledger [TS 29.514 §4.2.3.2].
+      const bool removed =
+          med_component.fStatusIsSet() &&
+          med_component.getFStatus().getEnumValue() ==
+              oai::model::pcf::FlowStatus_anyOf::eFlowStatus_anyOf::REMOVED;
+      if (removed) {
+        auto pcc_rules = current_decision.getPccRules();
+        auto qos_decs  = current_decision.getQosDecs();
+        pcc_rules.erase(rule_id);
+        qos_decs.erase(qos_id);
+        current_decision.setPccRules(pcc_rules);
+        current_decision.setQosDecs(qos_decs);
+        session->qos().remove(qos_id, rule_id);
+        Logger::pcf_app().info(fmt::format(
+            "Removed QoS for media component {} (qosId '{}', pccRuleId '{}')",
+            med_comp_n, qos_id, rule_id));
+        qos_flow_processed = true;
+        continue;
+      }
+
+      // Modify / add: derive QoS for any component bearing QoS intent. Reusing
+      // the same deterministic ids overwrites an existing flow (upgrade/
+      // downgrade) or installs a new one [TS 29.513 §7.3.3].
+      if (med_component.qosReferenceIsSet() ||
+          med_component.medSubCompsIsSet() || med_component.marBwUlIsSet() ||
+          med_component.marBwDlIsSet() || med_component.mirBwUlIsSet() ||
+          med_component.mirBwDlIsSet()) {
+        handler_result result = policy_auth::handle_qos_requirements(
+            med_component, app_session_id, current_decision, session->qos(),
+            m_context->qos_references());
+        if (result.problem_details.has_value()) {
+          problem_details = result.problem_details.value();
+          Logger::pcf_app().error(
+              "QoS modification failed. Problem details: {}",
+              result.problem_details.value());
+          return result.status.value();
+        }
+        qos_flow_processed = true;
+      }
+    }
+
+  } else if (app_session_context_update_data_patch.getAscReqData()
+                 .afSfcReqIsSet()) {
+    handler_result result =
+        policy_auth::handle_service_function_chaining_update(
+            app_session_context_update_data_patch.getAscReqData().getAfSfcReq(),
+            request_decision, req_context);
+    if (result.problem_details.has_value()) {
+      problem_details = result.problem_details.value();
+      Logger::pcf_app().error(
+          "Service function chaining failed. Problem details: {}",
+          result.problem_details.value());
+      return result.status.value();
+    }
+  }
+
+  // Authorize the modified/added QoS against operator policy and the subscribed
+  // envelope, same gate as create [TS 29.514 §4.1.3.1, TS 23.503 §6.1.3.2.3].
+  if (qos_flow_processed) {
+    handler_result qos_auth_result = policy_auth::validate_qos_authorization(
+        current_decision, session->qos().owned_qos_ids(),
+        m_context->qos_authorization_policy());
+    if (qos_auth_result.problem_details.has_value()) {
+      problem_details = qos_auth_result.problem_details.value();
+      return qos_auth_result.status.value();
+    }
+  }
 
   // Validate the request decision against the current decision
   // merge the request decision with the current decision if the request
@@ -336,6 +482,14 @@ policy_auth::status_code pcf_policy_authorization::mod_app_session_handler(
         "Validation and merge of Decision failed. Problem details: {}",
         decision_result.problem_details.value());
     return decision_result.status.value();
+  }
+
+  // Pre-notification validation gate
+  handler_result decision_validation =
+      policy_auth::validate_policy_decision(current_decision);
+  if (decision_validation.problem_details.has_value()) {
+    problem_details = decision_validation.problem_details.value();
+    return decision_validation.status.value();
   }
 
   // Event with updated decision
@@ -377,10 +531,19 @@ policy_auth::status_code pcf_policy_authorization::mod_app_session_handler(
   //    - Send resource allocation updates for modified sessions
   //    - Provide operator policy override notifications
 
-  // Persist the updated request context on the session and advance lifecycle.
-  session->update_context(app_session_context);
+  // Apply the AF's JSON Merge Patch (RFC 7396) onto the stored request data so a
+  // subsequent GET reflects the modification: scalar fields replaced, media
+  // components merged in place, added, or removed [TS 29.514 §4.2.3.2].
+  req_context = policy_auth::merge_patch_context(
+      req_context, app_session_context_update_data_patch.getAscReqData());
+
+  // Persist the merged request context on the session and advance lifecycle.
+  session->update_context(req_context);
   session->next_version();
   session->set_state(app_session_state::modified);
+
+  app_session_context.setAscReqData(req_context);
+  app_session_context.setAscRespData(build_response_data(req_context));
 
   // TODO [PAS] send notification if notifcation is required
 
@@ -439,6 +602,42 @@ policy_auth::status_code pcf_policy_authorization::delete_app_session_handler(
   m_context->app_sessions().remove(app_session_id);
 
   return status_code::OK;
+}
+
+//------------------------------------------------------------------------------
+policy_auth::status_code pcf_policy_authorization::get_app_session_handler(
+    const std::string& app_session_id,
+    oai::model::pcf::AppSessionContext& app_session_context,
+    std::string& problem_details) {
+  Logger::pcf_app().info("GET /app-sessions/{}", app_session_id);
+
+  auto session = m_context->app_sessions().find(app_session_id);
+  // A session mid-termination (marked released before storage removal) is
+  // treated as gone, so GET never returns a context that is being torn down.
+  if (!session || session->state() == app_session_state::released) {
+    Logger::pcf_app().debug("App session '{}' not found", app_session_id);
+    problem_details = "APP_SESSION_CONTEXT_NOT_FOUND";
+    return status_code::NOT_FOUND;
+  }
+
+  // The resource representation is the AppSessionContext; PA stores the request
+  // data (ascReqData) the AF created the session with [TS 29.514 §4.2.5.1], and
+  // returns the negotiated response data (ascRespData) alongside it.
+  const auto req_data = session->context_snapshot();
+  app_session_context.setAscReqData(req_data);
+  app_session_context.setAscRespData(build_response_data(req_data));
+  return status_code::OK;
+}
+
+//------------------------------------------------------------------------------
+oai::model::pcf::AppSessionContextRespData
+pcf_policy_authorization::build_response_data(
+    const oai::model::pcf::AppSessionContextReqData& req) {
+  AppSessionContextRespData resp;
+  // Negotiate supported features against the AF request (suppFeat is mandatory
+  // in the request) [TS 29.514 §4.2.2.2, §5.8].
+  resp.setSuppFeat(negotiate_supported_features(req.getSuppFeat()));
+  return resp;
 }
 
 //------------------------------------------------------------------------------

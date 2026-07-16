@@ -56,17 +56,42 @@ api_response
 individual_application_session_context_document_api_handler::get_app_session(
     const std::string& app_session_id) {
   api_response response;
+  ProblemDetails problem_details;
+  std::string problem_description;
   std::string content_type = "application/problem+json";
-
   nlohmann::json json_data;
+  uint16_t http_code;
 
-  json_data["error"] = "API endpoint not implemented";
+  AppSessionContext app_session_context;
+  status_code res = m_pa_service->get_app_session_handler(
+      app_session_id, app_session_context, problem_description);
+
+  switch (res) {
+    case status_code::OK:
+      // 3GPP TS 29.514 §4.2.5.1: return the AppSessionContext representation.
+      content_type = "application/json";
+      http_code    = http_status_code::OK;
+      break;
+    case status_code::NOT_FOUND:
+      problem_details.setCause("CONTEXT_NOT_FOUND");
+      http_code = http_status_code::NOT_FOUND;
+      break;
+    default:
+      problem_details.setCause("INTERNAL_ERROR");
+      http_code = http_status_code::INTERNAL_SERVER_ERROR;
+  }
+
+  if (res == status_code::OK) {
+    to_json(json_data, app_session_context);
+  } else {
+    problem_details.setDetail(problem_description);
+    to_json(json_data, problem_details);
+  }
 
   response.headers.add<Pistache::Http::Header::ContentType>(
       Pistache::Http::Mime::MediaType(content_type));
   response.body        = json_data.dump();
-  response.status_code = http_status_code::NOT_FOUND;
-
+  response.status_code = http_code;
   return response;
 }
 
@@ -93,6 +118,21 @@ individual_application_session_context_document_api_handler::mod_app_session(
     case status_code::OK:
       content_type = "application/json";
       http_code    = http_status_code::OK;
+      break;
+    // The handler returns a machine-readable 3GPP cause in problem_description;
+    // surface it with the matching HTTP status [TS 29.514 §4.2.3.2,
+    // TS 29.571 §5.2.7].
+    case status_code::FORBIDDEN:
+      problem_details.setCause(problem_description);
+      http_code = http_status_code::FORBIDDEN;
+      break;
+    case status_code::BAD_REQUEST:
+      problem_details.setCause(problem_description);
+      http_code = http_status_code::BAD_REQUEST;
+      break;
+    case status_code::NOT_FOUND:
+      problem_details.setCause(problem_description);
+      http_code = http_status_code::NOT_FOUND;
       break;
     default:
       problem_details.setCause("INTERNAL_ERROR");
