@@ -64,7 +64,7 @@ class pcf_policy_authorization {
       const std::string& app_session_id,
       const oai::model::pcf::AppSessionContextUpdateDataPatch&
           app_session_context_update_data_patch,
-      const oai::model::pcf::AppSessionContext& context,
+      oai::model::pcf::AppSessionContext& app_session_context,
       std::string& problem_details);
 
   /**
@@ -82,6 +82,36 @@ class pcf_policy_authorization {
    */
   policy_auth::status_code delete_app_session_handler(
       const std::string& app_session_id, std::string& problem_details);
+
+  /**
+   * @brief Handler for reading an Individual Application Session Context, as
+   * defined in 3GPP TS 29.514 Chapter 4.2.5.
+   *
+   * Returns the stored AppSessionContext for the given id. Read-only: it does
+   * not touch the bound SM policy association or the SMF.
+   *
+   * @param app_session_id      input: id of the session to read
+   * @param app_session_context output: the session context on success
+   * @param problem_details     output: additional information in case of an
+   * error
+   * @return policy_auth::status_code::OK on success, NOT_FOUND if the session
+   * does not exist (or has been released)
+   */
+  policy_auth::status_code get_app_session_handler(
+      const std::string& app_session_id,
+      oai::model::pcf::AppSessionContext& app_session_context,
+      std::string& problem_details);
+
+  /**
+   * @brief Build the AppSessionContextRespData returned to the AF, negotiating
+   * supported features against the request [TS 29.514 §4.2.2.2, §5.8;
+   * TS 29.500 §6.6.2]. Phase 1 advertises no optional Npcf_PolicyAuthorization
+   * features, so the negotiated feature set is empty ("0"). Static so both the
+   * create (collection) and read (document) API paths produce a consistent
+   * ascRespData.
+   */
+  static oai::model::pcf::AppSessionContextRespData build_response_data(
+      const oai::model::pcf::AppSessionContextReqData& req);
 
  private:
   // Aggregate of the injected Policy Authorization stores (app-session working

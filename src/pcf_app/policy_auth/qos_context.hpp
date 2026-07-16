@@ -51,6 +51,13 @@ class qos_context {
   [[nodiscard]] std::vector<std::string> owned_rule_ids() const;
 
   /**
+   * @brief Drop a single owned QoS flow + PCC rule from the ledger (used on a
+   * PATCH that removes a media component, fStatus=REMOVED). Ids not owned by
+   * this session are ignored.
+   */
+  void remove(const std::string& qos_id, const std::string& rule_id);
+
+  /**
    * @brief Remove exactly the entries this session owns from a decision that
    * Policy Authorization fetched (used on DELETE / cleanup).
    *

@@ -49,6 +49,10 @@ void pcf_http2_server::start() {
           handle_method_not_exists(response, request);
           return;
         }
+        if (!is_json_content_type(request)) {
+          handle_unsupported_media_type(response, request);
+          return;
+        }
         auto request_body = std::make_shared<std::stringstream>();
 
         request.on_data(
@@ -108,6 +112,11 @@ void pcf_http2_server::start() {
           handle_method_not_exists(response, request);
           return;
         }
+        // update/delete carry a JSON body [TS 29.512 §4.2.3-4.2.4].
+        if ((is_update || is_delete) && !is_json_content_type(request)) {
+          handle_unsupported_media_type(response, request);
+          return;
+        }
         auto request_body = std::make_shared<std::stringstream>();
 
         request.on_data([&, request_body, is_get, is_update, is_delete,
@@ -156,6 +165,11 @@ void pcf_http2_server::start() {
           handle_method_not_exists(response, request);
           return;
         }
+        // The create request body is application/json [TS 29.514 §4.2.2.2].
+        if (!is_json_content_type(request)) {
+          handle_unsupported_media_type(response, request);
+          return;
+        }
         auto request_body = std::make_shared<std::stringstream>();
 
         request.on_data([&, request_body](
@@ -184,45 +198,11 @@ void pcf_http2_server::start() {
         });
       });
 
-  // We match for /app-sessions/pcsfc-restoration
-  server.handle(
-      app_sessions::get_route(),
-      [&](const request& request, const response& response) {
-        if (request.method() != "POST") {
-          handle_method_not_exists(response, request);
-          return;
-        }
-        auto request_body = std::make_shared<std::stringstream>();
-
-        request.on_data([&, request_body](
-                            const uint8_t* data, std::size_t len) {
-          if (len > 0) {
-            std::copy(
-                data, data + len,
-                std::ostream_iterator<uint8_t>(*request_body));
-            return;
-          }
-          PcscfRestorationRequestData pcscf_restoration_data;
-          try {
-            nlohmann::json::parse(request_body->str())
-                .get_to(pcscf_restoration_data);
-            pcscf_restoration_data.validate();
-            api_response resp =
-                m_pcscf_restoration_indication_api_handler->pcscf_restoration(
-                    pcscf_restoration_data);
-            auto h_map = convert_headers(resp);
-            response.write_head(
-                static_cast<unsigned int>(resp.status_code), h_map);
-            response.end(resp.body);
-            return;
-          } catch (std::exception& e) {
-            handle_parsing_error(response, e);
-            return;
-          }
-        });
-      });
-
   // We match for /app-sessions/*
+  // This prefix handler owns the whole /app-sessions/ subtree and dispatches by
+  // the last path segment: pcscf-restoration (collection-level POST),
+  // {appSessionId} (GET/PATCH), {appSessionId}/delete (POST) and
+  // {appSessionId}/events-subscription (PUT/DELETE) [TS 29.514 §4.2.2-4.2.6].
   server.handle(
       app_sessions::get_route() + "/",
       [&](const request& request, const response& response) {
@@ -232,9 +212,13 @@ void pcf_http2_server::start() {
         bool is_delete    = false;  // /app-sessions/{appSessionId}/delete
         bool is_event =
             false;  // /app-sessions/{appSessionId}/events-subscription
+        bool is_pcscf = false;  // /app-sessions/pcscf-restoration
 
         std::string app_session_id;
-        if (split_result[split_result.size() - 1] == "delete") {
+        if (split_result[split_result.size() - 1] == "pcscf-restoration") {
+          // Collection-level operation: no {appSessionId} segment.
+          is_pcscf = true;
+        } else if (split_result[split_result.size() - 1] == "delete") {
           is_delete      = true;
           app_session_id = split_result[split_result.size() - 2];
         } else if (
@@ -244,6 +228,11 @@ void pcf_http2_server::start() {
         } else {
           is_get_patch   = true;
           app_session_id = split_result[split_result.size() - 1];
+        }
+
+        if (is_pcscf && request.method() != "POST") {
+          handle_method_not_exists(response, request);
+          return;
         }
 
         if (is_event &&
@@ -258,10 +247,23 @@ void pcf_http2_server::start() {
           return;
         }
 
+        const bool is_patch = is_get_patch && request.method() == "PATCH";
+        const bool has_json_body =
+            is_pcscf || is_delete ||
+            (is_event && request.method() == "PUT") || is_patch;
+        const bool content_type_ok =
+            is_patch ? is_merge_patch_content_type(request)
+                     : is_json_content_type(request);
+        if (has_json_body && !content_type_ok) {
+          handle_unsupported_media_type(response, request);
+          return;
+        }
+
         auto request_body = std::make_shared<std::stringstream>();
 
         request.on_data([&, request_body, is_get_patch, is_delete, is_event,
-                         app_session_id](const uint8_t* data, std::size_t len) {
+                         is_pcscf, app_session_id](
+                            const uint8_t* data, std::size_t len) {
           if (len > 0) {
             std::copy(
                 data, data + len,
@@ -270,9 +272,16 @@ void pcf_http2_server::start() {
           }
           EventsSubscReqData events_subsc_data;
           AppSessionContextUpdateDataPatch app_session_context_data;
+          PcscfRestorationRequestData pcscf_restoration_data;
           api_response resp;
           try {
-            if (is_delete) {
+            if (is_pcscf) {
+              nlohmann::json::parse(request_body->str())
+                  .get_to(pcscf_restoration_data);
+              pcscf_restoration_data.validate();
+              resp = m_pcscf_restoration_indication_api_handler
+                         ->pcscf_restoration(pcscf_restoration_data);
+            } else if (is_delete) {
               nlohmann::json::parse(request_body->str())
                   .get_to(events_subsc_data);
               events_subsc_data.validate();
@@ -286,7 +295,7 @@ void pcf_http2_server::start() {
               resp =
                   m_events_subscription_document_api_handler
                       ->update_events_subsc(app_session_id, events_subsc_data);
-            } else if (is_event && request.method() == "DELTE") {
+            } else if (is_event && request.method() == "DELETE") {
               resp = m_events_subscription_document_api_handler
                          ->delete_events_subsc(app_session_id);
             } else if (is_get_patch && request.method() == "GET") {
@@ -325,6 +334,11 @@ void pcf_http2_server::start() {
   server.handle(
       provisioning_base + "/defaultDecision",
       [&](const request& request, const response& response) {
+        if ((request.method() == "POST" || request.method() == "PUT") &&
+            !is_json_content_type(request)) {
+          handle_unsupported_media_type(response, request);
+          return;
+        }
         if (request.method() == "GET") {
           api_response resp =
               m_default_policy_decisions_handler->default_decision_get();
@@ -365,6 +379,11 @@ void pcf_http2_server::start() {
   server.handle(
       provisioning_base + "/dnnPolicyDecision",
       [&](const request& request, const response& response) {
+        if ((request.method() == "POST" || request.method() == "PUT") &&
+            !is_json_content_type(request)) {
+          handle_unsupported_media_type(response, request);
+          return;
+        }
         if (request.method() == "POST") {
           auto request_body = std::make_shared<std::stringstream>();
           request.on_data([&, request_body](
@@ -398,6 +417,11 @@ void pcf_http2_server::start() {
   server.handle(
       provisioning_base + "/dnnPolicyDecision/",
       [&](const request& request, const response& response) {
+        if ((request.method() == "POST" || request.method() == "PUT") &&
+            !is_json_content_type(request)) {
+          handle_unsupported_media_type(response, request);
+          return;
+        }
         api_response resp;
         std::vector<std::string> split_result;
         boost::split(split_result, request.uri().path, boost::is_any_of("/"));
@@ -461,6 +485,11 @@ void pcf_http2_server::start() {
   server.handle(
       provisioning_base + "/slicePolicyDecision",
       [&](const request& request, const response& response) {
+        if ((request.method() == "POST" || request.method() == "PUT") &&
+            !is_json_content_type(request)) {
+          handle_unsupported_media_type(response, request);
+          return;
+        }
         if (request.method() == "POST") {
           auto request_body = std::make_shared<std::stringstream>();
           request.on_data([&, request_body](
@@ -579,6 +608,11 @@ void pcf_http2_server::start() {
   server.handle(
       provisioning_base + "/supiPolicyDecision",
       [&](const request& request, const response& response) {
+        if ((request.method() == "POST" || request.method() == "PUT") &&
+            !is_json_content_type(request)) {
+          handle_unsupported_media_type(response, request);
+          return;
+        }
         if (request.method() == "POST") {
           auto request_body = std::make_shared<std::stringstream>();
           request.on_data([&, request_body](
@@ -612,6 +646,11 @@ void pcf_http2_server::start() {
   server.handle(
       provisioning_base + "/supiPolicyDecision/",
       [&](const request& request, const response& response) {
+        if ((request.method() == "POST" || request.method() == "PUT") &&
+            !is_json_content_type(request)) {
+          handle_unsupported_media_type(response, request);
+          return;
+        }
         api_response resp;
         std::vector<std::string> split_result;
         boost::split(split_result, request.uri().path, boost::is_any_of("/"));
@@ -692,6 +731,11 @@ void pcf_http2_server::start() {
   server.handle(
       provisioning_base + "/pccRule",
       [&](const request& request, const response& response) {
+        if ((request.method() == "POST" || request.method() == "PUT") &&
+            !is_json_content_type(request)) {
+          handle_unsupported_media_type(response, request);
+          return;
+        }
         if (request.method() == "POST") {
           auto request_body = std::make_shared<std::stringstream>();
           request.on_data([&, request_body](
@@ -722,6 +766,11 @@ void pcf_http2_server::start() {
   server.handle(
       provisioning_base + "/pccRule/",
       [&](const request& request, const response& response) {
+        if ((request.method() == "POST" || request.method() == "PUT") &&
+            !is_json_content_type(request)) {
+          handle_unsupported_media_type(response, request);
+          return;
+        }
         api_response resp;
         std::vector<std::string> split_result;
         boost::split(split_result, request.uri().path, boost::is_any_of("/"));
@@ -797,6 +846,11 @@ void pcf_http2_server::start() {
   server.handle(
       provisioning_base + "/qosData",
       [&](const request& request, const response& response) {
+        if ((request.method() == "POST" || request.method() == "PUT") &&
+            !is_json_content_type(request)) {
+          handle_unsupported_media_type(response, request);
+          return;
+        }
         if (request.method() == "POST") {
           auto request_body = std::make_shared<std::stringstream>();
           request.on_data([&, request_body](
@@ -846,6 +900,11 @@ void pcf_http2_server::start() {
   server.handle(
       provisioning_base + "/qosData/",
       [&](const request& request, const response& response) {
+        if ((request.method() == "POST" || request.method() == "PUT") &&
+            !is_json_content_type(request)) {
+          handle_unsupported_media_type(response, request);
+          return;
+        }
         api_response resp;
         std::vector<std::string> split_result;
         boost::split(split_result, request.uri().path, boost::is_any_of("/"));
@@ -892,6 +951,11 @@ void pcf_http2_server::start() {
   server.handle(
       provisioning_base + "/trafficControlData",
       [&](const request& request, const response& response) {
+        if ((request.method() == "POST" || request.method() == "PUT") &&
+            !is_json_content_type(request)) {
+          handle_unsupported_media_type(response, request);
+          return;
+        }
         if (request.method() == "POST") {
           auto request_body = std::make_shared<std::stringstream>();
           request.on_data(
@@ -945,6 +1009,11 @@ void pcf_http2_server::start() {
   server.handle(
       provisioning_base + "/trafficControlData/",
       [&](const request& request, const response& response) {
+        if ((request.method() == "POST" || request.method() == "PUT") &&
+            !is_json_content_type(request)) {
+          handle_unsupported_media_type(response, request);
+          return;
+        }
         api_response resp;
         std::vector<std::string> split_result;
         boost::split(split_result, request.uri().path, boost::is_any_of("/"));
@@ -1030,6 +1099,39 @@ void pcf_http2_server::handle_parsing_error(
   // for security reasons it is better to not give the internal exception to the
   // user, we can also decide to change that
   response.end("Could not parse JSON data");
+}
+
+std::string pcf_http2_server::request_media_type(const request& request) {
+  const auto& headers = request.header();
+  const auto it       = headers.find("content-type");
+  if (it == headers.end()) return {};
+
+  // A media type may carry parameters, e.g. "application/json; charset=utf-8";
+  // keep only the type/subtype, normalised to lower case.
+  std::string media_type = it->second.value;
+  const auto semicolon   = media_type.find(';');
+  if (semicolon != std::string::npos) media_type = media_type.substr(0, semicolon);
+  boost::algorithm::trim(media_type);
+  boost::algorithm::to_lower(media_type);
+  return media_type;
+}
+
+bool pcf_http2_server::is_json_content_type(const request& request) {
+  return request_media_type(request) == "application/json";
+}
+
+bool pcf_http2_server::is_merge_patch_content_type(const request& request) {
+  return request_media_type(request) == "application/merge-patch+json";
+}
+
+void pcf_http2_server::handle_unsupported_media_type(
+    const response& response, const request& request) {
+  Logger::pcf_sbi().warn(
+      "Unsupported Media Type on %s %s (Content-Type: '%s')", request.method(),
+      request.uri().path.c_str(), request_media_type(request).c_str());
+  response.write_head(
+      static_cast<unsigned int>(http_status_code::UNSUPPORTED_MEDIA_TYPE));
+  response.end("Unsupported Media Type");
 }
 
 header_map pcf_http2_server::convert_headers(const api_response& response) {

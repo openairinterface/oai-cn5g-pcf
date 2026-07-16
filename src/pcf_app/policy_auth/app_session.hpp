@@ -16,6 +16,7 @@
 
 #include "AppSessionContext.h"
 #include "AppSessionContextReqData.h"
+#include "AppSessionContextUpdateData.h"
 #include "MediaComponent.h"
 #include "QosData.h"
 #include "SmPolicyDecision.h"
@@ -122,26 +123,33 @@ handle_service_function_chaining_update(
 
 // QoS handling functions [TS 29.514 §4.2.2.2, TS 29.513 §7.3, TS 29.512 §4.2.6.6]
 
-// Extract and process the QoS requirements of a single MediaComponent
+// Extract and process the QoS requirements of a single media component
 // [TS 29.514 §4.2.2.2, TS 29.513 §7.3.3]. Orchestrates
 // create_qos_data_from_media_component, create_qos_characteristics and
-// setup_qos_monitoring in sequence. `app_session_id` is used to build the
-// PA-QOS-{app_session_id}-{seq} rule/qos ids; `qos_ref_store` resolves the
-// MediaComponent `qosReference` to an operator-preconfigured QoS set.
+// setup_qos_monitoring in sequence. `app_session_id` + the component's medCompN
+// build the deterministic PA-QOS-{app_session_id}-{medCompN} rule/qos ids so a
+// PATCH re-sending the same medCompN modifies the flow in place; `qos_ref_store`
+// resolves the component `qosReference` to an operator-preconfigured QoS set.
+//
+// Templated on the media-component type so the SAME §7.3.3 mapping serves both
+// create (MediaComponent) and update (MediaComponentRm); the two generated types
+// expose identical accessors. Explicitly instantiated for both in app_session.cpp.
+template <typename MediaComponentT>
 oai::pcf::app::policy_auth::handler_result handle_qos_requirements(
-    const oai::model::pcf::MediaComponent& media_component,
-    const std::string& app_session_id, oai::model::pcf::SmPolicyDecision& decision,
-    qos_context& qos_ctx, const qos_reference_store& qos_ref_store);
+    const MediaComponentT& media_component, const std::string& app_session_id,
+    oai::model::pcf::SmPolicyDecision& decision, qos_context& qos_ctx,
+    const qos_reference_store& qos_ref_store);
 
-// Create the QosData + PccRule (with SDF filters) for one MediaComponent
+// Create the QosData + PccRule (with SDF filters) for one media component
 // [TS 29.512 §5.6.2.8, §4.1.4.2.1, TS 29.513 §7.3.3]. Returns the derived
 // QosData in `out_qos_data` so the caller can decide whether QoS characteristics
-// are required (non-standardized 5QI).
+// are required (non-standardized 5QI). Templated as above.
+template <typename MediaComponentT>
 oai::pcf::app::policy_auth::handler_result
 create_qos_data_from_media_component(
-    const oai::model::pcf::MediaComponent& media_component,
-    const std::string& app_session_id, oai::model::pcf::SmPolicyDecision& decision,
-    qos_context& qos_ctx, const qos_reference_store& qos_ref_store,
+    const MediaComponentT& media_component, const std::string& app_session_id,
+    oai::model::pcf::SmPolicyDecision& decision, qos_context& qos_ctx,
+    const qos_reference_store& qos_ref_store,
     oai::model::pcf::QosData& out_qos_data);
 
 // Generate QoS characteristics for a non-standardized (dynamically assigned)
@@ -278,6 +286,19 @@ oai::pcf::app::policy_auth::handler_result validate_and_merge_decision(
 // when the decision is safe to notify.
 oai::pcf::app::policy_auth::handler_result validate_policy_decision(
     const oai::model::pcf::SmPolicyDecision& decision);
+
+// Apply a JSON Merge Patch (RFC 7396) of a modification's ascReqData onto the
+// stored ascReqData, returning the merged request data [TS 29.514 §4.2.3.2].
+//
+// Fields the AF set add or replace the corresponding stored fields; the
+// medComponents map (and the medSubComps within each component) merge entry by
+// entry, so a partial update touches only the attributes it carries. Media
+// components the AF flags with fStatus=REMOVED are deleted from the stored map:
+// the generated *Rm model types cannot represent RFC 7396 null-removal, so 3GPP
+// fStatus is the removal signal [TS 29.514 §4.2.3.2, §5.6.2.7].
+oai::model::pcf::AppSessionContextReqData merge_patch_context(
+    const oai::model::pcf::AppSessionContextReqData& stored,
+    const oai::model::pcf::AppSessionContextUpdateData& patch);
 
 }  // namespace oai::pcf::app::policy_auth
 

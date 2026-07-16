@@ -31,8 +31,11 @@
 #include <vector>
 
 #include "Arp.h"
+#include "AppSessionContextReqData.h"
+#include "AppSessionContextUpdateData.h"
 #include "FlowStatus.h"
 #include "MediaComponent.h"
+#include "MediaComponentRm.h"
 #include "MediaSubComponent.h"
 #include "PccRule.h"
 #include "PreemptionCapability.h"
@@ -131,6 +134,218 @@ PccRule make_pcc_rule(const std::string& id, int32_t precedence) {
 }
 
 }  // namespace
+
+/*
+ * 3GPP TS 29.514 §4.2.3.2 / TS 29.512 §4.2.6.2.1 -- QoS modification (PATCH).
+ *
+ * The flow/rule ids are derived deterministically from medCompN, so a PATCH that
+ * re-describes an existing media component modifies its flow in place (rather
+ * than accumulating duplicates), and a new medCompN adds a distinct flow. The
+ * same templated derivation serves create (MediaComponent) and update
+ * (MediaComponentRm), so the update payload type is exercised here too.
+ */
+TEST(QosModification, DerivesDeterministicIdFromMedCompN) {
+  MediaComponent mc;
+  mc.setMedCompN(5);
+  mc.setMarBwDl("10 Mbps");
+  SmPolicyDecision decision;
+  qos_context qos_ctx;
+  fake_qos_reference_store store;
+
+  handle_qos_requirements(mc, "app", decision, qos_ctx, store);
+
+  ASSERT_EQ(decision.getQosDecs().size(), 1u);
+  EXPECT_EQ(qos_data_ids(decision), to_set({"PA-QOS-app-qos-5"}));
+  EXPECT_EQ(pcc_rule_ids(decision), to_set({"PA-QOS-app-5"}));
+}
+
+TEST(QosModification, RederivingSameMedCompNOverwritesInPlace) {
+  fake_qos_reference_store store;
+  SmPolicyDecision decision;
+  qos_context qos_ctx;
+
+  MediaComponent first;
+  first.setMedCompN(1);
+  first.setMarBwDl("10 Mbps");
+  handle_qos_requirements(first, "app", decision, qos_ctx, store);
+  ASSERT_EQ(decision.getQosDecs().size(), 1u);
+  const int32_t precedence_before =
+      decision.getPccRules().at("PA-QOS-app-1").getPrecedence();
+
+  MediaComponent second;  // same media component, higher downlink bandwidth
+  second.setMedCompN(1);
+  second.setMarBwDl("20 Mbps");
+  handle_qos_requirements(second, "app", decision, qos_ctx, store);
+
+  // Still one flow (modified in place, not duplicated), with the updated rate
+  // and the original precedence preserved so PCC ordering is stable.
+  EXPECT_EQ(decision.getQosDecs().size(), 1u);
+  EXPECT_EQ(decision.getPccRules().size(), 1u);
+  EXPECT_EQ(decision.getQosDecs().at("PA-QOS-app-qos-1").getMaxbrDl(), "20 Mbps");
+  EXPECT_EQ(
+      decision.getPccRules().at("PA-QOS-app-1").getPrecedence(),
+      precedence_before);
+  EXPECT_EQ(qos_ctx.owned_qos_ids().size(), 1u);
+}
+
+TEST(QosModification, DistinctMedCompNAddsSeparateFlow) {
+  fake_qos_reference_store store;
+  SmPolicyDecision decision;
+  qos_context qos_ctx;
+
+  MediaComponent a;
+  a.setMedCompN(1);
+  a.setMarBwDl("10 Mbps");
+  MediaComponent b;
+  b.setMedCompN(2);
+  b.setMarBwDl("10 Mbps");
+  handle_qos_requirements(a, "app", decision, qos_ctx, store);
+  handle_qos_requirements(b, "app", decision, qos_ctx, store);
+
+  EXPECT_EQ(
+      qos_data_ids(decision), to_set({"PA-QOS-app-qos-1", "PA-QOS-app-qos-2"}));
+  EXPECT_EQ(pcc_rule_ids(decision), to_set({"PA-QOS-app-1", "PA-QOS-app-2"}));
+}
+
+// The PATCH path feeds MediaComponentRm (the "with removable members" variant)
+// through the same templated derivation as create.
+TEST(QosModification, DerivesFromMediaComponentRm) {
+  MediaComponentRm mc;
+  mc.setMedCompN(3);
+  mc.setMarBwDl("5 Mbps");
+  SmPolicyDecision decision;
+  qos_context qos_ctx;
+  fake_qos_reference_store store;
+
+  const auto result = handle_qos_requirements(mc, "app", decision, qos_ctx, store);
+
+  ASSERT_TRUE(result.status.has_value());
+  EXPECT_EQ(result.status.value(), status_code::OK);
+  EXPECT_EQ(qos_data_ids(decision), to_set({"PA-QOS-app-qos-3"}));
+  EXPECT_EQ(decision.getQosDecs().at("PA-QOS-app-qos-3").getMaxbrDl(), "5 Mbps");
+}
+
+namespace {
+
+// The stored ascReqData needs its mandatory members set so the JSON round-trip
+// inside merge_patch_context can re-parse it [TS 29.514 §5.6.2.7].
+AppSessionContextReqData make_stored_context() {
+  AppSessionContextReqData ctx;
+  ctx.setNotifUri("http://af.example.com/notify");
+  ctx.setSuppFeat("0");
+  return ctx;
+}
+
+MediaComponentRm make_component_rm(
+    int32_t med_comp_n, std::optional<std::string> mar_bw_dl = std::nullopt) {
+  MediaComponentRm mc;
+  mc.setMedCompN(med_comp_n);
+  if (mar_bw_dl) mc.setMarBwDl(*mar_bw_dl);
+  return mc;
+}
+
+MediaComponentRm make_removed_component_rm(int32_t med_comp_n) {
+  MediaComponentRm mc;
+  mc.setMedCompN(med_comp_n);
+  FlowStatus fs;
+  fs.setEnumValue(FlowStatus_anyOf::eFlowStatus_anyOf::REMOVED);
+  mc.setFStatus(fs);
+  return mc;
+}
+
+}  // namespace
+
+/*
+ * 3GPP TS 29.514 §4.2.3.2 / RFC 7396 -- the stored ascReqData is updated by JSON
+ * Merge Patch: scalar fields replaced, media components merged in place, added,
+ * or removed (fStatus=REMOVED), so a subsequent GET reflects the modification.
+ */
+TEST(ContextMergePatch, ReplacesScalarFieldAndRetainsUntouchedFields) {
+  auto stored = make_stored_context();
+  stored.setAfAppId("app-A");
+  stored.setDnn("internet");
+
+  AppSessionContextUpdateData patch;
+  patch.setAfAppId("app-B");  // change only afAppId
+
+  const auto merged = merge_patch_context(stored, patch);
+
+  EXPECT_EQ(merged.getAfAppId(), "app-B");
+  EXPECT_EQ(merged.getDnn(), "internet");  // untouched field retained
+  EXPECT_EQ(merged.getNotifUri(), "http://af.example.com/notify");
+}
+
+TEST(ContextMergePatch, MergesMediaComponentInPlace) {
+  auto stored = make_stored_context();
+  MediaComponent existing;
+  existing.setMedCompN(1);
+  existing.setMarBwDl("10 Mbps");
+  existing.setMarBwUl("1 Mbps");
+  stored.setMedComponents({{"1", existing}});
+
+  AppSessionContextUpdateData patch;
+  patch.setMedComponents({{"1", make_component_rm(1, "20 Mbps")}});  // DL only
+
+  const auto merged = merge_patch_context(stored, patch);
+
+  ASSERT_EQ(merged.getMedComponents().size(), 1u);
+  const auto mc = merged.getMedComponents().at("1");
+  EXPECT_EQ(mc.getMarBwDl(), "20 Mbps");  // replaced
+  EXPECT_EQ(mc.getMarBwUl(), "1 Mbps");   // untouched sub-field retained
+}
+
+TEST(ContextMergePatch, AddsNewMediaComponent) {
+  auto stored = make_stored_context();
+  MediaComponent existing;
+  existing.setMedCompN(1);
+  existing.setMarBwDl("10 Mbps");
+  stored.setMedComponents({{"1", existing}});
+
+  AppSessionContextUpdateData patch;
+  patch.setMedComponents({{"2", make_component_rm(2, "5 Mbps")}});
+
+  const auto merged = merge_patch_context(stored, patch);
+
+  ASSERT_EQ(merged.getMedComponents().size(), 2u);
+  EXPECT_EQ(merged.getMedComponents().at("1").getMarBwDl(), "10 Mbps");
+  EXPECT_EQ(merged.getMedComponents().at("2").getMarBwDl(), "5 Mbps");
+}
+
+TEST(ContextMergePatch, RemovesMediaComponentViaFStatus) {
+  auto stored = make_stored_context();
+  MediaComponent one;
+  one.setMedCompN(1);
+  one.setMarBwDl("10 Mbps");
+  MediaComponent two;
+  two.setMedCompN(2);
+  two.setMarBwDl("5 Mbps");
+  stored.setMedComponents({{"1", one}, {"2", two}});
+
+  AppSessionContextUpdateData patch;
+  patch.setMedComponents({{"1", make_removed_component_rm(1)}});
+
+  const auto merged = merge_patch_context(stored, patch);
+
+  ASSERT_EQ(merged.getMedComponents().size(), 1u);
+  EXPECT_EQ(merged.getMedComponents().count("1"), 0u);
+  EXPECT_EQ(merged.getMedComponents().at("2").getMarBwDl(), "5 Mbps");
+}
+
+TEST(ContextMergePatch, RemovingLastComponentUnsetsMap) {
+  auto stored = make_stored_context();
+  MediaComponent one;
+  one.setMedCompN(1);
+  one.setMarBwDl("10 Mbps");
+  stored.setMedComponents({{"1", one}});
+
+  AppSessionContextUpdateData patch;
+  patch.setMedComponents({{"1", make_removed_component_rm(1)}});
+
+  const auto merged = merge_patch_context(stored, patch);
+
+  EXPECT_FALSE(merged.medComponentsIsSet());
+  EXPECT_TRUE(merged.getMedComponents().empty());
+}
 
 /*
  * 3GPP TS 23.501 §5.7.4
@@ -1072,9 +1287,13 @@ TEST(QosRequirementsProcessing, ProducesAConsistentDecisionAndLedger) {
 // TS 29.513 §7.3.3: repeated handling of multiple MediaComponents for the same
 // session shall accumulate distinct authorized QoS and PCC rule entries.
 TEST(QosRequirementsProcessing, MultipleComponentsAccumulateDistinctDecisionEntries) {
+  // Distinct medCompN per component (the mandatory media-component key
+  // [TS 29.514 §5.6.2.7]) => distinct deterministic QosData/PccRule ids.
   MediaComponent audio;
+  audio.setMedCompN(1);
   audio.setMarBwUl("5 Mbps");
   MediaComponent video;
+  video.setMedCompN(2);
   video.setMarBwDl("9 Mbps");
 
   SmPolicyDecision decision;
