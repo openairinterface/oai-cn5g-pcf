@@ -355,8 +355,15 @@ bool sub_component_removed(const MediaSubComponentT& sub) {
 template <typename MediaComponentT>
 oai::model::common::Arp derive_arp(const MediaComponentT& mc) {
   oai::model::common::Arp arp;
-  // TODO [QOS] Map MediaComponent.resPrio -> arp.priorityLevel once the
-  // ReservPriority model exposes its value [TS 29.513 Table 7.3.3-2].
+  // TODO [QOS] Map MediaComponent.resPrio -> arp.priorityLevel. Two blockers:
+  // (1) the generated ReservPriority model is one of ~29
+  // model/pcf classes OpenAPI Generator v6.0.1 left empty for this anyOf
+  // shape (FlowStatus/FlowStatus_anyOf show the correct shape to backport,
+  // per the submodule's own model/README.md); (2) TS 29.513 Table 7.3.2-1
+  // leaves the resPrio->ARP rule itself as an "application specific
+  // algorithm" -- undefined by the standard -- so a concrete mapping (e.g. a
+  // fixed PRIO_1..PRIO_16 -> priorityLevel table) still has to be designed
+  // once the value is readable.
   arp.setPriorityLevel(DEFAULT_ARP_PRIORITY_LEVEL);
   Logger::pcf_app().debug(fmt::format(
       "Using default ARP priority level {} because MediaComponent.resPrio is "
@@ -670,6 +677,16 @@ handler_result create_qos_data_from_media_component(
   }
 
   if (!from_reference) {
+    // minDesBwDl/Ul ("minimum desired bandwidth") is intentionally not read
+    // here: TS 29.514 Table 5.6.2.7-1 marks it Applicability "IMS_SBI"
+    // (Table 5.8-1, feature 5), so an AF is only meant to send it once the
+    // PCF has negotiated that feature -- and IMS_SBI also gates unrelated
+    // IMS-specific behaviour (charging correlation, credit reallocation,
+    // PS<->CS handover indication) this PCF does not implement. Negotiating
+    // the bit solely to unlock this one field would misrepresent PCF
+    // capabilities to the AF, so this stays deferred until IMS_SBI itself is
+    // implemented. See kPcfSupportedFeatures in pcf_policy_authorization.cpp.
+
     // Guaranteed Authorized Data Rate (GBR): derived only when the AF requested
     // a minimum/guaranteed rate (mirBw). GBR is not derived for non-GBR flows
     // [TS 29.513 Table 7.3.3-1, NOTE 6].
@@ -1219,15 +1236,24 @@ AppSessionContextReqData merge_patch_context(
 
   // RFC 7396 signals removal of a map member with a JSON null value, but the
   // generated *Rm model types serialise to an object, never null -- so 3GPP
-  // fStatus=REMOVED is the media-component removal signal [TS 29.514 §4.2.3.2,
-  // §5.6.2.7]. Record those keys before merging, then drop them afterwards.
+  // fStatus=REMOVED is the removal signal for both a whole media component and
+  // a single sub-component inside an otherwise-retained one [TS 29.514
+  // §4.2.3.2, §5.6.2.7, §5.6.2.9]. Record the removed keys before merging, then
+  // drop them from the merged representation afterwards. A removed component's
+  // own sub-components are moot -- the whole entry disappears regardless.
   std::set<std::string> removed_components;
+  std::map<std::string, std::set<std::string>> removed_sub_components;
   if (patch.medComponentsIsSet()) {
     for (const auto& [key, media_component] : patch.getMedComponents()) {
       if (media_component.fStatusIsSet() &&
           media_component.getFStatus().getEnumValue() ==
               FlowStatus_anyOf::eFlowStatus_anyOf::REMOVED) {
         removed_components.insert(key);
+        continue;
+      }
+      if (!media_component.medSubCompsIsSet()) continue;
+      for (const auto& [sub_key, sub] : media_component.getMedSubComps()) {
+        if (sub_component_removed(sub)) removed_sub_components[key].insert(sub_key);
       }
     }
   }
@@ -1236,10 +1262,21 @@ AppSessionContextReqData merge_patch_context(
   // merge entry by entry, so a partial update touches only what it carries.
   merged.merge_patch(patch_json);
 
-  // Delete the removed media components from the merged representation.
-  const auto med_components = merged.find("medComponents");
+  // Delete the removed media components (and removed sub-components of
+  // retained ones) from the merged representation.
+  auto med_components = merged.find("medComponents");
   if (med_components != merged.end()) {
     for (const auto& key : removed_components) med_components->erase(key);
+
+    for (const auto& [key, sub_keys] : removed_sub_components) {
+      auto component = med_components->find(key);
+      if (component == med_components->end()) continue;
+      auto sub_components = component->find("medSubComps");
+      if (sub_components == component->end()) continue;
+      for (const auto& sub_key : sub_keys) sub_components->erase(sub_key);
+      if (sub_components->empty()) component->erase("medSubComps");
+    }
+
     if (med_components->empty()) merged.erase("medComponents");
   }
 
