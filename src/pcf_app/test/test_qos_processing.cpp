@@ -37,6 +37,7 @@
 #include "MediaComponent.h"
 #include "MediaComponentRm.h"
 #include "MediaSubComponent.h"
+#include "MediaSubComponentRm.h"
 #include "PccRule.h"
 #include "PreemptionCapability.h"
 #include "PreemptionVulnerability.h"
@@ -253,6 +254,17 @@ MediaComponentRm make_removed_component_rm(int32_t med_comp_n) {
   return mc;
 }
 
+MediaSubComponentRm make_sub_component_rm(int32_t f_num, bool removed = false) {
+  MediaSubComponentRm sub;
+  sub.setFNum(f_num);
+  if (removed) {
+    FlowStatus fs;
+    fs.setEnumValue(FlowStatus_anyOf::eFlowStatus_anyOf::REMOVED);
+    sub.setFStatus(fs);
+  }
+  return sub;
+}
+
 }  // namespace
 
 /*
@@ -345,6 +357,57 @@ TEST(ContextMergePatch, RemovingLastComponentUnsetsMap) {
 
   EXPECT_FALSE(merged.medComponentsIsSet());
   EXPECT_TRUE(merged.getMedComponents().empty());
+}
+
+// A sub-component fStatus=REMOVED inside an otherwise-retained component
+// removes just that SDF filter, not the whole component [TS 29.514 §5.6.2.9].
+TEST(ContextMergePatch, RemovesSubComponentFromRetainedComponent) {
+  auto stored = make_stored_context();
+  MediaComponent one;
+  one.setMedCompN(1);
+  MediaSubComponent sub1, sub2;
+  sub1.setFNum(1);
+  sub2.setFNum(2);
+  one.setMedSubComps({{"1", sub1}, {"2", sub2}});
+  stored.setMedComponents({{"1", one}});
+
+  MediaComponentRm patched_component;
+  patched_component.setMedCompN(1);
+  patched_component.setMedSubComps({{"2", make_sub_component_rm(2, /*removed=*/true)}});
+  AppSessionContextUpdateData patch;
+  patch.setMedComponents({{"1", patched_component}});
+
+  const auto merged = merge_patch_context(stored, patch);
+
+  ASSERT_EQ(merged.getMedComponents().size(), 1u);  // component itself retained
+  const auto mc = merged.getMedComponents().at("1");
+  ASSERT_TRUE(mc.medSubCompsIsSet());
+  EXPECT_EQ(mc.getMedSubComps().size(), 1u);
+  EXPECT_EQ(mc.getMedSubComps().count("1"), 1u);
+  EXPECT_EQ(mc.getMedSubComps().count("2"), 0u);
+}
+
+TEST(ContextMergePatch, RemovingLastSubComponentUnsetsMedSubComps) {
+  auto stored = make_stored_context();
+  MediaComponent one;
+  one.setMedCompN(1);
+  MediaSubComponent sub1;
+  sub1.setFNum(1);
+  one.setMedSubComps({{"1", sub1}});
+  stored.setMedComponents({{"1", one}});
+
+  MediaComponentRm patched_component;
+  patched_component.setMedCompN(1);
+  patched_component.setMedSubComps({{"1", make_sub_component_rm(1, /*removed=*/true)}});
+  AppSessionContextUpdateData patch;
+  patch.setMedComponents({{"1", patched_component}});
+
+  const auto merged = merge_patch_context(stored, patch);
+
+  ASSERT_EQ(merged.getMedComponents().size(), 1u);
+  const auto mc = merged.getMedComponents().at("1");
+  EXPECT_FALSE(mc.medSubCompsIsSet());
+  EXPECT_TRUE(mc.getMedSubComps().empty());
 }
 
 /*
