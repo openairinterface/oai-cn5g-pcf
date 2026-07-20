@@ -713,6 +713,20 @@ handler_result create_qos_data_from_media_component(
     }
 
     // 5QI from desired latency [TS 29.513 §7.3.3 NOTE 15/17].
+    //
+    // desMaxLoss ("maximum desirable transport level packet loss rate") is the
+    // loss twin of desMaxLatency: TS 29.513 §7.3.3 NOTE 15/17 map it to the 5QI
+    // Packet Error Rate exactly as desMaxLatency maps to the Packet Delay
+    // Budget. It is intentionally NOT read here. Both fields carry Applicability
+    // "QoSHint"/"FLUS" [TS 29.514 §5.6.2.7, §4.2.2.33], a feature this PCF does
+    // not negotiate (kPcfSupportedFeatures = 0x0), and the spec prescribes NO
+    // mapping formula for either -- NOTE 15/17 only say the derivation "may
+    // consider" them, citing non-normative examples. Rather than invent a
+    // second non-normative heuristic for a field a compliant AF can't even send
+    // until QoSHint is advertised, desMaxLoss stays deferred.
+    // NOTE: desMaxLatency below is read as a pragmatic best-effort
+    // despite the same gate; the QoSHint pair should be handled together (and
+    // the feature formally negotiated) when QoSHint is taken on.
     std::optional<float> latency =
         media_component.desMaxLatencyIsSet()
             ? std::optional<float>(media_component.getDesMaxLatency())
