@@ -17,16 +17,35 @@ status_code policy_decision::decide(
     const SmPolicyContextData& /* context */,
     SmPolicyDecision& decision) const {
   // default rule, so just reply with the decision
-  decision = m_decision;
+  decision = *m_decision;
   return status_code::CREATED;
 }
 
 const SmPolicyDecision& policy_decision::get_sm_policy_decision() const {
-  return m_decision;
+  return *m_decision;
 }
 
 void policy_decision::set_sm_policy_decision(SmPolicyDecision& decision) {
-  m_decision = decision;
+  // Copy-on-write: publish a fresh immutable snapshot; existing snapshot
+  // holders keep seeing the old one.
+  m_decision = std::make_shared<SmPolicyDecision>(decision);
+  ++m_version;
+}
+
+void policy_decision::apply_delta(const oai::pcf::app::sm_policy_delta& delta) {
+  auto next = std::make_shared<SmPolicyDecision>(*m_decision);
+  oai::pcf::app::apply_sm_policy_delta(*next, delta);
+  m_decision = std::move(next);
+  ++m_version;
+}
+
+std::shared_ptr<const SmPolicyDecision> policy_decision::snapshot_decision()
+    const {
+  return m_decision;
+}
+
+uint64_t policy_decision::decision_version() const {
+  return m_version;
 }
 
 status_code policy_decision::handle_plmn_change(
@@ -246,13 +265,13 @@ status_code policy_decision::redecide(
     }
   }
 
-  new_decision = m_decision;
+  new_decision = *m_decision;
   return status;
 }
 
 std::string policy_decision::to_string() const {
   std::stringstream ss;
-  ss << m_decision;
+  ss << *m_decision;
   return ss.str();
 }
 

@@ -12,6 +12,7 @@
 #include "SmPolicyDecision.h"
 #include "guarded.hpp"
 #include "qos_types.hpp"
+#include "sm_policy_delta.hpp"
 
 namespace oai::pcf::app::policy_auth {
 
@@ -56,6 +57,17 @@ class qos_context {
    * this session are ignored.
    */
   void remove(const std::string& qos_id, const std::string& rule_id);
+
+  /**
+   * @brief Reconcile the ledger with a delta that has just been committed to
+   * the association, as the post-commit side-effect of an update.
+   *
+   * The ledger is only ever mutated here (after a successful association apply),
+   * never during QoS derivation -- derivation writes to a scratch context, so a
+   * request that is rejected/retried leaves this ledger untouched. Upserted
+   * qosDecs/pccRules are recorded (created-or-updated), removed ones dropped.
+   */
+  void apply_committed_delta(const oai::pcf::app::sm_policy_delta& delta);
 
   /**
    * @brief Remove exactly the entries this session owns from a decision that
