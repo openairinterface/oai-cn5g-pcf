@@ -8,8 +8,10 @@
 #include "SmPolicyContextData.h"
 #include "SmPolicyDecision.h"
 #include "policy_decision.hpp"
+#include "sm_policy_delta.hpp"
 
-#include <memory.h>
+#include <cstdint>
+#include <memory>
 
 namespace oai::pcf::app::sm_policy {
 
@@ -32,15 +34,23 @@ class individual_sm_association {
   [[nodiscard]] virtual const oai::_3gpp::model::SmPolicyDecision&
   get_sm_policy_decision_dto() const;
 
-  // TODO [QOS][REFACTOR] The full SmPolicyDecision is re-stored on every update.
-  // Prefer copy-on-write: hold the authoritative decision as
-  // shared_ptr<const SmPolicyDecision>, apply an sm_policy_delta to a copy, then
-  // atomically swap and bump a version. Readers then get cheap, consistent
-  // snapshots and concurrent updates cannot lose writes. Deferred to Phase 2
-  // together with the sm_update_decision -> delta signal change (see
-  // pcf_event_sig.hpp).
+  // Use apply_delta() for incremental Policy-Authorization updates
+  // so concurrent writers don't lose each other's changes; this remains
+  // for full-decision writes (e.g. the SM native create/update paths).
   virtual void set_sm_policy_decision(
       oai::_3gpp::model::SmPolicyDecision& new_decision);
+
+  // Apply an incremental change set to the held decision under the caller's
+  // lock (copy-on-write) [TS 29.512 §4.2.3.2]. This is how Policy Authorization
+  // mutates an active association without the read-modify-write lost-update.
+  virtual void apply_delta(const oai::pcf::app::sm_policy_delta& delta);
+
+  // Cheap immutable snapshot of the current decision; safe to keep after the
+  // association lock is released (used to notify the SMF off-lock).
+  [[nodiscard]] virtual std::shared_ptr<const oai::model::pcf::SmPolicyDecision>
+  snapshot_decision() const;
+
+  [[nodiscard]] virtual uint64_t decision_version() const;
 
   [[nodiscard]] virtual oai::pcf::app::sm_policy::status_code redecide_policy(
       const oai::_3gpp::model::SmPolicyUpdateContextData& update_data,

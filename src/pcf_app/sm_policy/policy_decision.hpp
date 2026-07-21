@@ -9,6 +9,10 @@
 #include "SmPolicyDecision.h"
 #include "SmPolicyUpdateContextData.h"
 #include "pcf_smpc_status_code.hpp"
+#include "sm_policy_delta.hpp"
+
+#include <cstdint>
+#include <memory>
 
 namespace oai::pcf::app::sm_policy {
 
@@ -18,14 +22,13 @@ namespace oai::pcf::app::sm_policy {
  */
 class policy_decision {
  public:
-  explicit policy_decision(
-      const oai::_3gpp::model::SmPolicyDecision& decision) {
-    m_decision = decision;
-  }
+  explicit policy_decision(const oai::_3gpp::model::SmPolicyDecision& decision)
+      : m_decision(
+            std::make_shared<oai::_3gpp::model::SmPolicyDecision>(decision)) {}
 
-  policy_decision(const policy_decision& other) {
-    m_decision = other.m_decision;
-  }
+  // Copies share the immutable decision snapshot (copy-on-write); a later
+  // set/apply on either copy rebinds only that copy's shared_ptr.
+  policy_decision(const policy_decision& other) = default;
 
   /**
    * @brief Decides based on context on a policy. In case the return code is !=
@@ -69,6 +72,21 @@ class policy_decision {
   [[nodiscard]] virtual const void set_sm_policy_decision(
       oai::_3gpp::model::SmPolicyDecision& decision);
 
+  // Apply an incremental change set copy-on-write: copy the current immutable
+  // decision, apply the delta, atomically rebind, and bump the version. This is
+  // the write half of the read-modify-write that callers run under the
+  // association lock, so concurrent updates cannot lose each other's changes
+  // [TS 29.512 §4.2.3.2].
+  virtual void apply_delta(const oai::pcf::app::sm_policy_delta& delta);
+
+  // Cheap immutable snapshot; safe to hold after the association lock is
+  // released (e.g. to notify the SMF without holding the lock across the
+  // blocking network call).
+  [[nodiscard]] virtual std::shared_ptr<const oai::model::pcf::SmPolicyDecision>
+  snapshot_decision() const;
+
+  [[nodiscard]] virtual uint64_t decision_version() const;
+
   [[nodiscard]] virtual std::string to_string() const;
 
  protected:
@@ -92,7 +110,11 @@ class policy_decision {
       const oai::_3gpp::model::SmPolicyUpdateContextData& update,
       std::string& problem_details);
 
-  oai::_3gpp::model::SmPolicyDecision m_decision;
+  // Authoritative decision held copy-on-write: an immutable snapshot published
+  // via shared_ptr. Writers (set/apply) build a new snapshot and rebind; readers
+  // take a cheap shared_ptr copy. Always non-null after construction.
+  std::shared_ptr<const oai::_3gpp::model::SmPolicyDecision> m_decision;
+  uint64_t m_version{0};
 };
 }  // namespace oai::pcf::app::sm_policy
 

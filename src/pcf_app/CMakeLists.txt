@@ -33,6 +33,7 @@ add_library (PCF STATIC
   pcf_nrf.cpp
   pcf_profile.cpp
   pcf_event.cpp
+  sm_policy_delta.cpp
   pcf_sm_policy_control.cpp
   task_manager.cpp
   sm_policy/individual_sm_association.cpp
