@@ -16,7 +16,7 @@ status_code dnn_policy_decision::decide(
     return status_code::CONTEXT_DENIED;
   }
 
-  decision = m_decision;
+  decision = *m_decision;
   return status_code::CREATED;
 }
 
@@ -27,7 +27,7 @@ std::string dnn_policy_decision::get_dnn() const {
 std::string dnn_policy_decision::to_string() const {
   std::stringstream ss;
   ss << "DNN: " << m_dnn << "\n";
-  ss << " -- " << m_decision;
+  ss << " -- " << *m_decision;
   return ss.str();
 }
 
