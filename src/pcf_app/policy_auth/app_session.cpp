@@ -590,10 +590,28 @@ handler_result create_qos_data_from_media_component(
   Logger::pcf_app().debug("create_qos_data_from_media_component()");
 
   // Deterministic PA-QOS-{app_session_id}-{medCompN} id convention
-  // [TS 29.512 §4.1.4.2.1]. Keying on the AF's media-component number (stable
-  // across create and update) means a PATCH re-sending the same medCompN
-  // targets the same QosData/PccRule, so the merge modifies the flow in place
-  // rather than creating a duplicate [TS 29.514 §4.2.3.2].
+  // [TS 29.512 §4.1.4.2.1]. Keying on the AF's media-component number means a
+  // PATCH re-sending the same medCompN targets the same QosData/PccRule (modify
+  // in place); a medCompN not seen before for this app-session installs a new
+  // flow (add). This is not spelled out in one normative sentence -- it follows
+  // from combining three points in the spec, none of which is TS 29.513 §7.3.3
+  // (that clause only derives QoS *values* from a MediaComponent's fields; it
+  // never mentions medCompN and has no bearing on identity/lifecycle):
+  //   1. "medComponents" is a *map* keyed by "medCompN" for both
+  //      AppSessionContextReqData (create) and AppSessionContextUpdateData
+  //      (PATCH) [TS 29.514 tables 5.6.2.3-1, 5.6.2.5-1] -- a JSON object can't
+  //      repeat a key, so medCompN is only guaranteed unique *within one
+  //      request* by this alone.
+  //   2. TS 29.514 §4.2.3.2 mandates the PATCH body be an RFC 7396 JSON Merge
+  //      Patch. RFC 7396's own merge algorithm is what turns "same key" into
+  //      "modify that member" and "new key" into "add a member" -- the
+  //      cross-request identity comes from combining (1)'s map key with this
+  //      RFC, not from a PCF-authored rule.
+  //   3. TS 29.514 §4.2.3.13 ("a media component's ... lifetime", "each media
+  //      component modification") and §4.2.3.41 ("a new or previously provided
+  //      MediaComponentRm element") both presuppose exactly this model, though
+  //      each is scoped to its own optional feature rather than stated as a
+  //      general rule.
   const int32_t med_comp_n = media_component.getMedCompN();
   const std::string qos_id =
       "PA-QOS-" + app_session_id + "-qos-" + std::to_string(med_comp_n);
@@ -885,7 +903,8 @@ handler_result create_qos_data_from_media_component(
   }
 
   // Write the QosData [TS 29.512 §5.6.2.8]. insert_or_assign so a PATCH
-  // modification (same qosId) overwrites the existing flow in place.
+  // modification (same qosId, i.e. same medCompN -- see the id-derivation
+  // comment above) overwrites the existing flow in place.
   auto qos_data_map = decision.getQosDecs();
   qos_data_map.insert_or_assign(qos_id, qos_data);
   decision.setQosDecs(qos_data_map);

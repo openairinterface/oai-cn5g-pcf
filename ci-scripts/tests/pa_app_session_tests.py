@@ -229,6 +229,18 @@ def guaranteed_video_request_body(
 def patch_modify_body(ue_ipv4: str | None = None, uplink_filter: bool = True) -> dict:
     """PATCH modifying component 1 to an explicit GBR flow (10/8 Mbps, 40ms).
 
+    Deliberately reuses medCompN 1 -- the same number guaranteed_video_request_body()
+    used to create the session -- rather than a fresh one. This is what makes the PCF
+    treat the request as a MODIFY of the existing flow instead of installing a second,
+    duplicate one. That behaviour is not one explicit sentence in the spec; it follows
+    from combining: (1) "medComponents" is a map keyed by "medCompN" in both the create
+    and PATCH request bodies [TS 29.514 tables 5.6.2.3-1, 5.6.2.5-1], and (2) the PATCH
+    body must be an RFC 7396 JSON Merge Patch [TS 29.514 §4.2.3.2] -- RFC 7396's merge
+    semantics are what turn "same key" into "replace/merge that member". See the fuller
+    citation trail (incl. TS 29.514 §4.2.3.13, §4.2.3.41) at the PCF's own id-derivation
+    site: src/pcf_app/policy_auth/app_session.cpp, create_qos_data_from_media_component().
+    Contrast with patch_add_body() below, which uses an unseen medCompN to add.
+
     `uplink_filter=False` reproduces the rejection case: uplink GBR is
     requested but no uplink SDF filter is present, so per-SDF uplink MBR
     aggregates to 0 and GBR(8Mbps) > MBR(0) fails check E -- 403
@@ -259,7 +271,14 @@ def patch_modify_body(ue_ipv4: str | None = None, uplink_filter: bool = True) ->
 
 
 def patch_add_body(ue_ipv4: str | None = None) -> dict:
-    """PATCH adding a new media component (medCompN 2, 5 Mbps downlink)."""
+    """PATCH adding a new media component (medCompN 2, 5 Mbps downlink).
+
+    medCompN 2 has not appeared in this app-session before (creation and
+    patch_modify_body() above both used 1), so the PCF installs a new QoS
+    flow/PCC rule rather than modifying an existing one -- see the ADD side of
+    the same medCompN-as-map-key + RFC 7396 mechanism documented at
+    patch_modify_body() above.
+    """
     ue_ipv4 = ue_ipv4 or UE_IPV4
     return {
         "ascReqData": {
