@@ -70,6 +70,48 @@ void qos_context::remove(
       qos_id.c_str(), rule_id.c_str());
 }
 
+void qos_context::apply_committed_delta(
+    const oai::pcf::app::sm_policy_delta& delta) {
+  const auto now = std::chrono::system_clock::now();
+  auto ledger    = m_ledger.write();
+
+  // Upserts: record (or refresh) ownership of each qos flow / PCC rule the
+  // committed delta added or modified.
+  for (const auto& [qos_id, unused] : delta.upsert_qos_decs) {
+    (void)unused;
+    auto& meta      = ledger->qos_flows[qos_id];
+    meta.qos_id     = qos_id;
+    meta.state      = qos_flow_state::established;
+    if (meta.created_at.time_since_epoch().count() == 0) meta.created_at = now;
+    meta.updated_at = now;
+  }
+  for (const auto& [rule_id, rule] : delta.upsert_pcc_rules) {
+    auto& ctx        = ledger->pcc_rules[rule_id];
+    ctx.pcc_rule_id  = rule_id;
+    ctx.precedence   = rule.precedenceIsSet()
+                           ? static_cast<uint32_t>(rule.getPrecedence())
+                           : 0;
+    ctx.ref_qos_data = rule.refQosDataIsSet() ? rule.getRefQosData()
+                                              : std::vector<std::string>{};
+    ctx.state        = qos_flow_state::established;
+    if (ctx.created_at.time_since_epoch().count() == 0) ctx.created_at = now;
+    ctx.updated_at   = now;
+  }
+
+  // Removals: drop ownership of anything the delta removed.
+  for (const auto& qos_id : delta.removed_qos_decs)
+    ledger->qos_flows.erase(qos_id);
+  for (const auto& rule_id : delta.removed_pcc_rules)
+    ledger->pcc_rules.erase(rule_id);
+
+  Logger::pcf_app().trace(
+      "qos_context: applied committed delta (+%zu/-%zu qos flows, "
+      "+%zu/-%zu PCC rules; now %zu flows, %zu rules)",
+      delta.upsert_qos_decs.size(), delta.removed_qos_decs.size(),
+      delta.upsert_pcc_rules.size(), delta.removed_pcc_rules.size(),
+      ledger->qos_flows.size(), ledger->pcc_rules.size());
+}
+
 void qos_context::erase_owned_from(
     oai::model::pcf::SmPolicyDecision& decision) const {
   auto ledger = m_ledger.read();

@@ -50,12 +50,13 @@ pcf_smpc::pcf_smpc(
           &pcf_smpc::handle_session_binding_request, this,
           boost::placeholders::_1, boost::placeholders::_2,
           boost::placeholders::_3, boost::placeholders::_4,
-          boost::placeholders::_5));
+          boost::placeholders::_5, boost::placeholders::_6));
 
   m_sm_update_decision_connection =
       m_event_sub.subscribe_sm_update_decision(boost::bind(
           &pcf_smpc::handle_update_decision_request, this,
-          boost::placeholders::_1, boost::placeholders::_2));
+          boost::placeholders::_1, boost::placeholders::_2,
+          boost::placeholders::_3, boost::placeholders::_4));
 
 }
 
@@ -65,36 +66,25 @@ void pcf_smpc::handle_policy_change(
 }
 
 sm_policy::status_code pcf_smpc::send_sm_policy_control_update_notify(
-    const oai::pcf::app::sm_policy::individual_sm_association& association) {
-  // TODO [QOS] Enhanced notification for QoS policy updates to SMF
-  // [TS 29.512 §4.2.3.2, §5.6.2.5]
-  // Tasks:
-  //   1. Include updated PCC rules with QoS enforcement actions [TS 29.512 §4.1.4.2]
-  //   2. Include QoS Data entries for flow-specific QoS parameters [TS 29.512 §5.6.2.8]
-  //   3. Include QoS Characteristics for non-standard 5QI values [TS 29.512 §5.6.2.16]
-  //   4. Include QoS Monitoring Data configurations [TS 29.512 §5.6.2.40]
-  //   5. Include Traffic Control Data with QoS steering information [TS 29.512 §5.6.2.3]
-  //   6. Include updated QoS flow identifiers and bindings [TS 23.501 §5.7.1.1]
+    const oai::model::pcf::SmPolicyContextData& context,
+    const std::shared_ptr<const oai::model::pcf::SmPolicyDecision>& decision) {
+  // Notifies the SMF with the FULL decision (the SMF diffs it itself). Operates
+  // on an immutable snapshot captured under the association lock, so this
+  // blocking round-trip runs off-lock [CP.22].
   //
-  // [QOS-MOCK] Phase 1 — SM policy update notification (partially mocked).
-  // Mocks the TODO [QOS] task above:
-  //   - Tasks 1–2 are partially fulfilled: the SmPolicyDecision serialised
-  //     below contains the mock PccRule and QosData written by
-  //     create_qos_data_from_media_component() (5QI=9, ARP, permit-all filter).
-  //   - Tasks 3–6 are not yet populated (QosChars, QosMonDecs, TcData stubs
-  //     only log).
+  // TODO [QOS-SMF] Populate QosMonDecs (Phase 4) and any TraffContDecs the SMF
+  // needs for QoS steering [TS 29.512 §5.6.2.40, §5.6.2.3]; qosChars and QoS
+  // PccRules/QosData are already carried.
 
-  std::string uri =
-      association.get_sm_policy_context_data().getNotificationUri() + "/update";
+  const oai::model::pcf::SmPolicyDecision& dec = *decision;
+  std::string uri = context.getNotificationUri() + "/update";
   nlohmann::json json_data;
-  // to_json(json_data, association.decsion);
   nlohmann::json decision_json;
-  const auto& decision = association.get_sm_policy_decision_dto();
-  to_json(decision_json, decision);
+  to_json(decision_json, dec);
 
   json_data["smPolicyDecision"] = decision_json;
 
-  const std::string& supi = association.get_sm_policy_context_data().getSupi();
+  const std::string& supi = context.getSupi();
 
   Logger::pcf_app().info(
       "Sending SM Policy Update Notification for SUPI %s: uri -> %s",
@@ -103,9 +93,9 @@ sm_policy::status_code pcf_smpc::send_sm_policy_control_update_notify(
   Logger::pcf_app().debug(
       "SM Policy Update Notification payload: %zu PCC rule(s), %zu QosData, "
       "%zu QosChars, %zu QosMonDecs, %zu TraffContDecs",
-      decision.getPccRules().size(), decision.getQosDecs().size(),
-      decision.getQosChars().size(), decision.getQosMonDecs().size(),
-      decision.getTraffContDecs().size());
+      dec.getPccRules().size(), dec.getQosDecs().size(),
+      dec.getQosChars().size(), dec.getQosMonDecs().size(),
+      dec.getTraffContDecs().size());
   const std::string request_body = json_data.dump();
   Logger::pcf_app().trace(
       "SM Policy Update Notification request body -> SMF: %s",
@@ -125,7 +115,36 @@ sm_policy::status_code pcf_smpc::send_sm_policy_control_update_notify(
     // TODO [PAS] check if for required headers
     Logger::pcf_app().info(
         "Successful SM Policy Update Notification for SUPI %s",
-        association.get_sm_policy_context_data().getSupi().c_str());
+        context.getSupi().c_str());
+
+    // TODO [QOS-SUB] Coordinate Application Function notifications after successful SMF update [TS 29.513 §5.2.2.3, TS 29.514 §4.2.5]
+    // Following successful SMF notification, trigger AF notifications as per 3GPP TS 29.514:
+    //
+    // 1. EXTRACT AF NOTIFICATION TARGETS [TS 29.513 §5.2.2.2.2]:
+    //    - Identify AF applications affected by the policy update
+    //    - Retrieve AF notification URIs from associated application sessions [TS 29.514 §5.6.2.6]
+    //    - Determine notification event types required by each AF [TS 29.514 §5.6.2.6]
+    //
+    // 2. PREPARE AF NOTIFICATION DATA [TS 29.514 §4.2.5]:
+    //    - Extract QoS status changes from the policy decision [TS 29.514 §5.6.2.15]
+    //    - Compile monitoring measurements if available from UPF reports [TS 29.514 §5.6.2.37]
+    //    - Prepare session context updates for AF consumption [TS 29.514 §5.6.2.9]
+    //
+    // 3. TRIGGER ASYNCHRONOUS AF NOTIFICATIONS [TS 29.500 §6.2]:
+    //    - Emit events to Policy Authorization service for AF notification delivery
+    //    - Include session binding information to correlate AF applications
+    //    - Schedule retry for failed AF notifications with appropriate backoff [TS 29.500 §5.2.8]
+    //
+    // 4. LOG COORDINATION STATUS:
+    //    - Track successful AF notification triggers
+    //    - Log any coordination failures for troubleshooting
+    //    - Update AF subscription health status [TS 29.500 §5.2.6]
+    //
+    // Example coordination:
+    // std::string supi = association.get_sm_policy_context_data().getSupi();
+    // std::string dnn = association.get_sm_policy_context_data().getDnn();
+    // m_event_sub.coordinate_af_notifications(supi, dnn, association.get_sm_policy_decision_dto());
+
     return status_code::CREATED;
   }
 
@@ -171,7 +190,25 @@ void pcf_smpc::handle_session_binding_request(
     const std::optional<std::string>& ipv4,
     const std::optional<std::string>& supi,
     const std::optional<std::string>& dnn, std::optional<std::string>& assoc_id,
-    oai::_3gpp::model::SmPolicyDecision& decision) {
+    oai::_3gpp::model::SmPolicyDecision& decision, std::uint64_t& version) {
+  // TODO [QOS] Handle QoS requirements during session binding [TS 29.513 §5.2.2.1, TS 29.512 §4.2.2]
+  // When Policy Authorization requests session binding, provide comprehensive QoS context:
+  //
+  // 1. QOS CONTEXT RETRIEVAL [TS 29.512 §4.2.2.2, TS 23.503 §6.1.3.2]:
+  //    - Retrieve existing QoS policies for this SUPI/DNN combination
+  //    - Include base QoS characteristics from subscription profile [TS 29.512 §4.2.6.6.1]
+  //    - Provide network slice-specific QoS limits and policies [TS 29.512 §4.2.6.7, TS 23.503 §6.1.4]
+  //
+  // 2. QOS BASELINE ESTABLISHMENT [TS 29.512 §4.2.2.2, TS 23.503 §6.1.3.2.3]:
+  //    - Set baseline QoS parameters that Policy Authorization can build upon
+  //    - Ensure default QoS flows are properly configured [TS 23.501 §5.7.1.1]
+  //    - Provide QoS rule precedence ranges available for Policy Auth use [TS 23.503 §6.3.1]
+  //
+  // 3. RESOURCE AVAILABILITY [TS 29.512 §4.2.6.8, TS 23.503 §6.1.4]:
+  //    - Include current QoS resource utilization information
+  //    - Provide available bandwidth and priority level ranges [TS 29.512 §4.2.6.8.2]
+  //    - Share network congestion status affecting QoS decisions
+
   // TODO: support multiple sessions
 
   std::shared_ptr<std::string> association_id =
@@ -194,25 +231,86 @@ void pcf_smpc::handle_session_binding_request(
     return;
   }
 
+  // Hand back the decision and the version it was read at, under the same lock,
+  // so Policy Authorization can later present that version for an optimistic
+  // (version-checked) apply.
   decision = iter->second.get_sm_policy_decision_dto();
+  version  = iter->second.decision_version();
 
   // Get PCC from decision
 }
 
 void pcf_smpc::handle_update_decision_request(
-    std::optional<std::string>& association_id,
-    oai::_3gpp::model::SmPolicyDecision& decision) {
-  // Fetch the association related to the decision
-  std::unique_lock lock_assocations(m_associations_mutex);
-  auto iter = m_associations.find(association_id.value());
-  if (iter == m_associations.end()) {
-    Logger::pcf_app().info(fmt::format(
-        "Could not delete policy association: ID {} not found",
-        association_id.value()));
-    return;
-  }
+    std::optional<std::string>& association_id, std::uint64_t expected_version,
+    const oai::pcf::app::sm_policy_delta& delta,
+    oai::pcf::app::decision_apply_result& out) {
+  // TODO [QOS] Process QoS policy updates from Policy Authorization Service [TS 29.513 §5.2.2.2.2, TS 29.512 §4.2.3.2]
+  // This function receives updated policy decisions from pcf_policy_authorization
+  // containing QoS requirements that need to be integrated with existing SM policies:
+  //
+  // 1. CONFLICT RESOLUTION [TS 23.503 §6.1.3.7]:
+  //    - Check for PCC rule ID conflicts between Policy Auth and SM Policy Control [TS 29.512 §4.1.4.2.1]
+  //    - Ensure QoS rule precedence values don't overlap with existing SM rules [TS 29.512 §5.6.2.6]
+  //    - Resolve conflicts between Policy Auth QoS requirements and SM QoS policies [TS 23.503 §6.1.3.7]
+  //
+  // 2. QOS DATA INTEGRATION [TS 29.512 §4.2.6.6.2]:
+  //    - Merge QosData entries from Policy Authorization with existing SM QoS data [TS 29.512 §5.6.2.8]
+  //    - Validate QoS parameters against subscription and network slice limits [TS 29.512 §4.2.6.6.1, TS 23.503 §6.1.4]
+  //    - Update QoS Characteristics for new or modified 5QI values [TS 29.512 §4.2.6.6.3, §5.6.2.16]
+  //
+  // 3. PCC RULE COORDINATION [TS 29.512 §4.2.6.2.1]:
+  //    - Generate unique PCC rule IDs that don't conflict across services [TS 29.512 §4.1.4.2.1]
+  //    - Assign appropriate precedence values considering both Policy Auth and SM rules [TS 23.503 §6.3.1]
+  //    - Ensure QoS enforcement actions are consistent across rule sets [TS 23.503 §6.1.3.7]
 
-  iter->second.set_sm_policy_decision(decision);
+  // Optimistic, version-checked apply. Under the association lock we commit the
+  // delta copy-on-write ONLY IF the association is still at the version the
+  // caller read; on a mismatch we return the current version+decision so the
+  // caller re-derives against it and retries. This serialises concurrent
+  // updates to one association, closing both the lost-update race and the
+  // stale-cumulative-limit race (the retrying caller re-validates against the
+  // committed base) -- see the retry loop in pcf_policy_authorization.cpp.
+  //
+  // First-come-first-served / last-committer-wins: serialisation orders the
+  // commits, it does NOT merge conflicting intents. Two requests changing the
+  // SAME key (same app-session + medCompN) still resolve by whoever commits
+  // last -- the loser re-derives on top and overwrites. That is the intended
+  // semantics for concurrent modification of one resource; cross-session
+  // updates (disjoint keys) all survive because the delta only carries the
+  // keys its request actually changed.
+  oai::_3gpp::model::SmPolicyContextData context;
+  {
+    std::unique_lock lock_associations(m_associations_mutex);
+    auto iter = m_associations.find(association_id.value());
+    if (iter == m_associations.end()) {
+      // Association gone (e.g. PDU session released concurrently); no retry
+      // helps, so report a terminal (non-committed) result.
+      Logger::pcf_app().info(fmt::format(
+          "Could not update policy association: ID {} not found",
+          association_id.value()));
+      out = {false, 0, nullptr};
+      return;
+    }
+
+    const std::uint64_t current = iter->second.decision_version();
+    if (current != expected_version) {
+      // Someone committed since the caller read its base. Hand back the current
+      // state; nothing is applied, persisted, or notified. The caller retries.
+      out = {false, current, iter->second.snapshot_decision()};
+      Logger::pcf_app().debug(fmt::format(
+          "Update rejected for association {}: version {} != expected {} "
+          "(concurrent update); caller will re-derive and retry",
+          association_id.value(), current, expected_version));
+      return;
+    }
+
+    iter->second.apply_delta(delta);  // copy-on-write + version bump
+    out = {true, iter->second.decision_version(),
+           iter->second.snapshot_decision()};
+    // Capture the context under the lock so persist/notify run off-lock
+    // [CP.22: never hold a lock across a blocking/foreign call].
+    context = iter->second.get_sm_policy_context_data();
+  }  // m_associations_mutex released
 
   // TODO [PAS] confirm if the storage should be updated
   /**
@@ -226,33 +324,26 @@ void pcf_smpc::handle_update_decision_request(
    * new decision and to look for an alternative way to store the updates for
    * the policy decisions that are not persisted.
    */
-  auto context = iter->second.get_sm_policy_context_data();
+  // Reached only on commit (conflicts/not-found returned above). Persist +
+  // notify against the immutable post-commit snapshot.
   if (!context.getSupi().empty()) {
-    m_policy_storage->insert_supi_decision(context.getSupi(), decision);
+    m_policy_storage->insert_supi_decision(context.getSupi(), *out.decision);
   } else if (!context.getDnn().empty()) {
-    m_policy_storage->insert_dnn_decision(context.getDnn(), decision);
+    m_policy_storage->insert_dnn_decision(context.getDnn(), *out.decision);
   } else {
     Logger::pcf_app().error("Failed to update policy decision");
   }
 
-  // TODO [QOS] Enhanced SMF notification for QoS policy changes [TS 29.512 §4.2.3.2, §5.6.2.5]
-  // Before sending notification, ensure comprehensive QoS update preparation:
-  // 1. Validate all QoS flows have consistent parameters [TS 29.512 §5.6.2.8]
-  // 2. Generate QoS flow setup/modification instructions for SMF [TS 29.512 §4.2.6.2.1]
-  // 3. Include QoS monitoring setup parameters if required [TS 29.512 §4.2.3.25.1]
-  // 4. Provide clear indication of which QoS flows are new/modified/deleted [TS 29.512 §5.6.2.5]
-
-  // TODO [QOS][REFACTOR] CP.22: m_associations_mutex is still held here while
-  // send_sm_policy_control_update_notify() makes a blocking SMF HTTP call, so
-  // all associations serialize behind one network round-trip. Snapshot what the
-  // notify needs under the lock, release it, then notify. Left as a
-  // recommendation this phase to avoid churning SM Policy Control; fold into the
-  // Phase 2 delta refactor (see pcf_event_sig.hpp).
-  // Send a notification to the SMF related to the updated decision
-  const auto& association_ref = iter->second;
-  auto ret                    = send_sm_policy_control_update_notify(association_ref);
+  // Notify the SMF against the immutable snapshot, off-lock. The notification
+  // still carries the full decision (the SMF diffs it itself); only PCF-internal
+  // application is incremental.
+  auto ret = send_sm_policy_control_update_notify(context, out.decision);
   if (ret != status_code::CREATED) {
     Logger::pcf_app().error("Policy update notification failed");
+
+    // TODO [QOS] Handle QoS notification failures gracefully [TS 29.500 §5.2.8;
+    // Phase 2 §2.8]: roll back the applied delta, retry with backoff, and/or
+    // alert the operator so PCF and SMF/UPF state don't diverge silently.
   }
 }
 

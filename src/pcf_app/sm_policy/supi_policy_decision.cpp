@@ -16,7 +16,7 @@ status_code supi_policy_decision::decide(
     return status_code::CONTEXT_DENIED;
   }
 
-  decision = m_decision;
+  decision = *m_decision;
   return status_code::CREATED;
 }
 
@@ -27,9 +27,7 @@ std::string supi_policy_decision::get_supi() const {
 std::string supi_policy_decision::to_string() const {
   std::stringstream ss;
   ss << "SUPI: " << m_supi << "\n";
-  nlohmann::json j;
-  to_json(j, m_decision);
-  ss << " -- " << j.dump();
+  ss << " -- " << *m_decision;
   return ss.str();
 }
 

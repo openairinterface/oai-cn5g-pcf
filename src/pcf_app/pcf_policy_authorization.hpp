@@ -5,6 +5,8 @@
 #ifndef FILE_PCF_POLICY_AUTHORIZATION_SEEN
 #define FILE_PCF_POLICY_AUTHORIZATION_SEEN
 
+#include <cstdint>
+#include <functional>
 #include <string>
 #include <memory>
 #include <optional>
@@ -19,6 +21,7 @@
 #include "policy_auth/app_session.hpp"
 #include "policy_auth/policy_auth_context.hpp"
 #include "pcf_event.hpp"
+#include "sm_policy_delta.hpp"
 
 namespace oai::pcf::app {
 
@@ -114,6 +117,32 @@ class pcf_policy_authorization {
       const oai::model::pcf::AppSessionContextReqData& req);
 
  private:
+  /**
+   * @brief Push a request's decision change to the bound association with
+   * optimistic concurrency + bounded retry.
+   *
+   * `derive` is invoked once per attempt with the current base decision; it must
+   * copy-and-mutate `working` into this request's intended decision and return
+   * an empty handler_result, or a set handler_result for a *deterministic*
+   * failure (403/400/...) that no retry can fix. The delta (base -> working) is
+   * applied to the association only if it is still at the base's version; on a
+   * version conflict `derive` is re-run against the freshly committed decision.
+   *
+   * On success returns status_code::OK and fills `committed_delta` (the delta
+   * that was applied -- callers use it to update the session ledger as a
+   * post-commit side-effect). On a deterministic failure returns that failure.
+   * On retry exhaustion returns INTERNAL_SERVER_ERROR.
+   */
+  policy_auth::status_code apply_with_retry(
+      std::optional<std::string>& association_id,
+      const oai::model::pcf::SmPolicyDecision& initial_base,
+      std::uint64_t initial_version,
+      const std::function<policy_auth::handler_result(
+          const oai::model::pcf::SmPolicyDecision& base,
+          oai::model::pcf::SmPolicyDecision& working)>& derive,
+      oai::pcf::app::sm_policy_delta& committed_delta,
+      std::string& problem_details);
+
   // Aggregate of the injected Policy Authorization stores (app-session working
   // set + binding index, and the operator-preconfigured QoS reference sets).
   // New stores are added on policy_auth_context, not here.
