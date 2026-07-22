@@ -168,11 +168,11 @@ status_code pcf_policy_authorization::apply_with_retry(
           "Association {} update abandoned after {} attempt(s): persistent "
           "concurrent updates (or association gone)",
           association_id.value_or("<none>"), attempt + 1));
-      // TODO [QOS] 503 Service Unavailable + Retry-After would be more precise
-      // than 500 for transient contention [TS 29.514 §4.2.2.2]; the internal
-      // status_code enum has no 503 today.
-      problem_details = "PCF_CONTENTION";
-      return status_code::INTERNAL_SERVER_ERROR;
+      // TS 29.514 Table 5.7.3-1: "the service information provided in the
+      // request is temporarily rejected" -- exactly this condition (persistent
+      // version-CAS contention on the association).
+      problem_details = "REQUESTED_SERVICE_TEMPORARILY_NOT_AUTHORIZED";
+      return status_code::FORBIDDEN;
     }
     Logger::pcf_app().debug(fmt::format(
         "Association {} update: version conflict on attempt {}; re-deriving "
@@ -373,13 +373,13 @@ policy_auth::status_code pcf_policy_authorization::mod_app_session_handler(
   auto session = m_context->app_sessions().find(app_session_id);
   if (!session) {
     Logger::pcf_app().error("App session not found");
-    problem_details = "APP_SESSION_CONTEXT_NOT_FOUND";
+    problem_details = "APPLICATION_SESSION_CONTEXT_NOT_FOUND";
     return status_code::NOT_FOUND;
   }
   // Zombie-session guard: abort if a concurrent DELETE released it.
   if (session->state() == app_session_state::released) {
     Logger::pcf_app().error("App session already released");
-    problem_details = "APP_SESSION_CONTEXT_NOT_FOUND";
+    problem_details = "APPLICATION_SESSION_CONTEXT_NOT_FOUND";
     return status_code::NOT_FOUND;
   }
 
@@ -533,12 +533,12 @@ policy_auth::status_code pcf_policy_authorization::delete_app_session_handler(
   auto session = m_context->app_sessions().find(app_session_id);
   if (!session) {
     Logger::pcf_app().error("App session not found");
-    problem_details = "APP_SESSION_CONTEXT_NOT_FOUND";
+    problem_details = "APPLICATION_SESSION_CONTEXT_NOT_FOUND";
     return status_code::NOT_FOUND;
   }
   if (session->state() == app_session_state::released) {
     Logger::pcf_app().error("App session already released");
-    problem_details = "APP_SESSION_CONTEXT_NOT_FOUND";
+    problem_details = "APPLICATION_SESSION_CONTEXT_NOT_FOUND";
     return status_code::NOT_FOUND;
   }
 
@@ -616,7 +616,7 @@ policy_auth::status_code pcf_policy_authorization::get_app_session_handler(
   // treated as gone, so GET never returns a context that is being torn down.
   if (!session || session->state() == app_session_state::released) {
     Logger::pcf_app().debug("App session '{}' not found", app_session_id);
-    problem_details = "APP_SESSION_CONTEXT_NOT_FOUND";
+    problem_details = "APPLICATION_SESSION_CONTEXT_NOT_FOUND";
     return status_code::NOT_FOUND;
   }
 
