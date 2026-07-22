@@ -104,6 +104,14 @@ sm_policy::status_code pcf_smpc::send_sm_policy_control_update_notify(
   request req   = http_client_inst->prepare_json_request(uri, request_body);
   response resp = http_client_inst->send_http_request(method_e::POST, req);
 
+  // TODO [QOS][ROLLBACK] Deferred: resp has
+  // no way to distinguish a connection/gateway failure from a timeout -- both
+  // leave status_code at 0. Telling them apart needs oai-cn5g-common-src's
+  // http_client to surface cpr::Response::error.code (shared across every
+  // CN5G NF; a separate, cross-repo change deferred for now). Until that
+  // lands, treat any status_code == 0 outcome as the more conservative of the
+  // two -- bounded retry, never rollback -- consistent with §5.1's "when
+  // ambiguous, don't rollback" posture.
   Logger::pcf_app().debug(
       "SM Policy Update Notification response from SMF for SUPI %s: HTTP %d",
       supi.c_str(), resp.status_code);
@@ -111,7 +119,8 @@ sm_policy::status_code pcf_smpc::send_sm_policy_control_update_notify(
       "SM Policy Update Notification response body <- SMF: %s",
       resp.body.c_str());
 
-  if (resp.status_code == http_status_code::OK) {
+  if (resp.status_code == http_status_code::OK ||
+      resp.status_code == http_status_code::NO_CONTENT) {
     // TODO [PAS] check if for required headers
     Logger::pcf_app().info(
         "Successful SM Policy Update Notification for SUPI %s",
