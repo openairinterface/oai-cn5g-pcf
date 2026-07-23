@@ -150,16 +150,16 @@ status_code pcf_policy_authorization::apply_with_retry(
         oai::model::pcf::SmPolicyDecision&)>& derive,
     sm_policy_delta& committed_delta, std::string& problem_details,
     const std::string& app_session_id) {
+  auto sm_update_decision = [this](
+      std::optional<std::string>& assoc_id, std::uint64_t expected_version,
+      const sm_policy_delta& delta, decision_apply_result& result) {
+    m_event_sub.sm_update_decision(
+        assoc_id, expected_version, delta, result);
+  };
   return policy_auth::apply_decision_with_retry(
       association_id, initial_base, initial_version, kMaxApplyRetries, derive,
-      [this](
-          std::optional<std::string>& assoc_id, std::uint64_t expected_version,
-          const sm_policy_delta& delta, decision_apply_result& result) {
-        m_event_sub.sm_update_decision(
-            assoc_id, expected_version, delta, result);
-      },
-      m_context->rollback_tracker(), app_session_id, committed_delta,
-      problem_details);
+      sm_update_decision, m_context->rollback_tracker(), app_session_id,
+      committed_delta, problem_details);
 }
 
 //------------------------------------------------------------------------------
@@ -674,27 +674,28 @@ void pcf_policy_authorization::handle_sm_policy_update_failed(
   // collaborators specifically so a test can assert this always feeds
   // apply_with_retry a freshly-looked-up live decision, never this commit's
   // own stale pre-commit base/post-commit version (a prior bug).
+  auto lookup_live_decision = [this](
+      const std::string& id, bool& found,
+      oai::model::pcf::SmPolicyDecision& decision,
+      std::uint64_t& out_version) {
+    m_event_sub.sm_get_association_decision(
+        id, found, decision, out_version);
+  };
+  auto apply_rollback_with_retry = [this](
+      std::optional<std::string>& assoc_id,
+      const oai::model::pcf::SmPolicyDecision& base, std::uint64_t ver,
+      const std::function<handler_result(
+          const oai::model::pcf::SmPolicyDecision&,
+          oai::model::pcf::SmPolicyDecision&)>& derive,
+      sm_policy_delta& committed_delta, std::string& problem_details,
+      const std::string& app_session_id) {
+    return apply_with_retry(
+        assoc_id, base, ver, derive, committed_delta, problem_details,
+        app_session_id);
+  };
   const status_code rollback_push = policy_auth::perform_compensating_rollback(
-      association_id, version, *commit,
-      [this](
-          const std::string& id, bool& found,
-          oai::model::pcf::SmPolicyDecision& decision,
-          std::uint64_t& out_version) {
-        m_event_sub.sm_get_association_decision(
-            id, found, decision, out_version);
-      },
-      [this](
-          std::optional<std::string>& assoc_id,
-          const oai::model::pcf::SmPolicyDecision& base, std::uint64_t ver,
-          const std::function<handler_result(
-              const oai::model::pcf::SmPolicyDecision&,
-              oai::model::pcf::SmPolicyDecision&)>& derive,
-          sm_policy_delta& committed_delta, std::string& problem_details,
-          const std::string& app_session_id) {
-        return apply_with_retry(
-            assoc_id, base, ver, derive, committed_delta, problem_details,
-            app_session_id);
-      });
+      association_id, version, *commit, lookup_live_decision,
+      apply_rollback_with_retry);
 
   // AF notification [§5.7 stub; Phase 3 fills in the real body]. Affected ids
   // are this commit's own original footprint (what needed undoing), not the
