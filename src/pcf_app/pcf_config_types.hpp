@@ -43,6 +43,40 @@ class qos_authorization_config : public config_type {
   [[nodiscard]] bool get_reject_on_missing_subscription() const;
 };
 
+/**
+ * @brief SMF notify-failure recovery limits (config view)
+ *
+ * Parses the `pcf.notify_failure_recovery` YAML block: TTL/cap for the two
+ * bounded tracking structures (SM-side retry-drain queue, PA-side
+ * pending_rollback_tracker) plus the retry-drain's bounded-retry schedule.
+ * These were flagged as open, unresolved numeric choices in the design doc
+ * (§8 Q2/Q3) -- exposed here as operator-tunable rather than hardcoded, since
+ * neither TS 29.512 nor TS 29.514 prescribes a value for either.
+ */
+class notify_failure_recovery_config : public config_type {
+ private:
+  int_config_value m_retry_drain_ttl_seconds;
+  int_config_value m_retry_drain_max_entries;
+  int_config_value m_max_notify_retries;
+  int_config_value m_retry_backoff_initial_ms;
+  int_config_value m_rollback_tracker_ttl_seconds;
+  int_config_value m_rollback_tracker_max_entries;
+
+ public:
+  notify_failure_recovery_config();
+
+  void from_yaml(const YAML::Node& node) override;
+
+  [[nodiscard]] std::string to_string(const std::string& indent) const override;
+
+  [[nodiscard]] int get_retry_drain_ttl_seconds() const;
+  [[nodiscard]] int get_retry_drain_max_entries() const;
+  [[nodiscard]] int get_max_notify_retries() const;
+  [[nodiscard]] int get_retry_backoff_initial_ms() const;
+  [[nodiscard]] int get_rollback_tracker_ttl_seconds() const;
+  [[nodiscard]] int get_rollback_tracker_max_entries() const;
+};
+
 class policy_config : public config_type {
  private:
   string_config_value m_pcc_rules_path;
@@ -72,6 +106,7 @@ class pcf_config_type : public nf {
   option_config_value m_enable_policy_provisioning_api;
   policy_config m_policy_config;
   qos_authorization_config m_qos_authorization_config;
+  notify_failure_recovery_config m_notify_failure_recovery_config;
 
  public:
   explicit pcf_config_type(
@@ -89,6 +124,8 @@ class pcf_config_type : public nf {
   [[nodiscard]] const policy_config& get_policy_config() const;
   [[nodiscard]] const qos_authorization_config& get_qos_authorization_config()
       const;
+  [[nodiscard]] const notify_failure_recovery_config&
+  get_notify_failure_recovery_config() const;
 };
 
 }  // namespace oai::config::pcf

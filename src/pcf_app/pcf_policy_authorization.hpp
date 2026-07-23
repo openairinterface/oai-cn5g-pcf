@@ -21,6 +21,7 @@
 #include "policy_auth/app_session.hpp"
 #include "policy_auth/policy_auth_context.hpp"
 #include "pcf_event.hpp"
+#include "sm_policy/smf_notify_outcome.hpp"
 #include "sm_policy_delta.hpp"
 
 namespace oai::pcf::app {
@@ -141,7 +142,23 @@ class pcf_policy_authorization {
           const oai::model::pcf::SmPolicyDecision& base,
           oai::model::pcf::SmPolicyDecision& working)>& derive,
       oai::pcf::app::sm_policy_delta& committed_delta,
-      std::string& problem_details);
+      std::string& problem_details, const std::string& app_session_id);
+
+  /**
+   * @brief Handler for a definitively "permanent" SMF notify rejection.
+   * Consumes (try_take) the matching
+   * pending_rollback_tracker entry, if still tracked, then delegates the
+   * fetch-live-decision-then-apply-with-retry orchestration to
+   * policy_auth::perform_compensating_rollback (rollback_orchestration.hpp) --
+   * extracted as a free, dependency-injected function specifically so that
+   * "always fetch live state, never reuse the tracker's stale pre-commit
+   * snapshot" is unit-tested in isolation. Also fires the §5.7 AF-notify stub
+   * either way (rollback committed, not committed, or the association no
+   * longer existing to roll back at all).
+   */
+  void handle_sm_policy_update_failed(
+      const std::string& association_id, std::uint64_t version,
+      oai::pcf::app::sm_policy::smf_notify_outcome reason);
 
   // Aggregate of the injected Policy Authorization stores (app-session working
   // set + binding index, and the operator-preconfigured QoS reference sets).
@@ -150,6 +167,7 @@ class pcf_policy_authorization {
 
   // for Event Handling
   pcf_event& m_event_sub;
+  bs2::connection m_sm_policy_update_failed_connection;
 
   // TODO [QOS-SUB] Application Function notification infrastructure [TS 29.514 §4.2.5, TS 29.500 §6.2]
   // Add data structures and methods for AF monitoring and notifications as per 3GPP TS 29.514:

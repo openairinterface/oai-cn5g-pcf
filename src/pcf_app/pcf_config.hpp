@@ -25,6 +25,7 @@ class pcf_config : public oai::config::config {
 
   const policy_config& get_pcf_policy() const;
   const qos_authorization_config& get_qos_authorization() const;
+  const notify_failure_recovery_config& get_notify_failure_recovery() const;
   bool use_db_policy_storage() const;
 };
 }  // namespace oai::config::pcf

@@ -33,6 +33,11 @@ add_executable(${NF_TARGET}
   test_qos_authorization_config.cpp
   test_operator_qos_policy_builder.cpp
   test_sm_policy_delta.cpp
+  test_rollback_delta.cpp
+  test_rollback_orchestration.cpp
+  test_smf_notify_response_classifier.cpp
+  test_pending_rollback_tracker.cpp
+  test_retry_drain_queue.cpp
 )
 
 ## Common modules (re-included with NF_TARGET=pcf_unit_tests so their
