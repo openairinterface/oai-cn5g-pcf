@@ -29,6 +29,7 @@
 #include "nf_launch.hpp"
 #include "conversions.hpp"
 #include "http_client.hpp"
+#include "task_manager.hpp"
 
 #include <iostream>
 #include <csignal>
@@ -50,6 +51,12 @@ std::unique_ptr<pcf_http2_server> pcf_api_server_2         = nullptr;
 std::shared_ptr<oai::http::http_client> http_client_inst   = nullptr;
 std::unique_ptr<database_wrapper_abstraction> db_connector = nullptr;
 std::unique_ptr<oai::config::lttng_configuration> lttng_config_yaml;
+// task_tick heartbeat (dormant today: nothing subscribes yet,
+// its destructor blocks until manage_tasks()'s
+// loop actually exits, so it must be reset (below) before task_manager_thread
+// is joined, never the other way around.
+std::unique_ptr<task_manager> task_manager_inst = nullptr;
+std::thread task_manager_thread;
 //------------------------------------------------------------------------------
 void signal_handler_sigint(int s) {
   auto shutdown_start = std::chrono::system_clock::now();
@@ -67,6 +74,15 @@ void signal_handler_sigint(int s) {
   }
   if (pcf_app_inst) {
     pcf_app_inst->stop();
+  }
+  Logger::system().debug("Shutting down task manager...");
+  // Resetting blocks until manage_tasks()'s loop actually exits (the
+  // destructor's terminate/terminated handshake) -- must complete before the
+  // std::thread running it is joined, or that thread is still running when
+  // its std::thread destructor would otherwise run.
+  task_manager_inst = nullptr;
+  if (task_manager_thread.joinable()) {
+    task_manager_thread.join();
   }
   // TODO exit is not always clean, check again after complete refactor
   // Ensure that objects are destructed before static libraries (e.g. Logger)
@@ -148,6 +164,13 @@ int main(int argc, char** argv) {
 
   // PCF application layer
   pcf_app_inst = std::make_unique<pcf_app>(ev);
+
+  // task_tick heartbeat thread. Started here, before any HTTP worker thread
+  // spins up, preserving the "every pcf_event .connect() happens once, at
+  // single-threaded startup" invariant the rest of pcf_event relies on
+  // (nothing subscribes to task_tick yet).
+  task_manager_inst   = std::make_unique<task_manager>(ev);
+  task_manager_thread = std::thread(&task_manager::run, task_manager_inst.get());
 
   std::string v4_address =
       oai::utils::conv::toString(pcf_cfg->local().get_sbi().get_addr4());

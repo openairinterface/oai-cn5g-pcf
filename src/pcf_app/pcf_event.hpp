@@ -83,6 +83,31 @@ class pcf_event {
   bs2::connection subscribe_sm_update_decision(
       const sm_update_decision_sig_t::slot_type& sig);
 
+  /**
+   * Subscribe to a definitively "permanent" SMF notify rejection.
+   * Invariant (finding F): connect only once,
+   * at Policy Authorization's construction, before any HTTP thread starts --
+   * dummy_mutex gives no protection against a runtime connect/disconnect
+   * racing an invocation.
+   * @param [const sm_policy_update_failed_sig_t::slot_type&] sig: slot_type
+   * parameter
+   * @return boost::signals2::connection: the connection between the signal
+   * and the slot
+   */
+  bs2::connection subscribe_sm_policy_update_failed(
+      const sm_policy_update_failed_sig_t::slot_type& sig);
+
+  /**
+   * Subscribe to a lookup of an association's current decision + version by
+   * association_id.
+   * @param [const sm_get_association_decision_sig_t::slot_type&] sig:
+   * slot_type parameter
+   * @return boost::signals2::connection: the connection between the signal
+   * and the slot
+   */
+  bs2::connection subscribe_sm_get_association_decision(
+      const sm_get_association_decision_sig_t::slot_type& sig);
+
   // TODO [QOS] Add QoS coordination events between Policy Authorization and SM Policy Control [TS 29.513 §5.2.2.2, TS 29.512 §4.2.3]
   // Implement the following events for comprehensive QoS coordination:
 
@@ -140,6 +165,12 @@ class pcf_event {
   sm_session_binding_sig_t sm_session_binding;  // Signal for SM Session Binding
 
   sm_update_decision_sig_t sm_update_decision;  // Signal for SM Update Decision
+
+  sm_policy_update_failed_sig_t
+      sm_policy_update_failed;  // Signal for a permanent SMF notify rejection
+
+  sm_get_association_decision_sig_t
+      sm_get_association_decision;  // Signal for association lookup by id
 
   // TODO [QOS] Add QoS coordination signals [TS 29.513 §5.2.2.2, TS 29.512 §4.2.3]
   // Private signal definitions for QoS coordination between services:

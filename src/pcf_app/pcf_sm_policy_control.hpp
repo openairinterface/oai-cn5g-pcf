@@ -17,11 +17,14 @@
 #include "SmPolicyControl.h"
 #include "SmPolicyUpdateContextData.h"
 #include "sm_policy/pcf_smpc_status_code.hpp"
+#include "sm_policy/smf_notify_outcome.hpp"
 #include "sm_policy/individual_sm_association.hpp"
+#include "sm_policy/retry_drain_queue.hpp"
 #include "sm_policy_delta.hpp"
 #include "uint_generator.hpp"
 #include "sm_policy/policy_storage.hpp"
 #include "pcf_event.hpp"
+#include "notify_failure_recovery_policy.hpp"
 #include "operator_qos_policy.hpp"
 
 namespace oai::pcf::app {
@@ -36,7 +39,8 @@ class pcf_smpc {
       const std::shared_ptr<oai::pcf::app::sm_policy::policy_storage>&
           policy_storage,
       pcf_event& ev,
-      oai::pcf::app::operator_qos_policy qos_authorization_policy = {});
+      oai::pcf::app::operator_qos_policy qos_authorization_policy         = {},
+      oai::pcf::app::notify_failure_recovery_policy notify_failure_recovery = {});
   pcf_smpc(pcf_smpc const&) = delete;
   void operator=(pcf_smpc const&) = delete;
 
@@ -122,22 +126,49 @@ class pcf_smpc {
   // later step (see N5_QoS_Phase1_§1.4 plan §7.4).
   oai::pcf::app::operator_qos_policy m_qos_authorization_policy;
 
+  // Bounded retry-drain queue for temporary/ambiguous SMF notify outcomes
+  // Drained on the task_tick heartbeat (see
+  // m_task_tick_connection); TTL/cap/retry-count/backoff come from config via
+  // notify_failure_recovery.
+  oai::pcf::app::sm_policy::retry_drain_queue m_retry_drain_queue;
+
+  // Drains due entries from m_retry_drain_queue: re-fetches each association's
+  // live decision + context under lock immediately before the attempt
+  // (never resend a frozen snapshot), notifies off-lock [CP.22],
+  // and reports the outcome back to the queue. Fires the SM->PA
+  // sm_policy_update_failed signal on a permanent rejection discovered here,
+  // exactly as handle_update_decision_request does on the first attempt.
+  void drain_retry_queue(std::uint64_t tick_ms);
+
   void handle_policy_change(
       const std::shared_ptr<oai::pcf::app::sm_policy::policy_decision>&
           decision);
 
   // Notify the SMF of a decision. Takes an immutable snapshot + the context
   // (SUPI/DNN/notifUri) captured under the association lock, so the caller can
-  // release the lock before this blocking SMF round-trip [CP.22].
+  // release the lock before this blocking SMF round-trip [CP.22]. `outcome`
+  // carries the TS 29.512 Table 5.7.3-2 classification (permanent/temporary/
+  // transport-ambiguous/etc.) that `status_code` alone can't express.
   sm_policy::status_code send_sm_policy_control_update_notify(
       const oai::model::pcf::SmPolicyContextData& context,
-      const std::shared_ptr<const oai::model::pcf::SmPolicyDecision>& decision);
+      const std::shared_ptr<const oai::model::pcf::SmPolicyDecision>& decision,
+      sm_policy::smf_notify_outcome& outcome);
 
   void handle_session_binding_request(
       const std::optional<std::string>& ipv4,
       const std::optional<std::string>& supi,
       const std::optional<std::string>& dnn,
       std::optional<std::string>& assoc_id,
+      oai::model::pcf::SmPolicyDecision& decision, std::uint64_t& version);
+
+  // Looks up an association's CURRENT decision + version directly by its
+  // already-known association_id.
+  // Unlike handle_session_binding_request, takes no (ipv4, supi, dnn) --
+  // the caller already has the association_id and just wants a fresh
+  // snapshot, e.g. immediately before Policy Authorization's own
+  // apply_with_retry call for a compensating rollback.
+  void handle_get_association_decision(
+      const std::string& association_id, bool& found,
       oai::model::pcf::SmPolicyDecision& decision, std::uint64_t& version);
 
   // Optimistic, version-checked apply. Applies `delta` and notifies the SMF
@@ -185,6 +216,8 @@ class pcf_smpc {
   pcf_event& m_event_sub;
   bs2::connection m_sm_session_binding_connection;
   bs2::connection m_sm_update_decision_connection;
+  bs2::connection m_task_tick_connection;
+  bs2::connection m_get_association_decision_connection;
 };
 }  // namespace oai::pcf::app
 #endif /* FILE_PCF_SM_POLICY_CONTROL_SEEN */

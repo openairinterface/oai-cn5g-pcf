@@ -6,9 +6,11 @@
 #define FILE_PCF_EVENT_SIG_HPP_SEEN
 
 #include <boost/signals2.hpp>
+#include <cstdint>
 #include <string>
 #include "SmPolicyDecision.h"
 #include "sm_policy_delta.hpp"
+#include "sm_policy/smf_notify_outcome.hpp"
 
 namespace bs2 = boost::signals2;
 
@@ -71,6 +73,36 @@ typedef bs2::signal_type<
         std::optional<std::string>&, std::uint64_t, const sm_policy_delta&,
         decision_apply_result&),
     bs2::keywords::mutex_type<bs2::dummy_mutex>>::type sm_update_decision_sig_t;
+
+// Signal for sm_policy_control to report a definitively "permanent" SMF
+// notify rejection back to Policy Authorization
+// a new channel, symmetric to sm_update_decision_sig_t but in the
+// opposite direction. Fired by SM only when a notify's outcome is
+// smf_notify_outcome::permanent_rejection (cause == PCC_RULE_EVENT per TS
+// 29.512 Table 5.7.3-2 -- the SMF has told us, unambiguously, that it will
+// not apply this change). Never fired for timeouts, transport failures, or
+// temporary_rejection outcomes.
+// (association_id in, version in, reason in.)
+typedef bs2::signal_type<
+    void(std::string, std::uint64_t, oai::pcf::app::sm_policy::smf_notify_outcome),
+    bs2::keywords::mutex_type<bs2::dummy_mutex>>::type
+    sm_policy_update_failed_sig_t;
+
+// Signal for sm_policy_control to look up an association's CURRENT decision +
+// version directly by its already-known association_id.
+// Distinct from sm_session_binding_sig_t, which
+// looks up BY (ipv4, supi, dnn) and returns the association_id as an out-param
+// -- this one is for a caller that already has the association_id (Policy
+// Authorization's rollback path) and needs a fresh snapshot immediately
+// before its own apply_with_retry call, rather than reusing a stale historical
+// one
+// (association_id in; found, decision, version out.)
+typedef bs2::signal_type<
+    void(
+        const std::string&, bool&, oai::model::pcf::SmPolicyDecision&,
+        std::uint64_t&),
+    bs2::keywords::mutex_type<bs2::dummy_mutex>>::type
+    sm_get_association_decision_sig_t;
 
 // TODO [QOS] Define QoS coordination signal types for cross-service communication [TS 29.513 §5.2.2.2, TS 29.512 §4.2.3]
 // The following signals enable coordination between Policy Authorization and SM Policy Control:

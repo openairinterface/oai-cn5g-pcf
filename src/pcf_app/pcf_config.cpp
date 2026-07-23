@@ -43,6 +43,12 @@ oai::config::pcf::pcf_config::get_qos_authorization() const {
       ->get_qos_authorization_config();
 }
 
+const oai::config::pcf::notify_failure_recovery_config&
+oai::config::pcf::pcf_config::get_notify_failure_recovery() const {
+  return std::dynamic_pointer_cast<pcf_config_type>(get_local())
+      ->get_notify_failure_recovery_config();
+}
+
 bool oai::config::pcf::pcf_config::use_db_policy_storage() const {
   return std::dynamic_pointer_cast<pcf_config_type>(get_local())
       ->enable_policy_provisioning_api();
