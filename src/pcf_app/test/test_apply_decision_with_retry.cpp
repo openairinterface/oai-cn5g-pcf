@@ -138,10 +138,11 @@ TEST(ApplyDecisionWithRetry, ConflictRederivesAgainstFreshlyCommittedBase) {
   auto derive = [&](
                     const SmPolicyDecision& base,
                     SmPolicyDecision& working) -> handler_result {
-    auto y_it = base.getQosDecs().find("Y");
+    const auto qos_decs = base.getQosDecs();
+    auto y_it = qos_decs.find("Y");
     bases_seen_y.push_back(
-        y_it == base.getQosDecs().end() ? std::nullopt
-                                         : std::optional<int32_t>(y_it->second.getR5qi()));
+        y_it == qos_decs.end() ? std::nullopt
+                                : std::optional<int32_t>(y_it->second.getR5qi()));
     working  = base;
     auto qos = working.getQosDecs();
     qos["X"] = make_qos("X", 9);
