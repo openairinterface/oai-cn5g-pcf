@@ -477,7 +477,11 @@ void pcf_smpc::drain_retry_queue(std::uint64_t /*tick_ms*/) {
     if (!association_found) {
       // Association gone (e.g. PDU session released concurrently); nothing
       // left to retry.
-      m_retry_drain_queue.report_attempt(association_id, version, true, now);
+      const auto drain_outcome =
+          m_retry_drain_queue.report_attempt(association_id, version, true, now);
+      Logger::pcf_app().debug(
+          "drain_retry_queue: association %s version %lu gone -> %s",
+          association_id.c_str(), version, to_string(drain_outcome));
       continue;
     }
 
@@ -493,10 +497,15 @@ void pcf_smpc::drain_retry_queue(std::uint64_t /*tick_ms*/) {
     // applied and permanent_rejection are both terminal for this queue (one
     // resolved cleanly, the other now owned by Policy Authorization);
     // temporary_rejection/transport_ambiguous reschedule with backoff, or
-    // exhaust (report_attempt logs the exhaustion itself).
+    // exhaust (report_attempt logs the exhaustion itself at ERROR -- this
+    // debug line traces every attempt's outcome, not just the terminal one).
     const bool resolved = outcome == smf_notify_outcome::applied ||
                            outcome == smf_notify_outcome::permanent_rejection;
-    m_retry_drain_queue.report_attempt(association_id, version, resolved, now);
+    const auto drain_outcome = m_retry_drain_queue.report_attempt(
+        association_id, version, resolved, now);
+    Logger::pcf_app().debug(
+        "drain_retry_queue: association %s version %lu -> %s",
+        association_id.c_str(), version, to_string(drain_outcome));
   }
 }
 
