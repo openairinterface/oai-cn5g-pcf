@@ -210,9 +210,10 @@ handler_result validate_and_merge_decision(
 
   // Check if PCC rule id in request decision exists in current decision
   if (request_decision.getPccRules().size() > 0 && !update) {
+    const auto existing_pcc_rules = current_decision.getPccRules();
     for (const auto& [key, value] : request_decision.getPccRules()) {
-      auto iter = current_decision.getPccRules().find(key.c_str());
-      if (iter != current_decision.getPccRules().end() &&
+      auto iter = existing_pcc_rules.find(key.c_str());
+      if (iter != existing_pcc_rules.end() &&
           !iter->first.empty()) {
         Logger::pcf_app().debug(fmt::format(
           "Rejecting create request because PCC Rule ID '{}' already exists "
@@ -229,9 +230,10 @@ handler_result validate_and_merge_decision(
   // Check if TcId in traffic control data in request decision exists in current
   // decision
   if (request_decision.getTraffContDecs().size() > 0 && !update) {
+    const auto existing_traff_cont_decs = current_decision.getTraffContDecs();
     for (const auto& [key, value] : request_decision.getTraffContDecs()) {
-      auto iter = current_decision.getTraffContDecs().find(key);
-      if (iter != current_decision.getTraffContDecs().end() &&
+      auto iter = existing_traff_cont_decs.find(key);
+      if (iter != existing_traff_cont_decs.end() &&
           !iter->first.empty()) {
         Logger::pcf_app().debug(fmt::format(
           "Rejecting create request because Traffic Control ID '{}' already "
