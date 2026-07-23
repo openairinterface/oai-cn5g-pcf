@@ -12,7 +12,9 @@
 #include "AppSessionContextUpdateDataPatch.h"
 #include "MediaComponentRm.h"
 #include "FlowStatus.h"
+#include "policy_auth/af_notify.hpp"
 #include "policy_auth/app_session.hpp"
+#include "policy_auth/rollback_orchestration.hpp"
 
 #include "AppSessionContextRespData.h"
 
@@ -62,6 +64,13 @@ std::string negotiate_supported_features(const std::string& af_supp_feat) {
 pcf_policy_authorization::pcf_policy_authorization(
     std::shared_ptr<policy_auth::policy_auth_context> context, pcf_event& ev)
     : m_context(std::move(context)), m_event_sub(ev) {
+  // Invariant: connect only once,
+  // here at construction, before any HTTP thread starts.
+  m_sm_policy_update_failed_connection =
+      m_event_sub.subscribe_sm_policy_update_failed(boost::bind(
+          &pcf_policy_authorization::handle_sm_policy_update_failed, this,
+          boost::placeholders::_1, boost::placeholders::_2,
+          boost::placeholders::_3));
 
   // TODO [QOS-SUB] Initialize Application Function monitoring and notification infrastructure [TS 29.514 §4.2.5, TS 29.500 §6.2]
   // Set up comprehensive AF communication framework as per 3GPP TS 29.514:
@@ -138,7 +147,8 @@ status_code pcf_policy_authorization::apply_with_retry(
     const std::function<handler_result(
         const oai::model::pcf::SmPolicyDecision&,
         oai::model::pcf::SmPolicyDecision&)>& derive,
-    sm_policy_delta& committed_delta, std::string& problem_details) {
+    sm_policy_delta& committed_delta, std::string& problem_details,
+    const std::string& app_session_id) {
   const oai::model::pcf::SmPolicyDecision* base = &initial_base;
   std::uint64_t base_version = initial_version;
   // Holds a conflict snapshot so `base` stays valid across iterations.
@@ -160,7 +170,22 @@ status_code pcf_policy_authorization::apply_with_retry(
     committed_delta = compute_sm_policy_delta(*base, working);
     m_event_sub.sm_update_decision(
         association_id, base_version, committed_delta, result);
-    if (result.committed) return status_code::OK;
+    if (result.committed) {
+      // Retain "what would need to be undone" if this commit is later
+      // reported as a permanent SMF rejection,
+      // keyed on the post-commit version (result.version) that SM's
+      // sm_policy_update_failed signal reports. `base` is copied into
+      // the shared_ptr snapshot pending_commit expects; a one-time cost paid
+      // once per successful commit, not multiplied by retries.
+      m_context->rollback_tracker().record(
+          association_id.value_or(""), result.version,
+          policy_auth::pending_commit{
+              app_session_id, committed_delta,
+              std::make_shared<const oai::model::pcf::SmPolicyDecision>(
+                  *base),
+              {}});
+      return status_code::OK;
+    }
 
     // Version conflict: another update committed since we read the base.
     if (attempt >= kMaxApplyRetries || !result.decision) {
@@ -300,7 +325,7 @@ status_code pcf_policy_authorization::post_app_sessions_handler(
   sm_policy_delta committed_delta;
   const status_code push = apply_with_retry(
       association_id, base_decision, bound_version, derive, committed_delta,
-      problem_details);
+      problem_details, app_session_id);
   if (push != status_code::OK) return push;
 
   // ---- post-commit side-effects (reached only once the delta committed) ----
@@ -508,7 +533,7 @@ policy_auth::status_code pcf_policy_authorization::mod_app_session_handler(
   sm_policy_delta committed_delta;
   const status_code push = apply_with_retry(
       association_id, base_decision, bound_version, derive, committed_delta,
-      problem_details);
+      problem_details, app_session_id);
   if (push != status_code::OK) return push;
 
   // ---- post-commit side-effects (reached only once the delta committed) ----
@@ -580,7 +605,7 @@ policy_auth::status_code pcf_policy_authorization::delete_app_session_handler(
     sm_policy_delta committed_delta;
     const status_code push = apply_with_retry(
         association_id, current_decision, bound_version, derive,
-        committed_delta, problem_details);
+        committed_delta, problem_details, app_session_id);
     if (push != status_code::OK) {
       // Best-effort cleanup: the AF's session is being torn down regardless, so
       // proceed to drop it from storage even if persistent contention stopped
@@ -643,4 +668,80 @@ pcf_policy_authorization::build_response_data(
 //------------------------------------------------------------------------------
 pcf_policy_authorization::~pcf_policy_authorization() {
   Logger::pcf_app().debug("Delete PCF PA instance...");
+}
+
+//------------------------------------------------------------------------------
+void pcf_policy_authorization::handle_sm_policy_update_failed(
+    const std::string& association_id, std::uint64_t version,
+    sm_policy::smf_notify_outcome reason) {
+  auto commit =
+      m_context->rollback_tracker().try_take(association_id, version);
+  if (!commit) {
+    Logger::pcf_app().warn(
+        "handle_sm_policy_update_failed: no pending commit tracked for "
+        "association %s version %lu (outcome=%s) -- expired, already taken, "
+        "or never tracked; cannot attribute or notify an AF",
+        association_id.c_str(), version, sm_policy::to_string(reason));
+    return;
+  }
+
+  Logger::pcf_app().error(
+      "handle_sm_policy_update_failed: association %s version %lu "
+      "permanently rejected by the SMF (outcome=%s) -- app-session %s's "
+      "commit needs compensating rollback",
+      association_id.c_str(), version, sm_policy::to_string(reason),
+      commit->app_session_id.c_str());
+
+  // Fetch-live-then-apply orchestration
+  // extracted into perform_compensating_rollback (rollback_orchestration.hpp)
+  // -- the live-decision lookup and apply_with_retry are injected as
+  // collaborators specifically so a test can assert this always feeds
+  // apply_with_retry a freshly-looked-up live decision, never this commit's
+  // own stale pre-commit base/post-commit version (a prior bug).
+  const status_code rollback_push = policy_auth::perform_compensating_rollback(
+      association_id, version, *commit,
+      [this](
+          const std::string& id, bool& found,
+          oai::model::pcf::SmPolicyDecision& decision,
+          std::uint64_t& out_version) {
+        m_event_sub.sm_get_association_decision(
+            id, found, decision, out_version);
+      },
+      [this](
+          std::optional<std::string>& assoc_id,
+          const oai::model::pcf::SmPolicyDecision& base, std::uint64_t ver,
+          const std::function<handler_result(
+              const oai::model::pcf::SmPolicyDecision&,
+              oai::model::pcf::SmPolicyDecision&)>& derive,
+          sm_policy_delta& committed_delta, std::string& problem_details,
+          const std::string& app_session_id) {
+        return apply_with_retry(
+            assoc_id, base, ver, derive, committed_delta, problem_details,
+            app_session_id);
+      });
+
+  // AF notification [§5.7 stub; Phase 3 fills in the real body]. Affected ids
+  // are this commit's own original footprint (what needed undoing), not the
+  // filtered rollback_committed_delta -- an id §5.6 skipped as stale is still
+  // an id the AF's QoS update failed for, whether or not PCF's own state
+  // reverted for it.
+  std::vector<std::string> affected_qos_ids;
+  for (const auto& [id, unused] : commit->committed_delta.upsert_qos_decs) {
+    (void)unused;
+    affected_qos_ids.push_back(id);
+  }
+  for (const auto& id : commit->committed_delta.removed_qos_decs) {
+    affected_qos_ids.push_back(id);
+  }
+  std::vector<std::string> affected_pcc_rule_ids;
+  for (const auto& [id, unused] : commit->committed_delta.upsert_pcc_rules) {
+    (void)unused;
+    affected_pcc_rule_ids.push_back(id);
+  }
+  for (const auto& id : commit->committed_delta.removed_pcc_rules) {
+    affected_pcc_rule_ids.push_back(id);
+  }
+  policy_auth::notify_af_qos_update_failed(
+      commit->app_session_id, affected_qos_ids, affected_pcc_rule_ids, reason,
+      rollback_push == status_code::OK);
 }

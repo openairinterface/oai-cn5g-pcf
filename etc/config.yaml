@@ -203,6 +203,17 @@ pcf:
     max_session_ambr_ul: ""          # e.g. "2 Gbps"; "" = no authorized Session-AMBR uplink clamp
     max_session_ambr_dl: ""          # e.g. "4 Gbps"; "" = no authorized Session-AMBR downlink clamp
     reject_on_missing_subscription: no  # yes = reject QoS when no subscribed Session-AMBR is available
+  # SMF notify-failure recovery: bounds on the SM-side
+  # retry-drain queue and the PA-side pending-rollback tracker, plus the
+  # retry-drain's bounded-retry schedule. Neither TS 29.512 nor TS 29.514
+  # prescribes these values -- tune to deployment scale.
+  notify_failure_recovery:
+    retry_drain_ttl_seconds: 30        # SM-side retry-drain queue entry TTL
+    retry_drain_max_entries: 10000     # SM-side retry-drain queue hard cap
+    max_notify_retries: 3              # bounded retries before log-only escalation
+    retry_backoff_initial_ms: 500      # first retry delay (doubles each attempt)
+    rollback_tracker_ttl_seconds: 30   # PA-side pending_rollback_tracker entry TTL
+    rollback_tracker_max_entries: 10000 # PA-side pending_rollback_tracker hard cap
 
 nssf:
   slice_config_path: /openair-nssf/etc/nssf_slice_config.yaml

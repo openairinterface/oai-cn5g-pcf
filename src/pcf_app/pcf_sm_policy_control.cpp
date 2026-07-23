@@ -7,6 +7,7 @@
 #include "pcf_config.hpp"
 #include "sm_policy/policy_decision.hpp"
 #include "sm_policy/qos_session_authorization.hpp"
+#include "sm_policy/smf_notify_response_classifier.hpp"
 #include "SmPolicyDecision.h"
 
 #include <boost/uuid/uuid_io.hpp>
@@ -17,7 +18,6 @@
 #include <optional>
 #include "nlohmann/json.hpp"
 #include "3gpp_29.500.h"
-#include "ProblemDetails.h"
 #include "http_client.hpp"
 
 using namespace oai::pcf::app;
@@ -31,12 +31,26 @@ using namespace std;
 
 extern std::shared_ptr<oai::http::http_client> http_client_inst;
 
+namespace {
+// Retry-drain heartbeat period [N5_QoS_Phase2_§2.8 plan §5.2] -- well above
+// task_tick's raw 1ms rate, since nothing here needs finer granularity than
+// the backoff schedule itself. An internal polling detail, not an operator
+// policy choice, so unlike TTL/cap/retry-count/backoff it isn't config-driven.
+constexpr std::uint64_t kRetryDrainCheckPeriodMs = 1000;
+}  // namespace
+
 //------------------------------------------------------------------------------
 pcf_smpc::pcf_smpc(
     const std::shared_ptr<oai::pcf::app::sm_policy::policy_storage>&
         policy_storage,
-    pcf_event& ev, oai::pcf::app::operator_qos_policy qos_authorization_policy)
-    : m_event_sub(ev) {
+    pcf_event& ev, oai::pcf::app::operator_qos_policy qos_authorization_policy,
+    oai::pcf::app::notify_failure_recovery_policy notify_failure_recovery)
+    : m_retry_drain_queue(
+          notify_failure_recovery.retry_drain_ttl,
+          notify_failure_recovery.retry_drain_max_entries,
+          notify_failure_recovery.max_notify_retries,
+          notify_failure_recovery.retry_backoff_initial),
+      m_event_sub(ev) {
   m_policy_storage           = policy_storage;
   m_qos_authorization_policy = std::move(qos_authorization_policy);
 
@@ -58,6 +72,16 @@ pcf_smpc::pcf_smpc(
           boost::placeholders::_1, boost::placeholders::_2,
           boost::placeholders::_3, boost::placeholders::_4));
 
+  m_task_tick_connection = m_event_sub.subscribe_task_nf_heartbeat(
+      boost::bind(
+          &pcf_smpc::drain_retry_queue, this, boost::placeholders::_1),
+      kRetryDrainCheckPeriodMs);
+
+  m_get_association_decision_connection =
+      m_event_sub.subscribe_sm_get_association_decision(boost::bind(
+          &pcf_smpc::handle_get_association_decision, this,
+          boost::placeholders::_1, boost::placeholders::_2,
+          boost::placeholders::_3, boost::placeholders::_4));
 }
 
 void pcf_smpc::handle_policy_change(
@@ -67,7 +91,13 @@ void pcf_smpc::handle_policy_change(
 
 sm_policy::status_code pcf_smpc::send_sm_policy_control_update_notify(
     const oai::model::pcf::SmPolicyContextData& context,
-    const std::shared_ptr<const oai::model::pcf::SmPolicyDecision>& decision) {
+    const std::shared_ptr<const oai::model::pcf::SmPolicyDecision>& decision,
+    smf_notify_outcome& outcome) {
+  // Safe default: if some future edit adds a path below that forgets to set
+  // `outcome`, fail toward "ambiguous, retry-only" rather than toward
+  // "applied" or an unset value -- consistent with §5.1's "when ambiguous,
+  // don't rollback" posture.
+  outcome = smf_notify_outcome::transport_ambiguous;
   // Notifies the SMF with the FULL decision (the SMF diffs it itself). Operates
   // on an immutable snapshot captured under the association lock, so this
   // blocking round-trip runs off-lock [CP.22].
@@ -119,12 +149,23 @@ sm_policy::status_code pcf_smpc::send_sm_policy_control_update_notify(
       "SM Policy Update Notification response body <- SMF: %s",
       resp.body.c_str());
 
-  if (resp.status_code == http_status_code::OK ||
-      resp.status_code == http_status_code::NO_CONTENT) {
+  // Classification (TS 29.512 Table 5.7.3-2 / clause 4.2.3.2) is a pure
+  // function of (http status, parsed body) -- extracted so it's directly
+  // unit-tested without mocking HTTP [N5_QoS_Phase2_§2.8 plan §5.1].
+  // (Previously this parsed resp.body -- a std::string -- directly as a
+  // nlohmann::json via from_json(resp.body, problem_details):
+  // nlohmann::json's implicit std::string constructor builds a JSON *string
+  // scalar*, not a parsed object, so `cause`/`detail` were never actually
+  // populated -- the USER_UNKNOWN branch had never fired against a real SMF
+  // response. get_json() parses properly.)
+  const auto classification =
+      classify_smf_notify_response(resp.status_code, resp.get_json());
+  outcome = classification.outcome;
+
+  if (classification.outcome == smf_notify_outcome::applied) {
     // TODO [PAS] check if for required headers
     Logger::pcf_app().info(
-        "Successful SM Policy Update Notification for SUPI %s",
-        context.getSupi().c_str());
+        "%s for SUPI %s", classification.info.c_str(), supi.c_str());
 
     // TODO [QOS-SUB] Coordinate Application Function notifications after successful SMF update [TS 29.513 §5.2.2.3, TS 29.514 §4.2.5]
     // Following successful SMF notification, trigger AF notifications as per 3GPP TS 29.514:
@@ -154,45 +195,21 @@ sm_policy::status_code pcf_smpc::send_sm_policy_control_update_notify(
     // std::string dnn = association.get_sm_policy_context_data().getDnn();
     // m_event_sub.coordinate_af_notifications(supi, dnn, association.get_sm_policy_decision_dto());
 
-    return status_code::CREATED;
+    return classification.response;
   }
 
-  // failure case
-  ProblemDetails problem_details;
-  from_json(resp.body, problem_details);
-
-  std::string info;
-  status_code response;
-  switch (resp.status_code) {
-    case http_status_code::FORBIDDEN:
-      info     = "SM Policy Update Notification Forbidden";
-      response = status_code::CONTEXT_DENIED;
-      break;
-    case http_status_code::BAD_REQUEST:
-      if (problem_details.getCause() == "USER_UNKNOWN") {
-        response = status_code::USER_UNKOWN;
-        info     = "SM Policy Association Creation: Unknown User";
-      } else {
-        response = status_code::INVALID_PARAMETERS;
-        info     = "SM Policy Update Notification: Bad Request";
-      }
-      break;
-    case http_status_code::INTERNAL_SERVER_ERROR:
-      response = status_code::INTERNAL_SERVER_ERROR;
-      info     = "SM Policy Update Notification: Internal Error";
-      break;
-    default:
-      response = status_code::INTERNAL_SERVER_ERROR;
-      info =
-          "SM Policy Update Notification: Unknown Error Code from "
-          "SMF: " +
-          std::to_string(resp.status_code);
+  if (classification.partial_failure_entries > 0) {
+    Logger::pcf_app().warn(
+        "%s for SUPI %s: HTTP %d (%zu entries) -- outcome=%s",
+        classification.info.c_str(), supi.c_str(), resp.status_code,
+        classification.partial_failure_entries, to_string(outcome));
+    return classification.response;
   }
 
   Logger::pcf_app().warn(
-      "%s -- Details: %s - %s", info.c_str(),
-      problem_details.getCause().c_str(), problem_details.getDetail().c_str());
-  return response;
+      "%s -- Details: %s - %s", classification.info.c_str(),
+      classification.cause.c_str(), classification.detail.c_str());
+  return classification.response;
 }
 
 void pcf_smpc::handle_session_binding_request(
@@ -247,6 +264,26 @@ void pcf_smpc::handle_session_binding_request(
   version  = iter->second.decision_version();
 
   // Get PCC from decision
+}
+
+//------------------------------------------------------------------------------
+void pcf_smpc::handle_get_association_decision(
+    const std::string& association_id, bool& found,
+    oai::model::pcf::SmPolicyDecision& decision, std::uint64_t& version) {
+  found = false;
+
+  std::shared_lock lock_associations(m_associations_mutex);
+  auto iter = m_associations.find(association_id);
+  if (iter == m_associations.end()) {
+    Logger::pcf_app().info(fmt::format(
+        "handle_get_association_decision: association {} not found",
+        association_id));
+    return;
+  }
+
+  found    = true;
+  decision = iter->second.get_sm_policy_decision_dto();
+  version  = iter->second.decision_version();
 }
 
 void pcf_smpc::handle_update_decision_request(
@@ -346,13 +383,86 @@ void pcf_smpc::handle_update_decision_request(
   // Notify the SMF against the immutable snapshot, off-lock. The notification
   // still carries the full decision (the SMF diffs it itself); only PCF-internal
   // application is incremental.
-  auto ret = send_sm_policy_control_update_notify(context, out.decision);
+  smf_notify_outcome outcome = smf_notify_outcome::applied;
+  auto ret = send_sm_policy_control_update_notify(context, out.decision, outcome);
   if (ret != status_code::CREATED) {
-    Logger::pcf_app().error("Policy update notification failed");
+    Logger::pcf_app().error(
+        "Policy update notification failed for association %s: outcome=%s",
+        association_id.value_or("<none>").c_str(), to_string(outcome));
 
-    // TODO [QOS] Handle QoS notification failures gracefully [TS 29.500 §5.2.8;
-    // Phase 2 §2.8]: roll back the applied delta, retry with backoff, and/or
-    // alert the operator so PCF and SMF/UPF state don't diverge silently.
+    switch (outcome) {
+      case smf_notify_outcome::permanent_rejection:
+        // TS 29.512 Table 5.7.3-2: the SMF has told us, unambiguously, that
+        // it will not apply this change -- the only outcome Policy
+        // Authorization may act on with a compensating rollback
+        // [N5_QoS_Phase2_§2.8 plan §5.3]. `out.version` is the same
+        // post-commit version PA's apply_with_retry recorded this commit's
+        // pending_rollback_tracker entry under.
+        m_event_sub.sm_policy_update_failed(
+            association_id.value(), out.version, outcome);
+        break;
+      case smf_notify_outcome::temporary_rejection:
+      case smf_notify_outcome::transport_ambiguous:
+        // Bounded retry, never rollback [§5.1/§5.2] -- drained off task_tick
+        // (m_task_tick_connection, this class's constructor).
+        m_retry_drain_queue.enqueue(association_id.value(), out.version);
+        break;
+      default:
+        // applied/partial_failure never reach here: applied returns CREATED
+        // above, and this classifier never produces partial_failure on its
+        // own (it already routes 200-with-partial-report straight to
+        // permanent/temporary_rejection per §5.1).
+        break;
+    }
+  }
+}
+
+//------------------------------------------------------------------------------
+void pcf_smpc::drain_retry_queue(std::uint64_t /*tick_ms*/) {
+  const auto now = std::chrono::steady_clock::now();
+  m_retry_drain_queue.sweep_expired(now);
+
+  for (const auto& [association_id, version] : m_retry_drain_queue.due_entries(now)) {
+    // Re-fetch the association's LIVE decision + context under lock
+    // immediately before this attempt (finding J) -- never resend a frozen
+    // snapshot, since an unrelated disjoint-key commit may have landed on
+    // this association since it was queued.
+    std::shared_ptr<const oai::model::pcf::SmPolicyDecision> decision;
+    oai::model::pcf::SmPolicyContextData context;
+    bool association_found;
+    {
+      std::shared_lock lock_associations(m_associations_mutex);
+      auto iter          = m_associations.find(association_id);
+      association_found  = iter != m_associations.end();
+      if (association_found) {
+        decision = iter->second.snapshot_decision();
+        context  = iter->second.get_sm_policy_context_data();
+      }
+    }  // m_associations_mutex released [CP.22]
+
+    if (!association_found) {
+      // Association gone (e.g. PDU session released concurrently); nothing
+      // left to retry.
+      m_retry_drain_queue.report_attempt(association_id, version, true, now);
+      continue;
+    }
+
+    smf_notify_outcome outcome = smf_notify_outcome::applied;
+    send_sm_policy_control_update_notify(context, decision, outcome);
+
+    if (outcome == smf_notify_outcome::permanent_rejection) {
+      // Discovered on a retry rather than the first attempt -- fires the
+      // same SM->PA event either way [§5.3].
+      m_event_sub.sm_policy_update_failed(association_id, version, outcome);
+    }
+
+    // applied and permanent_rejection are both terminal for this queue (one
+    // resolved cleanly, the other now owned by Policy Authorization);
+    // temporary_rejection/transport_ambiguous reschedule with backoff, or
+    // exhaust (report_attempt logs the exhaustion itself).
+    const bool resolved = outcome == smf_notify_outcome::applied ||
+                           outcome == smf_notify_outcome::permanent_rejection;
+    m_retry_drain_queue.report_attempt(association_id, version, resolved, now);
   }
 }
 

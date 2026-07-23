@@ -9,7 +9,9 @@
 #include <utility>
 
 #include "app_session_storage.hpp"
+#include "notify_failure_recovery_policy.hpp"
 #include "operator_qos_policy.hpp"
+#include "pending_rollback_tracker.hpp"
 #include "qos_reference_store.hpp"
 
 namespace oai::pcf::app::policy_auth {
@@ -31,10 +33,14 @@ class policy_auth_context {
   policy_auth_context(
       std::shared_ptr<app_session_storage> app_sessions,
       std::shared_ptr<qos_reference_store> qos_references,
-      operator_qos_policy qos_authorization_policy = {})
+      operator_qos_policy qos_authorization_policy         = {},
+      notify_failure_recovery_policy notify_failure_recovery = {})
       : m_app_sessions(std::move(app_sessions)),
         m_qos_references(std::move(qos_references)),
-        m_qos_authorization_policy(std::move(qos_authorization_policy)) {}
+        m_qos_authorization_policy(std::move(qos_authorization_policy)),
+        m_pending_rollback_tracker(
+            notify_failure_recovery.rollback_tracker_ttl,
+            notify_failure_recovery.rollback_tracker_max_entries) {}
 
   // Mutable runtime working set of app-sessions (+ binding index, id-gen).
   [[nodiscard]] app_session_storage& app_sessions() const {
@@ -53,10 +59,19 @@ class policy_auth_context {
     return m_qos_authorization_policy;
   }
 
+  // PA-side "which commit does this refer to" table for SMF notify-failure
+  // recovery . Owns its own guarded<T> lock, so
+  // a mutable reference is safe to hand out regardless of this context's own
+  // constness (returning mutable stores from a const accessor).
+  [[nodiscard]] pending_rollback_tracker& rollback_tracker() const {
+    return m_pending_rollback_tracker;
+  }
+
  private:
   std::shared_ptr<app_session_storage> m_app_sessions;
   std::shared_ptr<qos_reference_store> m_qos_references;
   operator_qos_policy m_qos_authorization_policy;
+  mutable pending_rollback_tracker m_pending_rollback_tracker;
 };
 
 }  // namespace oai::pcf::app::policy_auth

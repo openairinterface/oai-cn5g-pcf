@@ -29,6 +29,7 @@ add_library (PCF STATIC
   pcf_config_types.cpp
   pcf_config.cpp
   operator_qos_policy_builder.cpp
+  notify_failure_recovery_policy_builder.cpp
   pcf_app.cpp
   pcf_nrf.cpp
   pcf_profile.cpp
@@ -37,6 +38,8 @@ add_library (PCF STATIC
   pcf_sm_policy_control.cpp
   task_manager.cpp
   sm_policy/individual_sm_association.cpp
+  sm_policy/retry_drain_queue.cpp
+  sm_policy/smf_notify_response_classifier.cpp
   sm_policy/policy_decision.cpp
   sm_policy/qos_session_authorization.cpp
   sm_policy/slice_policy_decision.cpp
@@ -47,6 +50,10 @@ add_library (PCF STATIC
   sm_policy/policy_provisioning_file.cpp
   policy_auth/app_session.cpp
   policy_auth/qos_context.cpp
+  policy_auth/pending_rollback_tracker.cpp
+  policy_auth/rollback_delta.cpp
+  policy_auth/rollback_orchestration.cpp
+  policy_auth/af_notify.cpp
   policy_auth/app_session_storage.cpp
   policy_auth/qos_reference_loader.cpp
   pcf_policy_authorization.cpp

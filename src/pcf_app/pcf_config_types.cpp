@@ -109,6 +109,105 @@ bool qos_authorization_config::get_reject_on_missing_subscription() const {
   return m_reject_on_missing_subscription.get_value();
 }
 
+notify_failure_recovery_config::notify_failure_recovery_config() {
+  m_config_name = "Notify-Failure Recovery";
+  m_retry_drain_ttl_seconds =
+      int_config_value("retry_drain_ttl_seconds", 30);
+  m_retry_drain_ttl_seconds.set_validation_interval(1, 3600);
+  m_retry_drain_max_entries =
+      int_config_value("retry_drain_max_entries", 10000);
+  m_retry_drain_max_entries.set_validation_interval(1, 1000000);
+  m_max_notify_retries = int_config_value("max_notify_retries", 3);
+  m_max_notify_retries.set_validation_interval(0, 20);
+  m_retry_backoff_initial_ms =
+      int_config_value("retry_backoff_initial_ms", 500);
+  m_retry_backoff_initial_ms.set_validation_interval(1, 60000);
+  m_rollback_tracker_ttl_seconds =
+      int_config_value("rollback_tracker_ttl_seconds", 30);
+  m_rollback_tracker_ttl_seconds.set_validation_interval(1, 3600);
+  m_rollback_tracker_max_entries =
+      int_config_value("rollback_tracker_max_entries", 10000);
+  m_rollback_tracker_max_entries.set_validation_interval(1, 1000000);
+  m_set = true;
+}
+
+void notify_failure_recovery_config::from_yaml(const YAML::Node& node) {
+  if (node["retry_drain_ttl_seconds"]) {
+    m_retry_drain_ttl_seconds.from_yaml(node["retry_drain_ttl_seconds"]);
+  }
+  if (node["retry_drain_max_entries"]) {
+    m_retry_drain_max_entries.from_yaml(node["retry_drain_max_entries"]);
+  }
+  if (node["max_notify_retries"]) {
+    m_max_notify_retries.from_yaml(node["max_notify_retries"]);
+  }
+  if (node["retry_backoff_initial_ms"]) {
+    m_retry_backoff_initial_ms.from_yaml(node["retry_backoff_initial_ms"]);
+  }
+  if (node["rollback_tracker_ttl_seconds"]) {
+    m_rollback_tracker_ttl_seconds.from_yaml(
+        node["rollback_tracker_ttl_seconds"]);
+  }
+  if (node["rollback_tracker_max_entries"]) {
+    m_rollback_tracker_max_entries.from_yaml(
+        node["rollback_tracker_max_entries"]);
+  }
+}
+
+std::string notify_failure_recovery_config::to_string(
+    const std::string& indent) const {
+  if (!m_set) return "";
+  std::string out;
+  std::string title_fmt = get_title_formatter(0);
+  std::string value_fmt = get_value_formatter(1);
+
+  out.append(indent).append(fmt::format(title_fmt, m_config_name));
+  out.append(indent).append(fmt::format(
+      value_fmt, m_retry_drain_ttl_seconds.get_config_name(),
+      m_retry_drain_ttl_seconds.get_value()));
+  out.append(indent).append(fmt::format(
+      value_fmt, m_retry_drain_max_entries.get_config_name(),
+      m_retry_drain_max_entries.get_value()));
+  out.append(indent).append(fmt::format(
+      value_fmt, m_max_notify_retries.get_config_name(),
+      m_max_notify_retries.get_value()));
+  out.append(indent).append(fmt::format(
+      value_fmt, m_retry_backoff_initial_ms.get_config_name(),
+      m_retry_backoff_initial_ms.get_value()));
+  out.append(indent).append(fmt::format(
+      value_fmt, m_rollback_tracker_ttl_seconds.get_config_name(),
+      m_rollback_tracker_ttl_seconds.get_value()));
+  out.append(indent).append(fmt::format(
+      value_fmt, m_rollback_tracker_max_entries.get_config_name(),
+      m_rollback_tracker_max_entries.get_value()));
+
+  return out;
+}
+
+int notify_failure_recovery_config::get_retry_drain_ttl_seconds() const {
+  return m_retry_drain_ttl_seconds.get_value();
+}
+
+int notify_failure_recovery_config::get_retry_drain_max_entries() const {
+  return m_retry_drain_max_entries.get_value();
+}
+
+int notify_failure_recovery_config::get_max_notify_retries() const {
+  return m_max_notify_retries.get_value();
+}
+
+int notify_failure_recovery_config::get_retry_backoff_initial_ms() const {
+  return m_retry_backoff_initial_ms.get_value();
+}
+
+int notify_failure_recovery_config::get_rollback_tracker_ttl_seconds() const {
+  return m_rollback_tracker_ttl_seconds.get_value();
+}
+
+int notify_failure_recovery_config::get_rollback_tracker_max_entries() const {
+  return m_rollback_tracker_max_entries.get_value();
+}
+
 policy_config::policy_config(
     const std::string& policy_decisions_path, const std::string& pcc_rules_path,
     const std::string& traffic_rules_path, const std::string& qos_data_path,
@@ -210,6 +309,10 @@ void pcf_config_type::from_yaml(const YAML::Node& node) {
   if (node["qos_authorization"]) {
     m_qos_authorization_config.from_yaml(node["qos_authorization"]);
   }
+  if (node["notify_failure_recovery"]) {
+    m_notify_failure_recovery_config.from_yaml(
+        node["notify_failure_recovery"]);
+  }
 }
 
 std::string pcf_config_type::to_string(const std::string& indent) const {
@@ -226,6 +329,7 @@ std::string pcf_config_type::to_string(const std::string& indent) const {
   }
 
   out.append(m_qos_authorization_config.to_string(indent));
+  out.append(m_notify_failure_recovery_config.to_string(indent));
 
   return out;
 }
@@ -246,4 +350,9 @@ const policy_config& pcf_config_type::get_policy_config() const {
 const qos_authorization_config&
 pcf_config_type::get_qos_authorization_config() const {
   return m_qos_authorization_config;
+}
+
+const notify_failure_recovery_config&
+pcf_config_type::get_notify_failure_recovery_config() const {
+  return m_notify_failure_recovery_config;
 }

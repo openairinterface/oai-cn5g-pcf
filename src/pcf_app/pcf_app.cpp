@@ -11,6 +11,8 @@
 #include "pcf_nrf.hpp"
 #include "logger.hpp"
 #include "pcf_config.hpp"
+#include "notify_failure_recovery_policy.hpp"
+#include "notify_failure_recovery_policy_builder.hpp"
 #include "operator_qos_policy.hpp"
 #include "operator_qos_policy_builder.hpp"
 #include "SupiPolicyDecision.h"
@@ -64,8 +66,14 @@ pcf_app::pcf_app(pcf_event& ev) : m_event_sub(ev) {
   const operator_qos_policy qos_auth_policy =
       make_operator_qos_policy(pcf_cfg->get_qos_authorization());
 
-  m_pcf_smpc_service =
-      std::make_shared<pcf_smpc>(m_policy_storage, ev, qos_auth_policy);
+  // SMF notify-failure recovery bounds, shared by both services (SM-side
+  // retry-drain queue and PA-side pending_rollback_tracker)
+  const notify_failure_recovery_policy notify_failure_recovery_pol =
+      make_notify_failure_recovery_policy(
+          pcf_cfg->get_notify_failure_recovery());
+
+  m_pcf_smpc_service = std::make_shared<pcf_smpc>(
+      m_policy_storage, ev, qos_auth_policy, notify_failure_recovery_pol);
 
   // App-session storage backed by the generic in-memory store (swap in a
   // DB-backed crud_store here later); it generates restart-safe UUID ids and
@@ -83,7 +91,8 @@ pcf_app::pcf_app(pcf_event& ev) : m_event_sub(ev) {
 
   // Aggregate the Policy Authorization stores into a single injected context.
   m_policy_auth_context = std::make_shared<policy_auth::policy_auth_context>(
-      app_sessions, qos_ref_store, qos_auth_policy);
+      app_sessions, qos_ref_store, qos_auth_policy,
+      notify_failure_recovery_pol);
 
   m_pcf_policy_authorization_service =
       std::make_shared<pcf_policy_authorization>(m_policy_auth_context, ev);

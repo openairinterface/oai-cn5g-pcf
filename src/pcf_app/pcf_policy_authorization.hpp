@@ -21,6 +21,7 @@
 #include "policy_auth/app_session.hpp"
 #include "policy_auth/policy_auth_context.hpp"
 #include "pcf_event.hpp"
+#include "sm_policy/smf_notify_outcome.hpp"
 #include "sm_policy_delta.hpp"
 
 namespace oai::pcf::app {
@@ -141,7 +142,23 @@ class pcf_policy_authorization {
           const oai::model::pcf::SmPolicyDecision& base,
           oai::model::pcf::SmPolicyDecision& working)>& derive,
       oai::pcf::app::sm_policy_delta& committed_delta,
-      std::string& problem_details);
+      std::string& problem_details, const std::string& app_session_id);
+
+  /**
+   * @brief Handler for a definitively "permanent" SMF notify rejection.
+   * Consumes (try_take) the matching
+   * pending_rollback_tracker entry, if still tracked, then delegates the
+   * fetch-live-decision-then-apply-with-retry orchestration to
+   * policy_auth::perform_compensating_rollback (rollback_orchestration.hpp) --
+   * extracted as a free, dependency-injected function specifically so that
+   * "always fetch live state, never reuse the tracker's stale pre-commit
+   * snapshot" is unit-tested in isolation. Also fires the §5.7 AF-notify stub
+   * either way (rollback committed, not committed, or the association no
+   * longer existing to roll back at all).
+   */
+  void handle_sm_policy_update_failed(
+      const std::string& association_id, std::uint64_t version,
+      oai::pcf::app::sm_policy::smf_notify_outcome reason);
 
   // Aggregate of the injected Policy Authorization stores (app-session working
   // set + binding index, and the operator-preconfigured QoS reference sets).
@@ -150,6 +167,54 @@ class pcf_policy_authorization {
 
   // for Event Handling
   pcf_event& m_event_sub;
+  bs2::connection m_sm_policy_update_failed_connection;
+
+  // TODO [QOS-SUB] Application Function notification infrastructure [TS 29.514 §4.2.5, TS 29.500 §6.2]
+  // Add data structures and methods for AF monitoring and notifications as per 3GPP TS 29.514:
+  //
+  // 1. AF NOTIFICATION CLIENT [TS 29.500 §5.2.6, TS 29.514 §4.2.5]:
+  //    - std::unique_ptr<af_notification_client> m_af_notif_client;
+  //    - HTTP/2 client for sending notifications to Application Functions [TS 29.500 §5.2.6]
+  //    - Support for both secured (HTTPS) and unsecured (HTTP) connections [TS 33.501 §13.1.0]
+  //    - Connection pooling and retry mechanisms for AF endpoints [TS 29.500 §5.2.8]
+  //
+  // 2. SUBSCRIPTION MANAGEMENT [TS 29.514 §4.2.6, §5.3.4.1]:
+  //    - std::unordered_map<std::string, af_subscription> m_af_subscriptions;
+  //    - Maps session_id to AF notification subscription details
+  //    - std::unordered_map<std::string, af_endpoint_info> m_af_endpoints;
+  //    - AF endpoint health monitoring and authentication credentials [TS 29.500 §5.2.6]
+  //
+  // 3. NOTIFICATION QUEUE SYSTEM [TS 29.500 §6.8]:
+  //    - std::queue<af_notification_event> m_notification_queue;
+  //    - std::queue<af_notification_event> m_priority_notification_queue; [TS 29.500 §6.8.2]
+  //    - std::queue<af_notification_event> m_failed_notification_queue; [TS 29.500 §5.2.8]
+  //    - Asynchronous notification processing with priority handling [TS 29.500 §6.8.5]
+  //
+  // 4. MONITORING EVENT HANDLERS [TS 29.514 §4.2.5]:
+  //    - void handle_qos_flow_update(session_id, qos_flow_info);
+  //    - void handle_pdu_session_event(session_id, session_event);
+  //    - void handle_monitoring_report(session_id, monitoring_data);
+  //    - void handle_policy_decision_update(session_id, policy_changes);
+  //
+  // 5. AF NOTIFICATION METHODS [TS 29.514 §4.2.5]:
+  //    - status_code notify_af_qos_status(af_endpoint, qos_notification); [TS 29.514 §4.2.5.4]
+  //    - status_code notify_af_session_event(af_endpoint, session_notification); [TS 29.514 §4.2.5.22]
+  //    - status_code notify_af_monitoring_report(af_endpoint, monitoring_report); [TS 29.514 §4.2.5.14]
+  //    - status_code notify_af_policy_update(af_endpoint, policy_notification); [TS 29.514 §4.2.5.2]
+  //
+  // 6. SUBSCRIPTION LIFECYCLE [TS 29.514 §4.2.6]:
+  //    - status_code register_af_subscription(session_id, af_subscription_info); [TS 29.514 §4.2.6.2]
+  //    - status_code update_af_subscription(session_id, subscription_updates);
+  //    - status_code remove_af_subscription(session_id); [TS 29.514 §4.2.7.1]
+  //    - void cleanup_expired_subscriptions();
+  //
+  // TODO [QOS-MON] QoS monitoring infrastructure [TS 29.512 §4.1.4.4.6, TS 23.503 §6.1.3.21]
+  // Add comprehensive QoS monitoring framework:
+  //
+  // 7. MONITORING INFRASTRUCTURE [TS 29.512 §4.2.3.25, TS 23.503 §6.1.3.21]:
+  //    - std::unordered_map<std::string, qos_monitoring_context> m_qos_monitors;
+  //    - Timer-based monitoring report generation for subscribed sessions [TS 29.512 §5.6.2.40]
+  //    - Threshold-based event triggering for QoS violations and improvements [TS 29.514 §4.2.5.14]
 };
 
 }  // namespace oai::pcf::app
