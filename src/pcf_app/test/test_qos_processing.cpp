@@ -944,8 +944,9 @@ TEST(QosCharacteristics, DynamicQfiProducesAnEntryKeyedByThe5qi) {
 
   ASSERT_TRUE(result.status.has_value());
   ASSERT_EQ(decision.getQosChars().size(), 1u);
-  auto it = decision.getQosChars().find("128");
-  ASSERT_NE(it, decision.getQosChars().end());
+  const auto qos_chars = decision.getQosChars();
+  auto it = qos_chars.find("128");
+  ASSERT_NE(it, qos_chars.end());
   EXPECT_EQ(it->second.getR5qi(), 128);
   EXPECT_EQ(it->second.getPacketDelayBudget(), 75);
   EXPECT_EQ(it->second.getPacketErrorRate(), "1E-4");
@@ -962,8 +963,9 @@ TEST(QosCharacteristics, DynamicGbrQfiHasGbrResourceType) {
   SmPolicyDecision decision;
   create_qos_characteristics(qos, decision);
 
-  auto it = decision.getQosChars().find("130");
-  ASSERT_NE(it, decision.getQosChars().end());
+  const auto qos_chars = decision.getQosChars();
+  auto it = qos_chars.find("130");
+  ASSERT_NE(it, qos_chars.end());
   EXPECT_EQ(it->second.getResourceType().getEnumValue(),
             oai::model::common::QosResourceType_anyOf::
                 eQosResourceType_anyOf::NON_CRITICAL_GBR);
@@ -979,8 +981,9 @@ TEST(QosCharacteristics, DynamicNonGbrQfiHasNonGbrResourceType) {
   SmPolicyDecision decision;
   create_qos_characteristics(qos, decision);
 
-  auto it = decision.getQosChars().find("131");
-  ASSERT_NE(it, decision.getQosChars().end());
+  const auto qos_chars = decision.getQosChars();
+  auto it = qos_chars.find("131");
+  ASSERT_NE(it, qos_chars.end());
   EXPECT_EQ(it->second.getResourceType().getEnumValue(),
             oai::model::common::QosResourceType_anyOf::
                 eQosResourceType_anyOf::NON_GBR);
@@ -994,8 +997,9 @@ TEST(QosCharacteristics, DynamicQfiDefaultsMandatoryFieldsWhenReferenceOmitsThem
   SmPolicyDecision decision;
   create_qos_characteristics(qos, decision);
 
-  auto it = decision.getQosChars().find("132");
-  ASSERT_NE(it, decision.getQosChars().end());
+  const auto qos_chars = decision.getQosChars();
+  auto it = qos_chars.find("132");
+  ASSERT_NE(it, qos_chars.end());
   EXPECT_EQ(it->second.getPriorityLevel(), 8);
   EXPECT_EQ(it->second.getPacketDelayBudget(), 300);
   EXPECT_EQ(it->second.getPacketErrorRate(), "1E-6");
@@ -1013,8 +1017,9 @@ TEST(QosCharacteristics, GbrDynamicQfiCarriesAveragingWindowWhenProvided) {
   SmPolicyDecision decision;
   create_qos_characteristics(qos, decision);
 
-  auto it = decision.getQosChars().find("133");
-  ASSERT_NE(it, decision.getQosChars().end());
+  const auto qos_chars = decision.getQosChars();
+  auto it = qos_chars.find("133");
+  ASSERT_NE(it, qos_chars.end());
   ASSERT_TRUE(it->second.averagingWindowIsSet());
   EXPECT_EQ(it->second.getAveragingWindow(), 80);
 }
@@ -1030,8 +1035,9 @@ TEST(QosCharacteristics, NonGbrDynamicQfiOmitsAveragingWindow) {
   SmPolicyDecision decision;
   create_qos_characteristics(qos, decision);
 
-  auto it = decision.getQosChars().find("134");
-  ASSERT_NE(it, decision.getQosChars().end());
+  const auto qos_chars = decision.getQosChars();
+  auto it = qos_chars.find("134");
+  ASSERT_NE(it, qos_chars.end());
   EXPECT_FALSE(it->second.averagingWindowIsSet());
 }
 
