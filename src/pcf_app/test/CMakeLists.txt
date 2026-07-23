@@ -36,6 +36,9 @@ add_executable(${NF_TARGET}
   test_rollback_delta.cpp
   test_rollback_orchestration.cpp
   test_smf_notify_response_classifier.cpp
+  test_apply_decision_with_retry.cpp
+  test_notify_failure_recovery_config.cpp
+  test_notify_failure_recovery_policy_builder.cpp
   test_pending_rollback_tracker.cpp
   test_retry_drain_queue.cpp
 )
