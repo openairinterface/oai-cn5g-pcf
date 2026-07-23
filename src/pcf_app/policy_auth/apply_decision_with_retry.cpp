@@ -5,6 +5,7 @@
 #include "apply_decision_with_retry.hpp"
 
 #include "logger.hpp"
+#include "policy_authorization_causes.hpp"
 
 namespace oai::pcf::app::policy_auth {
 
@@ -60,20 +61,21 @@ status_code apply_decision_with_retry(
 
     // Version conflict: another update committed since we read the base.
     if (attempt >= max_retries || !result.decision) {
-      Logger::pcf_app().error(fmt::format(
-          "Association {} update abandoned after {} attempt(s): persistent "
+      Logger::pcf_app().error(
+          "Association %s update abandoned after %d attempt(s): persistent "
           "concurrent updates (or association gone)",
-          association_id.value_or("<none>"), attempt + 1));
+          association_id.value_or("<none>").c_str(), attempt + 1);
       // TS 29.514 Table 5.7.3-1: "the service information provided in the
       // request is temporarily rejected" -- exactly this condition
       // (persistent version-CAS contention on the association).
-      problem_details = "REQUESTED_SERVICE_TEMPORARILY_NOT_AUTHORIZED";
+      problem_details = kCauseRequestedServiceTemporarilyNotAuthorized;
       return status_code::FORBIDDEN;
     }
-    Logger::pcf_app().debug(fmt::format(
-        "Association {} update: version conflict on attempt {}; re-deriving "
-        "against committed version {}",
-        association_id.value_or("<none>"), attempt + 1, result.version));
+    Logger::pcf_app().debug(
+        "Association %s update: version conflict on attempt %d; re-deriving "
+        "against committed version %lu",
+        association_id.value_or("<none>").c_str(), attempt + 1,
+        result.version);
     fresh_base   = *result.decision;
     base         = &fresh_base;
     base_version = result.version;

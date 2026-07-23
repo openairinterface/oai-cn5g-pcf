@@ -22,6 +22,11 @@ class task_manager {
   task_manager(pcf_event& ev);
   ~task_manager();
 
+  task_manager(const task_manager&) = delete;
+  task_manager& operator=(const task_manager&) = delete;
+  task_manager(task_manager&&) = delete;
+  task_manager& operator=(task_manager&&) = delete;
+
   /*
    * Manage the tasks
    * @param [void]

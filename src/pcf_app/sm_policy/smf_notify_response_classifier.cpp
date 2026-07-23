@@ -5,6 +5,7 @@
 #include "smf_notify_response_classifier.hpp"
 
 #include "3gpp_29.500.h"
+#include "sm_policy/smf_notify_causes.hpp"
 
 namespace oai::pcf::app::sm_policy {
 
@@ -27,7 +28,8 @@ smf_notify_classification classify_smf_notify_response(
       // session-rule ruleReports/sessRuleReports extraction is deferred
       bool any_permanent = false;
       for (const auto& report : body_json) {
-        if (report.value("failureCause", std::string{}) == "PCC_RULE_EVENT") {
+        if (report.value("failureCause", std::string{}) ==
+            kCausePccRuleEvent) {
           any_permanent = true;
           break;
         }
@@ -79,11 +81,11 @@ smf_notify_classification classify_smf_notify_response(
     // RULE_PERMANENT_ERROR/RULE_TEMPORARY_ERROR/PENDING_TRANSACTION
     // (unreachable while kPcfSupportedFeatures == 0x0ULL) -- defaults to
     // retry-only per §5.1's "when ambiguous, don't rollback" posture.
-    if (result.cause == "USER_UNKNOWN") {
+    if (result.cause == kCauseUserUnknown) {
       result.response = status_code::USER_UNKOWN;
       result.info     = "SM Policy Association Creation: Unknown User";
       result.outcome  = smf_notify_outcome::temporary_rejection;
-    } else if (result.cause == "PCC_RULE_EVENT") {
+    } else if (result.cause == kCausePccRuleEvent) {
       result.response = status_code::INVALID_PARAMETERS;
       result.info     = "SM Policy Update Notification: permanently rejected";
       result.outcome  = smf_notify_outcome::permanent_rejection;

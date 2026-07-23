@@ -28,6 +28,20 @@ enum class drain_result {
                // expired, or evicted)
 };
 
+inline const char* to_string(drain_result result) {
+  switch (result) {
+    case drain_result::succeeded:
+      return "succeeded";
+    case drain_result::rescheduled:
+      return "rescheduled";
+    case drain_result::exhausted:
+      return "exhausted";
+    case drain_result::not_found:
+      return "not_found";
+  }
+  return "unknown";
+}
+
 /**
  * @brief SM-owned retry-drain queue for temporary/ambiguous SMF notify
  * outcomes -- distinct from PA's pending_rollback_tracker.
@@ -73,7 +87,7 @@ class retry_drain_queue {
    * with exponential backoff if attempts remain, or removes the entry and
    * returns drain_result::exhausted once max_notify_retries is reached.
    */
-  drain_result report_attempt(
+  [[nodiscard]] drain_result report_attempt(
       const std::string& association_id, std::uint64_t version, bool success,
       std::chrono::steady_clock::time_point now);
 
