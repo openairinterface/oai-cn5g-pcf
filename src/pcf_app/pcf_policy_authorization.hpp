@@ -120,7 +120,12 @@ class pcf_policy_authorization {
  private:
   /**
    * @brief Push a request's decision change to the bound association with
-   * optimistic concurrency + bounded retry.
+   * optimistic concurrency + bounded retry. Thin wrapper around
+   * policy_auth::apply_decision_with_retry (apply_decision_with_retry.hpp) --
+   * the CAS-retry/conflict/exhaustion mechanics are extracted there as a
+   * free, dependency-injected function specifically so they're directly
+   * unit-tested without pcf_event/pcf_smpc, since every PA handler
+   * (create/modify/delete/rollback) depends on this being correct.
    *
    * `derive` is invoked once per attempt with the current base decision; it must
    * copy-and-mutate `working` into this request's intended decision and return
@@ -132,7 +137,8 @@ class pcf_policy_authorization {
    * On success returns status_code::OK and fills `committed_delta` (the delta
    * that was applied -- callers use it to update the session ledger as a
    * post-commit side-effect). On a deterministic failure returns that failure.
-   * On retry exhaustion returns INTERNAL_SERVER_ERROR.
+   * On retry exhaustion returns FORBIDDEN with problem_details =
+   * REQUESTED_SERVICE_TEMPORARILY_NOT_AUTHORIZED [TS 29.514 Table 5.7.3-1].
    */
   policy_auth::status_code apply_with_retry(
       std::optional<std::string>& association_id,
