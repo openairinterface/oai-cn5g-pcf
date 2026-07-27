@@ -22,6 +22,7 @@ set(NF_TARGET pcf_unit_tests)
 
 add_executable(${NF_TARGET}
   main.cpp
+  http_client_inst_stub.cpp
   test_guarded.cpp
   test_bitrate.cpp
   test_crud_store.cpp
@@ -61,6 +62,7 @@ include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/model/common_model/common_model.cmake)
 # transitively via used_common_files.cmake's own include(smf_model.cmake).
 # Re-included explicitly here for the same reason as the includes above.
 include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/model/smf/smf_model.cmake)
+include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/http/http.cmake)
 
 target_link_libraries(${NF_TARGET}
   PCF
@@ -69,6 +71,8 @@ target_link_libraries(${NF_TARGET}
   ssl crypto
   fmt spdlog
   yaml-cpp
+  cpr::cpr
+  curl
   pthread m rt dl
 )
 
