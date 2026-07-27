@@ -56,7 +56,8 @@ typedef bs2::signal_type<
         oai::model::pcf::SmPolicyDecision&, std::uint64_t&),
     bs2::keywords::mutex_type<bs2::dummy_mutex>>::type sm_session_binding_sig_t;
 
-// Signal for sm_policy_control to update a policy decision.
+// Signal for sm_policy_control to commit a policy decision change (CAS only
+// -- no notify, no persist-triggered signal).
 //
 // Optimistic concurrency: carries the base version the caller read plus an
 // sm_policy_delta (added/modified/removed qosDecs, pccRules, qosChars,
@@ -65,8 +66,7 @@ typedef bs2::signal_type<
 // the out result, and the caller re-derives against the returned newer decision
 // and retries. This makes updates to one association serialisable, so neither
 // a stale write-back nor a stale cumulative-limit check can slip through
-// [TS 29.512 §4.2.3.2]. The notification the SM side sends the SMF is still the
-// full decision.
+// [TS 29.512 §4.2.3.2].
 // (association_id in/out, expected_version in, delta in, result out.)
 typedef bs2::signal_type<
     void(
@@ -74,14 +74,29 @@ typedef bs2::signal_type<
         decision_apply_result&),
     bs2::keywords::mutex_type<bs2::dummy_mutex>>::type sm_update_decision_sig_t;
 
+// Signal for Policy Authorization to ask sm_policy_control to notify the SMF
+// of a decision this same PA instance just committed (via
+// sm_update_decision_sig_t) and get back the classified outcome directly --
+// a plain synchronous call/return, not a signal PA has to wait on
+// asynchronously, since the caller here is already blocked on the answer.
+typedef bs2::signal_type<
+    void(
+        const std::string&, std::uint64_t,
+        oai::pcf::app::sm_policy::smf_notify_outcome&),
+    bs2::keywords::mutex_type<bs2::dummy_mutex>>::type
+    sm_notify_committed_decision_sig_t;
+
 // Signal for sm_policy_control to report a definitively "permanent" SMF
-// notify rejection back to Policy Authorization
-// a new channel, symmetric to sm_update_decision_sig_t but in the
-// opposite direction. Fired by SM only when a notify's outcome is
-// smf_notify_outcome::permanent_rejection (cause == PCC_RULE_EVENT per TS
-// 29.512 Table 5.7.3-2 -- the SMF has told us, unambiguously, that it will
-// not apply this change). Never fired for timeouts, transport failures, or
-// temporary_rejection outcomes.
+// notify rejection back to Policy Authorization, discovered ON A DELAYED
+// RETRY (retry_drain_queue's drain path) -- NOT fired for a rejection
+// discovered inline on the same attempt that committed; that case is
+// reported directly via sm_notify_committed_decision_sig_t's return value
+// instead, so there is nothing here for it to race against.
+// Fired only when a
+// notify's outcome is smf_notify_outcome::permanent_rejection (cause ==
+// PCC_RULE_EVENT per TS 29.512 Table 5.7.3-2 -- the SMF has told us,
+// unambiguously, that it will not apply this change). Never fired for
+// timeouts, transport failures, or temporary_rejection outcomes.
 // (association_id in, version in, reason in.)
 typedef bs2::signal_type<
     void(std::string, std::uint64_t, oai::pcf::app::sm_policy::smf_notify_outcome),

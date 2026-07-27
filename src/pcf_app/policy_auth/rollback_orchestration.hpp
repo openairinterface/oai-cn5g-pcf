@@ -13,6 +13,7 @@
 #include "SmPolicyDecision.h"
 #include "pcf_policy_authorization_status_code.hpp"
 #include "pending_rollback_tracker.hpp"
+#include "policy_auth/decision_applier.hpp"
 #include "sm_policy_delta.hpp"
 
 namespace oai::pcf::app::policy_auth {
@@ -24,16 +25,16 @@ using live_decision_lookup_fn = std::function<void(
     const std::string& association_id, bool& found,
     oai::model::pcf::SmPolicyDecision& decision, std::uint64_t& version)>;
 
-// Matches pcf_policy_authorization::apply_with_retry's shape.
+// Mirrors decision_applier::apply's shape (minus the class binding), so
+// perform_compensating_rollback's tests inject a fake without constructing a
+// real decision_applier.
 using apply_with_retry_fn = std::function<status_code(
-    std::optional<std::string>& association_id,
-    const oai::model::pcf::SmPolicyDecision& initial_base,
-    std::uint64_t initial_version,
+    decision_apply_request request,
     const std::function<handler_result(
         const oai::model::pcf::SmPolicyDecision& base,
         oai::model::pcf::SmPolicyDecision& working)>& derive,
     oai::pcf::app::sm_policy_delta& committed_delta,
-    std::string& problem_details, const std::string& app_session_id)>;
+    std::string& problem_details)>;
 
 /**
  * @brief Push a compensating-delta rollback for `commit` through the CAS-

@@ -12,8 +12,6 @@
 #include <optional>
 #include <string>
 
-#include <vector>
-
 #include "AppSessionContext.h"
 #include "AppSessionContextReqData.h"
 #include "AppSessionContextUpdateData.h"
@@ -22,10 +20,8 @@
 #include "SmPolicyDecision.h"
 #include "app_session_record.hpp"
 #include "guarded.hpp"
-#include "operator_qos_policy.hpp"
 #include "pcf_policy_authorization_status_code.hpp"
 #include "qos_context.hpp"
-#include "qos_reference_store.hpp"
 #include "qos_types.hpp"
 
 namespace oai::pcf::app::policy_auth {
@@ -123,35 +119,6 @@ handle_service_function_chaining_update(
 
 // QoS handling functions [TS 29.514 §4.2.2.2, TS 29.513 §7.3, TS 29.512 §4.2.6.6]
 
-// Extract and process the QoS requirements of a single media component
-// [TS 29.514 §4.2.2.2, TS 29.513 §7.3.3]. Orchestrates
-// create_qos_data_from_media_component, create_qos_characteristics and
-// setup_qos_monitoring in sequence. `app_session_id` + the component's medCompN
-// build the deterministic PA-QOS-{app_session_id}-{medCompN} rule/qos ids so a
-// PATCH re-sending the same medCompN modifies the flow in place; `qos_ref_store`
-// resolves the component `qosReference` to an operator-preconfigured QoS set.
-//
-// Templated on the media-component type so the SAME §7.3.3 mapping serves both
-// create (MediaComponent) and update (MediaComponentRm); the two generated types
-// expose identical accessors. Explicitly instantiated for both in app_session.cpp.
-template <typename MediaComponentT>
-oai::pcf::app::policy_auth::handler_result handle_qos_requirements(
-    const MediaComponentT& media_component, const std::string& app_session_id,
-    oai::model::pcf::SmPolicyDecision& decision, qos_context& qos_ctx,
-    const qos_reference_store& qos_ref_store);
-
-// Create the QosData + PccRule (with SDF filters) for one media component
-// [TS 29.512 §5.6.2.8, §4.1.4.2.1, TS 29.513 §7.3.3]. Returns the derived
-// QosData in `out_qos_data` so the caller can decide whether QoS characteristics
-// are required (non-standardized 5QI). Templated as above.
-template <typename MediaComponentT>
-oai::pcf::app::policy_auth::handler_result
-create_qos_data_from_media_component(
-    const MediaComponentT& media_component, const std::string& app_session_id,
-    oai::model::pcf::SmPolicyDecision& decision, qos_context& qos_ctx,
-    const qos_reference_store& qos_ref_store,
-    oai::model::pcf::QosData& out_qos_data);
-
 // Generate QoS characteristics for a non-standardized (dynamically assigned)
 // 5QI [TS 29.512 §4.2.6.6.3, §5.6.2.16]. No-op for standardized 5QI values.
 oai::pcf::app::policy_auth::handler_result create_qos_characteristics(
@@ -177,23 +144,6 @@ oai::pcf::app::policy_auth::handler_result create_qos_characteristics(
 // [TS 29.512 §4.1.4.4.6, TS 29.514 §4.2.2.23]
 oai::pcf::app::policy_auth::handler_result setup_qos_monitoring(
     oai::model::pcf::SmPolicyDecision& decision);
-
-// Validate the QoS this app-session authorized against operator policy and the
-// subscribed envelope [TS 29.514 §4.1.3.1, TS 23.503 §6.1.3.2.3].
-//
-// Checks the app-session's own QoS flows (identified by `owned_qos_ids`, keys
-// into `decision.qosDecs`): allowed 5QI, ARP priority range, per-flow MBR
-// ceiling, and GBR<=MBR structural sanity [TS 29.512 §4.2.6.6.2]. Additionally
-// checks that the cumulative non-GBR MBR of all flows in the decision does not
-// exceed the authorized Session-AMBR carried in `decision.sessRules` (populated
-// by the SM side, sm_policy::authorize_session_rule) [TS 23.503 §6.1.4,
-// TS 29.512 §4.2.6.6.1]. When no authorized Session-AMBR is available the check
-// fails open unless op_policy.reject_on_missing_subscription is set
-// [TS 29.512 §4.2.2.2]. Returns FORBIDDEN with a cause on the first violation.
-oai::pcf::app::policy_auth::handler_result validate_qos_authorization(
-    const oai::model::pcf::SmPolicyDecision& decision,
-    const std::vector<std::string>& owned_qos_ids,
-    const oai::pcf::app::operator_qos_policy& op_policy);
 
 // TODO [QOS] Handle QoS parameter updates during session modification [TS 29.514 §4.2.3.2, TS 29.512 §4.2.6.2.1]
 // oai::pcf::app::policy_auth::handler_result handle_qos_update(

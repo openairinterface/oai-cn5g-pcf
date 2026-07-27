@@ -15,11 +15,14 @@
 #include "SmPolicyDecision.h"
 #include "TrafficControlData.h"
 #include "AppSessionContext.h"
+#include "AppSessionContextUpdateData.h"
 #include "AppSessionContextUpdateDataPatch.h"
 #include "AppSessionContextReqData.h"
 #include "policy_auth/pcf_policy_authorization_status_code.hpp"
 #include "policy_auth/app_session.hpp"
+#include "policy_auth/decision_applier.hpp"
 #include "policy_auth/policy_auth_context.hpp"
+#include "policy_auth/qos_deriver.hpp"
 #include "pcf_event.hpp"
 #include "sm_policy/smf_notify_outcome.hpp"
 #include "sm_policy_delta.hpp"
@@ -119,57 +122,81 @@ class pcf_policy_authorization {
 
  private:
   /**
-   * @brief Push a request's decision change to the bound association with
-   * optimistic concurrency + bounded retry. Thin wrapper around
-   * policy_auth::apply_decision_with_retry (apply_decision_with_retry.hpp) --
-   * the CAS-retry/conflict/exhaustion mechanics are extracted there as a
-   * free, dependency-injected function specifically so they're directly
-   * unit-tested without pcf_event/pcf_smpc, since every PA handler
-   * (create/modify/delete/rollback) depends on this being correct.
-   *
-   * `derive` is invoked once per attempt with the current base decision; it must
-   * copy-and-mutate `working` into this request's intended decision and return
-   * an empty handler_result, or a set handler_result for a *deterministic*
-   * failure (403/400/...) that no retry can fix. The delta (base -> working) is
-   * applied to the association only if it is still at the base's version; on a
-   * version conflict `derive` is re-run against the freshly committed decision.
-   *
-   * On success returns status_code::OK and fills `committed_delta` (the delta
-   * that was applied -- callers use it to update the session ledger as a
-   * post-commit side-effect). On a deterministic failure returns that failure.
-   * On retry exhaustion returns FORBIDDEN with problem_details =
-   * REQUESTED_SERVICE_TEMPORARILY_NOT_AUTHORIZED [TS 29.514 Table 5.7.3-1].
+   * @brief Push a decision change through m_applier and, on commit, drive
+   * the SMF notify + compensating-rollback-check as one operation, so no
+   * caller can commit without also notifying.
+   * Every handler
+   * (POST/PATCH/DELETE/rollback) calls this instead of m_applier.apply()
+   * directly.
    */
-  policy_auth::status_code apply_with_retry(
-      std::optional<std::string>& association_id,
-      const oai::model::pcf::SmPolicyDecision& initial_base,
-      std::uint64_t initial_version,
+  policy_auth::status_code push_decision_change(
+      policy_auth::decision_apply_request request,
       const std::function<policy_auth::handler_result(
           const oai::model::pcf::SmPolicyDecision& base,
           oai::model::pcf::SmPolicyDecision& working)>& derive,
       oai::pcf::app::sm_policy_delta& committed_delta,
-      std::string& problem_details, const std::string& app_session_id);
+      std::string& problem_details);
 
   /**
-   * @brief Handler for a definitively "permanent" SMF notify rejection.
-   * Consumes (try_take) the matching
-   * pending_rollback_tracker entry, if still tracked, then delegates the
-   * fetch-live-decision-then-apply-with-retry orchestration to
-   * policy_auth::perform_compensating_rollback (rollback_orchestration.hpp) --
-   * extracted as a free, dependency-injected function specifically so that
-   * "always fetch live state, never reuse the tracker's stale pre-commit
-   * snapshot" is unit-tested in isolation. Also fires the §5.7 AF-notify stub
-   * either way (rollback committed, not committed, or the association no
-   * longer existing to roll back at all).
+   * @brief Consumes (try_take) the matching pending_rollback_tracker entry,
+   * if still tracked, then delegates the fetch-live-decision-then-apply-
+   * with-retry orchestration to policy_auth::perform_compensating_rollback
+   * (rollback_orchestration.hpp) -- extracted as a free, dependency-injected
+   * function specifically so that "always fetch live state, never reuse the
+   * tracker's stale pre-commit snapshot" is unit-tested in isolation. Also
+   * fires the §5.7 AF-notify stub either way (rollback committed, not
+   * committed, or the association no longer existing to roll back at all).
+   *
+   * Called from two places: directly, right after push_decision_change's own
+   * commit, when the SMF notify reports a permanent rejection inline on the
+   * same attempt; and as the slot for sm_policy_update_failed_sig_t, when a
+   * permanent rejection is instead discovered later via
+   * retry_drain_queue's delayed path. Both cases reduce to the same
+   * question -- "is there a pending commit for (association_id, version),
+   * and if so, compensate it" -- so both share this one implementation.
    */
-  void handle_sm_policy_update_failed(
+  void compensate_if_pending(
       const std::string& association_id, std::uint64_t version,
       oai::pcf::app::sm_policy::smf_notify_outcome reason);
+
+  // Per-attempt recompute for POST /app-sessions's derive (called once per
+  // apply() attempt against the current base): derives this request's QoS/SFC
+  // into `working` (side-effect-free w.r.t. shared session state), authorizes,
+  // merges and validates. Only per-request state remains as parameters --
+  // the stable deps it used to thread (qos_ref_store, op_policy) are now
+  // m_qos_deriver, reached via `this`.
+  policy_auth::handler_result derive_post_app_session(
+      const oai::model::pcf::AppSessionContext& context,
+      const std::string& app_session_id,
+      const std::shared_ptr<policy_auth::app_session>& session,
+      oai::model::pcf::SmPolicyDecision& working);
+
+  // Per-attempt recompute for PATCH /app-sessions/{id}'s derive: re-derives
+  // this PATCH's changes -- SFC, QoS modify/add, and REMOVED deletions --
+  // into `working`, authorizes, merges and validates, then applies the AF's
+  // JSON Merge Patch onto `req_context` (rebuilt from the session snapshot on
+  // every attempt; the committed attempt leaves the value used post-commit).
+  policy_auth::handler_result derive_mod_app_session(
+      const oai::model::pcf::AppSessionContextUpdateData& patch_asc,
+      const std::string& app_session_id,
+      const std::shared_ptr<policy_auth::app_session>& session,
+      oai::model::pcf::AppSessionContextReqData& req_context,
+      oai::model::pcf::SmPolicyDecision& working);
 
   // Aggregate of the injected Policy Authorization stores (app-session working
   // set + binding index, and the operator-preconfigured QoS reference sets).
   // New stores are added on policy_auth_context, not here.
   std::shared_ptr<policy_auth::policy_auth_context> m_context;
+
+  // CAS-retry/conflict/exhaustion mechanics shared by every PA handler
+  // (create/modify/delete/rollback). The stable deps (sm_update_decision
+  // bridge to m_event_sub, this instance's rollback tracker, max retries)
+  // are bound once here at construction instead of re-supplied per call.
+  policy_auth::decision_applier m_applier;
+
+  // The two never-varying deps the QoS-derivation functions used to thread
+  // through every call (qos_ref_store, op_policy), bound once at construction.
+  policy_auth::qos_deriver m_qos_deriver;
 
   // for Event Handling
   pcf_event& m_event_sub;

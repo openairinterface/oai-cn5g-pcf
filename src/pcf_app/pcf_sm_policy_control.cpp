@@ -44,12 +44,18 @@ pcf_smpc::pcf_smpc(
     const std::shared_ptr<oai::pcf::app::sm_policy::policy_storage>&
         policy_storage,
     pcf_event& ev, oai::pcf::app::operator_qos_policy qos_authorization_policy,
-    oai::pcf::app::notify_failure_recovery_policy notify_failure_recovery)
+    oai::pcf::app::notify_failure_recovery_policy notify_failure_recovery,
+    http_send_fn http_send)
     : m_retry_drain_queue(
           notify_failure_recovery.retry_drain_ttl,
           notify_failure_recovery.retry_drain_max_entries,
           notify_failure_recovery.max_notify_retries,
           notify_failure_recovery.retry_backoff_initial),
+      m_http_send(
+          http_send ? std::move(http_send)
+                    : http_send_fn([](method_e m, const request& r) {
+                        return http_client_inst->send_http_request(m, r);
+                      })),
       m_event_sub(ev) {
   m_policy_storage           = policy_storage;
   m_qos_authorization_policy = std::move(qos_authorization_policy);
@@ -68,9 +74,15 @@ pcf_smpc::pcf_smpc(
 
   m_sm_update_decision_connection =
       m_event_sub.subscribe_sm_update_decision(boost::bind(
-          &pcf_smpc::handle_update_decision_request, this,
+          &pcf_smpc::handle_commit_decision_request, this,
           boost::placeholders::_1, boost::placeholders::_2,
           boost::placeholders::_3, boost::placeholders::_4));
+
+  m_notify_committed_decision_connection =
+      m_event_sub.subscribe_notify_committed_decision(boost::bind(
+          &pcf_smpc::handle_notify_committed_decision_request, this,
+          boost::placeholders::_1, boost::placeholders::_2,
+          boost::placeholders::_3));
 
   m_task_tick_connection = m_event_sub.subscribe_task_nf_heartbeat(
       boost::bind(
@@ -132,7 +144,7 @@ sm_policy::status_code pcf_smpc::send_sm_policy_control_update_notify(
       request_body.c_str());
 
   request req   = http_client_inst->prepare_json_request(uri, request_body);
-  response resp = http_client_inst->send_http_request(method_e::POST, req);
+  response resp = m_http_send(method_e::POST, req);
 
   // TODO [QOS][ROLLBACK] Deferred: resp has
   // no way to distinguish a connection/gateway failure from a timeout -- both
@@ -286,7 +298,7 @@ void pcf_smpc::handle_get_association_decision(
   version  = iter->second.decision_version();
 }
 
-void pcf_smpc::handle_update_decision_request(
+void pcf_smpc::handle_commit_decision_request(
     std::optional<std::string>& association_id, std::uint64_t expected_version,
     const oai::pcf::app::sm_policy_delta& delta,
     oai::pcf::app::decision_apply_result& out) {
@@ -341,7 +353,7 @@ void pcf_smpc::handle_update_decision_request(
     const std::uint64_t current = iter->second.decision_version();
     if (current != expected_version) {
       // Someone committed since the caller read its base. Hand back the current
-      // state; nothing is applied, persisted, or notified. The caller retries.
+      // state; nothing is applied or persisted. The caller retries.
       out = {false, current, iter->second.snapshot_decision()};
       Logger::pcf_app().debug(fmt::format(
           "Update rejected for association {}: version {} != expected {} "
@@ -353,8 +365,7 @@ void pcf_smpc::handle_update_decision_request(
     iter->second.apply_delta(delta);  // copy-on-write + version bump
     out = {true, iter->second.decision_version(),
            iter->second.snapshot_decision()};
-    // Capture the context under the lock so persist/notify run off-lock
-    // [CP.22: never hold a lock across a blocking/foreign call].
+    // Capture the context under the lock so persist runs off-lock
     context = iter->second.get_sm_policy_context_data();
   }  // m_associations_mutex released
 
@@ -370,8 +381,8 @@ void pcf_smpc::handle_update_decision_request(
    * new decision and to look for an alternative way to store the updates for
    * the policy decisions that are not persisted.
    */
-  // Reached only on commit (conflicts/not-found returned above). Persist +
-  // notify against the immutable post-commit snapshot.
+  // Reached only on commit (conflicts/not-found returned above). Persist
+  // against the immutable post-commit snapshot.
   if (!context.getSupi().empty()) {
     m_policy_storage->insert_supi_decision(context.getSupi(), *out.decision);
   } else if (!context.getDnn().empty()) {
@@ -379,33 +390,68 @@ void pcf_smpc::handle_update_decision_request(
   } else {
     Logger::pcf_app().error("Failed to update policy decision");
   }
+}
 
-  // Notify the SMF against the immutable snapshot, off-lock. The notification
-  // still carries the full decision (the SMF diffs it itself); only PCF-internal
-  // application is incremental.
-  smf_notify_outcome outcome = smf_notify_outcome::applied;
-  auto ret = send_sm_policy_control_update_notify(context, out.decision, outcome);
+void pcf_smpc::handle_notify_committed_decision_request(
+    const std::string& association_id, std::uint64_t version,
+    smf_notify_outcome& outcome) {
+  // Re-fetch the association's LIVE decision + context under lock
+  // immediately before this attempt (same discipline drain_retry_queue's
+  // delayed path uses -- never resend a frozen snapshot; an unrelated
+  // disjoint-key commit may have landed on this association since PA's
+  // commit call returned).
+  //
+  //  PA already  can be configured to run multiple HTTP workers
+  // so a DIFFERENT concurrent request bound to the SAME
+  // association can acquire m_associations_mutex and commit its own delta
+  // in the gap between this request's own commit releasing the lock and
+  // this re-fetch reacquiring it. "Same thread, same request, nothing else
+  // ran in between" does not imply "no other thread touched this
+  // association in between" -- the mutex serializes individual
+  // acquisitions, it does not serialize across two acquisitions made by the
+  // same caller. Skipping this would silently resend a stale snapshot.
+  std::shared_ptr<const oai::model::pcf::SmPolicyDecision> decision;
+  oai::model::pcf::SmPolicyContextData context;
+  bool association_found;
+  {
+    std::shared_lock lock_associations(m_associations_mutex);
+    auto iter          = m_associations.find(association_id);
+    association_found  = iter != m_associations.end();
+    if (association_found) {
+      decision = iter->second.snapshot_decision();
+      context  = iter->second.get_sm_policy_context_data();
+    }
+  }  // m_associations_mutex released [CP.22]
+
+  if (!association_found) {
+    // Association gone (e.g. concurrently deleted) in the narrow window
+    // between PA's commit call returning and this call -- nothing to
+    // notify. Conservative: don't claim a confirmed outcome either way.
+    outcome = smf_notify_outcome::transport_ambiguous;
+    return;
+  }
+
+  outcome = smf_notify_outcome::applied;
+  auto ret = send_sm_policy_control_update_notify(context, decision, outcome);
   if (ret != status_code::CREATED) {
     Logger::pcf_app().error(
         "Policy update notification failed for association %s: outcome=%s",
-        association_id.value_or("<none>").c_str(), to_string(outcome));
+        association_id.c_str(), to_string(outcome));
 
     switch (outcome) {
       case smf_notify_outcome::permanent_rejection:
         // TS 29.512 Table 5.7.3-2: the SMF has told us, unambiguously, that
         // it will not apply this change -- the only outcome Policy
-        // Authorization may act on with a compensating rollback
-        // [N5_QoS_Phase2_§2.8 plan §5.3]. `out.version` is the same
-        // post-commit version PA's apply_with_retry recorded this commit's
-        // pending_rollback_tracker entry under.
-        m_event_sub.sm_policy_update_failed(
-            association_id.value(), out.version, outcome);
+        // Authorization may act on with a compensating rollback.
+        // Reported directly via `outcome`
+        // to the caller (Policy Authorization, already synchronously
+        // waiting for this call to return) -- no signal fired here.
         break;
       case smf_notify_outcome::temporary_rejection:
       case smf_notify_outcome::transport_ambiguous:
         // Bounded retry, never rollback [§5.1/§5.2] -- drained off task_tick
         // (m_task_tick_connection, this class's constructor).
-        m_retry_drain_queue.enqueue(association_id.value(), out.version);
+        m_retry_drain_queue.enqueue(association_id, version);
         break;
       default:
         // applied/partial_failure never reach here: applied returns CREATED

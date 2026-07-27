@@ -84,6 +84,17 @@ class pcf_event {
       const sm_update_decision_sig_t::slot_type& sig);
 
   /**
+   * Subscribe to Policy Authorization's request to notify the SMF of a
+   * decision it just committed, and report back the classified outcome.
+   * @param [const sm_notify_committed_decision_sig_t::slot_type&] sig:
+   * slot_type parameter
+   * @return boost::signals2::connection: the connection between the signal
+   * and the slot
+   */
+  bs2::connection subscribe_notify_committed_decision(
+      const sm_notify_committed_decision_sig_t::slot_type& sig);
+
+  /**
    * Subscribe to a definitively "permanent" SMF notify rejection.
    * Invariant (finding F): connect only once,
    * at Policy Authorization's construction, before any HTTP thread starts --
@@ -165,6 +176,9 @@ class pcf_event {
   sm_session_binding_sig_t sm_session_binding;  // Signal for SM Session Binding
 
   sm_update_decision_sig_t sm_update_decision;  // Signal for SM Update Decision
+
+  sm_notify_committed_decision_sig_t
+      notify_committed_decision;  // Signal for PA to ask SM to notify the SMF
 
   sm_policy_update_failed_sig_t
       sm_policy_update_failed;  // Signal for a permanent SMF notify rejection

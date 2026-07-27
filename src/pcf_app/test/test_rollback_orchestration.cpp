@@ -34,6 +34,7 @@ using oai::model::pcf::QosData;
 using oai::model::pcf::SmPolicyDecision;
 using oai::pcf::app::compute_sm_policy_delta;
 using oai::pcf::app::sm_policy_delta;
+using oai::pcf::app::policy_auth::decision_apply_request;
 using oai::pcf::app::policy_auth::handler_result;
 using oai::pcf::app::policy_auth::pending_commit;
 using oai::pcf::app::policy_auth::perform_compensating_rollback;
@@ -96,14 +97,13 @@ TEST(RollbackOrchestration, UsesFreshLiveDecisionNotStalePendingBase) {
     version  = live_version;
   };
   auto fake_apply_with_retry =
-      [&](std::optional<std::string>&, const SmPolicyDecision& base,
-          std::uint64_t version, const std::function<handler_result(
-                                      const SmPolicyDecision&,
-                                      SmPolicyDecision&)>&,
-          sm_policy_delta&, std::string&, const std::string&) {
+      [&](decision_apply_request request,
+          const std::function<handler_result(
+              const SmPolicyDecision&, SmPolicyDecision&)>&,
+          sm_policy_delta&, std::string&) {
         apply_called     = true;
-        captured_base    = base;
-        captured_version = version;
+        captured_base    = request.initial_base;
+        captured_version = request.initial_version;
         return status_code::OK;
       };
 
@@ -126,10 +126,10 @@ TEST(RollbackOrchestration, AssociationGoneSkipsRollbackAttemptEntirely) {
                           const std::string&, bool& found, SmPolicyDecision&,
                           std::uint64_t&) { found = false; };
   auto fake_apply_with_retry =
-      [&](std::optional<std::string>&, const SmPolicyDecision&,
-          std::uint64_t, const std::function<handler_result(
-                              const SmPolicyDecision&, SmPolicyDecision&)>&,
-          sm_policy_delta&, std::string&, const std::string&) {
+      [&](decision_apply_request,
+          const std::function<handler_result(
+              const SmPolicyDecision&, SmPolicyDecision&)>&,
+          sm_policy_delta&, std::string&) {
         apply_called = true;
         return status_code::OK;
       };
@@ -152,11 +152,10 @@ TEST(RollbackOrchestration, PropagatesApplyWithRetryFailureResult) {
     version  = 1;
   };
   auto fake_apply_with_retry =
-      [](std::optional<std::string>&, const SmPolicyDecision&, std::uint64_t,
+      [](decision_apply_request,
          const std::function<handler_result(
              const SmPolicyDecision&, SmPolicyDecision&)>&,
-         sm_policy_delta&, std::string& problem_details,
-         const std::string&) {
+         sm_policy_delta&, std::string& problem_details) {
         problem_details = "REQUESTED_SERVICE_TEMPORARILY_NOT_AUTHORIZED";
         return status_code::FORBIDDEN;
       };
@@ -191,13 +190,12 @@ TEST(RollbackOrchestration, DeriveLambdaAppliesTheComputedRollbackDelta) {
 
   SmPolicyDecision resulting_working;
   auto fake_apply_with_retry =
-      [&](std::optional<std::string>&, const SmPolicyDecision& base,
-          std::uint64_t, const std::function<handler_result(
-                              const SmPolicyDecision&, SmPolicyDecision&)>&
-                              derive,
-          sm_policy_delta&, std::string&, const std::string&) {
-        SmPolicyDecision working = base;
-        derive(base, working);
+      [&](decision_apply_request request,
+          const std::function<handler_result(
+              const SmPolicyDecision&, SmPolicyDecision&)>& derive,
+          sm_policy_delta&, std::string&) {
+        SmPolicyDecision working = request.initial_base;
+        derive(request.initial_base, working);
         resulting_working = working;
         return status_code::OK;
       };

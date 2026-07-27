@@ -5,6 +5,7 @@
 #ifndef FILE_PCF_SM_POLICY_CONTROL_SEEN
 #define FILE_PCF_SM_POLICY_CONTROL_SEEN
 
+#include <functional>
 #include <string>
 #include <unordered_map>
 #include <shared_mutex>
@@ -16,6 +17,16 @@
 #include "SmPolicyDeleteData.h"
 #include "SmPolicyControl.h"
 #include "SmPolicyUpdateContextData.h"
+// 3gpp_29.500.h (not the heavier http_definitions.hpp) is deliberate here:
+// it's the lightweight header that declares method_e, with none of
+// http_definitions.hpp's <cpr/cpr.h>/<curl/curl.h>/<fmt/format.h>/
+// <nlohmann/json.hpp> pulled in. oai::http::request/response below are
+// forward-declared instead of included for the same reason -- this header
+// is included well beyond pcf_smpc's own .cpp (e.g. transitively via
+// pcf_app.hpp into api-server sources), and those consumers have no need
+// for (and, before this fix, no include path configured for) the full HTTP
+// client dependency stack just to see this class's declaration.
+#include "3gpp_29.500.h"
 #include "sm_policy/pcf_smpc_status_code.hpp"
 #include "sm_policy/smf_notify_outcome.hpp"
 #include "sm_policy/individual_sm_association.hpp"
@@ -27,7 +38,20 @@
 #include "notify_failure_recovery_policy.hpp"
 #include "operator_qos_policy.hpp"
 
+namespace oai::http {
+struct request;
+struct response;
+}  // namespace oai::http
+
 namespace oai::pcf::app {
+
+// A PCF-owned seam over the single blocking call pcf_smpc needs from
+// http_client. http_client::send_http_request is NOT virtual (submodule,
+// shared across every CN5G NF -- not ours to change), so injecting
+// std::shared_ptr<http_client> alone would not give mockability; this
+// std::function seam does.
+using http_send_fn = std::function<oai::http::response(
+    oai::common::sbi::method_e, const oai::http::request&)>;
 
 /**
  * @brief Service class to handle Session Management Policies
@@ -40,7 +64,11 @@ class pcf_smpc {
           policy_storage,
       pcf_event& ev,
       oai::pcf::app::operator_qos_policy qos_authorization_policy         = {},
-      oai::pcf::app::notify_failure_recovery_policy notify_failure_recovery = {});
+      oai::pcf::app::notify_failure_recovery_policy notify_failure_recovery = {},
+      // The SMF-notify send seam. Empty
+      // (the default) binds to the real http_client_inst global at
+      // construction; tests inject a fake returning canned responses.
+      http_send_fn http_send = {});
   pcf_smpc(pcf_smpc const&) = delete;
   void operator=(pcf_smpc const&) = delete;
 
@@ -132,12 +160,18 @@ class pcf_smpc {
   // notify_failure_recovery.
   oai::pcf::app::sm_policy::retry_drain_queue m_retry_drain_queue;
 
+  // The SMF-notify send seam (constructor-bound; see http_send_fn above).
+  http_send_fn m_http_send;
+
   // Drains due entries from m_retry_drain_queue: re-fetches each association's
   // live decision + context under lock immediately before the attempt
   // (never resend a frozen snapshot), notifies off-lock [CP.22],
   // and reports the outcome back to the queue. Fires the SM->PA
-  // sm_policy_update_failed signal on a permanent rejection discovered here,
-  // exactly as handle_update_decision_request does on the first attempt.
+  // sm_policy_update_failed signal on a permanent rejection discovered here
+  // -- unlike a rejection discovered inline on the first attempt (reported
+  // directly via handle_notify_committed_decision_request's return value,
+  // not this signal) since nothing is synchronously waiting for this
+  // delayed retry.
   void drain_retry_queue(std::uint64_t tick_ms);
 
   void handle_policy_change(
@@ -171,14 +205,32 @@ class pcf_smpc {
       const std::string& association_id, bool& found,
       oai::model::pcf::SmPolicyDecision& decision, std::uint64_t& version);
 
-  // Optimistic, version-checked apply. Applies `delta` and notifies the SMF
-  // only if the association is still at `expected_version`; otherwise reports a
-  // conflict (with the current version/decision) via `out` for the caller to
-  // retry against.
-  void handle_update_decision_request(
+  // Optimistic, version-checked commit ONLY -- no persist-triggered notify,
+  // no signal. Applies
+  // `delta` if the association is still at `expected_version`; otherwise
+  // reports a conflict (with the current version/decision) via `out` for the
+  // caller to retry against. Persists the committed decision (cheap/local)
+  // before returning. The caller (decision_applier, via
+  // pcf_policy_authorization::push_decision_change) is responsible for
+  // calling handle_notify_committed_decision_request afterward if this
+  // committed -- splitting the two steps this way means nothing here needs
+  // to invoke anything the caller handed in.
+  void handle_commit_decision_request(
       std::optional<std::string>& association_id, std::uint64_t expected_version,
       const oai::pcf::app::sm_policy_delta& delta,
       oai::pcf::app::decision_apply_result& out);
+
+  // Notify the SMF of a decision this same PA instance just committed (via
+  // handle_commit_decision_request) and return the classified outcome
+  // directly. Re-fetches the association's live decision + context under
+  // lock immediately before sending (same discipline drain_retry_queue's
+  // delayed path uses -- never resend a frozen snapshot). Does not fire
+  // sm_policy_update_failed -- that signal is reserved for
+  // drain_retry_queue's delayed-discovery path; the caller here is already
+  // synchronously waiting for the answer.
+  void handle_notify_committed_decision_request(
+      const std::string& association_id, std::uint64_t version,
+      oai::pcf::app::sm_policy::smf_notify_outcome& outcome);
 
   // TODO [QOS] Add QoS coordination functions between Policy Authorization and SM Policy Control [TS 29.513 §5.2.2.2, TS 29.512 §4.2.3]
   // Implement the following functions to ensure proper QoS policy coordination:
@@ -216,6 +268,7 @@ class pcf_smpc {
   pcf_event& m_event_sub;
   bs2::connection m_sm_session_binding_connection;
   bs2::connection m_sm_update_decision_connection;
+  bs2::connection m_notify_committed_decision_connection;
   bs2::connection m_task_tick_connection;
   bs2::connection m_get_association_decision_connection;
 };

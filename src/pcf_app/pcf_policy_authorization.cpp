@@ -14,7 +14,7 @@
 #include "FlowStatus.h"
 #include "policy_auth/af_notify.hpp"
 #include "policy_auth/app_session.hpp"
-#include "policy_auth/apply_decision_with_retry.hpp"
+#include "policy_auth/decision_applier.hpp"
 #include "policy_auth/rollback_orchestration.hpp"
 
 #include "AppSessionContextRespData.h"
@@ -64,12 +64,24 @@ std::string negotiate_supported_features(const std::string& af_supp_feat) {
 //------------------------------------------------------------------------------
 pcf_policy_authorization::pcf_policy_authorization(
     std::shared_ptr<policy_auth::policy_auth_context> context, pcf_event& ev)
-    : m_context(std::move(context)), m_event_sub(ev) {
+    : m_context(std::move(context)),
+      m_applier(
+          [this](
+              std::optional<std::string>& assoc_id,
+              std::uint64_t expected_version, const sm_policy_delta& delta,
+              decision_apply_result& result) {
+            m_event_sub.sm_update_decision(
+                assoc_id, expected_version, delta, result);
+          },
+          m_context->rollback_tracker(), kMaxApplyRetries),
+      m_qos_deriver(
+          m_context->qos_references(), m_context->qos_authorization_policy()),
+      m_event_sub(ev) {
   // Invariant: connect only once,
   // here at construction, before any HTTP thread starts.
   m_sm_policy_update_failed_connection =
       m_event_sub.subscribe_sm_policy_update_failed(boost::bind(
-          &pcf_policy_authorization::handle_sm_policy_update_failed, this,
+          &pcf_policy_authorization::compensate_if_pending, this,
           boost::placeholders::_1, boost::placeholders::_2,
           boost::placeholders::_3));
 
@@ -105,11 +117,46 @@ pcf_policy_authorization::pcf_policy_authorization(
 }
 
 //------------------------------------------------------------------------------
-// Optimistic-concurrency driver shared by POST/PATCH/DELETE. See the header for
-// the contract. `derive` is the request's pure recompute (side-effect-free
-// w.r.t. shared session state. It must derive into a throwaway scratch ledger,
-// not the session's real ledger); the real ledger/context/version are updated by
-// the caller only after this returns OK.
+// Wraps m_applier.apply() with the post-commit notify + rollback-check, so
+// no caller can commit a decision change without also notifying the SMF and
+// checking whether that notify came back as a confirmed permanent rejection.
+// Every handler
+// (POST/PATCH/DELETE/rollback) calls this instead of m_applier.apply()
+// directly.
+status_code pcf_policy_authorization::push_decision_change(
+    decision_apply_request request,
+    const std::function<handler_result(
+        const oai::model::pcf::SmPolicyDecision&,
+        oai::model::pcf::SmPolicyDecision&)>& derive,
+    sm_policy_delta& committed_delta, std::string& problem_details) {
+  std::uint64_t committed_version = 0;
+  const status_code push = m_applier.apply(
+      request, derive, committed_delta, problem_details, committed_version);
+  if (push != status_code::OK) return push;
+
+  // Ask SM to notify the SMF of the commit we just made and get the
+  // classified outcome back directly -- a plain synchronous call/return,
+  // not a signal, since we're already blocked waiting for the answer.
+  sm_policy::smf_notify_outcome outcome = sm_policy::smf_notify_outcome::applied;
+  m_event_sub.notify_committed_decision(
+      request.association_id.value(), committed_version, outcome);
+  if (outcome == sm_policy::smf_notify_outcome::permanent_rejection) {
+    // Discovered inline, on this same attempt -- nothing to race, since
+    // m_applier.apply() already recorded this commit's pending_rollback_
+    // tracker entry before returning OK, and this check runs synchronously
+    // right after, on the same thread.
+    compensate_if_pending(
+        request.association_id.value(), committed_version, outcome);
+  }
+  return status_code::OK;
+}
+
+//------------------------------------------------------------------------------
+// Optimistic-concurrency driver shared by POST/PATCH/DELETE, via m_applier
+// (decision_applier.hpp). `derive` is the request's pure recompute
+// (side-effect-free w.r.t. shared session state. It must derive into a
+// throwaway scratch ledger, not the session's real ledger); the real
+// ledger/context/version are updated by the caller only after this returns OK.
 //
 // Why the version-CAS (compare-and-swap) + re-derive is needed (worked
 // examples). Binding hands PA
@@ -141,25 +188,66 @@ pcf_policy_authorization::pcf_policy_authorization(
 //      That is the intended semantics for concurrent modification of one
 //      resource -- the delta only carries the keys a request changed, so nothing
 //      *else* is lost; only the directly-contended field resolves last-wins.
-status_code pcf_policy_authorization::apply_with_retry(
-    std::optional<std::string>& association_id,
-    const oai::model::pcf::SmPolicyDecision& initial_base,
-    std::uint64_t initial_version,
-    const std::function<handler_result(
-        const oai::model::pcf::SmPolicyDecision&,
-        oai::model::pcf::SmPolicyDecision&)>& derive,
-    sm_policy_delta& committed_delta, std::string& problem_details,
-    const std::string& app_session_id) {
-  auto sm_update_decision = [this](
-      std::optional<std::string>& assoc_id, std::uint64_t expected_version,
-      const sm_policy_delta& delta, decision_apply_result& result) {
-    m_event_sub.sm_update_decision(
-        assoc_id, expected_version, delta, result);
-  };
-  return policy_auth::apply_decision_with_retry(
-      association_id, initial_base, initial_version, kMaxApplyRetries, derive,
-      sm_update_decision, m_context->rollback_tracker(), app_session_id,
-      committed_delta, problem_details);
+//------------------------------------------------------------------------------
+// Per-attempt recompute for POST /app-sessions (see the header for the
+// contract): derive this request's QoS/SFC into `working`, authorize, merge
+// and validate.
+handler_result pcf_policy_authorization::derive_post_app_session(
+    const oai::model::pcf::AppSessionContext& context,
+    const std::string& app_session_id,
+    const std::shared_ptr<policy_auth::app_session>& session,
+    oai::model::pcf::SmPolicyDecision& working) {
+  oai::model::pcf::SmPolicyDecision request_decision = {};  // SFC/QoS contributions
+  policy_auth::qos_context scratch;  // throwaway: decouples the real ledger
+  bool qos_flow_processed = false;
+
+  if (context.getAscReqData().medComponentsIsSet()) {
+    for (const auto& medComponent : context.getAscReqData().getMedComponents()) {
+      const auto& med_component = medComponent.second;
+      if (med_component.afSfcReqIsSet()) {
+        handler_result r = policy_auth::handle_service_function_chaining(
+            med_component.getAfSfcReq(), request_decision);
+        if (r.problem_details.has_value()) return r;
+        break;
+      } else if (
+          // Any MediaComponent bearing QoS intent [TS 29.513 §7.3.3].
+          med_component.qosReferenceIsSet() ||
+          med_component.medSubCompsIsSet() || med_component.marBwUlIsSet() ||
+          med_component.marBwDlIsSet() || med_component.mirBwUlIsSet() ||
+          med_component.mirBwDlIsSet()) {
+        handler_result r = m_qos_deriver.handle_qos_requirements(
+            med_component, app_session_id, working, scratch);
+        if (r.problem_details.has_value()) return r;
+        qos_flow_processed = true;
+      }
+    }
+  } else if (context.getAscReqData().afSfcReqIsSet()) {
+    handler_result r = policy_auth::handle_service_function_chaining(
+        context.getAscReqData().getAfSfcReq(), request_decision);
+    if (r.problem_details.has_value()) return r;
+  }
+
+  // Authorize against operator policy + the subscribed Session-AMBR. Owned =
+  // this session's prior-committed ids (empty on create) + the ids just
+  // derived into `scratch`; only owned flows are judged and summed
+  // [TS 29.514 §4.1.3.1, TS 23.503 §6.1.3.2.3, TS 29.512 §4.2.6.6].
+  if (qos_flow_processed) {
+    std::vector<std::string> owned = session->qos().owned_qos_ids();
+    const auto derived_ids         = scratch.owned_qos_ids();
+    owned.insert(owned.end(), derived_ids.begin(), derived_ids.end());
+    handler_result a = m_qos_deriver.validate_qos_authorization(working, owned);
+    if (a.problem_details.has_value()) return a;
+  }
+
+  handler_result m = validate_and_merge_decision(request_decision, working);
+  if (m.problem_details.has_value()) return m;
+
+  // Pre-notification gate: never push a structurally/referentially
+  // inconsistent decision [TS 29.512 §4.2.6.2, §5.6.2.4].
+  handler_result v = policy_auth::validate_policy_decision(working);
+  if (v.problem_details.has_value()) return v;
+
+  return {};  // ok
 }
 
 //------------------------------------------------------------------------------
@@ -213,72 +301,22 @@ status_code pcf_policy_authorization::post_app_sessions_handler(
   auto session   = std::make_shared<policy_auth::app_session>(
       app_session_id, reqContext, association_id);
 
-  // Per-attempt recompute (pure w.r.t. shared session state): derive this
-  // request's QoS/SFC into `working`, authorize, merge and validate. Called once
-  // per attempt by apply_with_retry against the current base.
-  auto derive =
-      [&](const oai::model::pcf::SmPolicyDecision& /*base*/,
-          oai::model::pcf::SmPolicyDecision& working) -> handler_result {
-    oai::model::pcf::SmPolicyDecision request_decision = {};  // SFC/QoS contributions
-    policy_auth::qos_context scratch;  // throwaway: decouples the real ledger
-    bool qos_flow_processed = false;
-
-    if (context.getAscReqData().medComponentsIsSet()) {
-      for (const auto& medComponent :
-           context.getAscReqData().getMedComponents()) {
-        const auto& med_component = medComponent.second;
-        if (med_component.afSfcReqIsSet()) {
-          handler_result r = policy_auth::handle_service_function_chaining(
-              med_component.getAfSfcReq(), request_decision);
-          if (r.problem_details.has_value()) return r;
-          break;
-        } else if (
-            // Any MediaComponent bearing QoS intent [TS 29.513 §7.3.3].
-            med_component.qosReferenceIsSet() ||
-            med_component.medSubCompsIsSet() || med_component.marBwUlIsSet() ||
-            med_component.marBwDlIsSet() || med_component.mirBwUlIsSet() ||
-            med_component.mirBwDlIsSet()) {
-          handler_result r = policy_auth::handle_qos_requirements(
-              med_component, app_session_id, working, scratch,
-              m_context->qos_references());
-          if (r.problem_details.has_value()) return r;
-          qos_flow_processed = true;
-        }
-      }
-    } else if (context.getAscReqData().afSfcReqIsSet()) {
-      handler_result r = policy_auth::handle_service_function_chaining(
-          context.getAscReqData().getAfSfcReq(), request_decision);
-      if (r.problem_details.has_value()) return r;
-    }
-
-    // Authorize against operator policy + the subscribed Session-AMBR. Owned =
-    // this session's prior-committed ids (empty on create) + the ids just
-    // derived into `scratch`; only owned flows are judged and summed
-    // [TS 29.514 §4.1.3.1, TS 23.503 §6.1.3.2.3, TS 29.512 §4.2.6.6].
-    if (qos_flow_processed) {
-      std::vector<std::string> owned = session->qos().owned_qos_ids();
-      const auto derived_ids         = scratch.owned_qos_ids();
-      owned.insert(owned.end(), derived_ids.begin(), derived_ids.end());
-      handler_result a = policy_auth::validate_qos_authorization(
-          working, owned, m_context->qos_authorization_policy());
-      if (a.problem_details.has_value()) return a;
-    }
-
-    handler_result m = validate_and_merge_decision(request_decision, working);
-    if (m.problem_details.has_value()) return m;
-
-    // Pre-notification gate: never push a structurally/referentially
-    // inconsistent decision [TS 29.512 §4.2.6.2, §5.6.2.4].
-    handler_result v = policy_auth::validate_policy_decision(working);
-    if (v.problem_details.has_value()) return v;
-
-    return {};  // ok
+  // Per-attempt recompute (pure w.r.t. shared session state), called once per
+  // apply() attempt against the current base; extracted as
+  // derive_post_app_session since only genuinely per-request state (context,
+  // app_session_id, session) remains to thread through it -- m_qos_deriver
+  // holds the stable deps.
+  auto derive = [this, &context, &app_session_id, &session](
+                    const oai::model::pcf::SmPolicyDecision&,
+                    oai::model::pcf::SmPolicyDecision& working)
+      -> handler_result {
+    return derive_post_app_session(context, app_session_id, session, working);
   };
 
   sm_policy_delta committed_delta;
-  const status_code push = apply_with_retry(
-      association_id, base_decision, bound_version, derive, committed_delta,
-      problem_details, app_session_id);
+  const status_code push = push_decision_change(
+      {association_id, base_decision, bound_version, app_session_id}, derive,
+      committed_delta, problem_details);
   if (push != status_code::OK) return push;
 
   // ---- post-commit side-effects (reached only once the delta committed) ----
@@ -329,6 +367,106 @@ status_code pcf_policy_authorization::post_app_sessions_handler(
 
   // Return "201 Created" response to the HTTP POST request
   return status_code::CREATED;
+}
+
+//------------------------------------------------------------------------------
+// Per-attempt recompute for PATCH /app-sessions/{id} (see the header for the
+// contract): re-derive this PATCH's changes -- SFC, QoS modify/add, and
+// REMOVED deletions -- into `working`, authorize, merge, validate, then apply
+// the AF's JSON Merge Patch onto `req_context`. Ids are deterministic per
+// medCompN, so re-deriving a component modifies its flow in place
+// [TS 29.514 §4.2.3.2, TS 29.512 §4.2.6.2.1].
+handler_result pcf_policy_authorization::derive_mod_app_session(
+    const oai::model::pcf::AppSessionContextUpdateData& patch_asc,
+    const std::string& app_session_id,
+    const std::shared_ptr<policy_auth::app_session>& session,
+    oai::model::pcf::AppSessionContextReqData& req_context,
+    oai::model::pcf::SmPolicyDecision& working) {
+  oai::model::pcf::SmPolicyDecision request_decision = {};  // SFC contributions
+  policy_auth::qos_context scratch;  // throwaway: decouples the real ledger
+  req_context             = session->context_snapshot();
+  bool qos_flow_processed = false;
+
+  if (patch_asc.medComponentsIsSet()) {
+    for (const auto& [med_comp_key, med_component] :
+         patch_asc.getMedComponents()) {
+      // Service function chaining update [TS 29.514 §4.2.2.8].
+      if (med_component.afSfcReqIsSet()) {
+        handler_result r = policy_auth::handle_service_function_chaining_update(
+            med_component.getAfSfcReq(), request_decision, req_context);
+        if (r.problem_details.has_value()) return r;
+        continue;
+      }
+
+      const int32_t med_comp_n = med_component.getMedCompN();
+      const std::string qos_id =
+          "PA-QOS-" + app_session_id + "-qos-" + std::to_string(med_comp_n);
+      const std::string rule_id =
+          "PA-QOS-" + app_session_id + "-" + std::to_string(med_comp_n);
+
+      // Removal (fStatus=REMOVED): drop this flow + PCC rule from `working`.
+      // The ledger removal is deferred -- apply_committed_delta() reconciles
+      // it post-commit from the removals in the committed delta
+      // [TS 29.514 §4.2.3.2].
+      const bool removed =
+          med_component.fStatusIsSet() &&
+          med_component.getFStatus().getEnumValue() ==
+              oai::model::pcf::FlowStatus_anyOf::eFlowStatus_anyOf::REMOVED;
+      if (removed) {
+        auto pcc_rules = working.getPccRules();
+        auto qos_decs  = working.getQosDecs();
+        pcc_rules.erase(rule_id);
+        qos_decs.erase(qos_id);
+        working.setPccRules(pcc_rules);
+        working.setQosDecs(qos_decs);
+        qos_flow_processed = true;
+        continue;
+      }
+
+      // Modify / add: re-deriving with the same deterministic ids overwrites
+      // an existing flow (upgrade/downgrade) or installs a new one
+      // [TS 29.513 §7.3.3].
+      if (med_component.qosReferenceIsSet() ||
+          med_component.medSubCompsIsSet() || med_component.marBwUlIsSet() ||
+          med_component.marBwDlIsSet() || med_component.mirBwUlIsSet() ||
+          med_component.mirBwDlIsSet()) {
+        handler_result r = m_qos_deriver.handle_qos_requirements(
+            med_component, app_session_id, working, scratch);
+        if (r.problem_details.has_value()) return r;
+        qos_flow_processed = true;
+      }
+    }
+  } else if (patch_asc.afSfcReqIsSet()) {
+    handler_result r = policy_auth::handle_service_function_chaining_update(
+        patch_asc.getAfSfcReq(), request_decision, req_context);
+    if (r.problem_details.has_value()) return r;
+  }
+
+  // Authorize the modified/added QoS, same gate as create. Owned = prior
+  // committed ids (removed flows still listed here are harmless -- they are
+  // absent from `working` so the gate never inspects them) + this attempt's
+  // scratch ids [TS 29.514 §4.1.3.1, TS 23.503 §6.1.3.2.3].
+  if (qos_flow_processed) {
+    std::vector<std::string> owned = session->qos().owned_qos_ids();
+    const auto derived_ids         = scratch.owned_qos_ids();
+    owned.insert(owned.end(), derived_ids.begin(), derived_ids.end());
+    handler_result a = m_qos_deriver.validate_qos_authorization(working, owned);
+    if (a.problem_details.has_value()) return a;
+  }
+
+  handler_result m =
+      validate_and_merge_decision(request_decision, working, true);
+  if (m.problem_details.has_value()) return m;
+
+  // Pre-notification gate [TS 29.512 §4.2.6.2, §5.6.2.4].
+  handler_result v = policy_auth::validate_policy_decision(working);
+  if (v.problem_details.has_value()) return v;
+
+  // Apply the AF's JSON Merge Patch (RFC 7396) onto the stored request data so
+  // a subsequent GET reflects the modification: scalar fields replaced, media
+  // components merged in place, added, or removed [TS 29.514 §4.2.3.2].
+  req_context = policy_auth::merge_patch_context(req_context, patch_asc);
+  return {};  // ok
 }
 
 //------------------------------------------------------------------------------
@@ -390,103 +528,18 @@ policy_auth::status_code pcf_policy_authorization::mod_app_session_handler(
   // snapshot on every attempt (SFC routing mutates it, then RFC 7396 merges the
   // AF patch onto it); the committed attempt leaves the value used post-commit.
   const auto& patch_asc = app_session_context_update_data_patch.getAscReqData();
-  auto derive =
-      [&](const oai::model::pcf::SmPolicyDecision& /*base*/,
-          oai::model::pcf::SmPolicyDecision& working) -> handler_result {
-    oai::model::pcf::SmPolicyDecision request_decision = {};  // SFC contributions
-    policy_auth::qos_context scratch;  // throwaway: decouples the real ledger
-    req_context             = session->context_snapshot();
-    bool qos_flow_processed = false;
-
-    if (patch_asc.medComponentsIsSet()) {
-      for (const auto& [med_comp_key, med_component] :
-           patch_asc.getMedComponents()) {
-        // Service function chaining update [TS 29.514 §4.2.2.8].
-        if (med_component.afSfcReqIsSet()) {
-          handler_result r =
-              policy_auth::handle_service_function_chaining_update(
-                  med_component.getAfSfcReq(), request_decision, req_context);
-          if (r.problem_details.has_value()) return r;
-          continue;
-        }
-
-        const int32_t med_comp_n = med_component.getMedCompN();
-        const std::string qos_id =
-            "PA-QOS-" + app_session_id + "-qos-" + std::to_string(med_comp_n);
-        const std::string rule_id =
-            "PA-QOS-" + app_session_id + "-" + std::to_string(med_comp_n);
-
-        // Removal (fStatus=REMOVED): drop this flow + PCC rule from `working`.
-        // The ledger removal is deferred -- apply_committed_delta() reconciles
-        // it post-commit from the removals in the committed delta
-        // [TS 29.514 §4.2.3.2].
-        const bool removed =
-            med_component.fStatusIsSet() &&
-            med_component.getFStatus().getEnumValue() ==
-                oai::model::pcf::FlowStatus_anyOf::eFlowStatus_anyOf::REMOVED;
-        if (removed) {
-          auto pcc_rules = working.getPccRules();
-          auto qos_decs  = working.getQosDecs();
-          pcc_rules.erase(rule_id);
-          qos_decs.erase(qos_id);
-          working.setPccRules(pcc_rules);
-          working.setQosDecs(qos_decs);
-          qos_flow_processed = true;
-          continue;
-        }
-
-        // Modify / add: re-deriving with the same deterministic ids overwrites
-        // an existing flow (upgrade/downgrade) or installs a new one
-        // [TS 29.513 §7.3.3].
-        if (med_component.qosReferenceIsSet() ||
-            med_component.medSubCompsIsSet() || med_component.marBwUlIsSet() ||
-            med_component.marBwDlIsSet() || med_component.mirBwUlIsSet() ||
-            med_component.mirBwDlIsSet()) {
-          handler_result r = policy_auth::handle_qos_requirements(
-              med_component, app_session_id, working, scratch,
-              m_context->qos_references());
-          if (r.problem_details.has_value()) return r;
-          qos_flow_processed = true;
-        }
-      }
-    } else if (patch_asc.afSfcReqIsSet()) {
-      handler_result r = policy_auth::handle_service_function_chaining_update(
-          patch_asc.getAfSfcReq(), request_decision, req_context);
-      if (r.problem_details.has_value()) return r;
-    }
-
-    // Authorize the modified/added QoS, same gate as create. Owned = prior
-    // committed ids (removed flows still listed here are harmless -- they are
-    // absent from `working` so the gate never inspects them) + this attempt's
-    // scratch ids [TS 29.514 §4.1.3.1, TS 23.503 §6.1.3.2.3].
-    if (qos_flow_processed) {
-      std::vector<std::string> owned = session->qos().owned_qos_ids();
-      const auto derived_ids         = scratch.owned_qos_ids();
-      owned.insert(owned.end(), derived_ids.begin(), derived_ids.end());
-      handler_result a = policy_auth::validate_qos_authorization(
-          working, owned, m_context->qos_authorization_policy());
-      if (a.problem_details.has_value()) return a;
-    }
-
-    handler_result m =
-        validate_and_merge_decision(request_decision, working, true);
-    if (m.problem_details.has_value()) return m;
-
-    // Pre-notification gate [TS 29.512 §4.2.6.2, §5.6.2.4].
-    handler_result v = policy_auth::validate_policy_decision(working);
-    if (v.problem_details.has_value()) return v;
-
-    // Apply the AF's JSON Merge Patch (RFC 7396) onto the stored request data so
-    // a subsequent GET reflects the modification: scalar fields replaced, media
-    // components merged in place, added, or removed [TS 29.514 §4.2.3.2].
-    req_context = policy_auth::merge_patch_context(req_context, patch_asc);
-    return {};  // ok
+  auto derive = [this, &patch_asc, &app_session_id, &session, &req_context](
+                    const oai::model::pcf::SmPolicyDecision&,
+                    oai::model::pcf::SmPolicyDecision& working)
+      -> handler_result {
+    return derive_mod_app_session(
+        patch_asc, app_session_id, session, req_context, working);
   };
 
   sm_policy_delta committed_delta;
-  const status_code push = apply_with_retry(
-      association_id, base_decision, bound_version, derive, committed_delta,
-      problem_details, app_session_id);
+  const status_code push = push_decision_change(
+      {association_id, base_decision, bound_version, app_session_id}, derive,
+      committed_delta, problem_details);
   if (push != status_code::OK) return push;
 
   // ---- post-commit side-effects (reached only once the delta committed) ----
@@ -556,9 +609,9 @@ policy_auth::status_code pcf_policy_authorization::delete_app_session_handler(
     };
 
     sm_policy_delta committed_delta;
-    const status_code push = apply_with_retry(
-        association_id, current_decision, bound_version, derive,
-        committed_delta, problem_details, app_session_id);
+    const status_code push = push_decision_change(
+        {association_id, current_decision, bound_version, app_session_id},
+        derive, committed_delta, problem_details);
     if (push != status_code::OK) {
       // Best-effort cleanup: the AF's session is being torn down regardless, so
       // proceed to drop it from storage even if persistent contention stopped
@@ -624,14 +677,14 @@ pcf_policy_authorization::~pcf_policy_authorization() {
 }
 
 //------------------------------------------------------------------------------
-void pcf_policy_authorization::handle_sm_policy_update_failed(
+void pcf_policy_authorization::compensate_if_pending(
     const std::string& association_id, std::uint64_t version,
     sm_policy::smf_notify_outcome reason) {
   auto commit =
       m_context->rollback_tracker().try_take(association_id, version);
   if (!commit) {
     Logger::pcf_app().warn(
-        "handle_sm_policy_update_failed: no pending commit tracked for "
+        "compensate_if_pending: no pending commit tracked for "
         "association %s version %lu (outcome=%s) -- expired, already taken, "
         "or never tracked; cannot attribute or notify an AF",
         association_id.c_str(), version, sm_policy::to_string(reason));
@@ -639,7 +692,7 @@ void pcf_policy_authorization::handle_sm_policy_update_failed(
   }
 
   Logger::pcf_app().error(
-      "handle_sm_policy_update_failed: association %s version %lu "
+      "compensate_if_pending: association %s version %lu "
       "permanently rejected by the SMF (outcome=%s) -- app-session %s's "
       "commit needs compensating rollback",
       association_id.c_str(), version, sm_policy::to_string(reason),
@@ -659,16 +712,19 @@ void pcf_policy_authorization::handle_sm_policy_update_failed(
         id, found, decision, out_version);
   };
   auto apply_rollback_with_retry = [this](
-      std::optional<std::string>& assoc_id,
-      const oai::model::pcf::SmPolicyDecision& base, std::uint64_t ver,
+      policy_auth::decision_apply_request request,
       const std::function<handler_result(
           const oai::model::pcf::SmPolicyDecision&,
           oai::model::pcf::SmPolicyDecision&)>& derive,
-      sm_policy_delta& committed_delta, std::string& problem_details,
-      const std::string& app_session_id) {
-    return apply_with_retry(
-        assoc_id, base, ver, derive, committed_delta, problem_details,
-        app_session_id);
+      sm_policy_delta& committed_delta, std::string& problem_details) {
+    // Goes through push_decision_change (not m_applier.apply() directly) so
+    // the rollback's own re-commit ALSO gets notified and, if THAT notify
+    // is itself permanently rejected, ALSO gets its own compensate_if_pending
+    // check -- exactly the same treatment every other commit gets, since
+    // this is just another commit as far as push_decision_change is
+    // concerned.
+    return push_decision_change(
+        request, derive, committed_delta, problem_details);
   };
   const status_code rollback_push = policy_auth::perform_compensating_rollback(
       association_id, version, *commit, lookup_live_decision,
