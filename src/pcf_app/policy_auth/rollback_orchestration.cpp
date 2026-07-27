@@ -46,8 +46,10 @@ status_code perform_compensating_rollback(
   // state, so the rollback notify simply resends that same (now-current-
   // again) decision -- at worst a harmless no-op resync.
   const status_code rollback_push = apply_with_retry(
-      rollback_association_id, live_decision, live_version, derive,
-      rollback_committed_delta, rollback_problem_details, commit.app_session_id);
+      decision_apply_request{
+          rollback_association_id, live_decision, live_version,
+          commit.app_session_id},
+      derive, rollback_committed_delta, rollback_problem_details);
 
   if (rollback_push == status_code::OK) {
     Logger::pcf_app().info(

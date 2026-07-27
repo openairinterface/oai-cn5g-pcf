@@ -39,6 +39,11 @@ bs2::connection pcf_event::subscribe_sm_update_decision(
   return sm_update_decision.connect(sig);
 }
 
+bs2::connection pcf_event::subscribe_notify_committed_decision(
+    const sm_notify_committed_decision_sig_t::slot_type& sig) {
+  return notify_committed_decision.connect(sig);
+}
+
 bs2::connection pcf_event::subscribe_sm_policy_update_failed(
     const sm_policy_update_failed_sig_t::slot_type& sig) {
   return sm_policy_update_failed.connect(sig);

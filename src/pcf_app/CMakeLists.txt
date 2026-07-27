@@ -49,11 +49,12 @@ add_library (PCF STATIC
   sm_policy/policy_storage_db.cpp
   sm_policy/policy_provisioning_file.cpp
   policy_auth/app_session.cpp
+  policy_auth/qos_deriver.cpp
   policy_auth/qos_context.cpp
   policy_auth/pending_rollback_tracker.cpp
   policy_auth/rollback_delta.cpp
   policy_auth/rollback_orchestration.cpp
-  policy_auth/apply_decision_with_retry.cpp
+  policy_auth/decision_applier.cpp
   policy_auth/af_notify.cpp
   policy_auth/app_session_storage.cpp
   policy_auth/qos_reference_loader.cpp

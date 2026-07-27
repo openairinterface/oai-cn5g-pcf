@@ -50,11 +50,13 @@
 #include "app_session.hpp"
 #include "crud_store.hpp"
 #include "operator_qos_policy.hpp"
+#include "policy_auth/qos_deriver.hpp"
 #include "qos_context.hpp"
 #include "qos_reference_store.hpp"
 
 using namespace oai::pcf::app::policy_auth;
 using namespace oai::model::pcf;
+using oai::pcf::app::operator_qos_policy;
 
 namespace {
 
@@ -152,8 +154,10 @@ TEST(QosModification, DerivesDeterministicIdFromMedCompN) {
   SmPolicyDecision decision;
   qos_context qos_ctx;
   fake_qos_reference_store store;
+  operator_qos_policy op_policy;
+  qos_deriver deriver(store, op_policy);
 
-  handle_qos_requirements(mc, "app", decision, qos_ctx, store);
+  deriver.handle_qos_requirements(mc, "app", decision, qos_ctx);
 
   ASSERT_EQ(decision.getQosDecs().size(), 1u);
   EXPECT_EQ(qos_data_ids(decision), to_set({"PA-QOS-app-qos-5"}));
@@ -162,13 +166,15 @@ TEST(QosModification, DerivesDeterministicIdFromMedCompN) {
 
 TEST(QosModification, RederivingSameMedCompNOverwritesInPlace) {
   fake_qos_reference_store store;
+  operator_qos_policy op_policy;
+  qos_deriver deriver(store, op_policy);
   SmPolicyDecision decision;
   qos_context qos_ctx;
 
   MediaComponent first;
   first.setMedCompN(1);
   first.setMarBwDl("10 Mbps");
-  handle_qos_requirements(first, "app", decision, qos_ctx, store);
+  deriver.handle_qos_requirements(first, "app", decision, qos_ctx);
   ASSERT_EQ(decision.getQosDecs().size(), 1u);
   const int32_t precedence_before =
       decision.getPccRules().at("PA-QOS-app-1").getPrecedence();
@@ -176,7 +182,7 @@ TEST(QosModification, RederivingSameMedCompNOverwritesInPlace) {
   MediaComponent second;  // same media component, higher downlink bandwidth
   second.setMedCompN(1);
   second.setMarBwDl("20 Mbps");
-  handle_qos_requirements(second, "app", decision, qos_ctx, store);
+  deriver.handle_qos_requirements(second, "app", decision, qos_ctx);
 
   // Still one flow (modified in place, not duplicated), with the updated rate
   // and the original precedence preserved so PCC ordering is stable.
@@ -191,6 +197,8 @@ TEST(QosModification, RederivingSameMedCompNOverwritesInPlace) {
 
 TEST(QosModification, DistinctMedCompNAddsSeparateFlow) {
   fake_qos_reference_store store;
+  operator_qos_policy op_policy;
+  qos_deriver deriver(store, op_policy);
   SmPolicyDecision decision;
   qos_context qos_ctx;
 
@@ -200,8 +208,8 @@ TEST(QosModification, DistinctMedCompNAddsSeparateFlow) {
   MediaComponent b;
   b.setMedCompN(2);
   b.setMarBwDl("10 Mbps");
-  handle_qos_requirements(a, "app", decision, qos_ctx, store);
-  handle_qos_requirements(b, "app", decision, qos_ctx, store);
+  deriver.handle_qos_requirements(a, "app", decision, qos_ctx);
+  deriver.handle_qos_requirements(b, "app", decision, qos_ctx);
 
   EXPECT_EQ(
       qos_data_ids(decision), to_set({"PA-QOS-app-qos-1", "PA-QOS-app-qos-2"}));
@@ -217,8 +225,10 @@ TEST(QosModification, DerivesFromMediaComponentRm) {
   SmPolicyDecision decision;
   qos_context qos_ctx;
   fake_qos_reference_store store;
+  operator_qos_policy op_policy;
+  qos_deriver deriver(store, op_policy);
 
-  const auto result = handle_qos_requirements(mc, "app", decision, qos_ctx, store);
+  const auto result = deriver.handle_qos_requirements(mc, "app", decision, qos_ctx);
 
   ASSERT_TRUE(result.status.has_value());
   EXPECT_EQ(result.status.value(), status_code::OK);
@@ -445,8 +455,10 @@ TEST(QosDataGeneration, PrecedenceIsInThePaBand) {
   SmPolicyDecision decision;
   qos_context qos_ctx;
   fake_qos_reference_store store;
+  operator_qos_policy op_policy;
+  qos_deriver deriver(store, op_policy);
   QosData out;
-  create_qos_data_from_media_component(mc, "s", decision, qos_ctx, store, out);
+  deriver.create_qos_data_from_media_component(mc, "s", decision, qos_ctx, out);
 
   EXPECT_GE(only_pcc_rule(decision).getPrecedence(), 1000);
   EXPECT_LT(only_pcc_rule(decision).getPrecedence(), 100000);
@@ -537,10 +549,12 @@ TEST(QosDataGeneration, CreatesOneQosDataAndOnePccRule) {
   SmPolicyDecision decision;
   qos_context qos_ctx;
   fake_qos_reference_store store;
+  operator_qos_policy op_policy;
+  qos_deriver deriver(store, op_policy);
   QosData out;
 
-  auto result = create_qos_data_from_media_component(
-      mc, "sess-1", decision, qos_ctx, store, out);
+  auto result = deriver.create_qos_data_from_media_component(
+      mc, "sess-1", decision, qos_ctx, out);
 
   ASSERT_TRUE(result.status.has_value());
   EXPECT_EQ(result.status.value(), status_code::OK);
@@ -555,9 +569,11 @@ TEST(QosDataGeneration, IdsUseThePaQosSessionScopedConvention) {
   SmPolicyDecision decision;
   qos_context qos_ctx;
   fake_qos_reference_store store;
+  operator_qos_policy op_policy;
+  qos_deriver deriver(store, op_policy);
   QosData out;
-  create_qos_data_from_media_component(
-      mc, "sess-42", decision, qos_ctx, store, out);
+  deriver.create_qos_data_from_media_component(
+      mc, "sess-42", decision, qos_ctx, out);
 
   EXPECT_EQ(
       only_qos_data(decision).getQosId().rfind("PA-QOS-sess-42-", 0), 0u);
@@ -572,8 +588,10 @@ TEST(QosDataGeneration, PccRuleReferencesTheCreatedQosData) {
   SmPolicyDecision decision;
   qos_context qos_ctx;
   fake_qos_reference_store store;
+  operator_qos_policy op_policy;
+  qos_deriver deriver(store, op_policy);
   QosData out;
-  create_qos_data_from_media_component(mc, "s", decision, qos_ctx, store, out);
+  deriver.create_qos_data_from_media_component(mc, "s", decision, qos_ctx, out);
 
   auto known = qos_data_ids(decision);
   for (const auto& ref : only_pcc_rule(decision).getRefQosData()) {
@@ -592,8 +610,10 @@ TEST(QosDataSdf, FlowFiltersAreBuiltFromSubComponentDescriptions) {
   SmPolicyDecision decision;
   qos_context qos_ctx;
   fake_qos_reference_store store;
+  operator_qos_policy op_policy;
+  qos_deriver deriver(store, op_policy);
   QosData out;
-  create_qos_data_from_media_component(mc, "s", decision, qos_ctx, store, out);
+  deriver.create_qos_data_from_media_component(mc, "s", decision, qos_ctx, out);
 
   const auto& flows = only_pcc_rule(decision).getFlowInfos();
   ASSERT_EQ(flows.size(), 2u);
@@ -610,8 +630,10 @@ TEST(QosDataSdf, PermitAllFallbackWhenNoSubComponents) {
   SmPolicyDecision decision;
   qos_context qos_ctx;
   fake_qos_reference_store store;
+  operator_qos_policy op_policy;
+  qos_deriver deriver(store, op_policy);
   QosData out;
-  create_qos_data_from_media_component(mc, "s", decision, qos_ctx, store, out);
+  deriver.create_qos_data_from_media_component(mc, "s", decision, qos_ctx, out);
 
   const auto& flows = only_pcc_rule(decision).getFlowInfos();
   ASSERT_EQ(flows.size(), 1u);
@@ -629,8 +651,10 @@ TEST(QosDataSdf, FlowFiltersAlwaysHaveAnExplicitDirection) {
   SmPolicyDecision decision;
   qos_context qos_ctx;
   fake_qos_reference_store store;
+  operator_qos_policy op_policy;
+  qos_deriver deriver(store, op_policy);
   QosData out;
-  create_qos_data_from_media_component(mc, "s", decision, qos_ctx, store, out);
+  deriver.create_qos_data_from_media_component(mc, "s", decision, qos_ctx, out);
 
   for (const auto& f : only_pcc_rule(decision).getFlowInfos()) {
     EXPECT_NE(f.getFlowDirection().getEnumValue(),
@@ -651,8 +675,10 @@ TEST(QosDataFlowStatus, RemovedSubComponentDoesNotCreateFlowInfo) {
   SmPolicyDecision decision;
   qos_context qos_ctx;
   fake_qos_reference_store store;
+  operator_qos_policy op_policy;
+  qos_deriver deriver(store, op_policy);
   QosData out;
-  create_qos_data_from_media_component(mc, "s", decision, qos_ctx, store, out);
+  deriver.create_qos_data_from_media_component(mc, "s", decision, qos_ctx, out);
 
   const auto& flows = only_pcc_rule(decision).getFlowInfos();
   ASSERT_EQ(flows.size(), 1u);
@@ -815,8 +841,10 @@ TEST(QosDataGeneration, MandatoryQosFieldsAreSet) {
   SmPolicyDecision decision;
   qos_context qos_ctx;
   fake_qos_reference_store store;
+  operator_qos_policy op_policy;
+  qos_deriver deriver(store, op_policy);
   QosData out;
-  create_qos_data_from_media_component(mc, "s", decision, qos_ctx, store, out);
+  deriver.create_qos_data_from_media_component(mc, "s", decision, qos_ctx, out);
 
   const QosData& qos = only_qos_data(decision);
   EXPECT_TRUE(qos.r5qiIsSet());
@@ -830,8 +858,10 @@ TEST(QosDataGeneration, ArpPreemptionFieldsAreExplicitlySet) {
   SmPolicyDecision decision;
   qos_context qos_ctx;
   fake_qos_reference_store store;
+  operator_qos_policy op_policy;
+  qos_deriver deriver(store, op_policy);
   QosData out;
-  create_qos_data_from_media_component(mc, "s", decision, qos_ctx, store, out);
+  deriver.create_qos_data_from_media_component(mc, "s", decision, qos_ctx, out);
 
   const oai::model::common::Arp& arp = only_qos_data(decision).getArp();
   EXPECT_NE(arp.getPreemptCap().getEnumValue(),
@@ -855,8 +885,10 @@ TEST(QosDataGeneration, ArpUsesRequestPreemptionValues) {
   SmPolicyDecision decision;
   qos_context qos_ctx;
   fake_qos_reference_store store;
+  operator_qos_policy op_policy;
+  qos_deriver deriver(store, op_policy);
   QosData out;
-  create_qos_data_from_media_component(mc, "s", decision, qos_ctx, store, out);
+  deriver.create_qos_data_from_media_component(mc, "s", decision, qos_ctx, out);
 
   const auto& arp = only_qos_data(decision).getArp();
   EXPECT_EQ(arp.getPreemptCap().getEnumValue(),
@@ -875,8 +907,10 @@ TEST(QosDataGeneration, LedgerMirrorsTheDecisionIds) {
   SmPolicyDecision decision;
   qos_context qos_ctx;
   fake_qos_reference_store store;
+  operator_qos_policy op_policy;
+  qos_deriver deriver(store, op_policy);
   QosData out;
-  create_qos_data_from_media_component(mc, "s", decision, qos_ctx, store, out);
+  deriver.create_qos_data_from_media_component(mc, "s", decision, qos_ctx, out);
 
   EXPECT_EQ(to_set(qos_ctx.owned_qos_ids()), qos_data_ids(decision));
   EXPECT_EQ(to_set(qos_ctx.owned_rule_ids()), pcc_rule_ids(decision));
@@ -895,6 +929,8 @@ TEST(QosDataReference, StandardizedReferencePreservesStandardizedOverrides) {
   preset->setArp(arp);
 
   fake_qos_reference_store store;
+  operator_qos_policy op_policy;
+  qos_deriver deriver(store, op_policy);
   store.insert("std-ref", preset);
 
   MediaComponent mc;
@@ -902,7 +938,7 @@ TEST(QosDataReference, StandardizedReferencePreservesStandardizedOverrides) {
   SmPolicyDecision decision;
   qos_context qos_ctx;
   QosData out;
-  create_qos_data_from_media_component(mc, "s", decision, qos_ctx, store, out);
+  deriver.create_qos_data_from_media_component(mc, "s", decision, qos_ctx, out);
 
   const QosData& qos = only_qos_data(decision);
   EXPECT_EQ(qos.getR5qi(), 9);
@@ -1099,8 +1135,10 @@ TEST(QosDataGeneration, NoLatencyYieldsBestEffort5qi) {
   SmPolicyDecision decision;
   qos_context qos_ctx;
   fake_qos_reference_store store;
+  operator_qos_policy op_policy;
+  qos_deriver deriver(store, op_policy);
   QosData out;
-  create_qos_data_from_media_component(mc, "s", decision, qos_ctx, store, out);
+  deriver.create_qos_data_from_media_component(mc, "s", decision, qos_ctx, out);
 
   EXPECT_EQ(only_qos_data(decision).getR5qi(), 9);
 }
@@ -1114,8 +1152,10 @@ TEST(QosDataBandwidth, ComponentLevelMbrIsUsedWhenNoSubComponents) {
   SmPolicyDecision decision;
   qos_context qos_ctx;
   fake_qos_reference_store store;
+  operator_qos_policy op_policy;
+  qos_deriver deriver(store, op_policy);
   QosData out;
-  create_qos_data_from_media_component(mc, "s", decision, qos_ctx, store, out);
+  deriver.create_qos_data_from_media_component(mc, "s", decision, qos_ctx, out);
 
   const QosData& qos = only_qos_data(decision);
   EXPECT_EQ(qos.getMaxbrUl(), "10 Mbps");
@@ -1133,8 +1173,10 @@ TEST(QosDataBandwidth, PerSdfMbrIsSummedAcrossSubComponents) {
   SmPolicyDecision decision;
   qos_context qos_ctx;
   fake_qos_reference_store store;
+  operator_qos_policy op_policy;
+  qos_deriver deriver(store, op_policy);
   QosData out;
-  create_qos_data_from_media_component(mc, "s", decision, qos_ctx, store, out);
+  deriver.create_qos_data_from_media_component(mc, "s", decision, qos_ctx, out);
 
   EXPECT_EQ(only_qos_data(decision).getMaxbrUl(), "3 Mbps");
 }
@@ -1152,8 +1194,10 @@ TEST(QosDataBandwidth, PerSdfDlMbrIsSummedAcrossSubComponents) {
   SmPolicyDecision decision;
   qos_context qos_ctx;
   fake_qos_reference_store store;
+  operator_qos_policy op_policy;
+  qos_deriver deriver(store, op_policy);
   QosData out;
-  create_qos_data_from_media_component(mc, "s", decision, qos_ctx, store, out);
+  deriver.create_qos_data_from_media_component(mc, "s", decision, qos_ctx, out);
 
   EXPECT_EQ(only_qos_data(decision).getMaxbrDl(), "3 Mbps");
 }
@@ -1167,8 +1211,10 @@ TEST(QosDataBandwidth, GbrDerivedOnlyWhenMinimumRateRequested) {
   SmPolicyDecision decision;
   qos_context qos_ctx;
   fake_qos_reference_store store;
+  operator_qos_policy op_policy;
+  qos_deriver deriver(store, op_policy);
   QosData out;
-  create_qos_data_from_media_component(mc, "s", decision, qos_ctx, store, out);
+  deriver.create_qos_data_from_media_component(mc, "s", decision, qos_ctx, out);
 
   const QosData& qos = only_qos_data(decision);
   EXPECT_TRUE(qos.gbrUlIsSet());
@@ -1184,8 +1230,10 @@ TEST(QosDataBandwidth, ComponentLevelGbrDlIsDerivedFromMirBwDl) {
   SmPolicyDecision decision;
   qos_context qos_ctx;
   fake_qos_reference_store store;
+  operator_qos_policy op_policy;
+  qos_deriver deriver(store, op_policy);
   QosData out;
-  create_qos_data_from_media_component(mc, "s", decision, qos_ctx, store, out);
+  deriver.create_qos_data_from_media_component(mc, "s", decision, qos_ctx, out);
 
   const QosData& qos = only_qos_data(decision);
   EXPECT_TRUE(qos.gbrDlIsSet());
@@ -1200,8 +1248,10 @@ TEST(QosDataBandwidth, NoGbrWhenNoMinimumRateRequested) {
   SmPolicyDecision decision;
   qos_context qos_ctx;
   fake_qos_reference_store store;
+  operator_qos_policy op_policy;
+  qos_deriver deriver(store, op_policy);
   QosData out;
-  create_qos_data_from_media_component(mc, "s", decision, qos_ctx, store, out);
+  deriver.create_qos_data_from_media_component(mc, "s", decision, qos_ctx, out);
 
   EXPECT_FALSE(only_qos_data(decision).gbrUlIsSet());
 }
@@ -1217,8 +1267,10 @@ TEST(QosDataBandwidth, SubComponentFallsBackToComponentBandwidthWhenSubRateMissi
   SmPolicyDecision decision;
   qos_context qos_ctx;
   fake_qos_reference_store store;
+  operator_qos_policy op_policy;
+  qos_deriver deriver(store, op_policy);
   QosData out;
-  create_qos_data_from_media_component(mc, "s", decision, qos_ctx, store, out);
+  deriver.create_qos_data_from_media_component(mc, "s", decision, qos_ctx, out);
 
   EXPECT_EQ(only_qos_data(decision).getMaxbrUl(), "10 Mbps");
 }
@@ -1235,8 +1287,10 @@ TEST(QosDataFlowStatus, RemovedSubComponentIsExcludedFromBandwidthSum) {
   SmPolicyDecision decision;
   qos_context qos_ctx;
   fake_qos_reference_store store;
+  operator_qos_policy op_policy;
+  qos_deriver deriver(store, op_policy);
   QosData out;
-  create_qos_data_from_media_component(mc, "s", decision, qos_ctx, store, out);
+  deriver.create_qos_data_from_media_component(mc, "s", decision, qos_ctx, out);
 
   EXPECT_EQ(only_qos_data(decision).getMaxbrUl(), "1 Mbps");
 }
@@ -1252,10 +1306,12 @@ TEST(QosDataBandwidth, DirectionWithoutFlowDescriptionGetsZeroRate) {
   SmPolicyDecision decision;
   qos_context qos_ctx;
   fake_qos_reference_store store;
+  operator_qos_policy op_policy;
+  qos_deriver deriver(store, op_policy);
   QosData out;
 
-  auto result = create_qos_data_from_media_component(
-      mc, "sess-direction", decision, qos_ctx, store, out);
+  auto result = deriver.create_qos_data_from_media_component(
+      mc, "sess-direction", decision, qos_ctx, out);
 
   ASSERT_TRUE(result.status.has_value());
   EXPECT_EQ(result.status.value(), status_code::OK);
@@ -1276,10 +1332,12 @@ TEST(QosDataFlowStatus, AllRemovedSubComponentsDoNotInstallPermitAllFallback) {
   SmPolicyDecision decision;
   qos_context qos_ctx;
   fake_qos_reference_store store;
+  operator_qos_policy op_policy;
+  qos_deriver deriver(store, op_policy);
   QosData out;
 
-  auto result = create_qos_data_from_media_component(
-      mc, "sess-removed", decision, qos_ctx, store, out);
+  auto result = deriver.create_qos_data_from_media_component(
+      mc, "sess-removed", decision, qos_ctx, out);
 
   ASSERT_TRUE(result.status.has_value());
   EXPECT_EQ(result.status.value(), status_code::OK);
@@ -1297,6 +1355,8 @@ TEST(QosDataReference, PreconfiguredSetIsAppliedWhenReferenceResolves) {
   preset->setArp(arp);
 
   fake_qos_reference_store store;
+  operator_qos_policy op_policy;
+  qos_deriver deriver(store, op_policy);
   store.insert("voice-ref", preset);
 
   MediaComponent mc;
@@ -1305,7 +1365,7 @@ TEST(QosDataReference, PreconfiguredSetIsAppliedWhenReferenceResolves) {
   SmPolicyDecision decision;
   qos_context qos_ctx;
   QosData out;
-  create_qos_data_from_media_component(mc, "s", decision, qos_ctx, store, out);
+  deriver.create_qos_data_from_media_component(mc, "s", decision, qos_ctx, out);
 
   const QosData& qos = only_qos_data(decision);
   EXPECT_EQ(qos.getR5qi(), 5);
@@ -1316,12 +1376,14 @@ TEST(QosDataReference, PreconfiguredSetIsAppliedWhenReferenceResolves) {
 // deriving authorized QoS from the received service information.
 TEST(QosDataReference, FallsBackToDerivationWhenReferenceUnknown) {
   fake_qos_reference_store store;
+  operator_qos_policy op_policy;
+  qos_deriver deriver(store, op_policy);
   MediaComponent mc;
   mc.setQosReference("does-not-exist");
   SmPolicyDecision decision;
   qos_context qos_ctx;
   QosData out;
-  create_qos_data_from_media_component(mc, "s", decision, qos_ctx, store, out);
+  deriver.create_qos_data_from_media_component(mc, "s", decision, qos_ctx, out);
 
   EXPECT_EQ(only_qos_data(decision).getR5qi(), 9);
 }
@@ -1334,8 +1396,10 @@ TEST(QosRequirementsProcessing, ProducesAConsistentDecisionAndLedger) {
   SmPolicyDecision decision;
   qos_context qos_ctx;
   fake_qos_reference_store store;
+  operator_qos_policy op_policy;
+  qos_deriver deriver(store, op_policy);
 
-  auto result = handle_qos_requirements(mc, "sess-1", decision, qos_ctx, store);
+  auto result = deriver.handle_qos_requirements(mc, "sess-1", decision, qos_ctx);
 
   ASSERT_TRUE(result.status.has_value());
   EXPECT_EQ(result.status.value(), status_code::OK);
@@ -1368,10 +1432,12 @@ TEST(QosRequirementsProcessing, MultipleComponentsAccumulateDistinctDecisionEntr
   SmPolicyDecision decision;
   qos_context qos_ctx;
   fake_qos_reference_store store;
+  operator_qos_policy op_policy;
+  qos_deriver deriver(store, op_policy);
 
-  auto first = handle_qos_requirements(audio, "sess-1", decision, qos_ctx, store);
+  auto first = deriver.handle_qos_requirements(audio, "sess-1", decision, qos_ctx);
   auto second =
-      handle_qos_requirements(video, "sess-1", decision, qos_ctx, store);
+      deriver.handle_qos_requirements(video, "sess-1", decision, qos_ctx);
 
   ASSERT_TRUE(first.status.has_value());
   ASSERT_TRUE(second.status.has_value());
@@ -1396,6 +1462,8 @@ TEST(QosRequirementsProcessing, DynamicReferenceAlsoEmitsQosCharacteristics) {
   preset->setArp(arp);
 
   fake_qos_reference_store store;
+  operator_qos_policy op_policy;
+  qos_deriver deriver(store, op_policy);
   store.insert("dyn-ref", preset);
 
   MediaComponent mc;
@@ -1403,7 +1471,7 @@ TEST(QosRequirementsProcessing, DynamicReferenceAlsoEmitsQosCharacteristics) {
   SmPolicyDecision decision;
   qos_context qos_ctx;
 
-  handle_qos_requirements(mc, "s", decision, qos_ctx, store);
+  deriver.handle_qos_requirements(mc, "s", decision, qos_ctx);
 
   EXPECT_EQ(decision.getQosDecs().size(), 1u);
   ASSERT_EQ(decision.getQosChars().size(), 1u);
@@ -1516,7 +1584,11 @@ TEST(QosAuthorization, AcceptsQosWithinAllLimits) {
   add_qos_data(decision, "q1", make_qos_data(9, "10 Mbps", "10 Mbps"));
   set_authorized_session_ambr(decision, "20 Mbps", "20 Mbps");
 
-  const auto result = validate_qos_authorization(decision, {"q1"}, {});
+  // unused by validate_qos_authorization; qos_deriver's ctor still needs it
+  fake_qos_reference_store store;
+  operator_qos_policy op_policy;
+  qos_deriver deriver(store, op_policy);
+  const auto result = deriver.validate_qos_authorization(decision, {"q1"});
 
   ASSERT_TRUE(result.status.has_value());
   EXPECT_EQ(result.status.value(), status_code::OK);
@@ -1531,7 +1603,10 @@ TEST(QosAuthorization, RejectsDisallowedDynamic5qi) {
   SmPolicyDecision decision;
   add_qos_data(decision, "q1", make_qos_data(200, "1 Mbps", "1 Mbps"));
 
-  const auto result = validate_qos_authorization(decision, {"q1"}, op_policy);
+  // unused by validate_qos_authorization; qos_deriver's ctor still needs it
+  fake_qos_reference_store store;
+  qos_deriver deriver(store, op_policy);
+  const auto result = deriver.validate_qos_authorization(decision, {"q1"});
 
   ASSERT_TRUE(result.status.has_value());
   EXPECT_EQ(result.status.value(), status_code::FORBIDDEN);
@@ -1547,7 +1622,10 @@ TEST(QosAuthorization, AcceptsStandardized5qiRegardlessOfAllowList) {
   SmPolicyDecision decision;
   add_qos_data(decision, "q1", make_qos_data(9, "1 Mbps", "1 Mbps"));
 
-  const auto result = validate_qos_authorization(decision, {"q1"}, op_policy);
+  // unused by validate_qos_authorization; qos_deriver's ctor still needs it
+  fake_qos_reference_store store;
+  qos_deriver deriver(store, op_policy);
+  const auto result = deriver.validate_qos_authorization(decision, {"q1"});
 
   EXPECT_EQ(result.status.value(), status_code::OK);
 }
@@ -1559,7 +1637,10 @@ TEST(QosAuthorization, RejectsPerFlowMbrAboveOperatorCap) {
   SmPolicyDecision decision;
   add_qos_data(decision, "q1", make_qos_data(9, "1 Mbps", "10 Mbps"));
 
-  const auto result = validate_qos_authorization(decision, {"q1"}, op_policy);
+  // unused by validate_qos_authorization; qos_deriver's ctor still needs it
+  fake_qos_reference_store store;
+  qos_deriver deriver(store, op_policy);
+  const auto result = deriver.validate_qos_authorization(decision, {"q1"});
 
   EXPECT_EQ(result.status.value(), status_code::FORBIDDEN);
   EXPECT_EQ(result.problem_details.value(), "REQUESTED_SERVICE_NOT_AUTHORIZED");
@@ -1573,8 +1654,12 @@ TEST(QosAuthorization, RejectsCumulativeNonGbrAboveSessionAmbr) {
   add_qos_data(decision, "q2", make_qos_data(9, "1 Mbps", "15 Mbps"));
   set_authorized_session_ambr(decision, "50 Mbps", "20 Mbps");  // 25 > 20 DL
 
+  // unused by validate_qos_authorization; qos_deriver's ctor still needs it
+  fake_qos_reference_store store;
+  operator_qos_policy op_policy;
+  qos_deriver deriver(store, op_policy);
   const auto result =
-      validate_qos_authorization(decision, {"q1", "q2"}, {});
+      deriver.validate_qos_authorization(decision, {"q1", "q2"});
 
   EXPECT_EQ(result.status.value(), status_code::FORBIDDEN);
   EXPECT_EQ(result.problem_details.value(), "REQUESTED_SERVICE_NOT_AUTHORIZED");
@@ -1586,8 +1671,12 @@ TEST(QosAuthorization, AcceptsCumulativeWithinSessionAmbr) {
   add_qos_data(decision, "q2", make_qos_data(9, "1 Mbps", "5 Mbps"));
   set_authorized_session_ambr(decision, "50 Mbps", "20 Mbps");  // 15 <= 20 DL
 
+  // unused by validate_qos_authorization; qos_deriver's ctor still needs it
+  fake_qos_reference_store store;
+  operator_qos_policy op_policy;
+  qos_deriver deriver(store, op_policy);
   const auto result =
-      validate_qos_authorization(decision, {"q1", "q2"}, {});
+      deriver.validate_qos_authorization(decision, {"q1", "q2"});
 
   EXPECT_EQ(result.status.value(), status_code::OK);
 }
@@ -1602,7 +1691,11 @@ TEST(QosAuthorization, PrefersUnconditionalSessionRuleAmbr) {
   add_session_rule(decision, "SR-default", "20 Mbps", "20 Mbps", false);
   add_session_rule(decision, "SR-cond", "5 Mbps", "5 Mbps", true);
 
-  const auto result = validate_qos_authorization(decision, {"q1"}, {});
+  // unused by validate_qos_authorization; qos_deriver's ctor still needs it
+  fake_qos_reference_store store;
+  operator_qos_policy op_policy;
+  qos_deriver deriver(store, op_policy);
+  const auto result = deriver.validate_qos_authorization(decision, {"q1"});
 
   EXPECT_EQ(result.status.value(), status_code::OK);
 }
@@ -1615,7 +1708,11 @@ TEST(QosAuthorization, FallsBackToTightestWhenOnlyConditionalRules) {
   add_session_rule(decision, "SR-a", "100 Mbps", "10 Mbps", true);  // tightest DL=10
   add_session_rule(decision, "SR-b", "100 Mbps", "30 Mbps", true);
 
-  const auto result = validate_qos_authorization(decision, {"q1"}, {});
+  // unused by validate_qos_authorization; qos_deriver's ctor still needs it
+  fake_qos_reference_store store;
+  operator_qos_policy op_policy;
+  qos_deriver deriver(store, op_policy);
+  const auto result = deriver.validate_qos_authorization(decision, {"q1"});
 
   EXPECT_EQ(result.status.value(), status_code::FORBIDDEN);
   EXPECT_EQ(result.problem_details.value(), "REQUESTED_SERVICE_NOT_AUTHORIZED");
@@ -1630,7 +1727,11 @@ TEST(QosAuthorization, ExcludesGbrFlowsFromSessionAmbrSum) {
                                     "80 Mbps"));
   set_authorized_session_ambr(decision, "20 Mbps", "20 Mbps");
 
-  const auto result = validate_qos_authorization(decision, {"q1"}, {});
+  // unused by validate_qos_authorization; qos_deriver's ctor still needs it
+  fake_qos_reference_store store;
+  operator_qos_policy op_policy;
+  qos_deriver deriver(store, op_policy);
+  const auto result = deriver.validate_qos_authorization(decision, {"q1"});
 
   EXPECT_EQ(result.status.value(), status_code::OK);
 }
@@ -1642,7 +1743,11 @@ TEST(QosAuthorization, RejectsGbrExceedingMbr) {
       decision, "q1", make_qos_data(2, "10 Mbps", "10 Mbps", "20 Mbps",
                                     "5 Mbps"));
 
-  const auto result = validate_qos_authorization(decision, {"q1"}, {});
+  // unused by validate_qos_authorization; qos_deriver's ctor still needs it
+  fake_qos_reference_store store;
+  operator_qos_policy op_policy;
+  qos_deriver deriver(store, op_policy);
+  const auto result = deriver.validate_qos_authorization(decision, {"q1"});
 
   EXPECT_EQ(result.status.value(), status_code::FORBIDDEN);
   EXPECT_EQ(result.problem_details.value(), "INVALID_SERVICE_INFORMATION");
@@ -1657,7 +1762,11 @@ TEST(QosAuthorization, RejectsArpPriorityOutOfRange) {
   qos.setArp(arp);
   add_qos_data(decision, "q1", qos);
 
-  const auto result = validate_qos_authorization(decision, {"q1"}, {});
+  // unused by validate_qos_authorization; qos_deriver's ctor still needs it
+  fake_qos_reference_store store;
+  operator_qos_policy op_policy;
+  qos_deriver deriver(store, op_policy);
+  const auto result = deriver.validate_qos_authorization(decision, {"q1"});
 
   EXPECT_EQ(result.status.value(), status_code::FORBIDDEN);
   EXPECT_EQ(result.problem_details.value(), "REQUESTED_SERVICE_NOT_AUTHORIZED");
@@ -1669,7 +1778,11 @@ TEST(QosAuthorization, FailsOpenWhenNoSessionAmbr) {
   SmPolicyDecision decision;
   add_qos_data(decision, "q1", make_qos_data(9, "1 Mbps", "999 Mbps"));
 
-  const auto result = validate_qos_authorization(decision, {"q1"}, {});
+  // unused by validate_qos_authorization; qos_deriver's ctor still needs it
+  fake_qos_reference_store store;
+  operator_qos_policy op_policy;
+  qos_deriver deriver(store, op_policy);
+  const auto result = deriver.validate_qos_authorization(decision, {"q1"});
 
   EXPECT_EQ(result.status.value(), status_code::OK);
 }
@@ -1681,7 +1794,10 @@ TEST(QosAuthorization, RejectsMissingSubscriptionWhenPolicyRequires) {
   SmPolicyDecision decision;
   add_qos_data(decision, "q1", make_qos_data(9, "1 Mbps", "1 Mbps"));
 
-  const auto result = validate_qos_authorization(decision, {"q1"}, op_policy);
+  // unused by validate_qos_authorization; qos_deriver's ctor still needs it
+  fake_qos_reference_store store;
+  qos_deriver deriver(store, op_policy);
+  const auto result = deriver.validate_qos_authorization(decision, {"q1"});
 
   EXPECT_EQ(result.status.value(), status_code::FORBIDDEN);
   EXPECT_EQ(result.problem_details.value(), "REQUESTED_SERVICE_NOT_AUTHORIZED");
@@ -1697,7 +1813,10 @@ TEST(QosAuthorization, DoesNotJudgeNonOwnedBaseFlows) {
   add_qos_data(decision, "base", make_qos_data(200, "1 Mbps", "1 Mbps"));
   add_qos_data(decision, "q1", make_qos_data(9, "1 Mbps", "1 Mbps"));
 
-  const auto result = validate_qos_authorization(decision, {"q1"}, op_policy);
+  // unused by validate_qos_authorization; qos_deriver's ctor still needs it
+  fake_qos_reference_store store;
+  qos_deriver deriver(store, op_policy);
+  const auto result = deriver.validate_qos_authorization(decision, {"q1"});
 
   EXPECT_EQ(result.status.value(), status_code::OK);
 }
