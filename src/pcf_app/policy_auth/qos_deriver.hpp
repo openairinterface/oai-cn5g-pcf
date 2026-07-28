@@ -5,17 +5,38 @@
 #ifndef FILE_QOS_DERIVER_HPP_SEEN
 #define FILE_QOS_DERIVER_HPP_SEEN
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
+#include "FlowStatus.h"
+#include "FlowStatus_anyOf.h"
 #include "QosData.h"
 #include "SmPolicyDecision.h"
-#include "operator_qos_policy.hpp"
 #include "pcf_policy_authorization_status_code.hpp"
+#include "pcf_runtime_policy.hpp"
 #include "qos_context.hpp"
 #include "qos_reference_store.hpp"
 
 namespace oai::pcf::app::policy_auth {
+
+// Default ARP priority level for PA-derived flows. TS 29.513 Table 7.3.3-2
+// leaves ARP "as defined by application specific algorithm" (from resPrio) /
+// "as configured by operator" (from qosReference); resPrio is currently
+// unreadable (empty model), so a fixed operator default is used. ARP
+// priorityLevel range is 1-15 (TS 29.571); 1-8 denote prioritized services
+// (TS 29.513 Table 7.3.3-2 NOTE 1).
+constexpr int32_t DEFAULT_ARP_PRIORITY_LEVEL = 8;
+
+// True when the SDF (MediaSubComponent) is flagged REMOVED. TS 29.513
+// Table 7.3.3-1: for a removed flow the authorized data rate is 0, i.e. the
+// flow contributes nothing to the aggregate and installs no filter.
+template <typename MediaSubComponentT>
+bool sub_component_removed(const MediaSubComponentT& sub) {
+  return sub.fStatusIsSet() &&
+         sub.getFStatus().getEnumValue() ==
+             oai::model::pcf::FlowStatus_anyOf::eFlowStatus_anyOf::REMOVED;
+}
 
 /**
  * @brief Holds the two never-varying dependencies the QoS-derivation

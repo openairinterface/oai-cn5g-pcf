@@ -14,9 +14,8 @@
 
 #include <chrono>
 
-#include "notify_failure_recovery_policy.hpp"
-#include "notify_failure_recovery_policy_builder.hpp"
 #include "pcf_config_types.hpp"
+#include "pcf_runtime_policy.hpp"
 
 using oai::config::pcf::notify_failure_recovery_config;
 using oai::pcf::app::make_notify_failure_recovery_policy;

@@ -35,8 +35,7 @@
 #include "uint_generator.hpp"
 #include "sm_policy/policy_storage.hpp"
 #include "pcf_event.hpp"
-#include "notify_failure_recovery_policy.hpp"
-#include "operator_qos_policy.hpp"
+#include "pcf_runtime_policy.hpp"
 
 namespace oai::http {
 struct request;

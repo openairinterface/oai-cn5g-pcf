@@ -9,9 +9,8 @@
 #include <utility>
 
 #include "app_session_storage.hpp"
-#include "notify_failure_recovery_policy.hpp"
-#include "operator_qos_policy.hpp"
-#include "pending_rollback_tracker.hpp"
+#include "decision_applier.hpp"
+#include "pcf_runtime_policy.hpp"
 #include "qos_reference_store.hpp"
 
 namespace oai::pcf::app::policy_auth {
