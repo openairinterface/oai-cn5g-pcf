@@ -27,7 +27,7 @@
 #include "PccRule.h"
 #include "QosData.h"
 #include "SmPolicyDecision.h"
-#include "policy_auth/rollback_orchestration.hpp"
+#include "policy_auth/decision_applier.hpp"
 #include "sm_policy_delta.hpp"
 
 using oai::model::pcf::QosData;

@@ -141,7 +141,7 @@ class pcf_policy_authorization {
    * @brief Consumes (try_take) the matching pending_rollback_tracker entry,
    * if still tracked, then delegates the fetch-live-decision-then-apply-
    * with-retry orchestration to policy_auth::perform_compensating_rollback
-   * (rollback_orchestration.hpp) -- extracted as a free, dependency-injected
+   * (decision_applier.hpp) -- extracted as a free, dependency-injected
    * function specifically so that "always fetch live state, never reuse the
    * tracker's stale pre-commit snapshot" is unit-tested in isolation. Also
    * fires the §5.7 AF-notify stub either way (rollback committed, not

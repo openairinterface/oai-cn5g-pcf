@@ -11,6 +11,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <vector>
 
 #include "AppSessionContext.h"
 #include "AppSessionContextReqData.h"
@@ -18,13 +19,39 @@
 #include "MediaComponent.h"
 #include "QosData.h"
 #include "SmPolicyDecision.h"
-#include "app_session_record.hpp"
 #include "guarded.hpp"
 #include "pcf_policy_authorization_status_code.hpp"
 #include "qos_context.hpp"
-#include "qos_types.hpp"
 
 namespace oai::pcf::app::policy_auth {
+
+/**
+ * @brief Durable, serializable projection of an app_session.
+ *
+ * Documents the future `app_session_binding` DB table and is the
+ * (de)serialization contract for the future DB storage backend. The in-memory
+ * backend stores live objects and does not need it; it is defined now so the
+ * schema is fixed.
+ *
+ * association_id maps to an indexed foreign key that is NOT unique: a single SM
+ * policy association can bind multiple app-sessions (1:N).
+ */
+struct app_session_record {
+  std::string app_session_id;                 // primary key
+  std::optional<std::string> association_id;  // indexed FK (non-unique)
+  std::string supi;                           // binding lookup key (indexed)
+  std::string dnn;
+  std::string ue_ipv4;  // binding lookup key (indexed)
+  std::string af_app_id;
+  app_session_state state{app_session_state::pending};
+  std::vector<std::string> owned_qos_ids;
+  std::vector<std::string> owned_pcc_rule_ids;
+  std::vector<std::string> owned_qos_mon_ids;
+  std::string context_json;  // serialized AppSessionContextReqData
+  std::chrono::system_clock::time_point created_at{};
+  std::chrono::system_clock::time_point updated_at{};
+  std::optional<std::chrono::system_clock::time_point> expires_at;
+};
 
 /**
  * @brief Aggregate root for an application session (3GPP TS 29.514).

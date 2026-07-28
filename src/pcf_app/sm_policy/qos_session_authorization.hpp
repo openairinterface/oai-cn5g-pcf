@@ -10,7 +10,7 @@
 #include "SessionRule.h"
 #include "SmPolicyContextData.h"
 #include "SmPolicyDecision.h"
-#include "operator_qos_policy.hpp"
+#include "pcf_runtime_policy.hpp"
 
 namespace oai::pcf::app::sm_policy {
 

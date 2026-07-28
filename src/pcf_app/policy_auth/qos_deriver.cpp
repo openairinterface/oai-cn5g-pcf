@@ -21,7 +21,6 @@
 #include "bitrate.hpp"
 #include "logger.hpp"
 #include "policy_auth/app_session.hpp"
-#include "policy_auth/qos_derivation_helpers.hpp"
 #include "uint_generator.hpp"
 
 // Base precedence for Policy-Authorization-derived PCC rules. TS 23.503 §6.3.1

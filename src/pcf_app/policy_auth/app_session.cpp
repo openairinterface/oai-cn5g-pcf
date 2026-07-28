@@ -30,7 +30,7 @@
 #include "FlowStatus.h"
 #include <nlohmann/json.hpp>
 #include "policy_auth/pcf_policy_authorization_status_code.hpp"
-#include "policy_auth/qos_derivation_helpers.hpp"
+#include "policy_auth/qos_deriver.hpp"
 #include "logger.hpp"
 #include "app_session.hpp"
 #include "uint_generator.hpp"

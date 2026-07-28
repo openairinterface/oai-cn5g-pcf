@@ -15,7 +15,6 @@
 #include "policy_auth/af_notify.hpp"
 #include "policy_auth/app_session.hpp"
 #include "policy_auth/decision_applier.hpp"
-#include "policy_auth/rollback_orchestration.hpp"
 
 #include "AppSessionContextRespData.h"
 
@@ -699,7 +698,7 @@ void pcf_policy_authorization::compensate_if_pending(
       commit->app_session_id.c_str());
 
   // Fetch-live-then-apply orchestration
-  // extracted into perform_compensating_rollback (rollback_orchestration.hpp)
+  // extracted into perform_compensating_rollback (decision_applier.hpp)
   // -- the live-decision lookup and apply_with_retry are injected as
   // collaborators specifically so a test can assert this always feeds
   // apply_with_retry a freshly-looked-up live decision, never this commit's

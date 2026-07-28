@@ -29,7 +29,7 @@
 #include "SubscribedDefaultQos.h"
 #include "VplmnQos.h"
 #include "bitrate.hpp"
-#include "operator_qos_policy.hpp"
+#include "pcf_runtime_policy.hpp"
 #include "sm_policy/qos_session_authorization.hpp"
 
 using oai::pcf::app::operator_qos_policy;

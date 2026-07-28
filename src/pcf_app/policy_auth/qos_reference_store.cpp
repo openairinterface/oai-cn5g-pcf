@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: LicenseRef-CSSL-1.0
  */
 
-#include "qos_reference_loader.hpp"
+#include "qos_reference_store.hpp"
 
 #include <memory>
 #include <sstream>

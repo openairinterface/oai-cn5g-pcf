@@ -5,17 +5,102 @@
 #ifndef FILE_DECISION_APPLIER_HPP_SEEN
 #define FILE_DECISION_APPLIER_HPP_SEEN
 
+#include <chrono>
+#include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <map>
+#include <memory>
 #include <optional>
 #include <string>
+#include <utility>
 
 #include "SmPolicyDecision.h"
+#include "guarded.hpp"
 #include "pcf_policy_authorization_status_code.hpp"
-#include "pending_rollback_tracker.hpp"
 #include "sm_policy_delta.hpp"
 
+/**
+ * @file
+ * @brief The commit-and-compensate path for Policy Authorization decision
+ * changes.
+ *
+ * One concern, four collaborating pieces, in dependency order:
+ *   1. pending_commit / pending_rollback_tracker -- "which commit does this
+ *      (association_id, version) refer to", with TTL + hard cap.
+ *   2. decision_applier -- CAS-retry apply, recording into (1) on commit.
+ *   3. compute_rollback_delta -- pure: the staleness-checked compensating delta.
+ *   4. perform_compensating_rollback -- fetch-live-then-apply orchestration,
+ *      with both collaborators injected.
+ */
+
 namespace oai::pcf::app::policy_auth {
+
+// ---- 1. pending-commit tracking ------------------------------------------
+
+/**
+ * @brief What would need to be undone if this commit is later reported as a
+ * permanent SMF rejection.
+ *
+ * `base` reuses snapshot_decision()'s shape (individual_sm_association.hpp)
+ * rather than a fresh full-decision copy.
+ */
+struct pending_commit {
+  std::string app_session_id;
+  oai::pcf::app::sm_policy_delta committed_delta;
+  std::shared_ptr<const oai::model::pcf::SmPolicyDecision> base;
+  std::chrono::steady_clock::time_point recorded_at;
+};
+
+/**
+ * @brief PA-side tracking table: "which commit does this (association_id,
+ * version) refer to".
+ *
+ * Populated at the exact point apply_with_retry currently discards this data
+ * (pcf_policy_authorization.cpp, right where it commits and returns OK);
+ * consumed when the SM->PA permanent-rejection event arrives. Bounded
+ * by an explicit TTL (sweep_expired, meant to be driven by the task_tick
+ * heartbeat) and a hard cap (record) -- "some retention window" isn't enough
+ * on its own, or this is a slow leak under sustained SMF failures.
+ *
+ * Its own aspect class (own `guarded<T>` member, minimal focused interface),
+ * rather than fields bolted onto pcf_policy_authorization.
+ */
+class pending_rollback_tracker {
+ public:
+  pending_rollback_tracker(std::chrono::seconds ttl, std::size_t max_entries);
+
+  /**
+   * @brief Record what would need to be undone for (association_id,
+   * version). Silently drops the record (after a WARN log) once at capacity
+   * -- a later permanent-rejection report for that commit becomes
+   * unattributable rather than growing this table without bound.
+   */
+  void record(
+      const std::string& association_id, std::uint64_t version,
+      pending_commit commit);
+
+  /**
+   * @brief Consume and return the record for (association_id, version), if
+   * still tracked. std::nullopt if never recorded, already taken, or
+   * expired/evicted -- the caller should log at WARN and drop in that case,
+   * it can no longer attribute or notify an AF that's untraceable.
+   */
+  [[nodiscard]] std::optional<pending_commit> try_take(
+      const std::string& association_id, std::uint64_t version);
+
+  /** @brief Evict every entry older than the configured TTL. */
+  void sweep_expired(std::chrono::steady_clock::time_point now);
+
+ private:
+  using key_t = std::pair<std::string, std::uint64_t>;
+
+  const std::chrono::seconds m_ttl;
+  const std::size_t m_max_entries;
+  oai::utils::guarded<std::map<key_t, pending_commit>> m_pending;
+};
+
+// ---- 2. the applier -------------------------------------------------------
 
 // Matches pcf_event::sm_update_decision's shape
 using sm_update_decision_fn = std::function<void(
@@ -81,6 +166,73 @@ class decision_applier {
   pending_rollback_tracker& m_tracker;
   int m_max_retries;
 };
+
+// ---- 3. compensating delta (pure) -----------------------------------------
+
+/**
+ * @brief Compute the compensating delta that would undo `pending`, against
+ * the association's current `live` decision.
+ *
+ * Per-key staleness check: a key from `pending.committed_delta` is
+ * included only if its value in `live` still matches what this commit
+ * recorded as committed -- i.e. unchanged since. Otherwise something else
+ * (plausibly a later request referencing this id) touched it since, so the
+ * key is skipped (left as-is in `live`) and logged at WARN, rather than risk
+ * orphaning a dependent PCC rule.
+ *
+ * A create (key absent from pending.base) compensates by removal; a modify
+ * (key present in pending.base) compensates by restoring pending.base's
+ * value; a removal (key in pending.committed_delta.removed_*) compensates by
+ * restoring pending.base's value for it, provided it's still absent from
+ * `live`.
+ *
+ * Deliberately a pure function of its three inputs -- no threading/timer
+ * glue -- so it's unit-testable without a real timerfd/thread (§6.11).
+ */
+[[nodiscard]] oai::pcf::app::sm_policy_delta compute_rollback_delta(
+    const oai::model::pcf::SmPolicyDecision& live, const pending_commit& pending);
+
+// ---- 4. rollback orchestration ---------------------------------------------
+
+// Matches pcf_event::sm_get_association_decision's shape: given an
+// association_id, report whether it still exists and, if so, its CURRENT
+// decision + version. (association_id in; found, decision, version out.)
+using live_decision_lookup_fn = std::function<void(
+    const std::string& association_id, bool& found,
+    oai::model::pcf::SmPolicyDecision& decision, std::uint64_t& version)>;
+
+// Mirrors decision_applier::apply's shape (minus the class binding), so
+// perform_compensating_rollback's tests inject a fake without constructing a
+// real decision_applier.
+using apply_with_retry_fn = std::function<status_code(
+    decision_apply_request request,
+    const std::function<handler_result(
+        const oai::model::pcf::SmPolicyDecision& base,
+        oai::model::pcf::SmPolicyDecision& working)>& derive,
+    oai::pcf::app::sm_policy_delta& committed_delta,
+    std::string& problem_details)>;
+
+/**
+ * @brief Push a compensating-delta rollback for `commit` through the CAS-
+ * retry loop `apply_with_retry` implements, fed a rollback-shaped `derive`
+ * instead of an AF-request-shaped one.
+ *
+ * `lookup_live_decision` and `apply_with_retry` are injected rather than
+ * called directly (pcf_event::sm_get_association_decision /
+ * pcf_policy_authorization::apply_with_retry) so this orchestration step --
+ * specifically, that it ALWAYS feeds apply_with_retry a freshly-looked-up
+ * live decision/version, never `commit`'s own stale pre-commit
+ * base/post-commit version -- is unit-testable without a real pcf_event/
+ * pcf_smpc/HTTP stack.
+ *
+ * Returns status_code::NOT_FOUND if the association no longer exists
+ * (nothing left to roll back), otherwise whatever apply_with_retry returns.
+ */
+[[nodiscard]] status_code perform_compensating_rollback(
+    const std::string& association_id, std::uint64_t version,
+    const pending_commit& commit,
+    const live_decision_lookup_fn& lookup_live_decision,
+    const apply_with_retry_fn& apply_with_retry);
 
 }  // namespace oai::pcf::app::policy_auth
 

@@ -14,9 +14,8 @@
 #include <cstdint>
 #include <set>
 
-#include "operator_qos_policy.hpp"
-#include "operator_qos_policy_builder.hpp"
 #include "pcf_config_types.hpp"
+#include "pcf_runtime_policy.hpp"
 
 using oai::config::pcf::qos_authorization_config;
 using oai::pcf::app::make_operator_qos_policy;
