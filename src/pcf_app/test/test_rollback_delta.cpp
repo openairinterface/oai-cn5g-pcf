@@ -19,7 +19,7 @@
 #include "QosData.h"
 #include "SmPolicyDecision.h"
 #include "TrafficControlData.h"
-#include "policy_auth/rollback_delta.hpp"
+#include "policy_auth/decision_applier.hpp"
 #include "sm_policy_delta.hpp"
 
 using oai::model::pcf::PccRule;

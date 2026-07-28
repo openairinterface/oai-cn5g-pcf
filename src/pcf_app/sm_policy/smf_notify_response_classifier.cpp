@@ -5,7 +5,6 @@
 #include "smf_notify_response_classifier.hpp"
 
 #include "3gpp_29.500.h"
-#include "sm_policy/smf_notify_causes.hpp"
 
 namespace oai::pcf::app::sm_policy {
 
