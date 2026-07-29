@@ -2,6 +2,34 @@
 
 # RELEASE NOTES:
 
+## Unreleased
+
+* Features
+  - N5 Policy Authorization service (`Npcf_PolicyAuthorization`, 3GPP TS 29.514):
+  full application session lifecycle over `POST`, `GET`, `PATCH` and `DELETE`
+  of `/app-sessions`, including RFC 7396 JSON Merge Patch semantics on
+  modification
+  - QoS derivation from AF service information per 3GPP TS 29.513 clause 7.3.3:
+  `QosData`, `QosCharacteristics` and PCC rules with service data flow filters,
+  derived from MediaComponent bandwidth, latency and priority attributes or
+  taken from an operator-preconfigured `qosReference` set
+  - QoS authorization against operator policy and the subscribed Session-AMBR,
+  configurable through the new `pcf.qos_authorization` block
+  - N7 SM Policy Association UpdateNotify (`Npcf_SMPolicyControl_UpdateNotify`,
+  3GPP TS 29.512 clause 4.2.3.2): AF-derived QoS is now provisioned to the SMF
+  - SMF notify-failure recovery: response classification per 3GPP TS 29.512
+  table 5.7.3-2, bounded retry with exponential backoff, and compensating
+  rollback on a confirmed permanent rejection; bounds configurable through the
+  new `pcf.notify_failure_recovery` block
+  - Operator-preconfigured QoS reference sets loaded from
+  `pcf.local_policy.qos_reference_path`
+* Tests
+  - GoogleTest/CTest unit-test infrastructure for the PCF application layer,
+  with 247 cases across 20 suites; build with `build_pcf --tests` or the
+  `checks` stage of `docker/Dockerfile.pcf.ubuntu`
+  - `ci-scripts/tests/pa_app_session_tests.py`: end-to-end N5 application
+  session lifecycle test against a live PCF
+
 ## v2.2.1 -- April 2026
 
 * Build and CI fixes for RHEL 9 based environments
