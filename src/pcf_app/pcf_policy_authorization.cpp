@@ -84,35 +84,11 @@ pcf_policy_authorization::pcf_policy_authorization(
           boost::placeholders::_1, boost::placeholders::_2,
           boost::placeholders::_3));
 
-  // TODO [QOS-SUB] Initialize Application Function monitoring and notification infrastructure [TS 29.514 §4.2.5, TS 29.500 §6.2]
-  // Set up comprehensive AF communication framework as per 3GPP TS 29.514:
-  //
-  // 1. NOTIFICATION CLIENT SETUP [TS 29.500 §5.2.6]:
-  //    - Initialize HTTP/2 client for AF notifications (support both HTTP and HTTPS) [TS 29.500 §5.2.6]
-  //    - Configure retry mechanisms for failed AF notifications [TS 29.500 §5.2.8]
-  //    - Setup connection pooling for multiple AF endpoints [TS 29.500 §5.2.6]
-  //    - Implement authentication/authorization for AF callbacks [TS 29.514 §5.9, TS 33.501 §13.4.1]
-  //
-  // 2. SUBSCRIPTION REGISTRY [TS 29.514 §4.2.6]:
-  //    - Create registry for AF notification subscriptions by session [TS 29.514 §5.3.4.1]
-  //    - Implement subscription filtering by event types and QoS parameters [TS 29.514 §5.6.2.6]
-  //    - Setup automatic subscription cleanup on session termination [TS 29.514 §4.2.7.1]
-  //    - Maintain AF endpoint health status and availability [TS 29.500 §5.2.6]
-  //
-  // 3. NOTIFICATION QUEUING AND DELIVERY [TS 29.500 §6.8]:
-  //    - Create notification queue with priority handling (critical vs informational) [TS 29.500 §6.8.2, §6.8.5]
-  //    - Implement batching for non-urgent notifications to same AF
-  //    - Setup dead letter queue for failed notifications with retry logic [TS 29.500 §5.2.8]
-  //    - Provide notification delivery status tracking and reporting [TS 29.500 §5.2.8]
-
-  // TODO [QOS-MON] Initialize QoS monitoring infrastructure [TS 29.512 §4.2.3.25, TS 23.503 §6.1.3.21]
-  // Set up QoS monitoring framework for AF reporting:
-  //
-  // 1. MONITORING EVENT TRIGGERS [TS 29.512 §4.2.3.25.1, TS 23.503 §6.1.3.21]:
-  //    - Register for SM Policy Control service events (QoS flow changes) [TS 29.512 §4.2.3.2]
-  //    - Subscribe to UPF monitoring reports via N4 interface [TS 29.244 §5.39.2]
-  //    - Setup periodic monitoring report generation timers [TS 29.244 §5.24.4.2]
-  //    - Implement threshold-based event triggering for QoS violations [TS 29.244 §5.39.3]
+  // TODO [QOS-SUB] Initialize the AF notification client, subscription registry
+  // and delivery queue here (Phase 3) [TS 29.514 §4.2.5, TS 29.500 §6.2, §6.8].
+  // TODO [QOS-MON] Initialize monitoring contexts and the report timer here,
+  // and subscribe to UPF measurement reports (Phase 4) [TS 29.512 §4.2.3.25,
+  // TS 23.503 §6.1.3.21].
 }
 
 //------------------------------------------------------------------------------
@@ -259,18 +235,6 @@ status_code pcf_policy_authorization::post_app_sessions_handler(
 
   Logger::pcf_app().info("POST /app-sessions");
 
-  // TODO [QOS] Overview of QoS handling in Policy Authorization Service [TS 29.514 §4.2.2, TS 29.513 §7.3]
-  // This handler processes application session requests containing QoS requirements
-  // and translates them into 5G system policy decisions as per 3GPP TS 29.514:
-  //
-  // 1. Extract QoS parameters from MediaComponents (bandwidth, latency, packet loss) [TS 29.514 §5.6.2.7, TS 29.513 §7.3.3]
-  // 2. Validate QoS requirements against user subscription and network policies [TS 29.514 §4.1.3.1, TS 23.503 §6.1.3.2.3]
-  // 3. Create QosData, QosCharacteristics, and QosMonitoringData entries [TS 29.512 §5.6.2.8, §5.6.2.16, §5.6.2.40]
-  // 4. Generate PCC rules with appropriate QoS enforcement actions [TS 29.512 §4.1.4.2, TS 23.503 §6.3.1]
-  // 5. Merge QoS decisions with existing session policies [TS 29.512 §4.2.6.2.3]
-  // 6. Notify SMF and other NFs about QoS policy decisions [TS 29.512 §4.2.3.2, TS 29.513 §5.2.2.2.1]
-  // 7. Setup QoS monitoring if required by the application or operator policy
-
   const oai::model::pcf::AppSessionContextReqData reqContext =
       context.getAscReqData();
   std::optional<std::string> association_id = {};
@@ -338,43 +302,12 @@ status_code pcf_policy_authorization::post_app_sessions_handler(
   session->qos().apply_committed_delta(committed_delta);
   session->set_state(app_session_state::established);
 
-  // TODO [QOS] Send QoS policy decision notifications [TS 29.512 §4.2.3.2, TS 29.513 §5.2.2.2.1]
-  // Notify relevant network functions about QoS policy updates:
-  // - SMF about new QoS flows and QoS rules [TS 29.512 §4.2.3.2]
-  // - UPF about traffic control and forwarding rules [via SMF N4]
-  // - UE about QoS flow establishment (via AMF/gNB) [TS 23.502 §4.3.3.2]
-  // Include QoS monitoring setup if required [TS 29.512 §4.2.3.25.1]
-
-  // TODO [QOS-SUB] Setup Application Function monitoring and notification framework [TS 29.514 §4.2.6, TS 29.500 §6.2]
-  // As per 3GPP TS 29.514, implement bidirectional communication with Application Functions:
-  //
-  // 1. AF SUBSCRIPTION MANAGEMENT [TS 29.514 §4.2.6]:
-  //    - Register AF notification endpoints from AppSessionContextReqData [TS 29.514 §5.6.2.6]
-  //    - Store AF callback URIs for different event types (QoS changes, session events) [TS 29.514 §5.6.2.6]
-  //    - Implement subscription lifecycle management for AF notifications [TS 29.514 §4.2.6.2]
-
-  // TODO [QOS-MON] Setup QoS monitoring reports to Application Functions [TS 29.514 §4.2.5.14, TS 23.503 §6.1.3.21]
-  // Implement QoS measurement and threshold monitoring for AF notifications:
-  //
-  // 1. QOS MONITORING REPORTS TO AF [TS 29.514 §4.2.5.14]:
-  //    - Send QoS flow status updates (established, modified, released) [TS 29.514 §4.2.5.4]
-  //    - Report QoS monitoring measurements when thresholds are exceeded [TS 29.514 §5.6.2.37]
-  //    - Notify about QoS guarantee failures or degradation [TS 29.514 §4.2.5.4]
-  //    - Provide bandwidth utilization and congestion status updates [TS 29.514 §5.6.2.37]
-  //
-  // 3. PDU SESSION EVENT NOTIFICATIONS [TS 29.514 §4.2.5.22]:
-  //    - Notify AF about PDU session establishment/termination [TS 29.514 §5.6.3.24]
-  //    - Report session modification events affecting QoS [TS 29.514 §4.2.5.2]
-  //    - Send UE mobility events that impact application QoS [TS 29.514 §5.6.3.7]
-  //    - Provide session binding status updates [TS 29.514 §4.2.5.22]
-  //
-  // 4. POLICY DECISION NOTIFICATIONS [TS 29.514 §4.2.5.2]:
-  //    - Inform AF when policy decisions are updated by operator
-  //    - Report conflicts between AF requests and network policies
-  //    - Notify about resource availability changes affecting QoS [TS 29.514 §5.6.3.7]
-  //    - Send charging policy updates if applicable
-
-  // TODO [PAS] send notification if notifcation is required
+  // TODO [QOS-SUB] Register the AF's notification endpoint and subscribed
+  // events from reqContext here, then send the
+  // SUCCESSFUL_RESOURCES_ALLOCATION notification if subscribed (Phase 3)
+  // [TS 29.514 §4.2.6, §4.2.5.8].
+  // TODO [QOS-MON] Configure monitoring thresholds from the request (Phase 4)
+  // [TS 29.514 §4.2.2.23.1].
 
   // Return "201 Created" response to the HTTP POST request
   return status_code::CREATED;
@@ -490,17 +423,6 @@ policy_auth::status_code pcf_policy_authorization::mod_app_session_handler(
   // Base decision from binding; the per-attempt working copy is derived from it
   // inside `derive` (below).
   oai::model::pcf::SmPolicyDecision current_decision = {};
-
-  // TODO [QOS] Overview of QoS handling in session modification requests [TS 29.514 §4.2.3, TS 29.512 §4.2.6.2]
-  // This handler processes updates to existing application sessions with QoS changes:
-  //
-  // 1. Compare new QoS parameters with existing session configuration [TS 29.514 §4.2.3.2]
-  // 2. Authorize QoS changes against user subscription and operator policies [TS 29.514 §4.1.3.1, TS 23.503 §6.1.3.2.3]
-  // 3. Handle QoS upgrade/downgrade requests appropriately [TS 23.503 §4.3.3.2.2, TS 29.512 §4.2.6.6.1]
-  // 4. Update QosData, QosCharacteristics, and monitoring configurations [TS 29.512 §5.6.2.8, §5.6.2.16, §5.6.2.40]
-  // 5. Modify existing PCC rules or create new ones for QoS changes [TS 29.512 §4.2.6.2.1]
-  // 6. Ensure QoS modification procedures maintain service continuity [TS 23.502 §4.3.3.2]
-  // 7. Send appropriate notifications to SMF for QoS flow updates [TS 29.512 §4.2.3.2, §5.6.2.5]
 
   const oai::model::pcf::AppSessionContextUpdateData reqContext =
       app_session_context_update_data_patch.getAscReqData();

@@ -144,6 +144,29 @@ namespace {
 // `committed_removed` are what `pending`'s original commit did; `pre_commit`
 // is that commit's pre-commit base -- the value to restore on a compensated
 // modify/removal.
+//
+// Per-key staleness rule: a key is compensated only if it still holds exactly
+// what this commit left there. If someone else has changed it since, this
+// commit no longer owns that value and reverting it would clobber a newer,
+// legitimate write -- so the key is skipped and logged.
+//
+// KNOWN LIMITATION [QOS][ROLLBACK] -- the skip is per-key and reference-blind,
+// so a partly-skipped rollback can leave the decision referentially
+// inconsistent, and nothing downstream catches it: perform_compensating_
+// rollback's derive does NOT call validate_policy_decision() (unlike the
+// POST/PATCH derives), so the result is committed AND notified to the SMF.
+// Worked example: a commit created QosData Q and PccRule R with
+// refQosData=[Q]; another writer then modified R (say its precedence) but left
+// Q alone. Compensating finds Q unchanged -> removes it, and R changed -> skips
+// it, so R is sent to the SMF referencing a Q that is gone.
+// TODO Fix in two parts:
+// (A) validate in the rollback derive, so an inconsistent rollback is abandoned
+// rather than pushed; (B) make this delta reference-aware -- project the
+// candidate onto `live`, drop any removal whose key is still referenced and any
+// restored rule whose own references would dangle, iterating until stable.
+// Deliberately not attempted here: (B) changes what a rollback means from "undo
+// my keys" to "undo my keys as far as the result stays valid", and needs its
+// own tests.
 template <typename MapT>
 void rollback_map(
     const MapT& live, const MapT& committed_upsert,
@@ -156,14 +179,11 @@ void rollback_map(
         live_it != live.end() && live_it->second == committed_value;
     if (!unchanged_since) {
       Logger::pcf_app().warn(
-          "compute_rollback_delta: %s key %s modified/referenced since this "
-          "commit; skipping compensation to avoid orphaning a dependent PCC "
-          "rule",
+          "compute_rollback_delta: %s key %s changed since this commit; "
+          "skipping its compensation (a newer writer owns that value now). "
+          "The rollback may therefore be partial -- see the reference-awareness "
+          "limitation in rollback_map()",
           map_name, key.c_str());
-      // TODO [QOS][ROLLBACK] key modified/referenced since this commit;
-      // skipping compensation to avoid orphaning a dependent PCC rule. Needs
-      // proper reference-aware rollback (e.g. refQosData dependency check)
-      // [Phase 3?].
       continue;
     }
     const auto pre_it = pre_commit.find(key);
@@ -178,9 +198,10 @@ void rollback_map(
     const bool unchanged_since = live.find(key) == live.end();  // still absent
     if (!unchanged_since) {
       Logger::pcf_app().warn(
-          "compute_rollback_delta: %s key %s modified/referenced since this "
-          "commit; skipping compensation to avoid orphaning a dependent PCC "
-          "rule",
+          "compute_rollback_delta: %s key %s was re-created since this commit "
+          "removed it; skipping its compensation (a newer writer owns it now). "
+          "The rollback may therefore be partial -- see the reference-awareness "
+          "limitation in rollback_map()",
           map_name, key.c_str());
       continue;
     }

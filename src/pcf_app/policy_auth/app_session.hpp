@@ -167,82 +167,25 @@ oai::pcf::app::policy_auth::handler_result create_qos_characteristics(
 [[nodiscard]] int32_t derive_5qi(
     std::optional<float> des_max_latency_ms, bool has_gbr);
 
-// TODO [QOS-MON] Setup QoS monitoring based on MediaComponent requirements
-// [TS 29.512 §4.1.4.4.6, TS 29.514 §4.2.2.23]
+// No-op stub until Phase 4 -- see app_session.cpp for what it will do
+// [TS 29.512 §4.1.4.4.6, TS 29.514 §4.2.2.23].
 oai::pcf::app::policy_auth::handler_result setup_qos_monitoring(
     oai::model::pcf::SmPolicyDecision& decision);
 
-// TODO [QOS] Handle QoS parameter updates during session modification [TS 29.514 §4.2.3.2, TS 29.512 §4.2.6.2.1]
-// oai::pcf::app::policy_auth::handler_result handle_qos_update(
-//     const oai::model::pcf::MediaComponent& updated_media_component,
-//     const oai::model::pcf::MediaComponent& existing_media_component,
-//     oai::model::pcf::SmPolicyDecision& decision);
+// NOTE: there is no handle_qos_update()/diff step for a modification. A PATCH
+// re-derives the same medCompN through handle_qos_requirements() above, which
+// upserts the flow in place -- so modify/add/remove and QoS upgrade/downgrade
+// all fall out of one code path, and that path stays safe to re-run under the
+// commit's version-CAS retry [TS 29.514 §4.2.3.2, TS 29.512 §4.2.6.2.1]. The
+// cost is that nothing reports *which* attributes changed; Phase 3 needs that
+// for its EventsNotification and is the natural place to add it.
 
-// TODO [QOS-SUB] Application Function notification and monitoring handlers [TS 29.514 §4.2.5, TS 29.500 §6.2]
-// Implement AF communication functions as per 3GPP TS 29.514:
-
-// TODO [QOS-SUB] Send QoS status notifications to Application Function [TS 29.514 §4.2.5.4, §5.6.2.15]
-// oai::pcf::app::policy_auth::handler_result notify_af_qos_status(
-//     const std::string& af_app_id,
-//     const std::string& session_id,
-//     const std::map<std::string, oai::model::pcf::QosData>& qos_flows,
-//     const std::string& status_event);
-// - Notify AF about QoS flow establishment, modification, release [TS 29.514 §4.2.5.4]
-// - Include QoS guarantee status, bandwidth measurements, latency reports [TS 29.514 §5.6.2.15]
-// - Handle both successful operations and failure notifications [TS 29.514 §4.2.5.2]
-
-// TODO [QOS-SUB] Send PDU session event notifications to Application Function [TS 29.514 §4.2.5.22, §5.6.3.24]
-// oai::pcf::app::policy_auth::handler_result notify_af_pdu_session_event(
-//     const std::string& af_app_id,
-//     const std::string& session_id,
-//     const std::string& event_type,
-//     const std::map<std::string, std::string>& session_info);
-// - Notify AF about PDU session lifecycle events (establish, modify, terminate) [TS 29.514 §5.6.3.24]
-// - Include UE mobility events affecting application performance [TS 29.514 §5.6.3.7]
-// - Provide session context updates and binding information [TS 29.514 §4.2.5.22]
-
-// TODO [QOS-MON] Send QoS monitoring reports to Application Function [TS 29.514 §4.2.5.14, §5.6.2.37]
-// oai::pcf::app::policy_auth::handler_result notify_af_monitoring_report(
-//     const std::string& af_app_id,
-//     const std::string& session_id,
-//     const std::map<std::string, oai::model::pcf::QosMonitoringData>& monitoring_data,
-//     const std::vector<std::string>& threshold_events);
-// - Send periodic monitoring measurements to subscribed AFs [TS 29.514 §4.2.5.14]
-// - Report threshold breach events and congestion status [TS 29.514 §5.6.2.37]
-// - Include bandwidth utilization, packet loss, and latency measurements [TS 29.514 §5.6.2.37]
-
-// TODO [QOS-SUB] Send policy decision updates to Application Function [TS 29.514 §4.2.5.2, §5.6.2.9]
-// oai::pcf::app::policy_auth::handler_result notify_af_policy_update(
-//     const std::string& af_app_id,
-//     const std::string& session_id,
-//     const std::map<std::string, std::string>& policy_changes,
-//     const std::string& update_reason);
-// - Notify AF about policy decision changes affecting their application [TS 29.514 §4.2.5.2]
-// - Include resource availability updates and operator policy overrides [TS 29.514 §5.6.3.7]
-// - Report charging policy updates and conflict resolutions [TS 29.514 §4.2.5.2]
-
-// TODO [QOS-SUB] Manage AF subscription lifecycle for notifications [TS 29.514 §4.2.6, §5.3.4.1]
-// oai::pcf::app::policy_auth::handler_result register_af_subscription(
-//     const std::string& af_app_id,
-//     const std::string& session_id,
-//     const std::string& notification_uri,
-//     const std::vector<std::string>& event_types);
-// - Register AF endpoints for different types of notifications [TS 29.514 §4.2.6.2]
-// - Validate AF authentication and authorization for subscriptions [TS 29.514 §5.9, TS 33.501 §13.4.1]
-// - Setup subscription filtering based on QoS parameters and events [TS 29.514 §5.6.2.6]
-
-// TODO [QOS-MON] Process AF monitoring configuration from requests [TS 29.514 §4.2.2.23, TS 29.512 §4.2.3.25]
-// oai::pcf::app::policy_auth::handler_result configure_af_monitoring(
-//     const oai::model::pcf::AppSessionContextReqData& req_data,
-//     oai::model::pcf::SmPolicyDecision& decision);
-// - Extract AF notification requirements from application session requests [TS 29.514 §4.2.2.23.1]
-// - Configure QoS monitoring thresholds based on AF requirements [TS 29.512 §5.6.2.40, TS 23.503 §6.1.3.21]
-// - Setup notification triggers and periodic reporting schedules [TS 29.514 §4.2.2.23.1]
-
-//   oai::pcf::app::policy_auth::status_code handle_traffic_routing(
-//       oai::model::pcf::SmPolicyContextData& orig_context,
-//       const oai::model::pcf::SmPolicyUpdateContextData& update,
-//       std::string& problem_details);
+// TODO [QOS-SUB] AF notification handlers (Phase 3) [TS 29.514 §4.2.5]:
+// notify_af_qos_status (§4.2.5.4), notify_af_pdu_session_event (§4.2.5.22),
+// notify_af_policy_update (§4.2.5.2, §4.2.5.8) and register_af_subscription
+// (§4.2.6). These replace af_notify.hpp's notify_af_qos_update_failed() stub.
+// TODO [QOS-MON] configure_af_monitoring (§4.2.2.23.1) and
+// notify_af_monitoring_report (§4.2.5.14) (Phase 4).
 
 oai::pcf::app::policy_auth::handler_result authorize_service_info(
     const oai::model::pcf::AppSessionContextReqData& reqData);

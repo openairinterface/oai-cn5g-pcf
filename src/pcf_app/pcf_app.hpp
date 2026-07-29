@@ -23,46 +23,23 @@
 
 namespace oai::pcf::app {
 
-// TODO [QOS] PCF QoS Coordination Architecture Overview [TS 29.513 §5.2.2.2, TS 29.512 §4.2.6]
-// =====================================================
+// QoS coordination between this PCF's two services
+// (pcf_policy_authorization, N5 [TS 29.514]) and SM Policy Control (pcf_smpc,
+// N7 [TS 29.512])interfacing runs over the pcf_event signal bus, both
+// constructed here [TS 29.513 §5.2.2.2]:
 //
-// This PCF implementation needs comprehensive QoS coordination between two main services:
-// 1. Policy Authorization Service (pcf_policy_authorization) - Handles application QoS requests [TS 29.514]
-// 2. SM Policy Control Service (pcf_sm_policy_control) - Handles session management QoS policies [TS 29.512]
+//   sm_session_binding          locate the association, and read its decision +
+//                               version so the caller can commit optimistically
+//   sm_update_decision          commit an SmPolicyDelta under a version-CAS
+//   notify_committed_decision   notify the SMF and return the classified outcome
+//   sm_policy_update_failed     a permanent rejection found on a delayed retry
+//   sm_get_association_decision fresh decision lookup by id (rollback path)
 //
-// KEY QOS COORDINATION CHALLENGES TO ADDRESS:
-//
-// A. PCC RULE MANAGEMENT [TS 23.503 §6.1.3.7, TS 29.512 §4.1.4.2]:
-//    - Unique PCC rule ID generation across services (prefix-based: "PA-QOS-" for Policy Auth, "SM-" for SM) [TS 29.512 §4.1.4.2.1]
-//    - Precedence value coordination to avoid conflicts (Policy Auth: 1000-1999, SM Policy: 2000-2999) [TS 23.503 §6.3.1]
-//    - Rule lifecycle management and cleanup coordination [TS 29.512 §4.2.6.2.1]
-//
-// B. QOS DATA CONSISTENCY [TS 29.512 §4.2.6.6]:
-//    - QosData merging between Policy Authorization and SM Policy decisions [TS 29.512 §4.2.6.6.2, §5.6.2.8]
-//    - QosCharacteristics coordination for non-standard 5QI values [TS 29.512 §4.2.6.6.3, §5.6.2.16]
-//    - QosMonitoringData synchronization across services [TS 29.512 §4.2.3.25, §5.6.2.40]
-//
-// C. RESOURCE MANAGEMENT [TS 29.512 §4.2.6.8, TS 23.503 §6.1.4]:
-//    - Bandwidth allocation tracking across both services [TS 29.512 §4.2.6.8.2]
-//    - QoS flow identifier allocation and management [TS 23.501 §5.7.1.1]
-//    - Priority level and ARP coordination [TS 23.501 §5.7.3.3]
-//
-// D. NOTIFICATION COORDINATION [TS 29.512 §4.2.3.2, TS 29.513 §5.2.2.3]:
-//    - SMF notification consolidation for combined policy updates [TS 29.512 §4.2.3.2]
-//    - Event-driven coordination via pcf_event system (boost::signals2)
-//    - Error handling and rollback mechanisms for failed updates [TS 29.500 §5.2.8]
-//
-// E. VALIDATION AND AUTHORIZATION [TS 29.514 §4.1.3.1, TS 23.503 §6.1.3.2.3]:
-//    - Cross-service QoS requirement validation [TS 29.513 §7.3.3]
-//    - Subscription and slice policy compliance checking [TS 29.512 §4.2.6.6.1, §4.2.6.7]
-//    - Resource availability verification [TS 23.503 §6.1.3.2.3]
-//
-// IMPLEMENTATION APPROACH:
-// - Use pcf_event system for real-time coordination between services
-// - Implement shared QoS coordination functions in both service classes
-// - Create unified PCC rule and QoS data management framework [TS 29.512 §4.2.6.2]
-// - Establish clear precedence and ID allocation schemes [TS 23.503 §6.3.1]
-// - Design comprehensive validation and conflict resolution mechanisms [TS 23.503 §6.1.3.7]
+// PCC rule identity and precedence are kept disjoint by construction rather
+// than negotiated: Policy Authorization owns the "PA-QOS-" id prefix and a
+// reserved precedence band [TS 29.512 §4.1.4.2.1, TS 23.503 §6.3.1]. Active
+// conflict detection and slice-level resource admission control are not
+// implemented -- see the TODOs in pcf_sm_policy_control.hpp.
 
 class pcf_app {
  public:

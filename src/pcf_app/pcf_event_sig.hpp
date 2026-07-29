@@ -119,88 +119,14 @@ typedef bs2::signal_type<
     bs2::keywords::mutex_type<bs2::dummy_mutex>>::type
     sm_get_association_decision_sig_t;
 
-// TODO [QOS] Define QoS coordination signal types for cross-service communication [TS 29.513 §5.2.2.2, TS 29.512 §4.2.3]
-// The following signals enable coordination between Policy Authorization and SM Policy Control:
+// NOTE: cross-service QoS ans SFC coordination between Policy Authorization and
+// SM Policy Control needs no signals of its own beyond the five above.
 
-// TODO [QOS] Signal for PCC rule conflict resolution between services [TS 23.503 §6.1.3.7, TS 29.512 §4.1.4.2.1]
-// Parameters: association_id, policy_auth_rules, sm_policy_rules, resolution_strategy
-// typedef bs2::signal_type<
-//     void(const std::string&,
-//          const std::map<std::string, oai::model::pcf::PccRule>&,
-//          const std::map<std::string, oai::model::pcf::PccRule>&,
-//          std::string&),
-//     bs2::keywords::mutex_type<bs2::dummy_mutex>>::type pcc_rule_conflict_sig_t;
-
-// TODO [QOS] Signal for QoS resource availability status updates [TS 29.512 §4.2.6.5.5, §4.2.3.16]
-// Parameters: association_id, available_bandwidth_ul, available_bandwidth_dl, congestion_status
-// typedef bs2::signal_type<
-//     void(const std::string&, uint64_t, uint64_t, uint8_t),
-//     bs2::keywords::mutex_type<bs2::dummy_mutex>>::type qos_resource_status_sig_t;
-
-// TODO [QOS-MON] Signal for QoS monitoring coordination between services [TS 29.512 §4.2.3.25, TS 23.503 §6.1.3.21]
-// Parameters: association_id, monitoring_data, service_id, coordination_action
-// typedef bs2::signal_type<
-//     void(const std::string&,
-//          const std::map<std::string, oai::model::pcf::QosMonitoringData>&,
-//          const std::string&,
-//          const std::string&),
-//     bs2::keywords::mutex_type<bs2::dummy_mutex>>::type qos_monitoring_coordination_sig_t;
-
-// TODO [QOS] Signal for cross-service QoS validation requests [TS 29.513 §7.3.3]
-// Parameters: association_id, qos_data, validation_context, validation_result
-// typedef bs2::signal_type<
-//     void(const std::string&,
-//          const std::map<std::string, oai::model::pcf::QosData>&,
-//          const std::string&,
-//          bool&),
-//     bs2::keywords::mutex_type<bs2::dummy_mutex>>::type qos_validation_request_sig_t;
-
-// TODO [QOS-SUB] Define Application Function notification signal types as per 3GPP TS 29.514
-// The following signals trigger notifications to Application Functions about QoS and session events:
-
-// TODO [QOS-SUB] Signal for AF QoS status notifications [TS 29.514 §4.2.5.4, §5.6.2.15]
-// Parameters: af_app_id, session_id, qos_flow_info, qos_status, measurements
-// Triggered when QoS flows are established, modified, released or when QoS guarantees change
-// typedef bs2::signal_type<
-//     void(const std::string&,
-//          const std::string&,
-//          const std::map<std::string, oai::model::pcf::QosData>&,
-//          const std::string&,
-//          const std::map<std::string, std::string>&),
-//     bs2::keywords::mutex_type<bs2::dummy_mutex>>::type af_qos_status_notification_sig_t;
-
-// TODO [QOS-SUB] Signal for AF PDU session event notifications [TS 29.514 §4.2.5.22, §5.6.3.24]
-// Parameters: af_app_id, session_id, pdu_session_info, event_type, ue_location_info
-// Triggered on PDU session lifecycle events: establishment, modification, termination, UE mobility
-// typedef bs2::signal_type<
-//     void(const std::string&,
-//          const std::string&,
-//          const std::map<std::string, std::string>&,
-//          const std::string&,
-//          const std::string&),
-//     bs2::keywords::mutex_type<bs2::dummy_mutex>>::type af_pdu_session_event_notification_sig_t;
-
-// TODO [QOS-MON] Signal for AF monitoring report notifications [TS 29.514 §4.2.5.14, §5.6.2.37]
-// Parameters: af_app_id, session_id, monitoring_data, threshold_events, congestion_info
-// Triggered when monitoring thresholds are exceeded or periodic reports are generated
-// typedef bs2::signal_type<
-//     void(const std::string&,
-//          const std::string&,
-//          const std::map<std::string, oai::model::pcf::QosMonitoringData>&,
-//          const std::vector<std::string>&,
-//          const std::string&),
-//     bs2::keywords::mutex_type<bs2::dummy_mutex>>::type af_monitoring_report_notification_sig_t;
-
-// TODO [QOS-SUB] Signal for AF policy decision update notifications [TS 29.514 §4.2.5.2, §5.6.2.9]
-// Parameters: af_app_id, session_id, policy_changes, resource_updates, conflict_resolutions
-// Triggered when network policy decisions affecting AF applications are updated
-// typedef bs2::signal_type<
-//     void(const std::string&,
-//          const std::string&,
-//          const std::map<std::string, std::string>&,
-//          const std::map<std::string, std::string>&,
-//          const std::vector<std::string>&),
-//     bs2::keywords::mutex_type<bs2::dummy_mutex>>::type af_policy_decision_notification_sig_t;
+// TODO [QOS-SUB] AF notification signal types (Phase 3) [TS 29.514 §4.2.5]:
+// QoS status (§4.2.5.4), PDU session events (§4.2.5.22), policy/resource
+// allocation outcome (§4.2.5.2, §4.2.5.8).
+// TODO [QOS-MON] AF monitoring report signal type (Phase 4) [TS 29.514
+// §4.2.5.14].
 
 }  // namespace oai::pcf::app
 #endif
