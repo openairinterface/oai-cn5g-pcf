@@ -284,10 +284,17 @@ handler_result validate_and_merge_decision(
   return handler_result{.status = status_code::OK};
 }
 
+// Base-independent admission check on the request itself, run once before any
+// derivation. QoS authorization is NOT done here: it needs the derived QosData
+// and the association's current decision (for the cumulative Session-AMBR
+// check), so it runs per attempt in qos_deriver::validate_qos_authorization()
+// [TS 29.514 §4.1.3.1, TS 23.503 §6.1.3.2.3].
+//
+// TODO: no request-level service authorization is performed yet -- e.g. whether
+// this AF may request service for this SUPI/DNN at all, independent of the QoS
+// values asked for.
 handler_result authorize_service_info(
-    const oai::_3gpp::model::AppSessionContextReqData& reqData) {
-  // TODO: Implement service authorization
-
+    const oai::model::pcf::AppSessionContextReqData& reqData) {
   return handler_result{.status = status_code::OK};
 }
 
@@ -449,18 +456,11 @@ handler_result create_qos_characteristics(
   return handler_result{.status = status_code::OK};
 }
 
-// TODO [QOS-MON] Setup QoS monitoring based on MediaComponent requirements
-// [TS 29.512 §4.1.4.4.6, TS 29.514 §4.2.2.23]
-// Tasks:
-//   - Read monitoring thresholds from MediaComponent (if present) [TS 29.514 §4.2.2.23]
-//   - Create QosMonitoringData entries with threshold and reporting params [TS 29.512 §5.6.2.40]
-//   - Add QosMonitoringData to SmPolicyDecision.qosMonDecs [TS 29.512 §5.6.2.40]
-//   - Link QosMonitoringData to the PccRule via refQosMon [TS 29.512 §5.6.2.6]
-//
-// [QOS-MOCK] Phase 1 — QoS monitoring setup (mock; no-op).
-// Mocks the TODO [QOS-MON] task above:
-//   - No monitoring thresholds are read and no QosMonitoringData is created.
-//     This stub only logs to confirm the call order.
+// TODO [QOS-MON] No-op stub (Phase 4) [TS 29.512 §4.1.4.4.6, TS 29.514
+// §4.2.2.23]. To implement: read the AF's monitoring thresholds, create
+// QosMonitoringData in decision.qosMonDecs [TS 29.512 §5.6.2.40] and link it
+// from the PCC rule via refQosMon [§5.6.2.6]. Kept as a call in
+// handle_qos_requirements so the ordering and its test are already in place.
 handler_result setup_qos_monitoring([[maybe_unused]] SmPolicyDecision& decision) {
   Logger::pcf_app().debug(
       "QoS monitoring setup is not implemented in Phase 1. Returning "

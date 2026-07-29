@@ -23,6 +23,24 @@
 
 namespace oai::pcf::app {
 
+// QoS coordination between this PCF's two services
+// (pcf_policy_authorization, N5 [TS 29.514]) and SM Policy Control (pcf_smpc,
+// N7 [TS 29.512])interfacing runs over the pcf_event signal bus, both
+// constructed here [TS 29.513 §5.2.2.2]:
+//
+//   sm_session_binding          locate the association, and read its decision +
+//                               version so the caller can commit optimistically
+//   sm_update_decision          commit an SmPolicyDelta under a version-CAS
+//   notify_committed_decision   notify the SMF and return the classified outcome
+//   sm_policy_update_failed     a permanent rejection found on a delayed retry
+//   sm_get_association_decision fresh decision lookup by id (rollback path)
+//
+// PCC rule identity and precedence are kept disjoint by construction rather
+// than negotiated: Policy Authorization owns the "PA-QOS-" id prefix and a
+// reserved precedence band [TS 29.512 §4.1.4.2.1, TS 23.503 §6.3.1]. Active
+// conflict detection and slice-level resource admission control are not
+// implemented -- see the TODOs in pcf_sm_policy_control.hpp.
+
 class pcf_app {
  public:
   explicit pcf_app(pcf_event& ev);
