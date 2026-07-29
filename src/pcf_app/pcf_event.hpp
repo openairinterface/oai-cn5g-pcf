@@ -119,51 +119,10 @@ class pcf_event {
   bs2::connection subscribe_sm_get_association_decision(
       const sm_get_association_decision_sig_t::slot_type& sig);
 
-  // TODO [QOS] Add QoS coordination events between Policy Authorization and SM Policy Control [TS 29.513 §5.2.2.2, TS 29.512 §4.2.3]
-  // Implement the following events for comprehensive QoS coordination:
-
-  // TODO [QOS] PCC rule coordination events [TS 23.503 §6.1.3.7, TS 29.512 §4.2.6.2.1]
-  // bs2::connection subscribe_pcc_rule_conflict_resolution(
-  //     const pcc_rule_conflict_sig_t::slot_type& sig);
-
-  // TODO [QOS] QoS resource availability events [TS 29.512 §4.2.6.5.5, §4.2.3.16]
-  // bs2::connection subscribe_qos_resource_status_update(
-  //     const qos_resource_status_sig_t::slot_type& sig);
-
-  // TODO [QOS-MON] QoS monitoring coordination events [TS 29.512 §4.2.3.25, TS 23.503 §6.1.3.21]
-  // bs2::connection subscribe_qos_monitoring_coordination(
-  //     const qos_monitoring_coordination_sig_t::slot_type& sig);
-
-  // TODO [QOS] Cross-service QoS validation events [TS 29.513 §7.3.3]
-  // bs2::connection subscribe_qos_validation_request(
-  //     const qos_validation_request_sig_t::slot_type& sig);
-
-  // TODO [QOS-SUB] Application Function notification events
-  // Add event subscriptions for AF monitoring and notification as per 3GPP TS 29.514:
-
-  // TODO [QOS-SUB] AF QoS status notification events [TS 29.514 §4.2.5.4, §5.6.2.15]
-  // bs2::connection subscribe_af_qos_status_notification(
-  //     const af_qos_status_notification_sig_t::slot_type& sig);
-  // - Triggered when QoS flows are established, modified, or released
-  // - Includes QoS guarantee status, bandwidth utilization, latency measurements
-
-  // TODO [QOS-SUB] AF PDU session event notifications [TS 29.514 §4.2.5.22, §5.6.3.24]
-  // bs2::connection subscribe_af_pdu_session_event_notification(
-  //     const af_pdu_session_event_notification_sig_t::slot_type& sig);
-  // - Triggered on PDU session establishment, modification, termination
-  // - Includes UE mobility events affecting application QoS
-
-  // TODO [QOS-MON] AF monitoring report events [TS 29.514 §4.2.5.14, §5.6.2.37]
-  // bs2::connection subscribe_af_monitoring_report_notification(
-  //     const af_monitoring_report_notification_sig_t::slot_type& sig);
-  // - Triggered when monitoring thresholds are exceeded or measurements available
-  // - Includes congestion status, packet loss reports, bandwidth usage
-
-  // TODO [QOS-SUB] AF policy decision update events [TS 29.514 §4.2.5.2, §5.6.2.9]
-  // bs2::connection subscribe_af_policy_decision_notification(
-  //     const af_policy_decision_notification_sig_t::slot_type& sig);
-  // - Triggered when policy decisions are updated by network operator
-  // - Includes resource availability changes, policy conflicts, charging updates
+  // TODO [QOS-SUB] AF notification subscriptions (Phase 3) [TS 29.514 §4.2.5]:
+  // QoS status, PDU session events, policy updates and monitoring reports.
+  // Signal types are declared in pcf_event_sig.hpp; each needs a
+  // subscribe_*() here plus a member below.
 
  private:
   task_sig_t task_tick;
@@ -186,43 +145,8 @@ class pcf_event {
   sm_get_association_decision_sig_t
       sm_get_association_decision;  // Signal for association lookup by id
 
-  // TODO [QOS] Add QoS coordination signals [TS 29.513 §5.2.2.2, TS 29.512 §4.2.3]
-  // Private signal definitions for QoS coordination between services:
-
-  // TODO [QOS] Signal for PCC rule conflict resolution [TS 23.503 §6.1.3.7, TS 29.512 §4.1.4.2.1]
-  // pcc_rule_conflict_sig_t pcc_rule_conflict_resolution;
-
-  // TODO [QOS] Signal for QoS resource status updates [TS 29.512 §4.2.6.5.5, §4.2.3.16]
-  // qos_resource_status_sig_t qos_resource_status_update;
-
-  // TODO [QOS-MON] Signal for QoS monitoring coordination [TS 29.512 §4.2.3.25, TS 23.503 §6.1.3.21]
-  // qos_monitoring_coordination_sig_t qos_monitoring_coordination;
-
-  // TODO [QOS] Signal for cross-service QoS validation [TS 29.513 §7.3.3]
-  // qos_validation_request_sig_t qos_validation_request;
-
-  // TODO [QOS-SUB] Application Function notification signals [TS 29.514 §4.2.5, TS 29.500 §6.2]
-  // Private signal definitions for AF monitoring and notification:
-
-  // TODO [QOS-SUB] Signal for AF QoS status notifications [TS 29.514 §4.2.5.4, §5.6.2.15]
-  // af_qos_status_notification_sig_t af_qos_status_notification;
-  // - Emitted when QoS flow status changes need to be reported to AF
-  // - Carries QoS flow ID, status, measurements, guarantee information
-
-  // TODO [QOS-SUB] Signal for AF PDU session event notifications [TS 29.514 §4.2.5.22, §5.6.3.24]
-  // af_pdu_session_event_notification_sig_t af_pdu_session_event_notification;
-  // - Emitted on PDU session lifecycle events affecting AF applications
-  // - Carries session info, UE context, mobility events, session modifications
-
-  // TODO [QOS-MON] Signal for AF monitoring report notifications [TS 29.514 §4.2.5.14, §5.6.2.37]
-  // af_monitoring_report_notification_sig_t af_monitoring_report_notification;
-  // - Emitted when monitoring data needs to be reported to subscribed AFs
-  // - Carries measurement reports, threshold violations, congestion status
-
-  // TODO [QOS-SUB] Signal for AF policy decision notifications [TS 29.514 §4.2.5.2, §5.6.2.9]
-  // af_policy_decision_notification_sig_t af_policy_decision_notification;
-  // - Emitted when policy decisions affecting AF applications are updated
-  // - Carries policy changes, resource updates, conflict resolutions, charging info
+  // TODO [QOS-SUB] AF notification signal members (Phase 3) -- see the
+  // subscribe_*() note above.
 };
 }  // namespace oai::pcf::app
 #endif

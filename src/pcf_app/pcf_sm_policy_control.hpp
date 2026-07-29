@@ -231,37 +231,15 @@ class pcf_smpc {
       const std::string& association_id, std::uint64_t version,
       oai::pcf::app::sm_policy::smf_notify_outcome& outcome);
 
-  // TODO [QOS] Add QoS coordination functions between Policy Authorization and SM Policy Control [TS 29.513 §5.2.2.2, TS 29.512 §4.2.3]
-  // Implement the following functions to ensure proper QoS policy coordination:
+  // TODO [QOS] Cross-service coordination still to build on this side
+  // [TS 29.513 §5.2.2.2]: active PCC-rule conflict detection and an SM-side
+  // id/precedence-band convention [TS 23.503 §6.1.3.7, TS 29.512 §4.1.4.2.1],
+  // and network-slice resource admission control [TS 29.512 §4.2.6.8,
+  // TS 23.503 §6.1.4]. Today collisions are avoided by construction (the PA
+  // side's id prefix + reserved precedence band) and the only capacity gate is
+  // the per-session cumulative Session-AMBR check in validate_qos_authorization().
 
-  // TODO [QOS] PCC rule conflict resolution and ID management [TS 23.503 §6.1.3.7, TS 29.512 §4.1.4.2.1]
-  // void resolve_pcc_rule_conflicts(
-  //     const oai::model::pcf::SmPolicyDecision& policy_auth_decision,
-  //     oai::model::pcf::SmPolicyDecision& current_sm_decision);
-
-  // TODO [QOS] QoS precedence and priority coordination [TS 29.512 §5.6.2.6, TS 23.503 §6.3.1]
-  // bool validate_qos_precedence_ranges(
-  //     const oai::model::pcf::SmPolicyDecision& new_decision,
-  //     const std::string& association_id);
-
-  // TODO [QOS] Generate unique identifiers for cross-service coordination [TS 29.512 §4.1.4.2.1]
-  // std::string generate_unique_pcc_rule_id(const std::string& service_prefix);
-  // uint32_t allocate_precedence_value(const std::string& association_id, uint32_t base_precedence);
-
-  // TODO [QOS] QoS data validation and consistency checks [TS 29.512 §4.2.6.2.3, §5.6.2.8]
-  // bool validate_qos_data_consistency(
-  //     const std::map<std::string, oai::model::pcf::QosData>& qos_data_map,
-  //     const std::string& association_id);
-
-  // TODO [QOS] Resource availability and capacity management [TS 29.512 §4.2.6.8, TS 23.503 §6.1.4]
-  // bool check_qos_resource_availability(
-  //     const oai::model::pcf::SmPolicyDecision& requested_decision,
-  //     const std::string& association_id);
-
-  // TODO [QOS-MON] QoS monitoring coordination between services [TS 29.512 §4.2.3.25, TS 23.503 §6.1.3.21]
-  // void coordinate_qos_monitoring_setup(
-  //     const std::map<std::string, oai::model::pcf::QosMonitoringData>& monitoring_data,
-  //     const std::string& association_id);
+  // TODO [QOS-MON] Monitoring coordination (Phase 4) [TS 29.512 §4.2.3.25].
 
   // for Event Handling
   pcf_event& m_event_sub;

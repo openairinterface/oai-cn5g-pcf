@@ -179,33 +179,11 @@ sm_policy::status_code pcf_smpc::send_sm_policy_control_update_notify(
     Logger::pcf_app().info(
         "%s for SUPI %s", classification.info.c_str(), supi.c_str());
 
-    // TODO [QOS-SUB] Coordinate Application Function notifications after successful SMF update [TS 29.513 §5.2.2.3, TS 29.514 §4.2.5]
-    // Following successful SMF notification, trigger AF notifications as per 3GPP TS 29.514:
-    //
-    // 1. EXTRACT AF NOTIFICATION TARGETS [TS 29.513 §5.2.2.2.2]:
-    //    - Identify AF applications affected by the policy update
-    //    - Retrieve AF notification URIs from associated application sessions [TS 29.514 §5.6.2.6]
-    //    - Determine notification event types required by each AF [TS 29.514 §5.6.2.6]
-    //
-    // 2. PREPARE AF NOTIFICATION DATA [TS 29.514 §4.2.5]:
-    //    - Extract QoS status changes from the policy decision [TS 29.514 §5.6.2.15]
-    //    - Compile monitoring measurements if available from UPF reports [TS 29.514 §5.6.2.37]
-    //    - Prepare session context updates for AF consumption [TS 29.514 §5.6.2.9]
-    //
-    // 3. TRIGGER ASYNCHRONOUS AF NOTIFICATIONS [TS 29.500 §6.2]:
-    //    - Emit events to Policy Authorization service for AF notification delivery
-    //    - Include session binding information to correlate AF applications
-    //    - Schedule retry for failed AF notifications with appropriate backoff [TS 29.500 §5.2.8]
-    //
-    // 4. LOG COORDINATION STATUS:
-    //    - Track successful AF notification triggers
-    //    - Log any coordination failures for troubleshooting
-    //    - Update AF subscription health status [TS 29.500 §5.2.6]
-    //
-    // Example coordination:
-    // std::string supi = association.get_sm_policy_context_data().getSupi();
-    // std::string dnn = association.get_sm_policy_context_data().getDnn();
-    // m_event_sub.coordinate_af_notifications(supi, dnn, association.get_sm_policy_decision_dto());
+    // TODO [QOS-SUB] Coordinate AF notifications once the SMF has applied the
+    // update (Phase 3, §2.6) [TS 29.513 §5.2.2.3, TS 29.514 §4.2.5]: find the
+    // app-sessions bound to this association
+    // (app_session_storage::find_by_association), then emit
+    // SUCCESSFUL_RESOURCES_ALLOCATION to those that subscribed [§4.2.5.8].
 
     return classification.response;
   }
@@ -228,24 +206,12 @@ void pcf_smpc::handle_session_binding_request(
     const std::optional<std::string>& ipv4,
     const std::optional<std::string>& supi,
     const std::optional<std::string>& dnn, std::optional<std::string>& assoc_id,
-    oai::_3gpp::model::SmPolicyDecision& decision, std::uint64_t& version) {
-  // TODO [QOS] Handle QoS requirements during session binding [TS 29.513 §5.2.2.1, TS 29.512 §4.2.2]
-  // When Policy Authorization requests session binding, provide comprehensive QoS context:
-  //
-  // 1. QOS CONTEXT RETRIEVAL [TS 29.512 §4.2.2.2, TS 23.503 §6.1.3.2]:
-  //    - Retrieve existing QoS policies for this SUPI/DNN combination
-  //    - Include base QoS characteristics from subscription profile [TS 29.512 §4.2.6.6.1]
-  //    - Provide network slice-specific QoS limits and policies [TS 29.512 §4.2.6.7, TS 23.503 §6.1.4]
-  //
-  // 2. QOS BASELINE ESTABLISHMENT [TS 29.512 §4.2.2.2, TS 23.503 §6.1.3.2.3]:
-  //    - Set baseline QoS parameters that Policy Authorization can build upon
-  //    - Ensure default QoS flows are properly configured [TS 23.501 §5.7.1.1]
-  //    - Provide QoS rule precedence ranges available for Policy Auth use [TS 23.503 §6.3.1]
-  //
-  // 3. RESOURCE AVAILABILITY [TS 29.512 §4.2.6.8, TS 23.503 §6.1.4]:
-  //    - Include current QoS resource utilization information
-  //    - Provide available bandwidth and priority level ranges [TS 29.512 §4.2.6.8.2]
-  //    - Share network congestion status affecting QoS decisions
+    oai::model::pcf::SmPolicyDecision& decision, std::uint64_t& version) {
+  // The decision handed back below already carries the QoS baseline Policy
+  // Authorization needs: the authorized Session-AMBR / default 5QI-ARP that
+  // create_sm_policy_handler() put in a SessionRule [TS 29.512 §4.2.6.6.1], plus
+  // every PCC rule and QosData currently installed. Slice-level resource
+  // utilisation is not included -- see the admission-control TODO in the header.
 
   // TODO: support multiple sessions
 
@@ -274,8 +240,6 @@ void pcf_smpc::handle_session_binding_request(
   // (version-checked) apply.
   decision = iter->second.get_sm_policy_decision_dto();
   version  = iter->second.decision_version();
-
-  // Get PCC from decision
 }
 
 //------------------------------------------------------------------------------
@@ -302,24 +266,13 @@ void pcf_smpc::handle_commit_decision_request(
     std::optional<std::string>& association_id, std::uint64_t expected_version,
     const oai::pcf::app::sm_policy_delta& delta,
     oai::pcf::app::decision_apply_result& out) {
-  // TODO [QOS] Process QoS policy updates from Policy Authorization Service [TS 29.513 §5.2.2.2.2, TS 29.512 §4.2.3.2]
-  // This function receives updated policy decisions from pcf_policy_authorization
-  // containing QoS requirements that need to be integrated with existing SM policies:
-  //
-  // 1. CONFLICT RESOLUTION [TS 23.503 §6.1.3.7]:
-  //    - Check for PCC rule ID conflicts between Policy Auth and SM Policy Control [TS 29.512 §4.1.4.2.1]
-  //    - Ensure QoS rule precedence values don't overlap with existing SM rules [TS 29.512 §5.6.2.6]
-  //    - Resolve conflicts between Policy Auth QoS requirements and SM QoS policies [TS 23.503 §6.1.3.7]
-  //
-  // 2. QOS DATA INTEGRATION [TS 29.512 §4.2.6.6.2]:
-  //    - Merge QosData entries from Policy Authorization with existing SM QoS data [TS 29.512 §5.6.2.8]
-  //    - Validate QoS parameters against subscription and network slice limits [TS 29.512 §4.2.6.6.1, TS 23.503 §6.1.4]
-  //    - Update QoS Characteristics for new or modified 5QI values [TS 29.512 §4.2.6.6.3, §5.6.2.16]
-  //
-  // 3. PCC RULE COORDINATION [TS 29.512 §4.2.6.2.1]:
-  //    - Generate unique PCC rule IDs that don't conflict across services [TS 29.512 §4.1.4.2.1]
-  //    - Assign appropriate precedence values considering both Policy Auth and SM rules [TS 23.503 §6.3.1]
-  //    - Ensure QoS enforcement actions are consistent across rule sets [TS 23.503 §6.1.3.7]
+  // Merging is the delta apply itself: upsert-by-key over qosDecs/pccRules/
+  // qosChars/traffContDecs [TS 29.512 §4.2.6.6.2]. Authorization against
+  // operator policy and the subscribed Session-AMBR already ran on the Policy
+  // Authorization side against this same base [TS 29.512 §4.2.6.6.1], and
+  // referential integrity was checked pre-notification, so nothing is
+  // re-validated here. Conflict detection and slice admission control remain --
+  // see the TODOs in the header.
 
   // Optimistic, version-checked apply. Under the association lock we commit the
   // delta copy-on-write ONLY IF the association is still at the version the
@@ -525,6 +478,11 @@ void pcf_smpc::drain_retry_queue(std::uint64_t /*tick_ms*/) {
 status_code pcf_smpc::create_sm_policy_handler(
     const SmPolicyContextData& context, SmPolicyDecision& decision,
     std::string& association_id, std::string& problem_details) {
+  // The QoS baseline for this association is established below by
+  // authorize_session_rule_into() (subscribed Session-AMBR / default 5QI-ARP ->
+  // SessionRule) [TS 29.512 §4.2.6.6.1]. Slice bandwidth reservation is not
+  // done -- see the admission-control TODO in the header.
+
   std::shared_ptr<policy_decision> chosen_decision =
       m_policy_storage->find_policy(context);
 
@@ -620,6 +578,14 @@ sm_policy::status_code pcf_smpc::update_sm_policy_handler(
     const std::string& id, const SmPolicyUpdateContextData& update_context,
     SmPolicyDecision& decision, std::string& problem_details) {
   Logger::pcf_app().info("Entering update_sm_policy_handler");
+
+  // TODO [QOS] This is where the SMF's own PCC rule error reports arrive
+  // ("ruleReports"/"sessRuleReports" in SmPolicyUpdateContextData) [TS 29.512
+  // §4.2.4.15, §4.2.4.7]. They are currently NOT read: redecide() only switches
+  // on repPolicyCtrlReqTriggers, so a rule the SMF failed to install -- or a QoS
+  // flow it later terminated -- leaves this PCF believing the QoS is active,
+  // with no compensating rollback and no AF notification.
+
   std::unique_lock lock_associations(m_associations_mutex);
   auto iter = m_associations.find(id);
 
