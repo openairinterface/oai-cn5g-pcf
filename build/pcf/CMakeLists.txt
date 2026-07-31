@@ -16,7 +16,7 @@ set (BUILD_TOP_DIR   ${OPENAIRCN_DIR}/build)
 set (SRC_TOP_DIR     ${OPENAIRCN_DIR}/src)
 
 set (NF_TARGET           pcf)
-set (MOUNTED_COMMON      oai-cn5g-common-src)
+set (MOUNTED_COMMON      common-src)
 
 project (OpenAirInterface)
 
