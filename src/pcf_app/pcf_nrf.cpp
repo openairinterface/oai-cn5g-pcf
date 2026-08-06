@@ -145,10 +145,11 @@ void pcf_nrf::trigger_nf_heartbeat_procedure(uint64_t /* ms */) {
   patch_items.push_back(patch_item);
   Logger::pcf_sbi().info("Sending NF heartbeat request");
 
-  nlohmann::json j;
-  to_json(j, patch_item);
+  nlohmann::json json_data = nlohmann::json::array();
+  json_data.push_back(patch_item);
 
-  auto request = http_client_inst->prepare_json_request(m_nrf_url, j.dump());
+  auto request =
+      http_client_inst->prepare_json_request(m_nrf_url, json_data.dump());
   auto http_response =
       http_client_inst->send_http_request(method_e::PATCH, request);
 
