@@ -32,8 +32,8 @@ namespace oai::pcf::app::sm_policy {
  * @param association_id used to derive the per-PDU-session-unique sessRuleId.
  * @param op_policy      operator authorization limits.
  */
-oai::model::pcf::SessionRule authorize_session_rule(
-    const oai::model::pcf::SmPolicyContextData& context,
+oai::_3gpp::model::SessionRule authorize_session_rule(
+    const oai::_3gpp::model::SmPolicyContextData& context,
     const std::string& association_id,
     const oai::pcf::app::operator_qos_policy& op_policy);
 
@@ -48,8 +48,8 @@ oai::model::pcf::SessionRule authorize_session_rule(
  * config-unaware decision layer.
  */
 void authorize_session_rule_into(
-    oai::model::pcf::SmPolicyDecision& decision,
-    const oai::model::pcf::SmPolicyContextData& context,
+    oai::_3gpp::model::SmPolicyDecision& decision,
+    const oai::_3gpp::model::SmPolicyContextData& context,
     const std::string& association_id,
     const oai::pcf::app::operator_qos_policy& op_policy);
 

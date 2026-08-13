@@ -76,20 +76,20 @@ TEST(QosContext, EraseOwnedFromRemovesExactlyTheOwnedEntries) {
   qc.record_qos_flow("qos-owned");
   qc.record_pcc_rule("rule-owned", 100, {"qos-owned"});
 
-  oai::model::pcf::SmPolicyDecision decision;
+  oai::_3gpp::model::SmPolicyDecision decision;
 
-  oai::model::pcf::QosData owned_qos;
+  oai::_3gpp::model::QosData owned_qos;
   owned_qos.setQosId("qos-owned");
-  oai::model::pcf::QosData other_qos;
+  oai::_3gpp::model::QosData other_qos;
   other_qos.setQosId("qos-other");
   auto qos_map = decision.getQosDecs();
   qos_map["qos-owned"] = owned_qos;
   qos_map["qos-other"] = other_qos;
   decision.setQosDecs(qos_map);
 
-  oai::model::pcf::PccRule owned_rule;
+  oai::_3gpp::model::PccRule owned_rule;
   owned_rule.setPccRuleId("rule-owned");
-  oai::model::pcf::PccRule other_rule;
+  oai::_3gpp::model::PccRule other_rule;
   other_rule.setPccRuleId("rule-other");
   auto rule_map = decision.getPccRules();
   rule_map["rule-owned"] = owned_rule;
@@ -111,8 +111,8 @@ TEST(QosContext, EraseOwnedFromRemovesExactlyTheOwnedEntries) {
 
 TEST(QosContext, EraseOwnedFromOnEmptyLedgerLeavesDecisionUnchanged) {
   qos_context qc;
-  oai::model::pcf::SmPolicyDecision decision;
-  oai::model::pcf::QosData qos;
+  oai::_3gpp::model::SmPolicyDecision decision;
+  oai::_3gpp::model::QosData qos;
   qos.setQosId("qos-1");
   auto qos_map = decision.getQosDecs();
   qos_map["qos-1"] = qos;

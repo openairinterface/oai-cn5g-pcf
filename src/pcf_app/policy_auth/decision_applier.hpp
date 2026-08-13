@@ -48,7 +48,7 @@ namespace oai::pcf::app::policy_auth {
 struct pending_commit {
   std::string app_session_id;
   oai::pcf::app::sm_policy_delta committed_delta;
-  std::shared_ptr<const oai::model::pcf::SmPolicyDecision> base;
+  std::shared_ptr<const oai::_3gpp::model::SmPolicyDecision> base;
   std::chrono::steady_clock::time_point recorded_at;
 };
 
@@ -113,7 +113,7 @@ using sm_update_decision_fn = std::function<void(
 // call, so they are bound once at decision_applier construction instead.
 struct decision_apply_request {
   std::optional<std::string>& association_id;
-  const oai::model::pcf::SmPolicyDecision& initial_base;
+  const oai::_3gpp::model::SmPolicyDecision& initial_base;
   std::uint64_t initial_version;
   const std::string& app_session_id;
 };
@@ -156,8 +156,8 @@ class decision_applier {
   [[nodiscard]] status_code apply(
       decision_apply_request request,
       const std::function<handler_result(
-          const oai::model::pcf::SmPolicyDecision& base,
-          oai::model::pcf::SmPolicyDecision& working)>& derive,
+          const oai::_3gpp::model::SmPolicyDecision& base,
+          oai::_3gpp::model::SmPolicyDecision& working)>& derive,
       oai::pcf::app::sm_policy_delta& committed_delta,
       std::string& problem_details, std::uint64_t& committed_version);
 
@@ -190,7 +190,7 @@ class decision_applier {
  * glue -- so it's unit-testable without a real timerfd/thread (§6.11).
  */
 [[nodiscard]] oai::pcf::app::sm_policy_delta compute_rollback_delta(
-    const oai::model::pcf::SmPolicyDecision& live, const pending_commit& pending);
+    const oai::_3gpp::model::SmPolicyDecision& live, const pending_commit& pending);
 
 // ---- 4. rollback orchestration ---------------------------------------------
 
@@ -199,7 +199,7 @@ class decision_applier {
 // decision + version. (association_id in; found, decision, version out.)
 using live_decision_lookup_fn = std::function<void(
     const std::string& association_id, bool& found,
-    oai::model::pcf::SmPolicyDecision& decision, std::uint64_t& version)>;
+    oai::_3gpp::model::SmPolicyDecision& decision, std::uint64_t& version)>;
 
 // Mirrors decision_applier::apply's shape (minus the class binding), so
 // perform_compensating_rollback's tests inject a fake without constructing a
@@ -207,8 +207,8 @@ using live_decision_lookup_fn = std::function<void(
 using apply_with_retry_fn = std::function<status_code(
     decision_apply_request request,
     const std::function<handler_result(
-        const oai::model::pcf::SmPolicyDecision& base,
-        oai::model::pcf::SmPolicyDecision& working)>& derive,
+        const oai::_3gpp::model::SmPolicyDecision& base,
+        oai::_3gpp::model::SmPolicyDecision& working)>& derive,
     oai::pcf::app::sm_policy_delta& committed_delta,
     std::string& problem_details)>;
 

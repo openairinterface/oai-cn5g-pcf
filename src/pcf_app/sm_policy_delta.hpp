@@ -41,10 +41,10 @@ namespace oai::pcf::app {
  * are intentionally out of scope.
  */
 struct sm_policy_delta {
-  std::map<std::string, oai::model::pcf::QosData> upsert_qos_decs;
-  std::map<std::string, oai::model::pcf::PccRule> upsert_pcc_rules;
-  std::map<std::string, oai::model::pcf::QosCharacteristics> upsert_qos_chars;
-  std::map<std::string, oai::model::pcf::TrafficControlData>
+  std::map<std::string, oai::_3gpp::model::QosData> upsert_qos_decs;
+  std::map<std::string, oai::_3gpp::model::PccRule> upsert_pcc_rules;
+  std::map<std::string, oai::_3gpp::model::QosCharacteristics> upsert_qos_chars;
+  std::map<std::string, oai::_3gpp::model::TrafficControlData>
       upsert_traff_cont_decs;
 
   std::vector<std::string> removed_qos_decs;
@@ -66,14 +66,14 @@ struct sm_policy_delta {
  * (see sm_policy_delta).
  */
 sm_policy_delta compute_sm_policy_delta(
-    const oai::model::pcf::SmPolicyDecision& base,
-    const oai::model::pcf::SmPolicyDecision& updated);
+    const oai::_3gpp::model::SmPolicyDecision& base,
+    const oai::_3gpp::model::SmPolicyDecision& updated);
 
 /**
  * @brief Apply `delta` to `decision` in place: upserts first, then removals.
  */
 void apply_sm_policy_delta(
-    oai::model::pcf::SmPolicyDecision& decision, const sm_policy_delta& delta);
+    oai::_3gpp::model::SmPolicyDecision& decision, const sm_policy_delta& delta);
 
 /**
  * @brief Outcome of an optimistic (version-checked) delta apply on an
@@ -88,7 +88,7 @@ void apply_sm_policy_delta(
 struct decision_apply_result {
   bool committed = false;
   std::uint64_t version = 0;
-  std::shared_ptr<const oai::model::pcf::SmPolicyDecision> decision;
+  std::shared_ptr<const oai::_3gpp::model::SmPolicyDecision> decision;
 };
 
 }  // namespace oai::pcf::app

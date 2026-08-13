@@ -85,6 +85,7 @@ class SlicePolicyDecision {
  protected:
 #ifdef USE_ODB
 #pragma db id
+#endif
   oai::_3gpp::model::Snssai m_Snssai;
   bool m_SnssaiIsSet;
   std::vector<std::string> m_PccRuleIds;

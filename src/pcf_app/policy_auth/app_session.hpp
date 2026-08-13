@@ -120,37 +120,18 @@ class app_session {
  * 3GPP TS 29.514 4.2.x
  */
 
-/**
- * Extracts the N6-LAN Traffic Steering Requirements from the given
- * AfSfcRequirement object. 3GPP TS 29.514 4.2.2.8.
- *
- * @param af_sfc           The AfSfcRequirement object containing the SFC
- * requirements.
- * @param traffic_control_data The TrafficControlData object to store the
- * extracted requirements.
- * @param problem_details  A reference string to hold any error details if
- * extraction fails.
- *
- * @return status_code::OK on success or a failure code if an issue occurs
- * during extraction.
- */
-oai::pcf::app::policy_auth::handler_result handle_service_function_chaining(
-    const oai::model::pcf::AfSfcRequirement& af_sfc,
-    oai::model::pcf::SmPolicyDecision& decision);
-
-oai::pcf::app::policy_auth::handler_result
-handle_service_function_chaining_update(
-    const oai::model::pcf::AfSfcRequirement& af_sfc,
-    oai::model::pcf::SmPolicyDecision& decision,
-    oai::model::pcf::AppSessionContextReqData& context);
+// Service function chaining (N6-LAN traffic steering, TS 29.514 §4.2.2.8) is
+// not present anymore: see the TODO in app_session.cpp. There is currently no
+// handle_service_function_chaining[_update] here -- callers must not derive
+// SFC from oai::_3gpp::model::AfRoutingRequirement yet.
 
 // QoS handling functions [TS 29.514 §4.2.2.2, TS 29.513 §7.3, TS 29.512 §4.2.6.6]
 
 // Generate QoS characteristics for a non-standardized (dynamically assigned)
 // 5QI [TS 29.512 §4.2.6.6.3, §5.6.2.16]. No-op for standardized 5QI values.
 oai::pcf::app::policy_auth::handler_result create_qos_characteristics(
-    const oai::model::pcf::QosData& qos_data,
-    oai::model::pcf::SmPolicyDecision& decision);
+    const oai::_3gpp::model::QosData& qos_data,
+    oai::_3gpp::model::SmPolicyDecision& decision);
 
 // --- QoS mapping helpers (pure; unit-tested directly) ---
 
@@ -170,7 +151,7 @@ oai::pcf::app::policy_auth::handler_result create_qos_characteristics(
 // No-op stub until Phase 4 -- see app_session.cpp for what it will do
 // [TS 29.512 §4.1.4.4.6, TS 29.514 §4.2.2.23].
 oai::pcf::app::policy_auth::handler_result setup_qos_monitoring(
-    oai::model::pcf::SmPolicyDecision& decision);
+    oai::_3gpp::model::SmPolicyDecision& decision);
 
 // NOTE: there is no handle_qos_update()/diff step for a modification. A PATCH
 // re-derives the same medCompN through handle_qos_requirements() above, which
@@ -205,7 +186,7 @@ oai::pcf::app::policy_auth::handler_result validate_and_merge_decision(
 // operator-provisioned/predefined rules may legitimately omit them. Returns OK
 // when the decision is safe to notify.
 oai::pcf::app::policy_auth::handler_result validate_policy_decision(
-    const oai::model::pcf::SmPolicyDecision& decision);
+    const oai::_3gpp::model::SmPolicyDecision& decision);
 
 // Apply a JSON Merge Patch (RFC 7396) of a modification's ascReqData onto the
 // stored ascReqData, returning the merged request data [TS 29.514 §4.2.3.2].
@@ -216,9 +197,9 @@ oai::pcf::app::policy_auth::handler_result validate_policy_decision(
 // components the AF flags with fStatus=REMOVED are deleted from the stored map:
 // the generated *Rm model types cannot represent RFC 7396 null-removal, so 3GPP
 // fStatus is the removal signal [TS 29.514 §4.2.3.2, §5.6.2.7].
-oai::model::pcf::AppSessionContextReqData merge_patch_context(
-    const oai::model::pcf::AppSessionContextReqData& stored,
-    const oai::model::pcf::AppSessionContextUpdateData& patch);
+oai::_3gpp::model::AppSessionContextReqData merge_patch_context(
+    const oai::_3gpp::model::AppSessionContextReqData& stored,
+    const oai::_3gpp::model::AppSessionContextUpdateData& patch);
 
 }  // namespace oai::pcf::app::policy_auth
 

@@ -13,7 +13,7 @@
 using namespace oai::pcf::app::policy_auth;
 
 TEST(AppSession, ConstructorSetsIdAndAssociationId) {
-  oai::model::pcf::AppSessionContextReqData ctx;
+  oai::_3gpp::model::AppSessionContextReqData ctx;
   app_session session("sess-1", ctx, std::optional<std::string>("assoc-1"));
 
   EXPECT_EQ(session.id(), "sess-1");
@@ -22,21 +22,21 @@ TEST(AppSession, ConstructorSetsIdAndAssociationId) {
 }
 
 TEST(AppSession, ConstructorWithoutAssociationIdLeavesItUnset) {
-  oai::model::pcf::AppSessionContextReqData ctx;
+  oai::_3gpp::model::AppSessionContextReqData ctx;
   app_session session("sess-1", ctx, std::nullopt);
 
   EXPECT_FALSE(session.association_id().has_value());
 }
 
 TEST(AppSession, InitialStateIsPending) {
-  oai::model::pcf::AppSessionContextReqData ctx;
+  oai::_3gpp::model::AppSessionContextReqData ctx;
   app_session session("sess-1", ctx, std::nullopt);
 
   EXPECT_EQ(session.state(), app_session_state::pending);
 }
 
 TEST(AppSession, SetStateChangesState) {
-  oai::model::pcf::AppSessionContextReqData ctx;
+  oai::_3gpp::model::AppSessionContextReqData ctx;
   app_session session("sess-1", ctx, std::nullopt);
 
   session.set_state(app_session_state::established);
@@ -47,7 +47,7 @@ TEST(AppSession, SetStateChangesState) {
 }
 
 TEST(AppSession, NextVersionIncrementsMonotonically) {
-  oai::model::pcf::AppSessionContextReqData ctx;
+  oai::_3gpp::model::AppSessionContextReqData ctx;
   app_session session("sess-1", ctx, std::nullopt);
 
   EXPECT_EQ(session.version(), 0u);
@@ -57,7 +57,7 @@ TEST(AppSession, NextVersionIncrementsMonotonically) {
 }
 
 TEST(AppSession, ContextSnapshotReturnsStoredContext) {
-  oai::model::pcf::AppSessionContextReqData ctx;
+  oai::_3gpp::model::AppSessionContextReqData ctx;
   ctx.setSupi("imsi-001");
   ctx.setDnn("internet");
   app_session session("sess-1", ctx, std::nullopt);
@@ -68,11 +68,11 @@ TEST(AppSession, ContextSnapshotReturnsStoredContext) {
 }
 
 TEST(AppSession, UpdateContextReplacesStoredContext) {
-  oai::model::pcf::AppSessionContextReqData ctx;
+  oai::_3gpp::model::AppSessionContextReqData ctx;
   ctx.setSupi("imsi-001");
   app_session session("sess-1", ctx, std::nullopt);
 
-  oai::model::pcf::AppSessionContextReqData updated;
+  oai::_3gpp::model::AppSessionContextReqData updated;
   updated.setSupi("imsi-002");
   session.update_context(updated);
 
@@ -80,7 +80,7 @@ TEST(AppSession, UpdateContextReplacesStoredContext) {
 }
 
 TEST(AppSession, QosAccessorReturnsPersistentLedgerAcrossCalls) {
-  oai::model::pcf::AppSessionContextReqData ctx;
+  oai::_3gpp::model::AppSessionContextReqData ctx;
   app_session session("sess-1", ctx, std::nullopt);
 
   session.qos().record_qos_flow("qos-1");
@@ -89,7 +89,7 @@ TEST(AppSession, QosAccessorReturnsPersistentLedgerAcrossCalls) {
 }
 
 TEST(AppSession, ToRecordProjectsIdStateBindingAndLedger) {
-  oai::model::pcf::AppSessionContextReqData ctx;
+  oai::_3gpp::model::AppSessionContextReqData ctx;
   ctx.setSupi("imsi-001");
   ctx.setDnn("internet");
   ctx.setUeIpv4("10.0.0.1");

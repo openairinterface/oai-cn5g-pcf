@@ -17,7 +17,7 @@ const SmPolicyDecision& individual_sm_association::get_sm_policy_decision_dto()
   return m_decision.get_sm_policy_decision();
 }
 
-const void individual_sm_association::set_sm_policy_decision(
+void individual_sm_association::set_sm_policy_decision(
     oai::_3gpp::model::SmPolicyDecision& new_decision) {
   m_decision.set_sm_policy_decision(new_decision);
 }
@@ -27,7 +27,7 @@ void individual_sm_association::apply_delta(
   m_decision.apply_delta(delta);
 }
 
-std::shared_ptr<const oai::model::pcf::SmPolicyDecision>
+std::shared_ptr<const oai::_3gpp::model::SmPolicyDecision>
 individual_sm_association::snapshot_decision() const {
   return m_decision.snapshot_decision();
 }

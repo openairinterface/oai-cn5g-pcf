@@ -7,6 +7,7 @@
 #include <optional>
 #include <set>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 #include "Arp.h"
@@ -31,7 +32,7 @@
 
 namespace oai::pcf::app::policy_auth {
 
-using namespace oai::model::pcf;
+using namespace oai::_3gpp::model;
 using namespace oai::pcf::app;
 using namespace oai::utils;
 
@@ -71,8 +72,8 @@ FlowInformation flow_info_from_desc(const std::string& desc) {
 // model, so the value is unreadable); preemptCap/preemptVuln are taken from the
 // request when present (TS 29.514 §5.6.2.7), else safe defaults.
 template <typename MediaComponentT>
-oai::model::common::Arp derive_arp(const MediaComponentT& mc) {
-  oai::model::common::Arp arp;
+oai::_3gpp::model::Arp derive_arp(const MediaComponentT& mc) {
+  oai::_3gpp::model::Arp arp;
   // TODO [QOS] Map MediaComponent.resPrio -> arp.priorityLevel. Two blockers:
   // (1) the generated ReservPriority model is one of ~29
   // model/pcf classes OpenAPI Generator v6.0.1 left empty for this anyOf
@@ -88,27 +89,51 @@ oai::model::common::Arp derive_arp(const MediaComponentT& mc) {
       "not readable from the current generated model.",
       DEFAULT_ARP_PRIORITY_LEVEL));
 
-  if (mc.preemptCapIsSet()) {
-    arp.setPreemptCap(mc.getPreemptCap());
+  // MediaComponentRm::getPreemptCap()/getPreemptVuln() (the update/PATCH
+  // path) return the "Rm" (nullable) variants, which are among the ~29
+  // model/pcf classes OpenAPI Generator v6.0.1 left empty for this anyOf
+  // shape (see the resPrio TODO above) -- there is no accessor to read an
+  // actual value out of them. MediaComponent (the create/POST path) has the
+  // real, non-empty types, so those are still read normally.
+  if constexpr (std::is_same_v<MediaComponentT, oai::_3gpp::model::MediaComponent>) {
+    if (mc.preemptCapIsSet()) {
+      arp.setPreemptCap(mc.getPreemptCap());
+    } else {
+      oai::_3gpp::model::PreemptionCapability cap;
+      cap.setEnumValue(oai::_3gpp::model::PreemptionCapability_anyOf::
+                           ePreemptionCapability_anyOf::NOT_PREEMPT);
+      arp.setPreemptCap(cap);
+      Logger::pcf_app().debug(
+          "No pre-emption capability was provided in the request. Defaulting "
+          "ARP preemptCap to NOT_PREEMPT.");
+    }
+    if (mc.preemptVulnIsSet()) {
+      arp.setPreemptVuln(mc.getPreemptVuln());
+    } else {
+      oai::_3gpp::model::PreemptionVulnerability vuln;
+      vuln.setEnumValue(oai::_3gpp::model::PreemptionVulnerability_anyOf::
+                            ePreemptionVulnerability_anyOf::NOT_PREEMPTABLE);
+      arp.setPreemptVuln(vuln);
+      Logger::pcf_app().debug(
+          "No pre-emption vulnerability was provided in the request. "
+          "Defaulting ARP preemptVuln to NOT_PREEMPTABLE.");
+    }
   } else {
-    oai::model::common::PreemptionCapability cap;
-    cap.setEnumValue(oai::model::common::PreemptionCapability_anyOf::
+    oai::_3gpp::model::PreemptionCapability cap;
+    cap.setEnumValue(oai::_3gpp::model::PreemptionCapability_anyOf::
                          ePreemptionCapability_anyOf::NOT_PREEMPT);
     arp.setPreemptCap(cap);
     Logger::pcf_app().debug(
-        "No pre-emption capability was provided in the request. Defaulting "
-        "ARP preemptCap to NOT_PREEMPT.");
-  }
-  if (mc.preemptVulnIsSet()) {
-    arp.setPreemptVuln(mc.getPreemptVuln());
-  } else {
-    oai::model::common::PreemptionVulnerability vuln;
-    vuln.setEnumValue(oai::model::common::PreemptionVulnerability_anyOf::
+        "Pre-emption capability is not readable from the current generated "
+        "model. Defaulting ARP preemptCap to NOT_PREEMPT.");
+
+    oai::_3gpp::model::PreemptionVulnerability vuln;
+    vuln.setEnumValue(oai::_3gpp::model::PreemptionVulnerability_anyOf::
                           ePreemptionVulnerability_anyOf::NOT_PREEMPTABLE);
     arp.setPreemptVuln(vuln);
     Logger::pcf_app().debug(
-        "No pre-emption vulnerability was provided in the request. "
-        "Defaulting ARP preemptVuln to NOT_PREEMPTABLE.");
+        "Pre-emption vulnerability is not readable from the current "
+        "generated model. Defaulting ARP preemptVuln to NOT_PREEMPTABLE.");
   }
   return arp;
 }

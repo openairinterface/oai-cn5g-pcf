@@ -22,11 +22,11 @@
 #include "policy_auth/decision_applier.hpp"
 #include "sm_policy_delta.hpp"
 
-using oai::model::pcf::PccRule;
-using oai::model::pcf::QosCharacteristics;
-using oai::model::pcf::QosData;
-using oai::model::pcf::SmPolicyDecision;
-using oai::model::pcf::TrafficControlData;
+using oai::_3gpp::model::PccRule;
+using oai::_3gpp::model::QosCharacteristics;
+using oai::_3gpp::model::QosData;
+using oai::_3gpp::model::SmPolicyDecision;
+using oai::_3gpp::model::TrafficControlData;
 using oai::pcf::app::compute_sm_policy_delta;
 using oai::pcf::app::sm_policy_delta;
 using oai::pcf::app::policy_auth::compute_rollback_delta;

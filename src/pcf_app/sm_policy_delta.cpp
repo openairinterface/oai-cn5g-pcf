@@ -6,7 +6,7 @@
 
 namespace oai::pcf::app {
 
-using oai::model::pcf::SmPolicyDecision;
+using oai::_3gpp::model::SmPolicyDecision;
 
 namespace {
 
@@ -70,21 +70,21 @@ sm_policy_delta compute_sm_policy_delta(
 void apply_sm_policy_delta(
     SmPolicyDecision& decision, const sm_policy_delta& delta) {
   if (!delta.upsert_qos_decs.empty() || !delta.removed_qos_decs.empty()) {
-    std::map<std::string, oai::model::pcf::QosData> merged;
+    std::map<std::string, oai::_3gpp::model::QosData> merged;
     apply_map(
         decision.getQosDecs(), delta.upsert_qos_decs, delta.removed_qos_decs,
         merged);
     decision.setQosDecs(merged);
   }
   if (!delta.upsert_pcc_rules.empty() || !delta.removed_pcc_rules.empty()) {
-    std::map<std::string, oai::model::pcf::PccRule> merged;
+    std::map<std::string, oai::_3gpp::model::PccRule> merged;
     apply_map(
         decision.getPccRules(), delta.upsert_pcc_rules, delta.removed_pcc_rules,
         merged);
     decision.setPccRules(merged);
   }
   if (!delta.upsert_qos_chars.empty() || !delta.removed_qos_chars.empty()) {
-    std::map<std::string, oai::model::pcf::QosCharacteristics> merged;
+    std::map<std::string, oai::_3gpp::model::QosCharacteristics> merged;
     apply_map(
         decision.getQosChars(), delta.upsert_qos_chars, delta.removed_qos_chars,
         merged);
@@ -92,7 +92,7 @@ void apply_sm_policy_delta(
   }
   if (!delta.upsert_traff_cont_decs.empty() ||
       !delta.removed_traff_cont_decs.empty()) {
-    std::map<std::string, oai::model::pcf::TrafficControlData> merged;
+    std::map<std::string, oai::_3gpp::model::TrafficControlData> merged;
     apply_map(
         decision.getTraffContDecs(), delta.upsert_traff_cont_decs,
         delta.removed_traff_cont_decs, merged);

@@ -55,13 +55,21 @@ include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/common/common.cmake)
 include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/logger/logger.cmake)
 include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/config/config.cmake)
 include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/utils/utils.cmake)
-include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/model/pcf/pcf_model.cmake)
-include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/model/common_model/common_model.cmake)
+# Unlike here, api-server/CMakeLists.txt's and pcf_app/CMakeLists.txt's own
+# include()s of these same *_model.cmake files run before their target
+# exists, so the `if (TARGET ${NF_TARGET})` guard inside each is false there
+# and no sources actually get attached -- UsageReport.cpp etc. are never
+# compiled into the real "pcf" executable. Here NF_TARGET (pcf_unit_tests)
+# already exists, so the guard IS true and the full file list -- including
+# SMF model files that need pfcp/ headers -- really does get compiled.
+include_directories(${SRC_TOP_DIR}/${MOUNTED_COMMON}/pfcp)
+include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/model/pcf_model.cmake)
+include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/model/common_model.cmake)
 # PCF's SmPolicyContextData/SmPolicyUpdateContextData reference SMF model types
 # (DnnSelectionMode, VplmnQos) directly; the real "pcf" executable gets these
 # transitively via used_common_files.cmake's own include(smf_model.cmake).
 # Re-included explicitly here for the same reason as the includes above.
-include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/model/smf/smf_model.cmake)
+include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/model/smf_model.cmake)
 include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/http/http.cmake)
 
 target_link_libraries(${NF_TARGET}

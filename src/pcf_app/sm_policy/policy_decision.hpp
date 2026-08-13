@@ -69,7 +69,7 @@ class policy_decision {
   [[nodiscard]] virtual const oai::_3gpp::model::SmPolicyDecision&
   get_sm_policy_decision() const;
 
-  [[nodiscard]] virtual const void set_sm_policy_decision(
+  virtual void set_sm_policy_decision(
       oai::_3gpp::model::SmPolicyDecision& decision);
 
   // Apply an incremental change set copy-on-write: copy the current immutable
@@ -82,7 +82,7 @@ class policy_decision {
   // Cheap immutable snapshot; safe to hold after the association lock is
   // released (e.g. to notify the SMF without holding the lock across the
   // blocking network call).
-  [[nodiscard]] virtual std::shared_ptr<const oai::model::pcf::SmPolicyDecision>
+  [[nodiscard]] virtual std::shared_ptr<const oai::_3gpp::model::SmPolicyDecision>
   snapshot_decision() const;
 
   [[nodiscard]] virtual uint64_t decision_version() const;

@@ -28,7 +28,7 @@ app_session_storage make_storage() {
 
 std::shared_ptr<app_session> make_session(
     const std::string& id, std::optional<std::string> association_id) {
-  oai::model::pcf::AppSessionContextReqData ctx;
+  oai::_3gpp::model::AppSessionContextReqData ctx;
   return std::make_shared<app_session>(id, ctx, std::move(association_id));
 }
 

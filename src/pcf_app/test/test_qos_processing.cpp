@@ -55,7 +55,7 @@
 #include "qos_reference_store.hpp"
 
 using namespace oai::pcf::app::policy_auth;
-using namespace oai::model::pcf;
+using namespace oai::_3gpp::model;
 using oai::pcf::app::operator_qos_policy;
 
 namespace {
@@ -90,18 +90,18 @@ MediaSubComponent make_sub_with_bitrates(
   return sub;
 }
 
-oai::model::common::PreemptionCapability make_preempt_capability(
-    oai::model::common::PreemptionCapability_anyOf::
+oai::_3gpp::model::PreemptionCapability make_preempt_capability(
+    oai::_3gpp::model::PreemptionCapability_anyOf::
         ePreemptionCapability_anyOf value) {
-  oai::model::common::PreemptionCapability cap;
+  oai::_3gpp::model::PreemptionCapability cap;
   cap.setEnumValue(value);
   return cap;
 }
 
-oai::model::common::PreemptionVulnerability make_preempt_vulnerability(
-    oai::model::common::PreemptionVulnerability_anyOf::
+oai::_3gpp::model::PreemptionVulnerability make_preempt_vulnerability(
+    oai::_3gpp::model::PreemptionVulnerability_anyOf::
         ePreemptionVulnerability_anyOf value) {
-  oai::model::common::PreemptionVulnerability vuln;
+  oai::_3gpp::model::PreemptionVulnerability vuln;
   vuln.setEnumValue(value);
   return vuln;
 }
@@ -863,12 +863,12 @@ TEST(QosDataGeneration, ArpPreemptionFieldsAreExplicitlySet) {
   QosData out;
   deriver.create_qos_data_from_media_component(mc, "s", decision, qos_ctx, out);
 
-  const oai::model::common::Arp& arp = only_qos_data(decision).getArp();
+  const oai::_3gpp::model::Arp& arp = only_qos_data(decision).getArp();
   EXPECT_NE(arp.getPreemptCap().getEnumValue(),
-            oai::model::common::PreemptionCapability_anyOf::
+            oai::_3gpp::model::PreemptionCapability_anyOf::
                 ePreemptionCapability_anyOf::INVALID_VALUE_OPENAPI_GENERATED);
   EXPECT_NE(arp.getPreemptVuln().getEnumValue(),
-            oai::model::common::PreemptionVulnerability_anyOf::
+            oai::_3gpp::model::PreemptionVulnerability_anyOf::
                 ePreemptionVulnerability_anyOf::INVALID_VALUE_OPENAPI_GENERATED);
 }
 
@@ -877,10 +877,10 @@ TEST(QosDataGeneration, ArpPreemptionFieldsAreExplicitlySet) {
 TEST(QosDataGeneration, ArpUsesRequestPreemptionValues) {
   MediaComponent mc;
   mc.setPreemptCap(make_preempt_capability(
-      oai::model::common::PreemptionCapability_anyOf::
+      oai::_3gpp::model::PreemptionCapability_anyOf::
           ePreemptionCapability_anyOf::MAY_PREEMPT));
   mc.setPreemptVuln(make_preempt_vulnerability(
-      oai::model::common::PreemptionVulnerability_anyOf::
+      oai::_3gpp::model::PreemptionVulnerability_anyOf::
           ePreemptionVulnerability_anyOf::PREEMPTABLE));
   SmPolicyDecision decision;
   qos_context qos_ctx;
@@ -892,10 +892,10 @@ TEST(QosDataGeneration, ArpUsesRequestPreemptionValues) {
 
   const auto& arp = only_qos_data(decision).getArp();
   EXPECT_EQ(arp.getPreemptCap().getEnumValue(),
-            oai::model::common::PreemptionCapability_anyOf::
+            oai::_3gpp::model::PreemptionCapability_anyOf::
                 ePreemptionCapability_anyOf::MAY_PREEMPT);
   EXPECT_EQ(arp.getPreemptVuln().getEnumValue(),
-            oai::model::common::PreemptionVulnerability_anyOf::
+            oai::_3gpp::model::PreemptionVulnerability_anyOf::
                 ePreemptionVulnerability_anyOf::PREEMPTABLE);
 }
 
@@ -924,7 +924,7 @@ TEST(QosDataReference, StandardizedReferencePreservesStandardizedOverrides) {
   preset->setPriorityLevel(6);
   preset->setAverWindow(200);
   preset->setMaxDataBurstVol(4096);
-  oai::model::common::Arp arp;
+  oai::_3gpp::model::Arp arp;
   arp.setPriorityLevel(4);
   preset->setArp(arp);
 
@@ -1003,7 +1003,7 @@ TEST(QosCharacteristics, DynamicGbrQfiHasGbrResourceType) {
   auto it = qos_chars.find("130");
   ASSERT_NE(it, qos_chars.end());
   EXPECT_EQ(it->second.getResourceType().getEnumValue(),
-            oai::model::common::QosResourceType_anyOf::
+            oai::_3gpp::model::QosResourceType_anyOf::
                 eQosResourceType_anyOf::NON_CRITICAL_GBR);
 }
 
@@ -1021,7 +1021,7 @@ TEST(QosCharacteristics, DynamicNonGbrQfiHasNonGbrResourceType) {
   auto it = qos_chars.find("131");
   ASSERT_NE(it, qos_chars.end());
   EXPECT_EQ(it->second.getResourceType().getEnumValue(),
-            oai::model::common::QosResourceType_anyOf::
+            oai::_3gpp::model::QosResourceType_anyOf::
                 eQosResourceType_anyOf::NON_GBR);
 }
 
@@ -1350,7 +1350,7 @@ TEST(QosDataReference, PreconfiguredSetIsAppliedWhenReferenceResolves) {
   auto preset = std::make_shared<QosData>();
   preset->setR5qi(5);
   preset->setMaxbrUl("99 Mbps");
-  oai::model::common::Arp arp;
+  oai::_3gpp::model::Arp arp;
   arp.setPriorityLevel(3);
   preset->setArp(arp);
 
@@ -1457,7 +1457,7 @@ TEST(QosRequirementsProcessing, DynamicReferenceAlsoEmitsQosCharacteristics) {
   preset->setR5qi(140);
   preset->setPacketDelayBudget(60);
   preset->setPacketErrorRate("1E-4");
-  oai::model::common::Arp arp;
+  oai::_3gpp::model::Arp arp;
   arp.setPriorityLevel(5);
   preset->setArp(arp);
 
@@ -1513,7 +1513,7 @@ void add_qos_data(
 // Install the authorized Session-AMBR (as the SM side would, via a SessionRule).
 void set_authorized_session_ambr(
     SmPolicyDecision& decision, const std::string& ul, const std::string& dl) {
-  oai::model::common::Ambr ambr;
+  oai::_3gpp::model::Ambr ambr;
   ambr.setUplink(ul);
   ambr.setDownlink(dl);
   SessionRule rule;
@@ -1530,7 +1530,7 @@ void set_authorized_session_ambr(
 void add_session_rule(
     SmPolicyDecision& decision, const std::string& id, const std::string& ul,
     const std::string& dl, bool conditional) {
-  oai::model::common::Ambr ambr;
+  oai::_3gpp::model::Ambr ambr;
   ambr.setUplink(ul);
   ambr.setDownlink(dl);
   SessionRule rule;
@@ -1757,7 +1757,7 @@ TEST(QosAuthorization, RejectsGbrExceedingMbr) {
 TEST(QosAuthorization, RejectsArpPriorityOutOfRange) {
   SmPolicyDecision decision;
   QosData qos = make_qos_data(9, "1 Mbps", "1 Mbps");
-  oai::model::common::Arp arp;
+  oai::_3gpp::model::Arp arp;
   arp.setPriorityLevel(20);
   qos.setArp(arp);
   add_qos_data(decision, "q1", qos);

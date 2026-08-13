@@ -19,11 +19,11 @@ namespace oai::pcf::app::policy_auth {
  *
  * This is exactly the generic keyed store with `find(qosReference)` returning
  * the preconfigured set, so it is just an alias: the value is the existing
- * oai::model::pcf::QosData (5QI, ARP, MBR/GBR, priorityLevel, PDB/PER, ...) held
+ * oai::_3gpp::model::QosData (5QI, ARP, MBR/GBR, priorityLevel, PDB/PER, ...) held
  * read-only (const) since references are provisioned once at startup.
  */
 using qos_reference_store =
-    oai::utils::crud_store<const oai::model::pcf::QosData>;
+    oai::utils::crud_store<const oai::_3gpp::model::QosData>;
 
 /**
  * @brief Provision operator-preconfigured QoS reference sets from YAML into a
