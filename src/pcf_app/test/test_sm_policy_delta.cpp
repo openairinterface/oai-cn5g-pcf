@@ -24,10 +24,10 @@
 #include "sm_policy/policy_decision.hpp"
 #include "sm_policy_delta.hpp"
 
-using oai::model::pcf::PccRule;
-using oai::model::pcf::QosData;
-using oai::model::pcf::SmPolicyContextData;
-using oai::model::pcf::SmPolicyDecision;
+using oai::_3gpp::model::PccRule;
+using oai::_3gpp::model::QosData;
+using oai::_3gpp::model::SmPolicyContextData;
+using oai::_3gpp::model::SmPolicyDecision;
 using oai::pcf::app::apply_sm_policy_delta;
 using oai::pcf::app::compute_sm_policy_delta;
 using oai::pcf::app::sm_policy::individual_sm_association;

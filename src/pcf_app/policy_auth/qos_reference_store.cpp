@@ -14,7 +14,7 @@
 
 namespace oai::pcf::app::policy_auth {
 
-using oai::model::pcf::QosData;
+using oai::_3gpp::model::QosData;
 
 std::size_t load_qos_references_from_directory(
     qos_reference_store& store, const std::string& dir_path) {

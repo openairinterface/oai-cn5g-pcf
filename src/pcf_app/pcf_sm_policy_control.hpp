@@ -183,8 +183,8 @@ class pcf_smpc {
   // carries the TS 29.512 Table 5.7.3-2 classification (permanent/temporary/
   // transport-ambiguous/etc.) that `status_code` alone can't express.
   sm_policy::status_code send_sm_policy_control_update_notify(
-      const oai::model::pcf::SmPolicyContextData& context,
-      const std::shared_ptr<const oai::model::pcf::SmPolicyDecision>& decision,
+      const oai::_3gpp::model::SmPolicyContextData& context,
+      const std::shared_ptr<const oai::_3gpp::model::SmPolicyDecision>& decision,
       sm_policy::smf_notify_outcome& outcome);
 
   void handle_session_binding_request(
@@ -202,7 +202,7 @@ class pcf_smpc {
   // apply_with_retry call for a compensating rollback.
   void handle_get_association_decision(
       const std::string& association_id, bool& found,
-      oai::model::pcf::SmPolicyDecision& decision, std::uint64_t& version);
+      oai::_3gpp::model::SmPolicyDecision& decision, std::uint64_t& version);
 
   // Optimistic, version-checked commit ONLY -- no persist-triggered notify,
   // no signal. Applies

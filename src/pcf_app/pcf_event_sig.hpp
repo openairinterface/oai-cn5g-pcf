@@ -53,7 +53,7 @@ typedef bs2::signal_type<
     void(
         const std::optional<std::string>&, const std::optional<std::string>&,
         const std::optional<std::string>&, std::optional<std::string>&,
-        oai::model::pcf::SmPolicyDecision&, std::uint64_t&),
+        oai::_3gpp::model::SmPolicyDecision&, std::uint64_t&),
     bs2::keywords::mutex_type<bs2::dummy_mutex>>::type sm_session_binding_sig_t;
 
 // Signal for sm_policy_control to commit a policy decision change (CAS only
@@ -114,7 +114,7 @@ typedef bs2::signal_type<
 // (association_id in; found, decision, version out.)
 typedef bs2::signal_type<
     void(
-        const std::string&, bool&, oai::model::pcf::SmPolicyDecision&,
+        const std::string&, bool&, oai::_3gpp::model::SmPolicyDecision&,
         std::uint64_t&),
     bs2::keywords::mutex_type<bs2::dummy_mutex>>::type
     sm_get_association_decision_sig_t;

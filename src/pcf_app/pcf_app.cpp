@@ -82,7 +82,7 @@ pcf_app::pcf_app(pcf_event& ev) : m_event_sub(ev) {
   // just the generic in-memory backend (a DB backend can be swapped in here
   // later); loading is a separate provisioning step through the store interface.
   auto qos_ref_store = std::make_shared<
-      oai::utils::crud_store_memory<const oai::model::pcf::QosData>>();
+      oai::utils::crud_store_memory<const oai::_3gpp::model::QosData>>();
   policy_auth::load_qos_references_from_directory(
       *qos_ref_store, pcf_cfg->get_pcf_policy().get_qos_reference_path());
 

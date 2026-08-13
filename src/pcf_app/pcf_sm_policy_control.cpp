@@ -102,8 +102,8 @@ void pcf_smpc::handle_policy_change(
 }
 
 sm_policy::status_code pcf_smpc::send_sm_policy_control_update_notify(
-    const oai::model::pcf::SmPolicyContextData& context,
-    const std::shared_ptr<const oai::model::pcf::SmPolicyDecision>& decision,
+    const oai::_3gpp::model::SmPolicyContextData& context,
+    const std::shared_ptr<const oai::_3gpp::model::SmPolicyDecision>& decision,
     smf_notify_outcome& outcome) {
   // Safe default: if some future edit adds a path below that forgets to set
   // `outcome`, fail toward "ambiguous, retry-only" rather than toward
@@ -118,7 +118,7 @@ sm_policy::status_code pcf_smpc::send_sm_policy_control_update_notify(
   // needs for QoS steering [TS 29.512 §5.6.2.40, §5.6.2.3]; qosChars and QoS
   // PccRules/QosData are already carried.
 
-  const oai::model::pcf::SmPolicyDecision& dec = *decision;
+  const oai::_3gpp::model::SmPolicyDecision& dec = *decision;
   std::string uri = context.getNotificationUri() + "/update";
   nlohmann::json json_data;
   nlohmann::json decision_json;
@@ -206,7 +206,7 @@ void pcf_smpc::handle_session_binding_request(
     const std::optional<std::string>& ipv4,
     const std::optional<std::string>& supi,
     const std::optional<std::string>& dnn, std::optional<std::string>& assoc_id,
-    oai::model::pcf::SmPolicyDecision& decision, std::uint64_t& version) {
+    oai::_3gpp::model::SmPolicyDecision& decision, std::uint64_t& version) {
   // The decision handed back below already carries the QoS baseline Policy
   // Authorization needs: the authorized Session-AMBR / default 5QI-ARP that
   // create_sm_policy_handler() put in a SessionRule [TS 29.512 §4.2.6.6.1], plus
@@ -245,7 +245,7 @@ void pcf_smpc::handle_session_binding_request(
 //------------------------------------------------------------------------------
 void pcf_smpc::handle_get_association_decision(
     const std::string& association_id, bool& found,
-    oai::model::pcf::SmPolicyDecision& decision, std::uint64_t& version) {
+    oai::_3gpp::model::SmPolicyDecision& decision, std::uint64_t& version) {
   found = false;
 
   std::shared_lock lock_associations(m_associations_mutex);
@@ -363,8 +363,8 @@ void pcf_smpc::handle_notify_committed_decision_request(
   // association in between" -- the mutex serializes individual
   // acquisitions, it does not serialize across two acquisitions made by the
   // same caller. Skipping this would silently resend a stale snapshot.
-  std::shared_ptr<const oai::model::pcf::SmPolicyDecision> decision;
-  oai::model::pcf::SmPolicyContextData context;
+  std::shared_ptr<const oai::_3gpp::model::SmPolicyDecision> decision;
+  oai::_3gpp::model::SmPolicyContextData context;
   bool association_found;
   {
     std::shared_lock lock_associations(m_associations_mutex);
@@ -426,8 +426,8 @@ void pcf_smpc::drain_retry_queue(std::uint64_t /*tick_ms*/) {
     // immediately before this attempt (finding J) -- never resend a frozen
     // snapshot, since an unrelated disjoint-key commit may have landed on
     // this association since it was queued.
-    std::shared_ptr<const oai::model::pcf::SmPolicyDecision> decision;
-    oai::model::pcf::SmPolicyContextData context;
+    std::shared_ptr<const oai::_3gpp::model::SmPolicyDecision> decision;
+    oai::_3gpp::model::SmPolicyContextData context;
     bool association_found;
     {
       std::shared_lock lock_associations(m_associations_mutex);

@@ -35,7 +35,7 @@ template <typename MediaSubComponentT>
 bool sub_component_removed(const MediaSubComponentT& sub) {
   return sub.fStatusIsSet() &&
          sub.getFStatus().getEnumValue() ==
-             oai::model::pcf::FlowStatus_anyOf::eFlowStatus_anyOf::REMOVED;
+             oai::_3gpp::model::FlowStatus_anyOf::eFlowStatus_anyOf::REMOVED;
 }
 
 /**
@@ -61,7 +61,7 @@ class qos_deriver {
   template <typename MediaComponentT>
   [[nodiscard]] handler_result handle_qos_requirements(
       const MediaComponentT& media_component, const std::string& app_session_id,
-      oai::model::pcf::SmPolicyDecision& decision, qos_context& qos_ctx);
+      oai::_3gpp::model::SmPolicyDecision& decision, qos_context& qos_ctx);
 
   // Create the QosData + PccRule (with SDF filters) for one media component
   // [TS 29.512 §5.6.2.8, §4.1.4.2.1, TS 29.513 §7.3.3]. Returns the derived
@@ -73,8 +73,8 @@ class qos_deriver {
   template <typename MediaComponentT>
   [[nodiscard]] handler_result create_qos_data_from_media_component(
       const MediaComponentT& media_component, const std::string& app_session_id,
-      oai::model::pcf::SmPolicyDecision& decision, qos_context& qos_ctx,
-      oai::model::pcf::QosData& out_qos_data);
+      oai::_3gpp::model::SmPolicyDecision& decision, qos_context& qos_ctx,
+      oai::_3gpp::model::QosData& out_qos_data);
 
   // Validate the QoS this app-session authorized against operator policy and
   // the subscribed envelope [TS 29.514 §4.1.3.1, TS 23.503 §6.1.3.2.3]. See
@@ -82,7 +82,7 @@ class qos_deriver {
   // (allowed 5QI, ARP priority range, per-flow MBR ceiling, GBR<=MBR
   // structural sanity, cumulative Session-AMBR check).
   [[nodiscard]] handler_result validate_qos_authorization(
-      const oai::model::pcf::SmPolicyDecision& decision,
+      const oai::_3gpp::model::SmPolicyDecision& decision,
       const std::vector<std::string>& owned_qos_ids);
 
  private:

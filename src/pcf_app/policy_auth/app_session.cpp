@@ -24,7 +24,6 @@
 #include "MediaComponentRm.h"
 #include "MediaSubComponentRm.h"
 #include "SmPolicyDecision.h"
-#include "AfSfcRequirement.h"
 #include "AppSessionContextReqData.h"
 #include "AppSessionContextUpdateData.h"
 #include "FlowStatus.h"
@@ -45,27 +44,19 @@ using namespace oai::pcf::app;
 using namespace oai::utils;
 
 app_session::app_session(
-    std::string id, oai::model::pcf::AppSessionContextReqData context,
+    std::string id, const oai::_3gpp::model::AppSessionContextReqData& context,
     std::optional<std::string> association_id)
     : m_id(std::move(id)),
       m_created_at(std::chrono::system_clock::now()),
-      m_context(std::move(context)),
+      m_context(context),
       m_association_id(std::move(association_id)) {}
 
-oai::model::pcf::AppSessionContextReqData app_session::context_snapshot()
+oai::_3gpp::model::AppSessionContextReqData app_session::context_snapshot()
     const {
   auto context = m_context.read();
   return *context;
 }
 
-const oai::_3gpp::model::AppSessionContextReqData&
-app_session::get_app_session_context() const {
-  return m_context;
-}
-
-void app_session::set_app_session_context(
-    oai::_3gpp::model::AppSessionContextReqData& context) {
-  m_context = context;
 void app_session::update_context(
     const oai::_3gpp::model::AppSessionContextReqData& context) {
   auto handle = m_context.write();
@@ -93,8 +84,7 @@ app_session_record app_session::to_record() const {
 }
 
 // TODO: Restore handle_service_function_chaining and
-// handle_service_function_chaining_update once AfSfcRequirement and
-// AppSessionContextReqData::afSfcReq are regenerated in the new model.
+// handle_service_function_chaining_update.
 // Ref: 3GPP TS 29.514 §4.2.2.8 N6-LAN traffic steering (SFC).
 
 handler_result validate_and_merge_decision(
@@ -294,7 +284,7 @@ handler_result validate_and_merge_decision(
 // this AF may request service for this SUPI/DNN at all, independent of the QoS
 // values asked for.
 handler_result authorize_service_info(
-    const oai::model::pcf::AppSessionContextReqData& reqData) {
+    const oai::_3gpp::model::AppSessionContextReqData& reqData) {
   return handler_result{.status = status_code::OK};
 }
 
@@ -405,11 +395,11 @@ handler_result create_qos_characteristics(
   // Resource type inferred from the presence of a guaranteed bit rate
   // [TS 29.512 §5.6.2.16; QosResourceType per TS 29.571].
   const bool is_gbr = qos_data.gbrUlIsSet() || qos_data.gbrDlIsSet();
-  oai::model::common::QosResourceType resource_type;
+  oai::_3gpp::model::QosResourceType resource_type;
   resource_type.setEnumValue(
-      is_gbr ? oai::model::common::QosResourceType_anyOf::
+      is_gbr ? oai::_3gpp::model::QosResourceType_anyOf::
                    eQosResourceType_anyOf::NON_CRITICAL_GBR
-             : oai::model::common::QosResourceType_anyOf::
+             : oai::_3gpp::model::QosResourceType_anyOf::
                    eQosResourceType_anyOf::NON_GBR);
   qos_char.setResourceType(resource_type);
 

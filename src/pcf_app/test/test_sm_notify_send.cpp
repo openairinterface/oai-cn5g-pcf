@@ -38,11 +38,11 @@ using oai::common::sbi::http_status_code;
 using oai::common::sbi::method_e;
 using oai::http::request;
 using oai::http::response;
-using oai::model::pcf::AppSessionContext;
-using oai::model::pcf::AppSessionContextReqData;
-using oai::model::pcf::SmPolicyContextData;
-using oai::model::pcf::SmPolicyControl;
-using oai::model::pcf::SmPolicyDecision;
+using oai::_3gpp::model::AppSessionContext;
+using oai::_3gpp::model::AppSessionContextReqData;
+using oai::_3gpp::model::SmPolicyContextData;
+using oai::_3gpp::model::SmPolicyControl;
+using oai::_3gpp::model::SmPolicyDecision;
 using oai::pcf::app::http_send_fn;
 using oai::pcf::app::pcf_event;
 using oai::pcf::app::pcf_policy_authorization;
@@ -78,7 +78,7 @@ class fake_policy_storage : public policy_storage {
   void insert_dnn_decision(
       const std::string&, const SmPolicyDecision&) override {}
   void insert_slice_decision(
-      const oai::model::common::Snssai&,
+      const oai::_3gpp::model::Snssai&,
       const SmPolicyDecision&) override {}
   void insert_associations(
       const SmPolicyContextData& context,
@@ -143,7 +143,7 @@ struct fixture {
         std::make_shared<
             oai::utils::crud_store_memory<oai::pcf::app::policy_auth::app_session>>());
     auto qos_refs = std::make_shared<
-        oai::utils::crud_store_memory<const oai::model::pcf::QosData>>();
+        oai::utils::crud_store_memory<const oai::_3gpp::model::QosData>>();
     pa_context = std::make_shared<policy_auth_context>(app_sessions, qos_refs);
     pa = std::make_shared<pcf_policy_authorization>(pa_context, ev);
   }

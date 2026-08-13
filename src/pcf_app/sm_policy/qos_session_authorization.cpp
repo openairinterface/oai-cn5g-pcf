@@ -16,12 +16,12 @@
 
 namespace oai::pcf::app::sm_policy {
 
-using oai::model::common::Ambr;
-using oai::model::common::SubscribedDefaultQos;
-using oai::model::pcf::AuthorizedDefaultQos;
-using oai::model::pcf::SessionRule;
-using oai::model::pcf::SmPolicyContextData;
-using oai::model::pcf::SmPolicyDecision;
+using oai::_3gpp::model::Ambr;
+using oai::_3gpp::model::SubscribedDefaultQos;
+using oai::_3gpp::model::AuthorizedDefaultQos;
+using oai::_3gpp::model::SessionRule;
+using oai::_3gpp::model::SmPolicyContextData;
+using oai::_3gpp::model::SmPolicyDecision;
 
 namespace {
 

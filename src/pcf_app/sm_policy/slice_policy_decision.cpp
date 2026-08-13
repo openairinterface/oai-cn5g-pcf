@@ -29,7 +29,9 @@ std::string slice_policy_decision::to_string() const {
   std::stringstream ss;
   ss << "Slice: Sd: " << m_snssai.getSd()
      << " Sst: " << std::to_string(m_snssai.getSst()) << "\n";
-  ss << " -- " << *m_decision;
+  nlohmann::json j;
+  to_json(j, *m_decision);
+  ss << " -- " << j.dump();
   return ss.str();
 }
 

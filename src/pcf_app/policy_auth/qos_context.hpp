@@ -112,7 +112,7 @@ class qos_context {
    * When the SmPolicyDelta refactor lands (plan §4.7) this becomes
    * build_remove_delta() feeding an association-side apply_delta().
    */
-  void erase_owned_from(oai::model::pcf::SmPolicyDecision& decision) const;
+  void erase_owned_from(oai::_3gpp::model::SmPolicyDecision& decision) const;
 
   /** Durable projection helpers (for app_session_record / future DB backend). */
   [[nodiscard]] qos_ledger snapshot() const;

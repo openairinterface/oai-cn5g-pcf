@@ -106,7 +106,7 @@ class pcf_policy_authorization {
    */
   policy_auth::status_code get_app_session_handler(
       const std::string& app_session_id,
-      oai::model::pcf::AppSessionContext& app_session_context,
+      oai::_3gpp::model::AppSessionContext& app_session_context,
       std::string& problem_details);
 
   /**
@@ -117,8 +117,8 @@ class pcf_policy_authorization {
    * create (collection) and read (document) API paths produce a consistent
    * ascRespData.
    */
-  static oai::model::pcf::AppSessionContextRespData build_response_data(
-      const oai::model::pcf::AppSessionContextReqData& req);
+  static oai::_3gpp::model::AppSessionContextRespData build_response_data(
+      const oai::_3gpp::model::AppSessionContextReqData& req);
 
  private:
   /**
@@ -132,8 +132,8 @@ class pcf_policy_authorization {
   policy_auth::status_code push_decision_change(
       policy_auth::decision_apply_request request,
       const std::function<policy_auth::handler_result(
-          const oai::model::pcf::SmPolicyDecision& base,
-          oai::model::pcf::SmPolicyDecision& working)>& derive,
+          const oai::_3gpp::model::SmPolicyDecision& base,
+          oai::_3gpp::model::SmPolicyDecision& working)>& derive,
       oai::pcf::app::sm_policy_delta& committed_delta,
       std::string& problem_details);
 
@@ -166,10 +166,10 @@ class pcf_policy_authorization {
   // the stable deps it used to thread (qos_ref_store, op_policy) are now
   // m_qos_deriver, reached via `this`.
   policy_auth::handler_result derive_post_app_session(
-      const oai::model::pcf::AppSessionContext& context,
+      const oai::_3gpp::model::AppSessionContext& context,
       const std::string& app_session_id,
       const std::shared_ptr<policy_auth::app_session>& session,
-      oai::model::pcf::SmPolicyDecision& working);
+      oai::_3gpp::model::SmPolicyDecision& working);
 
   // Per-attempt recompute for PATCH /app-sessions/{id}'s derive: re-derives
   // this PATCH's changes -- SFC, QoS modify/add, and REMOVED deletions --
@@ -177,11 +177,11 @@ class pcf_policy_authorization {
   // JSON Merge Patch onto `req_context` (rebuilt from the session snapshot on
   // every attempt; the committed attempt leaves the value used post-commit).
   policy_auth::handler_result derive_mod_app_session(
-      const oai::model::pcf::AppSessionContextUpdateData& patch_asc,
+      const oai::_3gpp::model::AppSessionContextUpdateData& patch_asc,
       const std::string& app_session_id,
       const std::shared_ptr<policy_auth::app_session>& session,
-      oai::model::pcf::AppSessionContextReqData& req_context,
-      oai::model::pcf::SmPolicyDecision& working);
+      oai::_3gpp::model::AppSessionContextReqData& req_context,
+      oai::_3gpp::model::SmPolicyDecision& working);
 
   // Aggregate of the injected Policy Authorization stores (app-session working
   // set + binding index, and the operator-preconfigured QoS reference sets).

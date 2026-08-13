@@ -113,7 +113,7 @@ void qos_context::apply_committed_delta(
 }
 
 void qos_context::erase_owned_from(
-    oai::model::pcf::SmPolicyDecision& decision) const {
+    oai::_3gpp::model::SmPolicyDecision& decision) const {
   auto ledger = m_ledger.read();
 
   auto pcc_rules = decision.getPccRules();

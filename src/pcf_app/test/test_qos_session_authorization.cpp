@@ -37,10 +37,10 @@ using oai::pcf::app::sm_policy::authorize_session_rule;
 using oai::pcf::app::sm_policy::authorize_session_rule_into;
 using oai::utils::bitrate::to_bps;
 
-using oai::model::common::Ambr;
-using oai::model::common::SubscribedDefaultQos;
-using oai::model::pcf::SmPolicyContextData;
-using oai::model::pcf::SmPolicyDecision;
+using oai::_3gpp::model::Ambr;
+using oai::_3gpp::model::SubscribedDefaultQos;
+using oai::_3gpp::model::SmPolicyContextData;
+using oai::_3gpp::model::SmPolicyDecision;
 
 namespace {
 
@@ -119,7 +119,7 @@ TEST(SessionAuthorization, DoesNotRaiseSessionAmbrBelowOperatorCap) {
  */
 TEST(SessionAuthorization, ClampsSessionAmbrToVplmnWhenRoaming) {
   auto context = context_with_session_ambr("100 Mbps", "200 Mbps");
-  oai::model::smf::VplmnQos vplmn;
+  oai::_3gpp::model::VplmnQos vplmn;
   vplmn.setSessionAmbr(make_ambr("50 Mbps", "80 Mbps"));
   context.setVplmnQos(vplmn);
 
@@ -135,7 +135,7 @@ TEST(SessionAuthorization, ClampsSessionAmbrToVplmnWhenRoaming) {
  */
 TEST(SessionAuthorization, AppliesTightestOfOperatorAndVplmnCaps) {
   auto context = context_with_session_ambr("100 Mbps", "100 Mbps");
-  oai::model::smf::VplmnQos vplmn;
+  oai::_3gpp::model::VplmnQos vplmn;
   vplmn.setSessionAmbr(make_ambr("50 Mbps", "90 Mbps"));
   context.setVplmnQos(vplmn);
   operator_qos_policy op_policy;
@@ -157,7 +157,7 @@ TEST(SessionAuthorization, MapsSubscribedDefaultQos) {
   SmPolicyContextData context;
   SubscribedDefaultQos subs_def;
   subs_def.setR5qi(9);
-  oai::model::common::Arp arp;
+  oai::_3gpp::model::Arp arp;
   arp.setPriorityLevel(8);
   subs_def.setArp(arp);
   subs_def.setPriorityLevel(5);
@@ -181,7 +181,7 @@ TEST(SessionAuthorization, OmitsDefaultQosPriorityLevelWhenUnset) {
   SmPolicyContextData context;
   SubscribedDefaultQos subs_def;
   subs_def.setR5qi(9);
-  oai::model::common::Arp arp;
+  oai::_3gpp::model::Arp arp;
   arp.setPriorityLevel(8);
   subs_def.setArp(arp);
   context.setSubsDefQos(subs_def);
@@ -212,7 +212,7 @@ TEST(SessionAuthorization, LeavesAuthSessAmbrUnsetWhenNoSubscribedAmbr) {
   SmPolicyContextData context;
   SubscribedDefaultQos subs_def;
   subs_def.setR5qi(9);
-  oai::model::common::Arp arp;
+  oai::_3gpp::model::Arp arp;
   arp.setPriorityLevel(8);
   subs_def.setArp(arp);
   context.setSubsDefQos(subs_def);

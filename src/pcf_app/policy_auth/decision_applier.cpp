@@ -8,7 +8,7 @@
 
 namespace oai::pcf::app::policy_auth {
 
-using oai::model::pcf::SmPolicyDecision;
+using oai::_3gpp::model::SmPolicyDecision;
 using oai::pcf::app::compute_sm_policy_delta;
 
 // ---- 1. pending-commit tracking ------------------------------------------
@@ -67,20 +67,20 @@ decision_applier::decision_applier(
 status_code decision_applier::apply(
     decision_apply_request request,
     const std::function<handler_result(
-        const oai::model::pcf::SmPolicyDecision&,
-        oai::model::pcf::SmPolicyDecision&)>& derive,
+        const oai::_3gpp::model::SmPolicyDecision&,
+        oai::_3gpp::model::SmPolicyDecision&)>& derive,
     oai::pcf::app::sm_policy_delta& committed_delta,
     std::string& problem_details, std::uint64_t& committed_version) {
-  const oai::model::pcf::SmPolicyDecision* base = &request.initial_base;
+  const oai::_3gpp::model::SmPolicyDecision* base = &request.initial_base;
   std::uint64_t base_version = request.initial_version;
   // Holds a conflict snapshot so `base` stays valid across iterations.
-  oai::model::pcf::SmPolicyDecision fresh_base;
+  oai::_3gpp::model::SmPolicyDecision fresh_base;
   decision_apply_result result;
 
   for (int attempt = 0;; ++attempt) {
     // Recompute this request's intended decision against the current base.
     // Pure w.r.t. shared state, so re-running on a conflict is safe.
-    oai::model::pcf::SmPolicyDecision working = *base;
+    oai::_3gpp::model::SmPolicyDecision working = *base;
     handler_result derived = derive(*base, working);
     if (derived.problem_details.has_value()) {
       // Deterministic failure (authorization/validation/derivation) --
@@ -105,7 +105,7 @@ status_code decision_applier::apply(
           request.association_id.value_or(""), result.version,
           pending_commit{
               request.app_session_id, committed_delta,
-              std::make_shared<const oai::model::pcf::SmPolicyDecision>(
+              std::make_shared<const oai::_3gpp::model::SmPolicyDecision>(
                   *base),
               {}});
       committed_version = result.version;
@@ -252,7 +252,7 @@ status_code perform_compensating_rollback(
     const live_decision_lookup_fn& lookup_live_decision,
     const apply_with_retry_fn& apply_with_retry) {
   bool association_found = false;
-  oai::model::pcf::SmPolicyDecision live_decision;
+  oai::_3gpp::model::SmPolicyDecision live_decision;
   std::uint64_t live_version = 0;
   lookup_live_decision(association_id, association_found, live_decision, live_version);
 
@@ -265,8 +265,8 @@ status_code perform_compensating_rollback(
   }
 
   auto derive =
-      [&](const oai::model::pcf::SmPolicyDecision& base,
-          oai::model::pcf::SmPolicyDecision& working) -> handler_result {
+      [&](const oai::_3gpp::model::SmPolicyDecision& base,
+          oai::_3gpp::model::SmPolicyDecision& working) -> handler_result {
     const sm_policy_delta rollback_delta = compute_rollback_delta(base, commit);
     apply_sm_policy_delta(working, rollback_delta);
     return {};  // a rollback only reverts what this commit itself set

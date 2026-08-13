@@ -27,7 +27,9 @@ std::string supi_policy_decision::get_supi() const {
 std::string supi_policy_decision::to_string() const {
   std::stringstream ss;
   ss << "SUPI: " << m_supi << "\n";
-  ss << " -- " << *m_decision;
+  nlohmann::json j;
+  to_json(j, *m_decision);
+  ss << " -- " << j.dump();
   return ss.str();
 }
 

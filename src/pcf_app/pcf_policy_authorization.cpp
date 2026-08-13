@@ -101,8 +101,8 @@ pcf_policy_authorization::pcf_policy_authorization(
 status_code pcf_policy_authorization::push_decision_change(
     decision_apply_request request,
     const std::function<handler_result(
-        const oai::model::pcf::SmPolicyDecision&,
-        oai::model::pcf::SmPolicyDecision&)>& derive,
+        const oai::_3gpp::model::SmPolicyDecision&,
+        oai::_3gpp::model::SmPolicyDecision&)>& derive,
     sm_policy_delta& committed_delta, std::string& problem_details) {
   std::uint64_t committed_version = 0;
   const status_code push = m_applier.apply(
@@ -168,23 +168,21 @@ status_code pcf_policy_authorization::push_decision_change(
 // contract): derive this request's QoS/SFC into `working`, authorize, merge
 // and validate.
 handler_result pcf_policy_authorization::derive_post_app_session(
-    const oai::model::pcf::AppSessionContext& context,
+    const oai::_3gpp::model::AppSessionContext& context,
     const std::string& app_session_id,
     const std::shared_ptr<policy_auth::app_session>& session,
-    oai::model::pcf::SmPolicyDecision& working) {
-  oai::model::pcf::SmPolicyDecision request_decision = {};  // SFC/QoS contributions
+    oai::_3gpp::model::SmPolicyDecision& working) {
+  oai::_3gpp::model::SmPolicyDecision request_decision = {};  // SFC/QoS contributions
   policy_auth::qos_context scratch;  // throwaway: decouples the real ledger
   bool qos_flow_processed = false;
 
+  // Service function chaining (TS 29.514 §4.2.2.8) is not present anymore --
+  // see the TODO in app_session.cpp -- so AfRoutingRequirement-bearing
+  // components are not specially handled here.
   if (context.getAscReqData().medComponentsIsSet()) {
     for (const auto& medComponent : context.getAscReqData().getMedComponents()) {
       const auto& med_component = medComponent.second;
-      if (med_component.afSfcReqIsSet()) {
-        handler_result r = policy_auth::handle_service_function_chaining(
-            med_component.getAfSfcReq(), request_decision);
-        if (r.problem_details.has_value()) return r;
-        break;
-      } else if (
+      if (
           // Any MediaComponent bearing QoS intent [TS 29.513 §7.3.3].
           med_component.qosReferenceIsSet() ||
           med_component.medSubCompsIsSet() || med_component.marBwUlIsSet() ||
@@ -196,10 +194,6 @@ handler_result pcf_policy_authorization::derive_post_app_session(
         qos_flow_processed = true;
       }
     }
-  } else if (context.getAscReqData().afSfcReqIsSet()) {
-    handler_result r = policy_auth::handle_service_function_chaining(
-        context.getAscReqData().getAfSfcReq(), request_decision);
-    if (r.problem_details.has_value()) return r;
   }
 
   // Authorize against operator policy + the subscribed Session-AMBR. Owned =
@@ -259,7 +253,7 @@ status_code pcf_policy_authorization::post_app_sessions_handler(
   // apply_with_retry re-derives against a newer base if a concurrent update
   // commits first, so this read-modify-write is serialisable [TS 29.512
   // §4.2.3.2].
-  const oai::model::pcf::SmPolicyDecision base_decision = current_decision;
+  const oai::_3gpp::model::SmPolicyDecision base_decision = current_decision;
 
   // Authorise the service information (pure, base-independent) up front.
   handler_result auth_result = authorize_service_info(context.getAscReqData());
@@ -282,8 +276,8 @@ status_code pcf_policy_authorization::post_app_sessions_handler(
   // app_session_id, session) remains to thread through it -- m_qos_deriver
   // holds the stable deps.
   auto derive = [this, &context, &app_session_id, &session](
-                    const oai::model::pcf::SmPolicyDecision&,
-                    oai::model::pcf::SmPolicyDecision& working)
+                    const oai::_3gpp::model::SmPolicyDecision&,
+                    oai::_3gpp::model::SmPolicyDecision& working)
       -> handler_result {
     return derive_post_app_session(context, app_session_id, session, working);
   };
@@ -321,12 +315,12 @@ status_code pcf_policy_authorization::post_app_sessions_handler(
 // medCompN, so re-deriving a component modifies its flow in place
 // [TS 29.514 §4.2.3.2, TS 29.512 §4.2.6.2.1].
 handler_result pcf_policy_authorization::derive_mod_app_session(
-    const oai::model::pcf::AppSessionContextUpdateData& patch_asc,
+    const oai::_3gpp::model::AppSessionContextUpdateData& patch_asc,
     const std::string& app_session_id,
     const std::shared_ptr<policy_auth::app_session>& session,
-    oai::model::pcf::AppSessionContextReqData& req_context,
-    oai::model::pcf::SmPolicyDecision& working) {
-  oai::model::pcf::SmPolicyDecision request_decision = {};  // SFC contributions
+    oai::_3gpp::model::AppSessionContextReqData& req_context,
+    oai::_3gpp::model::SmPolicyDecision& working) {
+  oai::_3gpp::model::SmPolicyDecision request_decision = {};  // SFC contributions
   policy_auth::qos_context scratch;  // throwaway: decouples the real ledger
   req_context             = session->context_snapshot();
   bool qos_flow_processed = false;
@@ -334,13 +328,8 @@ handler_result pcf_policy_authorization::derive_mod_app_session(
   if (patch_asc.medComponentsIsSet()) {
     for (const auto& [med_comp_key, med_component] :
          patch_asc.getMedComponents()) {
-      // Service function chaining update [TS 29.514 §4.2.2.8].
-      if (med_component.afSfcReqIsSet()) {
-        handler_result r = policy_auth::handle_service_function_chaining_update(
-            med_component.getAfSfcReq(), request_decision, req_context);
-        if (r.problem_details.has_value()) return r;
-        continue;
-      }
+      // Service function chaining update (TS 29.514 §4.2.2.8) is not
+      // present anymore -- see the TODO in app_session.cpp.
 
       const int32_t med_comp_n = med_component.getMedCompN();
       const std::string qos_id =
@@ -355,7 +344,7 @@ handler_result pcf_policy_authorization::derive_mod_app_session(
       const bool removed =
           med_component.fStatusIsSet() &&
           med_component.getFStatus().getEnumValue() ==
-              oai::model::pcf::FlowStatus_anyOf::eFlowStatus_anyOf::REMOVED;
+              oai::_3gpp::model::FlowStatus_anyOf::eFlowStatus_anyOf::REMOVED;
       if (removed) {
         auto pcc_rules = working.getPccRules();
         auto qos_decs  = working.getQosDecs();
@@ -380,10 +369,6 @@ handler_result pcf_policy_authorization::derive_mod_app_session(
         qos_flow_processed = true;
       }
     }
-  } else if (patch_asc.afSfcReqIsSet()) {
-    handler_result r = policy_auth::handle_service_function_chaining_update(
-        patch_asc.getAfSfcReq(), request_decision, req_context);
-    if (r.problem_details.has_value()) return r;
   }
 
   // Authorize the modified/added QoS, same gate as create. Owned = prior
@@ -459,7 +444,7 @@ policy_auth::status_code pcf_policy_authorization::mod_app_session_handler(
   // Base this PATCH's update on the decision + version binding returned;
   // apply_with_retry re-derives against a newer base on a concurrent commit
   // [TS 29.512 §4.2.3.2].
-  const oai::model::pcf::SmPolicyDecision base_decision = current_decision;
+  const oai::_3gpp::model::SmPolicyDecision base_decision = current_decision;
 
   // Per-attempt recompute (pure w.r.t. shared session state): re-derive this
   // PATCH's changes -- SFC, QoS modify/add, and REMOVED deletions -- into
@@ -473,8 +458,8 @@ policy_auth::status_code pcf_policy_authorization::mod_app_session_handler(
   // AF patch onto it); the committed attempt leaves the value used post-commit.
   const auto& patch_asc = app_session_context_update_data_patch.getAscReqData();
   auto derive = [this, &patch_asc, &app_session_id, &session, &req_context](
-                    const oai::model::pcf::SmPolicyDecision&,
-                    oai::model::pcf::SmPolicyDecision& working)
+                    const oai::_3gpp::model::SmPolicyDecision&,
+                    oai::_3gpp::model::SmPolicyDecision& working)
       -> handler_result {
     return derive_mod_app_session(
         patch_asc, app_session_id, session, req_context, working);
@@ -527,7 +512,7 @@ policy_auth::status_code pcf_policy_authorization::delete_app_session_handler(
   // held across the emits below.
   const auto app_session_context = session->context_snapshot();
   std::optional<std::string> association_id          = {};
-  oai::model::pcf::SmPolicyDecision current_decision = {};
+  oai::_3gpp::model::SmPolicyDecision current_decision = {};
   std::uint64_t bound_version                        = 0;
   try {
     m_event_sub.sm_session_binding(
@@ -546,8 +531,8 @@ policy_auth::status_code pcf_policy_authorization::delete_app_session_handler(
     // safe; the resulting delta leaves other sessions' entries untouched
     // [TS 29.512 §4.2.3.2].
     auto derive =
-        [&](const oai::model::pcf::SmPolicyDecision& /*base*/,
-            oai::model::pcf::SmPolicyDecision& working) -> handler_result {
+        [&](const oai::_3gpp::model::SmPolicyDecision& /*base*/,
+            oai::_3gpp::model::SmPolicyDecision& working) -> handler_result {
       session->qos().erase_owned_from(working);
       return {};  // removals never fail
     };
@@ -582,7 +567,7 @@ policy_auth::status_code pcf_policy_authorization::delete_app_session_handler(
 //------------------------------------------------------------------------------
 policy_auth::status_code pcf_policy_authorization::get_app_session_handler(
     const std::string& app_session_id,
-    oai::model::pcf::AppSessionContext& app_session_context,
+    oai::_3gpp::model::AppSessionContext& app_session_context,
     std::string& problem_details) {
   Logger::pcf_app().info("GET /app-sessions/{}", app_session_id);
 
@@ -605,9 +590,9 @@ policy_auth::status_code pcf_policy_authorization::get_app_session_handler(
 }
 
 //------------------------------------------------------------------------------
-oai::model::pcf::AppSessionContextRespData
+oai::_3gpp::model::AppSessionContextRespData
 pcf_policy_authorization::build_response_data(
-    const oai::model::pcf::AppSessionContextReqData& req) {
+    const oai::_3gpp::model::AppSessionContextReqData& req) {
   AppSessionContextRespData resp;
   // Negotiate supported features against the AF request (suppFeat is mandatory
   // in the request) [TS 29.514 §4.2.2.2, §5.8].
@@ -650,7 +635,7 @@ void pcf_policy_authorization::compensate_if_pending(
   // own stale pre-commit base/post-commit version (a prior bug).
   auto lookup_live_decision = [this](
       const std::string& id, bool& found,
-      oai::model::pcf::SmPolicyDecision& decision,
+      oai::_3gpp::model::SmPolicyDecision& decision,
       std::uint64_t& out_version) {
     m_event_sub.sm_get_association_decision(
         id, found, decision, out_version);
@@ -658,8 +643,8 @@ void pcf_policy_authorization::compensate_if_pending(
   auto apply_rollback_with_retry = [this](
       policy_auth::decision_apply_request request,
       const std::function<handler_result(
-          const oai::model::pcf::SmPolicyDecision&,
-          oai::model::pcf::SmPolicyDecision&)>& derive,
+          const oai::_3gpp::model::SmPolicyDecision&,
+          oai::_3gpp::model::SmPolicyDecision&)>& derive,
       sm_policy_delta& committed_delta, std::string& problem_details) {
     // Goes through push_decision_change (not m_applier.apply() directly) so
     // the rollback's own re-commit ALSO gets notified and, if THAT notify

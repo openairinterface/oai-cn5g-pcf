@@ -47,7 +47,7 @@ class individual_sm_association {
 
   // Cheap immutable snapshot of the current decision; safe to keep after the
   // association lock is released (used to notify the SMF off-lock).
-  [[nodiscard]] virtual std::shared_ptr<const oai::model::pcf::SmPolicyDecision>
+  [[nodiscard]] virtual std::shared_ptr<const oai::_3gpp::model::SmPolicyDecision>
   snapshot_decision() const;
 
   [[nodiscard]] virtual uint64_t decision_version() const;
