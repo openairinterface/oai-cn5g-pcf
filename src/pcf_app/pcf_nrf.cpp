@@ -157,12 +157,11 @@ void pcf_nrf::trigger_nf_heartbeat_procedure(uint64_t /* ms */) {
       http_response.status_code == http_status_code::NO_CONTENT) {
     Logger::pcf_sbi().debug("NF heartbeat request successful");
   } else {
-    // TODO what should we do in this case?
-    // We disconnect, but we dont trigger anything else
     Logger::pcf_sbi().warn(
         "NF heartbeat request failed. Wrong response code %d",
         http_response.status_code);
-    m_task_connection.disconnect();
+    if (m_task_connection.connected()) m_task_connection.disconnect();
+    register_to_nrf();
   }
 }
 //------------------------------------------------------------------------------
