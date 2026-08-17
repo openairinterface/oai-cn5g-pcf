@@ -4,6 +4,8 @@
 
 #include "mysql_db.hpp"
 
+#ifdef USE_ODB
+
 #include <boost/algorithm/string.hpp>
 #include <chrono>
 #include <thread>
@@ -953,3 +955,4 @@ oai::_3gpp::model::SmPolicyDecision mysql_db::getSmPolicyDecision(
   decision.setTraffContDecs(trafficControlDataMap);
   return decision;
 }
+#endif  // USE_ODB
