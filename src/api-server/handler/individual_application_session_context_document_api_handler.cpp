@@ -26,6 +26,22 @@ individual_application_session_context_document_api_handler::delete_app_session(
   // TODO [QOS-SUB] events_subsc_req_data (subscription to the termination
   // EventsNotification) is not handled yet; AF termination notifications land
   // in Phase 3 [TS 29.514 §4.2.4].
+  //
+  // Prerequisite common-src fix needed before that work starts:
+  // AfEventSubscription::getEvent() currently returns
+  // oai::_3gpp::model::AfEvent, which common-src generated from the
+  // Naf_EventExposure schema [TS 29.517] (values like SVC_EXPERIENCE,
+  // UE_MOBILITY, ...) -- both specs define a schema literally named
+  // `AfEvent`, and only one survived being generated into the shared
+  // common-src/model directory. The Npcf_PolicyAuthorization AfEvent
+  // [TS 29.514 §5.6.3.4] this field actually needs (ACCESS_TYPE_CHANGE,
+  // ANI_REPORT, CHARGING_CORRELATION, EPS_FALLBACK,
+  // FAILED_RESOURCES_ALLOCATION, OUT_OF_CREDIT, PLMN_CHG, QOS_MONITORING,
+  // QOS_NOTIF, RAN_NAS_CAUSE, REALLOCATION_OF_CREDIT,
+  // SUCCESSFUL_RESOURCES_ALLOCATION, TSN_BRIDGE_INFO, USAGE_REPORT) doesn't
+  // exist under any name. Needs a distinctly-named type added to common-src
+  // (e.g. PaAfEvent/PaAfEvent_anyOf, following the AfNotifMethod_anyOf
+  // pattern)
   status_code res = m_pa_service->delete_app_session_handler(
       app_session_id, problem_description);
 
