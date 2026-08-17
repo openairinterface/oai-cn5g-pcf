@@ -248,9 +248,11 @@ void pcf_http2_server::start() {
         }
 
         const bool is_patch = is_get_patch && request.method() == "PATCH";
+        // EventsSubscReqData is optional on terminate [TS 29.514 §4.2.4.2]:
+        // an AF may DELETE without requesting further event notifications,
+        // so is_delete is excluded here and checked once the body is known.
         const bool has_json_body =
-            is_pcscf || is_delete ||
-            (is_event && request.method() == "PUT") || is_patch;
+            is_pcscf || (is_event && request.method() == "PUT") || is_patch;
         const bool content_type_ok =
             is_patch ? is_merge_patch_content_type(request)
                      : is_json_content_type(request);
@@ -282,9 +284,15 @@ void pcf_http2_server::start() {
               resp = m_pcscf_restoration_indication_api_handler
                          ->pcscf_restoration(pcscf_restoration_data);
             } else if (is_delete) {
-              nlohmann::json::parse(request_body->str())
-                  .get_to(events_subsc_data);
-              events_subsc_data.validate();
+              const std::string body = request_body->str();
+              if (!body.empty()) {
+                if (!is_json_content_type(request)) {
+                  handle_unsupported_media_type(response, request);
+                  return;
+                }
+                nlohmann::json::parse(body).get_to(events_subsc_data);
+                events_subsc_data.validate();
+              }
               resp =
                   m_individual_application_session_context_document_api_handler
                       ->delete_app_session(app_session_id, events_subsc_data);

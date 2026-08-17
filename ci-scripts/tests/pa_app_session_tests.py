@@ -311,14 +311,6 @@ def patch_remove_body(med_comp_n: int = 2) -> dict:
     }
 
 
-def delete_events_subsc_body() -> dict:
-    """Minimal EventsSubscReqData [TS 29.514 §4.2.4.2] -- the DELETE handler
-    parses the body unconditionally. `events` is mandatory and must be
-    non-empty (`AfEventSubscription[].event` is itself mandatory) or the PCF
-    rejects it with 400 before ever reaching delete_app_session_handler."""
-    return {"events": [{"event": "ACCESS_TYPE_CHANGE"}]}
-
-
 # ===========================================================================
 # CREATE -- POST /app-sessions [TS 29.514 §4.2.2]
 # ===========================================================================
@@ -482,14 +474,15 @@ PATCH_SCENARIOS = {
 
 
 def delete_app_session(app_session_id: str, report: TestReport | None = None) -> Response:
-    """Terminate the app session. Returns the Response."""
+    """Terminate the app session. Returns the Response.
+
+    EventsSubscReqData is optional on terminate [TS 29.514 §4.2.4.2], so no
+    body is sent here. Event-subscription coverage (a body carrying a real
+    AfEventSubscription) is disabled until the notification service lands --
+    see the TODO [QOS-SUB] in
+    individual_application_session_context_document_api_handler.cpp."""
     own_report = report or TestReport("delete_app_session")
-    resp = curl_request(
-        "POST",
-        path=f"/{app_session_id}/delete",
-        content_type="application/json",
-        body=delete_events_subsc_body(),
-    )
+    resp = curl_request("POST", path=f"/{app_session_id}/delete")
 
     own_report.check_eq("DELETE returns 204 No Content", 204, resp.status)
 
