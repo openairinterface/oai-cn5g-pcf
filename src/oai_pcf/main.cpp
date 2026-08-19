@@ -49,6 +49,7 @@ std::unique_ptr<PCFApiServer> pcf_api_server_1             = nullptr;
 std::unique_ptr<pcf_http2_server> pcf_api_server_2         = nullptr;
 std::shared_ptr<oai::http::http_client> http_client_inst   = nullptr;
 std::unique_ptr<database_wrapper_abstraction> db_connector = nullptr;
+std::unique_ptr<task_manager> tm_inst                      = nullptr;
 std::unique_ptr<oai::config::lttng_configuration> lttng_config_yaml;
 //------------------------------------------------------------------------------
 void signal_handler_sigint(int s) {
@@ -149,6 +150,10 @@ int main(int argc, char** argv) {
   // PCF application layer
   pcf_app_inst = std::make_unique<pcf_app>(ev);
 
+  // Task Manager
+  tm_inst = std::make_unique<task_manager>(ev);
+  std::thread task_manager_thread(&task_manager::run, tm_inst.get());
+
   std::string v4_address =
       oai::utils::conv::toString(pcf_cfg->local().get_sbi().get_addr4());
 
@@ -171,6 +176,7 @@ int main(int argc, char** argv) {
   }
 
   Logger::pcf_app().info("HTTP servers successfully stopped. Exiting");
+  task_manager_thread.join();
 
   return 0;
 }
