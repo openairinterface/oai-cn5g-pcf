@@ -64,6 +64,7 @@ FlowInformation flow_info_from_desc(const std::string& desc) {
   FlowInformation flow_info;
   flow_info.setFlowDescription(desc);
   flow_info.setFlowDirection(flow_direction_from_desc(desc));
+  flow_info.setPacketFilterUsage(true);
   return flow_info;
 }
 
