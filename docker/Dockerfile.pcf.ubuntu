@@ -32,6 +32,9 @@ RUN apt-get update && \
 RUN git config --global https.postBuffer 199757920 && \
     git config --global http.sslverify false
 ARG ENABLE_LTTNG=false
+# ODB/MySQL database persistence is optional and disabled by default. Set to 1
+# to build and package the ODB stack. When 0 the image carries no ODB artifacts.
+ARG USE_ODB=0
 # Copying source code
 WORKDIR /openair-pcf
 COPY ./build/scripts /openair-pcf/build/scripts/
@@ -41,31 +44,65 @@ COPY ./build/cmake_modules /openair-pcf/build/cmake_modules/
 
 # Installing all the needed libraries/packages to build and run PCF
 WORKDIR /openair-pcf/build/scripts
-RUN ./build_pcf --install-deps --force && \
+RUN ODB_FLAG=""; [ "$USE_ODB" = "1" ] && ODB_FLAG="--odb"; \
+    ./build_pcf --install-deps --force $ODB_FLAG && \
     ldconfig
 
 #---------------------------------------------------------------------
 # BUILDER IMAGE
 #---------------------------------------------------------------------
 FROM oai-pcf-base AS oai-pcf-builder
+ARG ENABLE_LTTNG=false
+ARG USE_ODB=0
 # Copying source code
 COPY . /openair-pcf
 # Building PCF
 WORKDIR /openair-pcf/build/scripts
 
-RUN  if [ "$ENABLE_LTTNG" = "true" ]; then DEBIAN_FRONTEND=noninteractive apt-get install --yes \
+RUN  ODB_FLAG=""; [ "$USE_ODB" = "1" ] && ODB_FLAG="--odb"; \
+    if [ "$ENABLE_LTTNG" = "true" ]; then DEBIAN_FRONTEND=noninteractive apt-get install --yes \
         lttng-modules-dkms \
         liblttng-ust-dev \
         lttng-tools && \
         ldconfig && \
-        ./build_pcf --clean --Verbose --build-type Release --jobs --lttng; \
+        ./build_pcf --clean --Verbose --build-type Release --jobs --lttng $ODB_FLAG; \
     else \
         ldconfig && \
-        ./build_pcf --clean --Verbose --build-type Release --jobs; \
+        ./build_pcf --clean --Verbose --build-type Release --jobs $ODB_FLAG; \
     fi && \
     ldd /openair-pcf/build/pcf/build/pcf && \
     mv /openair-pcf/build/pcf/build/pcf /openair-pcf/build/pcf/build/oai_pcf
 
+# Stage the optional ODB/MySQL runtime libraries only when ODB is enabled. When
+# disabled the directory stays empty so the runtime image carries no ODB libs.
+RUN mkdir -p /openair-pcf/odb-libs && \
+    if [ "$USE_ODB" = "1" ]; then \
+        cp -a /usr/local/lib/libmysqlclient-21.so \
+              /usr/local/lib/libodb-2.5.so \
+              /usr/local/lib/libodb-mysql-2.5.so \
+              /openair-pcf/odb-libs/; \
+    fi
+
+
+#---------------------------------------------------------------------
+# CHECKS (unit tests) -- opt-in, not part of the default build and not in
+# the runtime image's dependency graph, so a plain `docker build` never
+# builds this stage.
+# Build explicitly with: docker build --target checks -f docker/Dockerfile.pcf.ubuntu .
+# Tests run at build time (via build_pcf --tests -> ctest), so a failing
+# test fails the image build.
+#---------------------------------------------------------------------
+FROM oai-pcf-builder AS checks
+
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install --yes \
+      libgtest-dev \
+      libgmock-dev \
+      googletest-tools \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /openair-pcf/build/scripts
+RUN ./build_pcf --tests --jobs
 
 #---------------------------------------------------------------------
 # TARGET IMAGE
@@ -78,6 +115,7 @@ ENV TARGETPLATFORM=${TARGETPLATFORM}
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Europe/Paris
 ARG ENABLE_LTTNG=false
+ARG USE_ODB=0
 # We install some debug tools for the moment in addition of mandatory libraries
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get upgrade --yes && \
@@ -101,12 +139,11 @@ RUN apt-get update && \
       libcurl?-gnutls \
       librtmp1 \
       libpsl5 \
-# Ubuntu 20 --> gcc-9-plugin-dev
-# Ubuntu 22 --> gcc-11-plugin-dev
-      gcc-?-plugin-dev \
-      libmysqlclient2? \
 # lttng
   && if [ "$ENABLE_LTTNG" = "true" ]; then DEBIAN_FRONTEND=noninteractive apt-get install --yes liblttng-ust-dev; fi \
+# ODB/MySQL runtime packages, installed only when ODB is enabled
+# Ubuntu 20 --> gcc-9-plugin-dev / Ubuntu 22 --> gcc-11-plugin-dev
+  && if [ "$USE_ODB" = "1" ]; then DEBIAN_FRONTEND=noninteractive apt-get install --yes gcc-?-plugin-dev libmysqlclient2?; fi \
   && rm -rf /var/lib/apt/lists/*
 
 # Copying executable and generated libraries
@@ -135,12 +172,11 @@ COPY --from=oai-pcf-builder \
     /usr/local/lib/libcpr.so.1 \
     /usr/local/lib/libspdlog.so \
     /usr/local/lib/libfmt.so \
-    /usr/local/lib/libmysqlclient-21.so \
-    /usr/local/lib/libssl-1.1.so \
-    /usr/local/lib/libcrypto-1.1.so \
-    /usr/local/lib/libodb-2.5.so \
-    /usr/local/lib/libodb-mysql-2.5.so \
     ./
+
+# Optional ODB/MySQL libraries: this directory is empty unless the image was
+# built with --build-arg USE_ODB=1, so a default build stays free of ODB.
+COPY --from=oai-pcf-builder /openair-pcf/odb-libs/ ./
 
 RUN ldconfig && \
     ldd /openair-pcf/bin/oai_pcf

@@ -30,6 +30,10 @@ check_install_pcf_deps() {
   else
     debug=1
   fi
+  # arg3 (optional): install ODB/MySQL persistence dependencies (0 or 1)
+  local use_odb=${3:-0}
+  # arg4 (optional): install unit-test dependencies, i.e. gtest/gmock (0 or 1)
+  local use_tests=${4:-0}
 
   echo "Check supported distribution"
   check_supported_distribution
@@ -103,8 +107,6 @@ check_install_pcf_deps() {
       libcurl4 \
       net-tools \
       pkg-config \
-      mysql-client \
-      libmysqlclient-dev \
       libasan?"
   elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
     PACKAGE_LIST="\
@@ -119,9 +121,6 @@ check_install_pcf_deps() {
       nettle-devel \
       libcurl-devel \
       pkgconfig \
-      mysql \
-      mysql-devel \
-      mysql-libs \
       ninja-build \
       boost-devel \
       libasan"
@@ -136,8 +135,34 @@ check_install_pcf_deps() {
   install_fmt_from_git $1 $2
   ret=$?;[[ $ret -ne 0 ]] && return $ret
 
-  install_odb $1 $2
-  ret=$?;[[ $ret -ne 0 ]] && return $ret
+  # ODB/MySQL persistence is optional; only install it when requested (--odb).
+  if [ "$use_odb" -eq 1 ]; then
+    echo "Install ODB/MySQL persistence dependencies"
+    if [[ $OS_DISTRO == "ubuntu" ]]; then
+      $SUDO $INSTALLER install $OPTION mysql-client libmysqlclient-dev
+    elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
+      $SUDO $INSTALLER install $OPTION mysql mysql-devel mysql-libs
+    fi
+    ret=$?;[[ $ret -ne 0 ]] && return $ret
+
+    install_odb $1 $2
+    ret=$?;[[ $ret -ne 0 ]] && return $ret
+  else
+    echo "Skipping ODB/MySQL persistence dependencies (build without --odb)"
+  fi
+
+  # Unit-test dependencies are optional; only install when requested (--tests).
+  if [ "$use_tests" -eq 1 ]; then
+    echo "Install unit-test dependencies (GoogleTest/GoogleMock)"
+    if [[ $OS_DISTRO == "ubuntu" ]]; then
+      $SUDO $INSTALLER install $OPTION libgtest-dev libgmock-dev googletest-tools
+    elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
+      $SUDO $INSTALLER install $OPTION gtest-devel gmock-devel
+    fi
+    ret=$?;[[ $ret -ne 0 ]] && return $ret
+  else
+    echo "Skipping unit-test dependencies (build without --tests)"
+  fi
 
   install_spdlog_from_git $1 $2
   ret=$?;[[ $ret -ne 0 ]] && return $ret

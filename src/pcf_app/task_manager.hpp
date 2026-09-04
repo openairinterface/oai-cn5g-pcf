@@ -20,6 +20,12 @@ class pcf_event;
 class task_manager {
  public:
   task_manager(pcf_event& ev);
+  ~task_manager();
+
+  task_manager(const task_manager&) = delete;
+  task_manager& operator=(const task_manager&) = delete;
+  task_manager(task_manager&&) = delete;
+  task_manager& operator=(task_manager&&) = delete;
 
   /*
    * Manage the tasks
@@ -45,6 +51,8 @@ class task_manager {
 
   pcf_event& event_sub_;
   int sfd;
+  bool terminate;
+  bool terminated;
 };
 }  // namespace app
 }  // namespace pcf
