@@ -37,10 +37,17 @@ file(GLOB PCF_API_SERVER_src_files
 )
 
 if (USE_ODB)
-    file(GLOB PCF_API_SERVER_odb_files
-        ${PCF_API_SERVER_DIR}/provisioning_api/model/*.cxx
+    # When ODB is enabled, append the generated ODB C++ source files (*.cxx)
+    file(GLOB PCF_API_SERVER_odb_cxx_files
+      ${PCF_API_SERVER_DIR}/provisioning_api/model/*.cxx
     )
-    list(APPEND PCF_API_SERVER_src_files ${PCF_API_SERVER_odb_files})
+    list(APPEND PCF_API_SERVER_src_files ${PCF_API_SERVER_odb_cxx_files})
+else ()
+    # When ODB is disabled, strip out the ODB model .cpp files
+    file(GLOB PCF_API_SERVER_odb_cpp_files
+      ${PCF_API_SERVER_DIR}/provisioning_api/model/*ODB.cpp
+    )
+    list(REMOVE_ITEM PCF_API_SERVER_src_files ${PCF_API_SERVER_odb_cpp_files})
 endif (USE_ODB)
 
 add_library(PCF_API STATIC
