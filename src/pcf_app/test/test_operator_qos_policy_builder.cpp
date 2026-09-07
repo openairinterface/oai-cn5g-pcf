@@ -2,10 +2,11 @@
  * SPDX-License-Identifier: LicenseRef-CSSL-1.0
  */
 
-// Tests for make_operator_qos_policy() -- the config -> runtime translation that
-// converts the parsed pcf.qos_authorization block (3GPP BitRate strings) into
-// the operator_qos_policy consumed by the SM-side authorizer and the PA-side
-// validator. Verifies bit/s parsing, list->set, empty->nullopt, and the flag.
+// Tests for make_operator_qos_policy() -- the config -> runtime translation
+// that converts the parsed pcf.qos_authorization block (3GPP BitRate strings)
+// into the operator_qos_policy consumed by the SM-side authorizer and the
+// PA-side validator. Verifies bit/s parsing, list->set, empty->nullopt, and the
+// flag.
 
 #include <gtest/gtest.h>
 

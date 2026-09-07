@@ -31,9 +31,10 @@ namespace oai::pcf::app {
 //   sm_session_binding          locate the association, and read its decision +
 //                               version so the caller can commit optimistically
 //   sm_update_decision          commit an SmPolicyDelta under a version-CAS
-//   notify_committed_decision   notify the SMF and return the classified outcome
-//   sm_policy_update_failed     a permanent rejection found on a delayed retry
-//   sm_get_association_decision fresh decision lookup by id (rollback path)
+//   notify_committed_decision   notify the SMF and return the classified
+//   outcome sm_policy_update_failed     a permanent rejection found on a
+//   delayed retry sm_get_association_decision fresh decision lookup by id
+//   (rollback path)
 //
 // PCC rule identity and precedence are kept disjoint by construction rather
 // than negotiated: Policy Authorization owns the "PA-QOS-" id prefix and a

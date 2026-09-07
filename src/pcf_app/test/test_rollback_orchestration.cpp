@@ -66,7 +66,7 @@ std::set<std::string> keys(const std::map<std::string, QosData>& m) {
 // stale base instead of a fresh lookup is observable.
 pending_commit make_pending(const std::string& app_session_id = "as-1") {
   pending_commit commit;
-  commit.app_session_id = app_session_id;
+  commit.app_session_id  = app_session_id;
   auto stale_base        = decision_with_qos({{"A", make_qos("A", 9)}});
   commit.committed_delta = compute_sm_policy_delta(
       stale_base, decision_with_qos({{"A", make_qos("A", 3)}}));
@@ -89,9 +89,8 @@ TEST(RollbackOrchestration, UsesFreshLiveDecisionNotStalePendingBase) {
   SmPolicyDecision captured_base;
   std::uint64_t captured_version = 0;
 
-  auto fake_lookup = [&](
-                          const std::string&, bool& found,
-                          SmPolicyDecision& decision, std::uint64_t& version) {
+  auto fake_lookup = [&](const std::string&, bool& found,
+                         SmPolicyDecision& decision, std::uint64_t& version) {
     found    = true;
     decision = live_decision;
     version  = live_version;
@@ -120,11 +119,10 @@ TEST(RollbackOrchestration, UsesFreshLiveDecisionNotStalePendingBase) {
 
 TEST(RollbackOrchestration, AssociationGoneSkipsRollbackAttemptEntirely) {
   const pending_commit pending = make_pending();
-  bool apply_called = false;
+  bool apply_called            = false;
 
-  auto fake_lookup = [](
-                          const std::string&, bool& found, SmPolicyDecision&,
-                          std::uint64_t&) { found = false; };
+  auto fake_lookup = [](const std::string&, bool& found, SmPolicyDecision&,
+                        std::uint64_t&) { found = false; };
   auto fake_apply_with_retry =
       [&](decision_apply_request,
           const std::function<handler_result(
@@ -144,9 +142,8 @@ TEST(RollbackOrchestration, AssociationGoneSkipsRollbackAttemptEntirely) {
 TEST(RollbackOrchestration, PropagatesApplyWithRetryFailureResult) {
   const pending_commit pending = make_pending();
 
-  auto fake_lookup = [](
-                          const std::string&, bool& found,
-                          SmPolicyDecision& decision, std::uint64_t& version) {
+  auto fake_lookup = [](const std::string&, bool& found,
+                        SmPolicyDecision& decision, std::uint64_t& version) {
     found    = true;
     decision = SmPolicyDecision{};
     version  = 1;
@@ -172,7 +169,7 @@ TEST(RollbackOrchestration, PropagatesApplyWithRetryFailureResult) {
 // between the two, not just that apply_with_retry receives fresh inputs.
 TEST(RollbackOrchestration, DeriveLambdaAppliesTheComputedRollbackDelta) {
   auto pre_commit_base = decision_with_qos({});  // Q1 didn't exist yet
-  auto committed        = decision_with_qos({{"Q1", make_qos("Q1", 9)}});
+  auto committed       = decision_with_qos({{"Q1", make_qos("Q1", 9)}});
 
   pending_commit pending;
   pending.app_session_id  = "as-1";
@@ -180,9 +177,8 @@ TEST(RollbackOrchestration, DeriveLambdaAppliesTheComputedRollbackDelta) {
   pending.base = std::make_shared<const SmPolicyDecision>(pre_commit_base);
 
   // Live == what was committed -- unchanged since, so compensable (§5.6).
-  auto fake_lookup = [&](
-                          const std::string&, bool& found,
-                          SmPolicyDecision& decision, std::uint64_t& version) {
+  auto fake_lookup = [&](const std::string&, bool& found,
+                         SmPolicyDecision& decision, std::uint64_t& version) {
     found    = true;
     decision = committed;
     version  = 7;

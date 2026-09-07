@@ -66,7 +66,7 @@ void app_session::update_context(
 app_session_record app_session::to_record() const {
   app_session_record record;
   record.app_session_id     = m_id;
-  record.association_id      = m_association_id;
+  record.association_id     = m_association_id;
   record.state              = m_state.load();
   record.owned_qos_ids      = m_qos.owned_qos_ids();
   record.owned_pcc_rule_ids = m_qos.owned_rule_ids();
@@ -124,13 +124,12 @@ handler_result validate_and_merge_decision(
     const auto existing_pcc_rules = current_decision.getPccRules();
     for (const auto& [key, value] : request_decision.getPccRules()) {
       auto iter = existing_pcc_rules.find(key.c_str());
-      if (iter != existing_pcc_rules.end() &&
-          !iter->first.empty()) {
+      if (iter != existing_pcc_rules.end() && !iter->first.empty()) {
         Logger::pcf_app().debug(fmt::format(
-          "Rejecting create request because PCC Rule ID '{}' already exists "
-          "in the current decision. Existing PCC rules can only be changed "
-          "through the update path.",
-          key.c_str()));
+            "Rejecting create request because PCC Rule ID '{}' already exists "
+            "in the current decision. Existing PCC rules can only be changed "
+            "through the update path.",
+            key.c_str()));
         return handler_result{
             .status          = status_code::FORBIDDEN,
             .problem_details = "INVALID_SERVICE_INFORMATION"};
@@ -144,13 +143,12 @@ handler_result validate_and_merge_decision(
     const auto existing_traff_cont_decs = current_decision.getTraffContDecs();
     for (const auto& [key, value] : request_decision.getTraffContDecs()) {
       auto iter = existing_traff_cont_decs.find(key);
-      if (iter != existing_traff_cont_decs.end() &&
-          !iter->first.empty()) {
+      if (iter != existing_traff_cont_decs.end() && !iter->first.empty()) {
         Logger::pcf_app().debug(fmt::format(
-          "Rejecting create request because Traffic Control ID '{}' already "
-          "exists in the current decision. Existing traffic-control "
-          "entries can only be changed through the update path.",
-          key.c_str()));
+            "Rejecting create request because Traffic Control ID '{}' already "
+            "exists in the current decision. Existing traffic-control "
+            "entries can only be changed through the update path.",
+            key.c_str()));
         return handler_result{
             .status          = status_code::FORBIDDEN,
             .problem_details = "INVALID_SERVICE_INFORMATION"};
@@ -183,10 +181,10 @@ handler_result validate_and_merge_decision(
   // [TS 29.512 §4.2.6.2.3, §5.6.2.4]: the merged decision carries forward the
   // request's QosData, QosCharacteristics and QosMonitoringData. A colliding id
   // means the request re-authorizes that entry (a QoS upgrade/downgrade on the
-  // update path), so the request value replaces the current one -- insert_or_assign
-  // [TS 23.503 §4.3.3.2.2, TS 29.512 §4.2.6.6.1]. When QoS was written straight
-  // into current_decision (the create path), request_decision carries no QoS and
-  // these loops are no-ops.
+  // update path), so the request value replaces the current one --
+  // insert_or_assign [TS 23.503 §4.3.3.2.2, TS 29.512 §4.2.6.6.1]. When QoS was
+  // written straight into current_decision (the create path), request_decision
+  // carries no QoS and these loops are no-ops.
   auto qosDecsMap = current_decision.getQosDecs();
   for (const auto& [key, value] : request_decision.getQosDecs()) {
     qosDecsMap.insert_or_assign(key, value);
@@ -206,8 +204,8 @@ handler_result validate_and_merge_decision(
   current_decision.setQosMonDecs(qosMonDecsMap);  // [TS 29.512 §5.6.2.40]
 
   // Conflict resolution beyond last-writer-wins -- pre-empting a lower-priority
-  // service when cumulative authorized QoS is exceeded -- is deferred to Phase 2
-  // [TS 23.503 §6.1.3.7].
+  // service when cumulative authorized QoS is exceeded -- is deferred to Phase
+  // 2 [TS 23.503 §6.1.3.7].
 
   // Merge Traffic Control Data
   auto trafficControlMap = current_decision.getTraffContDecs();
@@ -306,11 +304,11 @@ bool is_standardized_5qi(int32_t r5qi) {
 }
 
 // TS 29.513 §7.3.3 NOTE 15/17: when desMaxLatency is present, the 5QI "may be
-// done according to table 5.7.4-1 in TS 23.501". That authoritative table is not
-// available in-repo, so this is an operator-tunable approximation: pick a
+// done according to table 5.7.4-1 in TS 23.501". That authoritative table is
+// not available in-repo, so this is an operator-tunable approximation: pick a
 // standardized 5QI whose packet delay budget fits the requested latency, GBR vs
-// non-GBR selected by whether a guaranteed rate was requested. Falls back to the
-// best-effort default 5QI=9 (TS 29.513 §7.3.3: OTHERWISE 5QI=9).
+// non-GBR selected by whether a guaranteed rate was requested. Falls back to
+// the best-effort default 5QI=9 (TS 29.513 §7.3.3: OTHERWISE 5QI=9).
 int32_t derive_5qi(std::optional<float> des_max_latency_ms, bool has_gbr) {
   if (!des_max_latency_ms.has_value()) {
     Logger::pcf_app().debug(
@@ -366,10 +364,9 @@ int32_t derive_5qi(std::optional<float> des_max_latency_ms, bool has_gbr) {
   return 9;  // 5QI 9  (best-effort default)
 }
 
-
 // Generate an explicitly-signalled QosCharacteristics entry for a dynamically
-// assigned (non-standardized) 5QI [TS 29.512 §4.2.6.6.3, §5.6.2.16]. Standardized
-// 5QI values carry preconfigured characteristics and need no entry
+// assigned (non-standardized) 5QI [TS 29.512 §4.2.6.6.3, §5.6.2.16].
+// Standardized 5QI values carry preconfigured characteristics and need no entry
 // [TS 29.512 §4.2.6.6.2].
 handler_result create_qos_characteristics(
     const QosData& qos_data, SmPolicyDecision& decision) {
@@ -398,8 +395,8 @@ handler_result create_qos_characteristics(
   oai::_3gpp::model::QosResourceType resource_type;
   resource_type.setEnumValue(
       is_gbr ? oai::_3gpp::model::QosResourceType_anyOf::
-                   eQosResourceType_anyOf::NON_CRITICAL_GBR
-             : oai::_3gpp::model::QosResourceType_anyOf::
+                   eQosResourceType_anyOf::NON_CRITICAL_GBR :
+               oai::_3gpp::model::QosResourceType_anyOf::
                    eQosResourceType_anyOf::NON_GBR);
   qos_char.setResourceType(resource_type);
 
@@ -408,8 +405,8 @@ handler_result create_qos_characteristics(
   // operator-preconfigured set (carried on the QosData); fall back to defensive
   // defaults with a warning if the operator omitted them.
   qos_char.setPriorityLevel(
-      qos_data.priorityLevelIsSet() ? qos_data.getPriorityLevel()
-                                    : DEFAULT_ARP_PRIORITY_LEVEL);
+      qos_data.priorityLevelIsSet() ? qos_data.getPriorityLevel() :
+                                      DEFAULT_ARP_PRIORITY_LEVEL);
   if (qos_data.packetDelayBudgetIsSet()) {
     qos_char.setPacketDelayBudget(qos_data.getPacketDelayBudget());
   } else {
@@ -434,7 +431,8 @@ handler_result create_qos_characteristics(
     qos_char.setAveragingWindow(qos_data.getAverWindow());
   }
 
-  // QosCharacteristics are keyed by the (dynamic) 5QI value [TS 29.512 §5.6.2.4].
+  // QosCharacteristics are keyed by the (dynamic) 5QI value [TS 29.512
+  // §5.6.2.4].
   auto qos_chars_map = decision.getQosChars();
   qos_chars_map.insert(std::make_pair(std::to_string(r5qi), qos_char));
   decision.setQosChars(qos_chars_map);
@@ -451,7 +449,8 @@ handler_result create_qos_characteristics(
 // QosMonitoringData in decision.qosMonDecs [TS 29.512 §5.6.2.40] and link it
 // from the PCC rule via refQosMon [§5.6.2.6]. Kept as a call in
 // handle_qos_requirements so the ordering and its test are already in place.
-handler_result setup_qos_monitoring([[maybe_unused]] SmPolicyDecision& decision) {
+handler_result setup_qos_monitoring(
+    [[maybe_unused]] SmPolicyDecision& decision) {
   Logger::pcf_app().debug(
       "QoS monitoring setup is not implemented in Phase 1. Returning "
       "success without creating QosMonitoringData or linking refQosMon.");
@@ -483,14 +482,16 @@ handler_result validate_policy_decision(const SmPolicyDecision& decision) {
 
   for (const auto& [rule_id, rule] : decision.getPccRules()) {
     // Well-formedness diagnostics (not fatal: predefined/operator-provisioned
-    // rules may legitimately omit these) [TS 29.512 §5.6.2.6, TS 23.503 §6.3.1].
+    // rules may legitimately omit these) [TS 29.512 §5.6.2.6, TS 23.503
+    // §6.3.1].
     if (!rule.precedenceIsSet()) {
       Logger::pcf_app().warn(fmt::format(
           "Policy decision validation: PCC rule '{}' has no precedence.",
           rule_id));
     }
-    const bool has_flows = rule.flowInfosIsSet() && !rule.getFlowInfos().empty();
-    const bool has_app   = rule.appIdIsSet() && !rule.getAppId().empty();
+    const bool has_flows =
+        rule.flowInfosIsSet() && !rule.getFlowInfos().empty();
+    const bool has_app = rule.appIdIsSet() && !rule.getAppId().empty();
     if (!has_flows && !has_app) {
       Logger::pcf_app().warn(fmt::format(
           "Policy decision validation: PCC rule '{}' has neither flow "
@@ -562,7 +563,8 @@ AppSessionContextReqData merge_patch_context(
       }
       if (!media_component.medSubCompsIsSet()) continue;
       for (const auto& [sub_key, sub] : media_component.getMedSubComps()) {
-        if (sub_component_removed(sub)) removed_sub_components[key].insert(sub_key);
+        if (sub_component_removed(sub))
+          removed_sub_components[key].insert(sub_key);
       }
     }
   }

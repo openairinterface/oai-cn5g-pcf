@@ -21,11 +21,11 @@ namespace oai::pcf::app::sm_policy {
  * @brief Outcome of reporting a drain attempt back to the queue
  */
 enum class drain_result {
-  succeeded,   // notify succeeded; entry removed, nothing further happens
-  rescheduled, // still temporary/ambiguous; entry re-armed with backoff
-  exhausted,   // max_notify_retries reached; entry removed, log-only escalation
-  not_found,   // (association_id, version) wasn't queued (already resolved,
-               // expired, or evicted)
+  succeeded,    // notify succeeded; entry removed, nothing further happens
+  rescheduled,  // still temporary/ambiguous; entry re-armed with backoff
+  exhausted,  // max_notify_retries reached; entry removed, log-only escalation
+  not_found,  // (association_id, version) wasn't queued (already resolved,
+              // expired, or evicted)
 };
 
 inline const char* to_string(drain_result result) {

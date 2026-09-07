@@ -34,15 +34,15 @@
 #include "sm_policy/policy_decision.hpp"
 #include "sm_policy/policy_storage.hpp"
 
-using oai::common::sbi::http_status_code;
-using oai::common::sbi::method_e;
-using oai::http::request;
-using oai::http::response;
 using oai::_3gpp::model::AppSessionContext;
 using oai::_3gpp::model::AppSessionContextReqData;
 using oai::_3gpp::model::SmPolicyContextData;
 using oai::_3gpp::model::SmPolicyControl;
 using oai::_3gpp::model::SmPolicyDecision;
+using oai::common::sbi::http_status_code;
+using oai::common::sbi::method_e;
+using oai::http::request;
+using oai::http::response;
 using oai::pcf::app::http_send_fn;
 using oai::pcf::app::pcf_event;
 using oai::pcf::app::pcf_policy_authorization;
@@ -62,8 +62,7 @@ namespace {
 // binding pcf_policy_authorization's session-binding lookup needs.
 class fake_policy_storage : public policy_storage {
  public:
-  explicit fake_policy_storage(
-      const std::shared_ptr<policy_decision>& decision)
+  explicit fake_policy_storage(const std::shared_ptr<policy_decision>& decision)
       : m_decision(decision) {}
 
   std::shared_ptr<oai::pcf::app::sm_policy::policy_decision> find_policy(
@@ -71,29 +70,27 @@ class fake_policy_storage : public policy_storage {
     return m_decision;
   }
   void subscribe_to_decision_change(
-      std::function<void(std::shared_ptr<oai::pcf::app::sm_policy::
-                              policy_decision>&)>) override {}
+      std::function<
+          void(std::shared_ptr<oai::pcf::app::sm_policy::policy_decision>&)>)
+      override {}
   void insert_supi_decision(
       const std::string&, const SmPolicyDecision&) override {}
   void insert_dnn_decision(
       const std::string&, const SmPolicyDecision&) override {}
   void insert_slice_decision(
-      const oai::_3gpp::model::Snssai&,
-      const SmPolicyDecision&) override {}
+      const oai::_3gpp::model::Snssai&, const SmPolicyDecision&) override {}
   void insert_associations(
       const SmPolicyContextData& context,
       const std::string& association_id) override {
     m_supi_to_assoc[context.getSupi()] = association_id;
   }
-  void insert_ip_association(
-      const std::string&, const std::string&) override {}
+  void insert_ip_association(const std::string&, const std::string&) override {}
   void insert_supi_association(
       const std::string&, const std::string&) override {}
-  void insert_dnn_association(
-      const std::string&, const std::string&) override {}
+  void insert_dnn_association(const std::string&, const std::string&) override {
+  }
   std::shared_ptr<std::string> find_association(
-      const std::optional<std::string>&,
-      const std::optional<std::string>& supi,
+      const std::optional<std::string>&, const std::optional<std::string>& supi,
       const std::optional<std::string>&) override {
     if (supi.has_value()) {
       auto it = m_supi_to_assoc.find(supi.value());
@@ -128,24 +125,24 @@ struct fixture {
     storage = std::make_shared<fake_policy_storage>(
         std::make_shared<policy_decision>(initial_decision));
 
-    http_send_fn http_send = [this](
-                                  method_e m, const request& r) -> response {
+    http_send_fn http_send = [this](method_e m, const request& r) -> response {
       sent.push_back({m, r.uri});
       response resp = canned_responses.front();
       canned_responses.pop_front();
       return resp;
     };
 
-    smpc = std::make_shared<pcf_smpc>(storage, ev, oai::pcf::app::operator_qos_policy{},
+    smpc = std::make_shared<pcf_smpc>(
+        storage, ev, oai::pcf::app::operator_qos_policy{},
         oai::pcf::app::notify_failure_recovery_policy{}, http_send);
 
     auto app_sessions = std::make_shared<app_session_storage>(
-        std::make_shared<
-            oai::utils::crud_store_memory<oai::pcf::app::policy_auth::app_session>>());
+        std::make_shared<oai::utils::crud_store_memory<
+            oai::pcf::app::policy_auth::app_session>>());
     auto qos_refs = std::make_shared<
         oai::utils::crud_store_memory<const oai::_3gpp::model::QosData>>();
     pa_context = std::make_shared<policy_auth_context>(app_sessions, qos_refs);
-    pa = std::make_shared<pcf_policy_authorization>(pa_context, ev);
+    pa         = std::make_shared<pcf_policy_authorization>(pa_context, ev);
   }
 
   // Creates the SM policy association (SUPI "imsi-test") and, via

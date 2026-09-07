@@ -32,7 +32,7 @@ class policy_auth_context {
   policy_auth_context(
       std::shared_ptr<app_session_storage> app_sessions,
       std::shared_ptr<qos_reference_store> qos_references,
-      operator_qos_policy qos_authorization_policy         = {},
+      operator_qos_policy qos_authorization_policy           = {},
       notify_failure_recovery_policy notify_failure_recovery = {})
       : m_app_sessions(std::move(app_sessions)),
         m_qos_references(std::move(qos_references)),

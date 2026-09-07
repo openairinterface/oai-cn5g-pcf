@@ -12,13 +12,11 @@ using namespace oai::config;
 using namespace oai::config::pcf;
 
 qos_authorization_config::qos_authorization_config() {
-  m_config_name     = "QoS Authorization";
-  m_max_flow_mbr_ul = string_config_value("Max Flow MBR Uplink", "");
-  m_max_flow_mbr_dl = string_config_value("Max Flow MBR Downlink", "");
-  m_max_session_ambr_ul =
-      string_config_value("Max Session-AMBR Uplink", "");
-  m_max_session_ambr_dl =
-      string_config_value("Max Session-AMBR Downlink", "");
+  m_config_name         = "QoS Authorization";
+  m_max_flow_mbr_ul     = string_config_value("Max Flow MBR Uplink", "");
+  m_max_flow_mbr_dl     = string_config_value("Max Flow MBR Downlink", "");
+  m_max_session_ambr_ul = string_config_value("Max Session-AMBR Uplink", "");
+  m_max_session_ambr_dl = string_config_value("Max Session-AMBR Downlink", "");
   m_reject_on_missing_subscription =
       option_config_value("reject_on_missing_subscription", false);
   m_set = true;
@@ -110,9 +108,8 @@ bool qos_authorization_config::get_reject_on_missing_subscription() const {
 }
 
 notify_failure_recovery_config::notify_failure_recovery_config() {
-  m_config_name = "Notify-Failure Recovery";
-  m_retry_drain_ttl_seconds =
-      int_config_value("retry_drain_ttl_seconds", 30);
+  m_config_name             = "Notify-Failure Recovery";
+  m_retry_drain_ttl_seconds = int_config_value("retry_drain_ttl_seconds", 30);
   m_retry_drain_ttl_seconds.set_validation_interval(1, 3600);
   m_retry_drain_max_entries =
       int_config_value("retry_drain_max_entries", 10000);
@@ -310,8 +307,7 @@ void pcf_config_type::from_yaml(const YAML::Node& node) {
     m_qos_authorization_config.from_yaml(node["qos_authorization"]);
   }
   if (node["notify_failure_recovery"]) {
-    m_notify_failure_recovery_config.from_yaml(
-        node["notify_failure_recovery"]);
+    m_notify_failure_recovery_config.from_yaml(node["notify_failure_recovery"]);
   }
 }
 
@@ -347,8 +343,8 @@ const policy_config& pcf_config_type::get_policy_config() const {
   return m_policy_config;
 }
 
-const qos_authorization_config&
-pcf_config_type::get_qos_authorization_config() const {
+const qos_authorization_config& pcf_config_type::get_qos_authorization_config()
+    const {
   return m_qos_authorization_config;
 }
 

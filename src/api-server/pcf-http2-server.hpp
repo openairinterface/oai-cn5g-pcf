@@ -127,8 +127,8 @@ class pcf_http2_server {
   static std::string request_media_type(
       const nghttp2::asio_http2::server::request& request);
 
-  // True if the request's Content-Type is application/json, as required for JSON
-  // request bodies [TS 29.500 §6.1.3, TS 29.514 §4.2.2.2].
+  // True if the request's Content-Type is application/json, as required for
+  // JSON request bodies [TS 29.500 §6.1.3, TS 29.514 §4.2.2.2].
   static bool is_json_content_type(
       const nghttp2::asio_http2::server::request& request);
 

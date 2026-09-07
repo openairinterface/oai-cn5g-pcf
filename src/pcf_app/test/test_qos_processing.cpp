@@ -66,8 +66,7 @@ using fake_qos_reference_store = oai::utils::crud_store_memory<const QosData>;
 
 MediaSubComponent make_sub(
     int32_t f_num, const std::vector<std::string>& fdescs,
-    std::optional<std::string> mar_bw_ul = std::nullopt,
-    bool removed = false) {
+    std::optional<std::string> mar_bw_ul = std::nullopt, bool removed = false) {
   MediaSubComponent sub;
   sub.setFNum(f_num);
   if (!fdescs.empty()) sub.setFDescs(fdescs);
@@ -82,8 +81,7 @@ MediaSubComponent make_sub(
 
 MediaSubComponent make_sub_with_bitrates(
     int32_t f_num, const std::vector<std::string>& fdescs,
-    std::optional<std::string> mar_bw_ul,
-    std::optional<std::string> mar_bw_dl,
+    std::optional<std::string> mar_bw_ul, std::optional<std::string> mar_bw_dl,
     bool removed = false) {
   MediaSubComponent sub = make_sub(f_num, fdescs, mar_bw_ul, removed);
   if (mar_bw_dl) sub.setMarBwDl(*mar_bw_dl);
@@ -91,8 +89,8 @@ MediaSubComponent make_sub_with_bitrates(
 }
 
 oai::_3gpp::model::PreemptionCapability make_preempt_capability(
-    oai::_3gpp::model::PreemptionCapability_anyOf::
-        ePreemptionCapability_anyOf value) {
+    oai::_3gpp::model::PreemptionCapability_anyOf::ePreemptionCapability_anyOf
+        value) {
   oai::_3gpp::model::PreemptionCapability cap;
   cap.setEnumValue(value);
   return cap;
@@ -141,10 +139,10 @@ PccRule make_pcc_rule(const std::string& id, int32_t precedence) {
 /*
  * 3GPP TS 29.514 §4.2.3.2 / TS 29.512 §4.2.6.2.1 -- QoS modification (PATCH).
  *
- * The flow/rule ids are derived deterministically from medCompN, so a PATCH that
- * re-describes an existing media component modifies its flow in place (rather
- * than accumulating duplicates), and a new medCompN adds a distinct flow. The
- * same templated derivation serves create (MediaComponent) and update
+ * The flow/rule ids are derived deterministically from medCompN, so a PATCH
+ * that re-describes an existing media component modifies its flow in place
+ * (rather than accumulating duplicates), and a new medCompN adds a distinct
+ * flow. The same templated derivation serves create (MediaComponent) and update
  * (MediaComponentRm), so the update payload type is exercised here too.
  */
 TEST(QosModification, DerivesDeterministicIdFromMedCompN) {
@@ -188,7 +186,8 @@ TEST(QosModification, RederivingSameMedCompNOverwritesInPlace) {
   // and the original precedence preserved so PCC ordering is stable.
   EXPECT_EQ(decision.getQosDecs().size(), 1u);
   EXPECT_EQ(decision.getPccRules().size(), 1u);
-  EXPECT_EQ(decision.getQosDecs().at("PA-QOS-app-qos-1").getMaxbrDl(), "20 Mbps");
+  EXPECT_EQ(
+      decision.getQosDecs().at("PA-QOS-app-qos-1").getMaxbrDl(), "20 Mbps");
   EXPECT_EQ(
       decision.getPccRules().at("PA-QOS-app-1").getPrecedence(),
       precedence_before);
@@ -228,12 +227,14 @@ TEST(QosModification, DerivesFromMediaComponentRm) {
   operator_qos_policy op_policy;
   qos_deriver deriver(store, op_policy);
 
-  const auto result = deriver.handle_qos_requirements(mc, "app", decision, qos_ctx);
+  const auto result =
+      deriver.handle_qos_requirements(mc, "app", decision, qos_ctx);
 
   ASSERT_TRUE(result.status.has_value());
   EXPECT_EQ(result.status.value(), status_code::OK);
   EXPECT_EQ(qos_data_ids(decision), to_set({"PA-QOS-app-qos-3"}));
-  EXPECT_EQ(decision.getQosDecs().at("PA-QOS-app-qos-3").getMaxbrDl(), "5 Mbps");
+  EXPECT_EQ(
+      decision.getQosDecs().at("PA-QOS-app-qos-3").getMaxbrDl(), "5 Mbps");
 }
 
 namespace {
@@ -278,9 +279,10 @@ MediaSubComponentRm make_sub_component_rm(int32_t f_num, bool removed = false) {
 }  // namespace
 
 /*
- * 3GPP TS 29.514 §4.2.3.2 / RFC 7396 -- the stored ascReqData is updated by JSON
- * Merge Patch: scalar fields replaced, media components merged in place, added,
- * or removed (fStatus=REMOVED), so a subsequent GET reflects the modification.
+ * 3GPP TS 29.514 §4.2.3.2 / RFC 7396 -- the stored ascReqData is updated by
+ * JSON Merge Patch: scalar fields replaced, media components merged in place,
+ * added, or removed (fStatus=REMOVED), so a subsequent GET reflects the
+ * modification.
  */
 TEST(ContextMergePatch, ReplacesScalarFieldAndRetainsUntouchedFields) {
   auto stored = make_stored_context();
@@ -383,7 +385,8 @@ TEST(ContextMergePatch, RemovesSubComponentFromRetainedComponent) {
 
   MediaComponentRm patched_component;
   patched_component.setMedCompN(1);
-  patched_component.setMedSubComps({{"2", make_sub_component_rm(2, /*removed=*/true)}});
+  patched_component.setMedSubComps(
+      {{"2", make_sub_component_rm(2, /*removed=*/true)}});
   AppSessionContextUpdateData patch;
   patch.setMedComponents({{"1", patched_component}});
 
@@ -408,7 +411,8 @@ TEST(ContextMergePatch, RemovingLastSubComponentUnsetsMedSubComps) {
 
   MediaComponentRm patched_component;
   patched_component.setMedCompN(1);
-  patched_component.setMedSubComps({{"1", make_sub_component_rm(1, /*removed=*/true)}});
+  patched_component.setMedSubComps(
+      {{"1", make_sub_component_rm(1, /*removed=*/true)}});
   AppSessionContextUpdateData patch;
   patch.setMedComponents({{"1", patched_component}});
 
@@ -428,9 +432,8 @@ TEST(ContextMergePatch, RemovingLastSubComponentUnsetsMedSubComps) {
 // TS 23.501 §5.7.4 Table 5.7.4-1: the full standardized 5QI catalogue shall
 // be recognized as preconfigured rather than treated as dynamic.
 TEST(Is5qiStandardized, KnownStandardizedValuesAreRecognized) {
-  for (int32_t v : {1,  2,  3,  4,  5,  6,  7,  8,  9,  10,
-                    65, 66, 67, 69, 70, 71, 72, 73, 74, 75,
-                    76, 79, 80, 82, 83, 84, 85, 86, 87}) {
+  for (int32_t v : {1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 65, 66, 67, 69, 70,
+                    71, 72, 73, 74, 75, 76, 79, 80, 82, 83, 84, 85, 86, 87}) {
     EXPECT_TRUE(is_standardized_5qi(v)) << "5QI " << v;
   }
 }
@@ -523,9 +526,9 @@ TEST(DecisionMerging, AssignsPrecedenceAboveExistingHighest) {
 TEST(DecisionMerging, AssignsUniquePrecedenceToMultipleZeroPrecedenceRules) {
   SmPolicyDecision current;
   SmPolicyDecision request;
-  auto rules   = request.getPccRules();
-  rules["r1"]  = make_pcc_rule("r1", 0);
-  rules["r2"]  = make_pcc_rule("r2", 0);
+  auto rules  = request.getPccRules();
+  rules["r1"] = make_pcc_rule("r1", 0);
+  rules["r2"] = make_pcc_rule("r2", 0);
   request.setPccRules(rules);
 
   auto result = validate_and_merge_decision(request, current, /*update=*/false);
@@ -575,14 +578,14 @@ TEST(QosDataGeneration, IdsUseThePaQosSessionScopedConvention) {
   deriver.create_qos_data_from_media_component(
       mc, "sess-42", decision, qos_ctx, out);
 
-  EXPECT_EQ(
-      only_qos_data(decision).getQosId().rfind("PA-QOS-sess-42-", 0), 0u);
+  EXPECT_EQ(only_qos_data(decision).getQosId().rfind("PA-QOS-sess-42-", 0), 0u);
   EXPECT_EQ(
       only_pcc_rule(decision).getPccRuleId().rfind("PA-QOS-sess-42-", 0), 0u);
 }
 
 // TS 29.512 §4.1.4.2.1 and §5.6.2.6: every PCC rule that provisions
-// authorized QoS shall reference the corresponding QosData entry via refQosData.
+// authorized QoS shall reference the corresponding QosData entry via
+// refQosData.
 TEST(QosDataGeneration, PccRuleReferencesTheCreatedQosData) {
   MediaComponent mc;
   SmPolicyDecision decision;
@@ -604,8 +607,9 @@ TEST(QosDataGeneration, PccRuleReferencesTheCreatedQosData) {
 TEST(QosDataSdf, FlowFiltersAreBuiltFromSubComponentDescriptions) {
   MediaComponent mc;
   std::map<std::string, MediaSubComponent> subs;
-  subs["1"] = make_sub(1, {"permit out ip from 1.2.3.4 to assigned",
-                           "permit in ip from assigned to 1.2.3.4"});
+  subs["1"] = make_sub(
+      1, {"permit out ip from 1.2.3.4 to assigned",
+          "permit in ip from assigned to 1.2.3.4"});
   mc.setMedSubComps(subs);
   SmPolicyDecision decision;
   qos_context qos_ctx;
@@ -637,8 +641,8 @@ TEST(QosDataSdf, PermitAllFallbackWhenNoSubComponents) {
 
   const auto& flows = only_pcc_rule(decision).getFlowInfos();
   ASSERT_EQ(flows.size(), 1u);
-  EXPECT_EQ(flows.front().getFlowDescription(),
-            "permit out ip from any to assigned");
+  EXPECT_EQ(
+      flows.front().getFlowDescription(), "permit out ip from any to assigned");
 }
 
 // TS 29.512 §4.1.4.2.1: each flow filter in a PCC rule shall have an explicit
@@ -657,9 +661,10 @@ TEST(QosDataSdf, FlowFiltersAlwaysHaveAnExplicitDirection) {
   deriver.create_qos_data_from_media_component(mc, "s", decision, qos_ctx, out);
 
   for (const auto& f : only_pcc_rule(decision).getFlowInfos()) {
-    EXPECT_NE(f.getFlowDirection().getEnumValue(),
-              FlowDirection_anyOf::eFlowDirection_anyOf::
-                  INVALID_VALUE_OPENAPI_GENERATED);
+    EXPECT_NE(
+        f.getFlowDirection().getEnumValue(),
+        FlowDirection_anyOf::eFlowDirection_anyOf::
+            INVALID_VALUE_OPENAPI_GENERATED);
   }
 }
 
@@ -669,8 +674,9 @@ TEST(QosDataFlowStatus, RemovedSubComponentDoesNotCreateFlowInfo) {
   MediaComponent mc;
   std::map<std::string, MediaSubComponent> subs;
   subs["1"] = make_sub(1, {"permit out ip from any to assigned"}, "1 Mbps");
-  subs["2"] = make_sub(2, {"permit in ip from assigned to any"}, "5 Mbps",
-                       /*removed=*/true);
+  subs["2"] = make_sub(
+      2, {"permit in ip from assigned to any"}, "5 Mbps",
+      /*removed=*/true);
   mc.setMedSubComps(subs);
   SmPolicyDecision decision;
   qos_context qos_ctx;
@@ -682,8 +688,8 @@ TEST(QosDataFlowStatus, RemovedSubComponentDoesNotCreateFlowInfo) {
 
   const auto& flows = only_pcc_rule(decision).getFlowInfos();
   ASSERT_EQ(flows.size(), 1u);
-  EXPECT_EQ(flows.front().getFlowDescription(),
-            "permit out ip from any to assigned");
+  EXPECT_EQ(
+      flows.front().getFlowDescription(), "permit out ip from any to assigned");
 }
 
 /*
@@ -825,8 +831,8 @@ TEST(DecisionMerging, MergesTrafficControlDataFromRequest) {
 
   ASSERT_TRUE(result.status.has_value());
   EXPECT_EQ(result.status.value(), status_code::OK);
-  EXPECT_NE(current.getTraffContDecs().find("tc1"),
-            current.getTraffContDecs().end());
+  EXPECT_NE(
+      current.getTraffContDecs().find("tc1"), current.getTraffContDecs().end());
 }
 
 /*
@@ -864,21 +870,23 @@ TEST(QosDataGeneration, ArpPreemptionFieldsAreExplicitlySet) {
   deriver.create_qos_data_from_media_component(mc, "s", decision, qos_ctx, out);
 
   const oai::_3gpp::model::Arp& arp = only_qos_data(decision).getArp();
-  EXPECT_NE(arp.getPreemptCap().getEnumValue(),
-            oai::_3gpp::model::PreemptionCapability_anyOf::
-                ePreemptionCapability_anyOf::INVALID_VALUE_OPENAPI_GENERATED);
-  EXPECT_NE(arp.getPreemptVuln().getEnumValue(),
-            oai::_3gpp::model::PreemptionVulnerability_anyOf::
-                ePreemptionVulnerability_anyOf::INVALID_VALUE_OPENAPI_GENERATED);
+  EXPECT_NE(
+      arp.getPreemptCap().getEnumValue(),
+      oai::_3gpp::model::PreemptionCapability_anyOf::
+          ePreemptionCapability_anyOf::INVALID_VALUE_OPENAPI_GENERATED);
+  EXPECT_NE(
+      arp.getPreemptVuln().getEnumValue(),
+      oai::_3gpp::model::PreemptionVulnerability_anyOf::
+          ePreemptionVulnerability_anyOf::INVALID_VALUE_OPENAPI_GENERATED);
 }
 
 // TS 29.512 §4.2.6.6.2 together with TS 29.514 §5.6.2.7: when the AF provides
 // pre-emption settings, the PCF shall propagate those exact values into ARP.
 TEST(QosDataGeneration, ArpUsesRequestPreemptionValues) {
   MediaComponent mc;
-  mc.setPreemptCap(make_preempt_capability(
-      oai::_3gpp::model::PreemptionCapability_anyOf::
-          ePreemptionCapability_anyOf::MAY_PREEMPT));
+  mc.setPreemptCap(
+      make_preempt_capability(oai::_3gpp::model::PreemptionCapability_anyOf::
+                                  ePreemptionCapability_anyOf::MAY_PREEMPT));
   mc.setPreemptVuln(make_preempt_vulnerability(
       oai::_3gpp::model::PreemptionVulnerability_anyOf::
           ePreemptionVulnerability_anyOf::PREEMPTABLE));
@@ -891,17 +899,19 @@ TEST(QosDataGeneration, ArpUsesRequestPreemptionValues) {
   deriver.create_qos_data_from_media_component(mc, "s", decision, qos_ctx, out);
 
   const auto& arp = only_qos_data(decision).getArp();
-  EXPECT_EQ(arp.getPreemptCap().getEnumValue(),
-            oai::_3gpp::model::PreemptionCapability_anyOf::
-                ePreemptionCapability_anyOf::MAY_PREEMPT);
-  EXPECT_EQ(arp.getPreemptVuln().getEnumValue(),
-            oai::_3gpp::model::PreemptionVulnerability_anyOf::
-                ePreemptionVulnerability_anyOf::PREEMPTABLE);
+  EXPECT_EQ(
+      arp.getPreemptCap().getEnumValue(),
+      oai::_3gpp::model::PreemptionCapability_anyOf::
+          ePreemptionCapability_anyOf::MAY_PREEMPT);
+  EXPECT_EQ(
+      arp.getPreemptVuln().getEnumValue(),
+      oai::_3gpp::model::PreemptionVulnerability_anyOf::
+          ePreemptionVulnerability_anyOf::PREEMPTABLE);
 }
 
 // TS 29.512 §4.2.6.6.2: the PCC rule to QosData linkage must remain internally
-// consistent; the session-local ledger mirrors the provisioned ids for lifecycle
-// operations on the same authorized QoS objects.
+// consistent; the session-local ledger mirrors the provisioned ids for
+// lifecycle operations on the same authorized QoS objects.
 TEST(QosDataGeneration, LedgerMirrorsTheDecisionIds) {
   MediaComponent mc;
   SmPolicyDecision decision;
@@ -981,7 +991,7 @@ TEST(QosCharacteristics, DynamicQfiProducesAnEntryKeyedByThe5qi) {
   ASSERT_TRUE(result.status.has_value());
   ASSERT_EQ(decision.getQosChars().size(), 1u);
   const auto qos_chars = decision.getQosChars();
-  auto it = qos_chars.find("128");
+  auto it              = qos_chars.find("128");
   ASSERT_NE(it, qos_chars.end());
   EXPECT_EQ(it->second.getR5qi(), 128);
   EXPECT_EQ(it->second.getPacketDelayBudget(), 75);
@@ -1000,11 +1010,12 @@ TEST(QosCharacteristics, DynamicGbrQfiHasGbrResourceType) {
   create_qos_characteristics(qos, decision);
 
   const auto qos_chars = decision.getQosChars();
-  auto it = qos_chars.find("130");
+  auto it              = qos_chars.find("130");
   ASSERT_NE(it, qos_chars.end());
-  EXPECT_EQ(it->second.getResourceType().getEnumValue(),
-            oai::_3gpp::model::QosResourceType_anyOf::
-                eQosResourceType_anyOf::NON_CRITICAL_GBR);
+  EXPECT_EQ(
+      it->second.getResourceType().getEnumValue(),
+      oai::_3gpp::model::QosResourceType_anyOf::eQosResourceType_anyOf::
+          NON_CRITICAL_GBR);
 }
 
 // TS 29.512 §4.2.6.6.3 and §5.6.2.16: a dynamic 5QI without GBR information
@@ -1018,23 +1029,26 @@ TEST(QosCharacteristics, DynamicNonGbrQfiHasNonGbrResourceType) {
   create_qos_characteristics(qos, decision);
 
   const auto qos_chars = decision.getQosChars();
-  auto it = qos_chars.find("131");
+  auto it              = qos_chars.find("131");
   ASSERT_NE(it, qos_chars.end());
-  EXPECT_EQ(it->second.getResourceType().getEnumValue(),
-            oai::_3gpp::model::QosResourceType_anyOf::
-                eQosResourceType_anyOf::NON_GBR);
+  EXPECT_EQ(
+      it->second.getResourceType().getEnumValue(),
+      oai::_3gpp::model::QosResourceType_anyOf::eQosResourceType_anyOf::
+          NON_GBR);
 }
 
 // TS 29.512 §4.2.6.6.3: dynamic QosCharacteristics shall always contain the
 // mandatory priority level, packet delay budget, and packet error rate fields.
-TEST(QosCharacteristics, DynamicQfiDefaultsMandatoryFieldsWhenReferenceOmitsThem) {
+TEST(
+    QosCharacteristics,
+    DynamicQfiDefaultsMandatoryFieldsWhenReferenceOmitsThem) {
   QosData qos;
   qos.setR5qi(132);
   SmPolicyDecision decision;
   create_qos_characteristics(qos, decision);
 
   const auto qos_chars = decision.getQosChars();
-  auto it = qos_chars.find("132");
+  auto it              = qos_chars.find("132");
   ASSERT_NE(it, qos_chars.end());
   EXPECT_EQ(it->second.getPriorityLevel(), 8);
   EXPECT_EQ(it->second.getPacketDelayBudget(), 300);
@@ -1054,7 +1068,7 @@ TEST(QosCharacteristics, GbrDynamicQfiCarriesAveragingWindowWhenProvided) {
   create_qos_characteristics(qos, decision);
 
   const auto qos_chars = decision.getQosChars();
-  auto it = qos_chars.find("133");
+  auto it              = qos_chars.find("133");
   ASSERT_NE(it, qos_chars.end());
   ASSERT_TRUE(it->second.averagingWindowIsSet());
   EXPECT_EQ(it->second.getAveragingWindow(), 80);
@@ -1072,7 +1086,7 @@ TEST(QosCharacteristics, NonGbrDynamicQfiOmitsAveragingWindow) {
   create_qos_characteristics(qos, decision);
 
   const auto qos_chars = decision.getQosChars();
-  auto it = qos_chars.find("134");
+  auto it              = qos_chars.find("134");
   ASSERT_NE(it, qos_chars.end());
   EXPECT_FALSE(it->second.averagingWindowIsSet());
 }
@@ -1090,7 +1104,8 @@ TEST(Derive5qi, DefaultsToBestEffortWhenNoLatency) {
 }
 
 // TS 29.513 §7.3.3 NOTE 15/17: the current operator-tunable GBR heuristic maps
-// progressively looser latency budgets to progressively less stringent GBR 5QIs.
+// progressively looser latency budgets to progressively less stringent GBR
+// 5QIs.
 TEST(Derive5qi, GbrBandsByLatency) {
   EXPECT_EQ(derive_5qi(30.0f, /*has_gbr=*/true), 3);
   EXPECT_EQ(derive_5qi(120.0f, /*has_gbr=*/true), 2);
@@ -1241,7 +1256,8 @@ TEST(QosDataBandwidth, ComponentLevelGbrDlIsDerivedFromMirBwDl) {
 }
 
 // TS 29.513 Table 7.3.3-1 NOTE 6: if no minimum or guaranteed rate is
-// requested, the authorized QoS remains non-GBR and no GBR attribute is signalled.
+// requested, the authorized QoS remains non-GBR and no GBR attribute is
+// signalled.
 TEST(QosDataBandwidth, NoGbrWhenNoMinimumRateRequested) {
   MediaComponent mc;
   mc.setMarBwUl("10 Mbps");
@@ -1258,7 +1274,9 @@ TEST(QosDataBandwidth, NoGbrWhenNoMinimumRateRequested) {
 
 // TS 29.513 Table 7.3.3-1: if a service data flow omits marBwUl, the component-
 // level uplink maximum authorized bit rate is used for that flow.
-TEST(QosDataBandwidth, SubComponentFallsBackToComponentBandwidthWhenSubRateMissing) {
+TEST(
+    QosDataBandwidth,
+    SubComponentFallsBackToComponentBandwidthWhenSubRateMissing) {
   MediaComponent mc;
   mc.setMarBwUl("10 Mbps");
   std::map<std::string, MediaSubComponent> subs;
@@ -1281,8 +1299,9 @@ TEST(QosDataFlowStatus, RemovedSubComponentIsExcludedFromBandwidthSum) {
   MediaComponent mc;
   std::map<std::string, MediaSubComponent> subs;
   subs["1"] = make_sub(1, {"permit in ip from assigned to any"}, "1 Mbps");
-  subs["2"] = make_sub(2, {"permit in ip from assigned to any"}, "5 Mbps",
-                       /*removed=*/true);
+  subs["2"] = make_sub(
+      2, {"permit in ip from assigned to any"}, "5 Mbps",
+      /*removed=*/true);
   mc.setMedSubComps(subs);
   SmPolicyDecision decision;
   qos_context qos_ctx;
@@ -1326,8 +1345,9 @@ TEST(QosDataBandwidth, DirectionWithoutFlowDescriptionGetsZeroRate) {
 TEST(QosDataFlowStatus, AllRemovedSubComponentsDoNotInstallPermitAllFallback) {
   MediaComponent mc;
   std::map<std::string, MediaSubComponent> subs;
-  subs["1"] = make_sub(1, {"permit out ip from any to assigned"}, "1 Mbps",
-                       /*removed=*/true);
+  subs["1"] = make_sub(
+      1, {"permit out ip from any to assigned"}, "1 Mbps",
+      /*removed=*/true);
   mc.setMedSubComps(subs);
   SmPolicyDecision decision;
   qos_context qos_ctx;
@@ -1399,7 +1419,8 @@ TEST(QosRequirementsProcessing, ProducesAConsistentDecisionAndLedger) {
   operator_qos_policy op_policy;
   qos_deriver deriver(store, op_policy);
 
-  auto result = deriver.handle_qos_requirements(mc, "sess-1", decision, qos_ctx);
+  auto result =
+      deriver.handle_qos_requirements(mc, "sess-1", decision, qos_ctx);
 
   ASSERT_TRUE(result.status.has_value());
   EXPECT_EQ(result.status.value(), status_code::OK);
@@ -1419,7 +1440,9 @@ TEST(QosRequirementsProcessing, ProducesAConsistentDecisionAndLedger) {
 
 // TS 29.513 §7.3.3: repeated handling of multiple MediaComponents for the same
 // session shall accumulate distinct authorized QoS and PCC rule entries.
-TEST(QosRequirementsProcessing, MultipleComponentsAccumulateDistinctDecisionEntries) {
+TEST(
+    QosRequirementsProcessing,
+    MultipleComponentsAccumulateDistinctDecisionEntries) {
   // Distinct medCompN per component (the mandatory media-component key
   // [TS 29.514 §5.6.2.7]) => distinct deterministic QosData/PccRule ids.
   MediaComponent audio;
@@ -1435,7 +1458,8 @@ TEST(QosRequirementsProcessing, MultipleComponentsAccumulateDistinctDecisionEntr
   operator_qos_policy op_policy;
   qos_deriver deriver(store, op_policy);
 
-  auto first = deriver.handle_qos_requirements(audio, "sess-1", decision, qos_ctx);
+  auto first =
+      deriver.handle_qos_requirements(audio, "sess-1", decision, qos_ctx);
   auto second =
       deriver.handle_qos_requirements(video, "sess-1", decision, qos_ctx);
 
@@ -1492,8 +1516,8 @@ using oai::pcf::app::operator_qos_policy;
 QosData make_qos_data(
     int32_t r5qi, std::optional<std::string> maxbr_ul = std::nullopt,
     std::optional<std::string> maxbr_dl = std::nullopt,
-    std::optional<std::string> gbr_ul = std::nullopt,
-    std::optional<std::string> gbr_dl = std::nullopt) {
+    std::optional<std::string> gbr_ul   = std::nullopt,
+    std::optional<std::string> gbr_dl   = std::nullopt) {
   QosData qos;
   qos.setR5qi(r5qi);
   if (maxbr_ul) qos.setMaxbrUl(*maxbr_ul);
@@ -1506,11 +1530,12 @@ QosData make_qos_data(
 void add_qos_data(
     SmPolicyDecision& decision, const std::string& key, const QosData& qos) {
   auto qos_decs = decision.getQosDecs();
-  qos_decs[key]  = qos;
+  qos_decs[key] = qos;
   decision.setQosDecs(qos_decs);
 }
 
-// Install the authorized Session-AMBR (as the SM side would, via a SessionRule).
+// Install the authorized Session-AMBR (as the SM side would, via a
+// SessionRule).
 void set_authorized_session_ambr(
     SmPolicyDecision& decision, const std::string& ul, const std::string& dl) {
   oai::_3gpp::model::Ambr ambr;
@@ -1547,7 +1572,7 @@ void add_session_rule(
 void add_pcc_rule(
     SmPolicyDecision& decision, const std::string& id,
     const std::vector<std::string>& ref_qos = {},
-    const std::vector<std::string>& ref_tc = {}) {
+    const std::vector<std::string>& ref_tc  = {}) {
   PccRule rule;
   rule.setPccRuleId(id);
   rule.setPrecedence(1000);
@@ -1562,7 +1587,7 @@ void add_pcc_rule(
 void add_qos_characteristics(SmPolicyDecision& decision, int32_t r5qi) {
   QosCharacteristics qc;
   qc.setR5qi(r5qi);
-  auto chars                    = decision.getQosChars();
+  auto chars                  = decision.getQosChars();
   chars[std::to_string(r5qi)] = qc;
   decision.setQosChars(chars);
 }
@@ -1595,8 +1620,8 @@ TEST(QosAuthorization, AcceptsQosWithinAllLimits) {
   EXPECT_FALSE(result.problem_details.has_value());
 }
 
-// TS 29.512 §4.2.6.6.3: a non-standardized 5QI not in the operator allow-list is
-// rejected with 403.
+// TS 29.512 §4.2.6.6.3: a non-standardized 5QI not in the operator allow-list
+// is rejected with 403.
 TEST(QosAuthorization, RejectsDisallowedDynamic5qi) {
   operator_qos_policy op_policy;
   op_policy.allowed_dynamic_5qi = {128};
@@ -1646,8 +1671,8 @@ TEST(QosAuthorization, RejectsPerFlowMbrAboveOperatorCap) {
   EXPECT_EQ(result.problem_details.value(), "REQUESTED_SERVICE_NOT_AUTHORIZED");
 }
 
-// TS 23.503 §6.1.4: cumulative non-GBR MBR exceeding the authorized Session-AMBR
-// is rejected.
+// TS 23.503 §6.1.4: cumulative non-GBR MBR exceeding the authorized
+// Session-AMBR is rejected.
 TEST(QosAuthorization, RejectsCumulativeNonGbrAboveSessionAmbr) {
   SmPolicyDecision decision;
   add_qos_data(decision, "q1", make_qos_data(9, "1 Mbps", "10 Mbps"));
@@ -1681,10 +1706,10 @@ TEST(QosAuthorization, AcceptsCumulativeWithinSessionAmbr) {
   EXPECT_EQ(result.status.value(), status_code::OK);
 }
 
-// TS 29.512 §4.2.6.2: when the decision carries several session rules, the check
-// uses the UNCONDITIONAL (default) rule's Session-AMBR, not an arbitrary
-// conditional one. Here a 10 Mbps DL flow fits the default (20 Mbps) even though
-// a tighter conditional rule (5 Mbps) is also present.
+// TS 29.512 §4.2.6.2: when the decision carries several session rules, the
+// check uses the UNCONDITIONAL (default) rule's Session-AMBR, not an arbitrary
+// conditional one. Here a 10 Mbps DL flow fits the default (20 Mbps) even
+// though a tighter conditional rule (5 Mbps) is also present.
 TEST(QosAuthorization, PrefersUnconditionalSessionRuleAmbr) {
   SmPolicyDecision decision;
   add_qos_data(decision, "q1", make_qos_data(9, "1 Mbps", "10 Mbps"));
@@ -1705,7 +1730,8 @@ TEST(QosAuthorization, PrefersUnconditionalSessionRuleAmbr) {
 TEST(QosAuthorization, FallsBackToTightestWhenOnlyConditionalRules) {
   SmPolicyDecision decision;
   add_qos_data(decision, "q1", make_qos_data(9, "1 Mbps", "20 Mbps"));
-  add_session_rule(decision, "SR-a", "100 Mbps", "10 Mbps", true);  // tightest DL=10
+  add_session_rule(
+      decision, "SR-a", "100 Mbps", "10 Mbps", true);  // tightest DL=10
   add_session_rule(decision, "SR-b", "100 Mbps", "30 Mbps", true);
 
   // unused by validate_qos_authorization; qos_deriver's ctor still needs it
@@ -1723,8 +1749,8 @@ TEST(QosAuthorization, ExcludesGbrFlowsFromSessionAmbrSum) {
   SmPolicyDecision decision;
   // GBR flow with a large MBR that would blow the AMBR if wrongly counted.
   add_qos_data(
-      decision, "q1", make_qos_data(2, "100 Mbps", "100 Mbps", "80 Mbps",
-                                    "80 Mbps"));
+      decision, "q1",
+      make_qos_data(2, "100 Mbps", "100 Mbps", "80 Mbps", "80 Mbps"));
   set_authorized_session_ambr(decision, "20 Mbps", "20 Mbps");
 
   // unused by validate_qos_authorization; qos_deriver's ctor still needs it
@@ -1740,8 +1766,8 @@ TEST(QosAuthorization, ExcludesGbrFlowsFromSessionAmbrSum) {
 TEST(QosAuthorization, RejectsGbrExceedingMbr) {
   SmPolicyDecision decision;
   add_qos_data(
-      decision, "q1", make_qos_data(2, "10 Mbps", "10 Mbps", "20 Mbps",
-                                    "5 Mbps"));
+      decision, "q1",
+      make_qos_data(2, "10 Mbps", "10 Mbps", "20 Mbps", "5 Mbps"));
 
   // unused by validate_qos_authorization; qos_deriver's ctor still needs it
   fake_qos_reference_store store;
@@ -1787,7 +1813,8 @@ TEST(QosAuthorization, FailsOpenWhenNoSessionAmbr) {
   EXPECT_EQ(result.status.value(), status_code::OK);
 }
 
-// Operators can opt into fail-closed when no subscribed Session-AMBR is present.
+// Operators can opt into fail-closed when no subscribed Session-AMBR is
+// present.
 TEST(QosAuthorization, RejectsMissingSubscriptionWhenPolicyRequires) {
   operator_qos_policy op_policy;
   op_policy.reject_on_missing_subscription = true;
@@ -1837,12 +1864,11 @@ TEST(QosAuthorization, DoesNotJudgeNonOwnedBaseFlows) {
  */
 
 // TS 23.503 §6.1.3.7: the PCF may pre-empt lower priority services or reject a
-// request when cumulative authorized QoS exceeds the subscribed guaranteed rate.
-// validate_qos_authorization() now performs the reject path (see
+// request when cumulative authorized QoS exceeds the subscribed guaranteed
+// rate. validate_qos_authorization() now performs the reject path (see
 // RejectsCumulativeNonGbrAboveSessionAmbr); pre-emption of lower-priority
 // services remains deferred to Phase 2.
-TEST(QosAuthorization,
-  DISABLED_PreemptsLowerPriorityServicesWhenAllowed) {
+TEST(QosAuthorization, DISABLED_PreemptsLowerPriorityServicesWhenAllowed) {
   GTEST_SKIP() << "Deferred: pre-emption (TS 23.503 §6.1.3.7) is Phase 2; "
                   "the reject path is covered by "
                   "RejectsCumulativeNonGbrAboveSessionAmbr";
@@ -1855,8 +1881,7 @@ TEST(QosAuthorization,
 
 // TS 29.512 §4.2.6.2.3: merged SM policy decisions shall carry forward qosDecs,
 // qosChars, and qosMonDecs from the request decision.
-TEST(DecisionMerging,
-  MergesQosDataQosCharacteristicsAndQosMonitoringData) {
+TEST(DecisionMerging, MergesQosDataQosCharacteristicsAndQosMonitoringData) {
   SmPolicyDecision current;
   SmPolicyDecision request;
 
@@ -1872,7 +1897,7 @@ TEST(DecisionMerging,
   qos_char.setPriorityLevel(8);
   qos_char.setPacketDelayBudget(300);
   qos_char.setPacketErrorRate("1E-6");
-  auto qos_chars    = request.getQosChars();
+  auto qos_chars   = request.getQosChars();
   qos_chars["128"] = qos_char;
   request.setQosChars(qos_chars);
 
@@ -1891,15 +1916,16 @@ TEST(DecisionMerging,
   EXPECT_EQ(current.getQosMonDecs().size(), 1u);
 }
 
-// TS 29.512 §4.2.6.6.1, TS 23.503 §4.3.3.2.2: on the update path a re-authorized
-// QosData id (a QoS upgrade/downgrade) replaces the current entry rather than
-// being ignored.
+// TS 29.512 §4.2.6.6.1, TS 23.503 §4.3.3.2.2: on the update path a
+// re-authorized QosData id (a QoS upgrade/downgrade) replaces the current entry
+// rather than being ignored.
 TEST(DecisionMerging, UpdateOverwritesExistingQosDataForUpgradeDowngrade) {
   SmPolicyDecision current;
   add_qos_data(current, "q1", make_qos_data(9, "5 Mbps", "5 Mbps"));
 
   SmPolicyDecision request;
-  add_qos_data(request, "q1", make_qos_data(9, "50 Mbps", "50 Mbps"));  // upgrade
+  add_qos_data(
+      request, "q1", make_qos_data(9, "50 Mbps", "50 Mbps"));  // upgrade
 
   auto result = validate_and_merge_decision(request, current, /*update=*/true);
 
@@ -1924,7 +1950,7 @@ TEST(DecisionMerging, PreservesRefQosDataReferentialIntegrityAfterMerge) {
   PccRule rule;
   rule.setPccRuleId("r1");
   rule.setRefQosData({"q1"});
-  auto rules   = request.getPccRules();
+  auto rules  = request.getPccRules();
   rules["r1"] = rule;
   request.setPccRules(rules);
 
@@ -1940,8 +1966,8 @@ TEST(DecisionMerging, PreservesRefQosDataReferentialIntegrityAfterMerge) {
 }
 
 // TS 29.512 §5.6.2.6: a PCC rule that references a QosData id absent from the
-// merged decision has that dangling reference dropped, so the SMF never receives
-// a rule pointing at a missing QosData.
+// merged decision has that dangling reference dropped, so the SMF never
+// receives a rule pointing at a missing QosData.
 TEST(DecisionMerging, DropsDanglingRefQosDataAfterMerge) {
   SmPolicyDecision current;
   SmPolicyDecision request;
@@ -2022,9 +2048,12 @@ TEST(PolicyDecisionValidation, AcceptsResolvableRefTcData) {
 
 // TS 29.512 §4.2.6.6.3, §5.6.2.16: a non-standardized 5QI without a signalled
 // QosCharacteristics is rejected.
-TEST(PolicyDecisionValidation, RejectsNonStandardized5qiWithoutQosCharacteristics) {
+TEST(
+    PolicyDecisionValidation,
+    RejectsNonStandardized5qiWithoutQosCharacteristics) {
   SmPolicyDecision decision;
-  add_qos_data(decision, "q1", make_qos_data(128, "1 Mbps", "1 Mbps"));  // dynamic
+  add_qos_data(
+      decision, "q1", make_qos_data(128, "1 Mbps", "1 Mbps"));  // dynamic
   add_pcc_rule(decision, "r1", /*ref_qos=*/{"q1"});
 
   const auto result = validate_policy_decision(decision);
@@ -2032,7 +2061,8 @@ TEST(PolicyDecisionValidation, RejectsNonStandardized5qiWithoutQosCharacteristic
   EXPECT_EQ(result.status.value(), status_code::INTERNAL_SERVER_ERROR);
 }
 
-TEST(PolicyDecisionValidation, AcceptsNonStandardized5qiWithQosCharacteristics) {
+TEST(
+    PolicyDecisionValidation, AcceptsNonStandardized5qiWithQosCharacteristics) {
   SmPolicyDecision decision;
   add_qos_data(decision, "q1", make_qos_data(128, "1 Mbps", "1 Mbps"));
   add_qos_characteristics(decision, 128);
@@ -2044,7 +2074,8 @@ TEST(PolicyDecisionValidation, AcceptsNonStandardized5qiWithQosCharacteristics) 
 }
 
 // A standardized 5QI needs no QosCharacteristics entry [TS 29.512 §4.2.6.6.2].
-TEST(PolicyDecisionValidation, AcceptsStandardized5qiWithoutQosCharacteristics) {
+TEST(
+    PolicyDecisionValidation, AcceptsStandardized5qiWithoutQosCharacteristics) {
   SmPolicyDecision decision;
   add_qos_data(decision, "q1", make_qos_data(9, "1 Mbps", "1 Mbps"));
   add_pcc_rule(decision, "r1", /*ref_qos=*/{"q1"});
@@ -2054,8 +2085,8 @@ TEST(PolicyDecisionValidation, AcceptsStandardized5qiWithoutQosCharacteristics) 
   EXPECT_EQ(result.status.value(), status_code::OK);
 }
 
-// Well-formedness issues (here: a rule with no precedence) are diagnostics only,
-// not fatal, so operator-provisioned/predefined rules are not rejected.
+// Well-formedness issues (here: a rule with no precedence) are diagnostics
+// only, not fatal, so operator-provisioned/predefined rules are not rejected.
 TEST(PolicyDecisionValidation, AcceptsRuleWithWellFormednessWarningsOnly) {
   SmPolicyDecision decision;
   add_qos_data(decision, "q1", make_qos_data(9, "1 Mbps", "1 Mbps"));
@@ -2080,7 +2111,8 @@ TEST(PolicyDecisionValidation, AcceptsRuleWithWellFormednessWarningsOnly) {
 // TS 29.512 §4.2.6.2.8/§4.2.6.2.9: PCC rules that may share resources shall be
 // provisioned with matching sharingKeyUl and or sharingKeyDl values.
 TEST(QosDataGeneration, DISABLED_CopiesSharingKeysForResourceSharingRules) {
-  GTEST_SKIP() << "Blocked: resource-sharing inputs are not modeled on the current QoS path";
+  GTEST_SKIP() << "Blocked: resource-sharing inputs are not modeled on the "
+                  "current QoS path";
 }
 
 /*
@@ -2090,9 +2122,10 @@ TEST(QosDataGeneration, DISABLED_CopiesSharingKeysForResourceSharingRules) {
 
 // TS 29.512 §4.2.6.5.7: reflective QoS is allowed only for eligible non-GBR
 // flows and shall not be attached to match-all or default-QoS-flow rules.
-TEST(QosDataGeneration,
-  DISABLED_EnablesReflectiveQosOnlyOnEligibleNonGbrFlows) {
-  GTEST_SKIP() << "Blocked: reflective QoS controls are not implemented in create_qos_data_from_media_component()";
+TEST(
+    QosDataGeneration, DISABLED_EnablesReflectiveQosOnlyOnEligibleNonGbrFlows) {
+  GTEST_SKIP() << "Blocked: reflective QoS controls are not implemented in "
+                  "create_qos_data_from_media_component()";
 }
 
 /*
@@ -2102,8 +2135,11 @@ TEST(QosDataGeneration,
 
 // TS 29.512 §4.2.6.6.2: maximum packet loss rate shall only be signalled when
 // the authorized QoS corresponds to 5QI 1 and that value is explicitly derived.
-TEST(QosDataGeneration, DISABLED_AuthorizesMaxPacketLossOnlyForAuthorized5qiOne) {
-  GTEST_SKIP() << "Blocked: the current derivation path does not produce an executable 5QI=1 authorization scenario";
+TEST(
+    QosDataGeneration,
+    DISABLED_AuthorizesMaxPacketLossOnlyForAuthorized5qiOne) {
+  GTEST_SKIP() << "Blocked: the current derivation path does not produce an "
+                  "executable 5QI=1 authorization scenario";
 }
 
 /*
@@ -2113,9 +2149,9 @@ TEST(QosDataGeneration, DISABLED_AuthorizesMaxPacketLossOnlyForAuthorized5qiOne)
 
 // TS 29.512 §4.1.4.4.6 and §4.2.3.25: QoS monitoring policy shall create
 // QosMonitoringData and reference it from the affected PCC rule via refQosMon.
-TEST(QosMonitoringSetup,
-  DISABLED_CreatesQosMonitoringDataAndLinksRefQosMon) {
-  GTEST_SKIP() << "Blocked: setup_qos_monitoring() is still a success-only stub";
+TEST(QosMonitoringSetup, DISABLED_CreatesQosMonitoringDataAndLinksRefQosMon) {
+  GTEST_SKIP()
+      << "Blocked: setup_qos_monitoring() is still a success-only stub";
 }
 
 /*
@@ -2125,9 +2161,11 @@ TEST(QosMonitoringSetup,
 
 // TS 29.512 §4.2.6.2.1 and TS 29.514 §4.2.2.32/§4.2.3.30: alternative service
 // requirements shall yield ordered refAltQosParams plus matching QosData sets.
-TEST(QosRequirementsProcessing,
-  DISABLED_CreatesOrderedAlternativeQosParameterSets) {
-  GTEST_SKIP() << "Blocked: alternative QoS parameter-set modeling is not implemented on the current QoS path";
+TEST(
+    QosRequirementsProcessing,
+    DISABLED_CreatesOrderedAlternativeQosParameterSets) {
+  GTEST_SKIP() << "Blocked: alternative QoS parameter-set modeling is not "
+                  "implemented on the current QoS path";
 }
 
 /*
@@ -2138,7 +2176,8 @@ TEST(QosRequirementsProcessing,
 // TS 29.513 Table 7.3.3-1: RTCP flows use the rsBw and rrBw-specific rate
 // derivation path. The generated FlowUsage model is currently opaque in C++.
 TEST(QosDataBandwidth, DISABLED_RtcpFlowUsageAppliesSpecialBandwidthRules) {
-  GTEST_SKIP() << "Blocked: FlowUsage does not expose RTCP-specific values in the generated C++ model";
+  GTEST_SKIP() << "Blocked: FlowUsage does not expose RTCP-specific values in "
+                  "the generated C++ model";
 }
 
 /*
@@ -2148,7 +2187,9 @@ TEST(QosDataBandwidth, DISABLED_RtcpFlowUsageAppliesSpecialBandwidthRules) {
 
 // TS 29.514 §4.2.3.2: modifying media-component QoS shall update or remove the
 // app-session-owned QosData and PCC rule entries instead of recreating blindly.
-TEST(QosRequirementsProcessing,
-  DISABLED_UpdatesOwnedQosEntriesOnSessionModification) {
-  GTEST_SKIP() << "Blocked: session-modification QoS update handling is not implemented yet";
+TEST(
+    QosRequirementsProcessing,
+    DISABLED_UpdatesOwnedQosEntriesOnSessionModification) {
+  GTEST_SKIP() << "Blocked: session-modification QoS update handling is not "
+                  "implemented yet";
 }

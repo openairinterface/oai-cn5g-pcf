@@ -56,8 +56,8 @@ struct pcc_rule_context {
  * @brief Pure data: the set of QoS entries an app-session contributed to the
  * association's SmPolicyDecision.
  *
- * Holds identifiers only (the payload's source of truth is the decision owned by
- * the SM policy association) plus internal-only lifecycle metadata.
+ * Holds identifiers only (the payload's source of truth is the decision owned
+ * by the SM policy association) plus internal-only lifecycle metadata.
  */
 struct qos_ledger {
   std::map<std::string, qos_flow_metadata> qos_flows;  // keyed by qosId
@@ -98,10 +98,11 @@ class qos_context {
    * @brief Reconcile the ledger with a delta that has just been committed to
    * the association, as the post-commit side-effect of an update.
    *
-   * The ledger is only ever mutated here (after a successful association apply),
-   * never during QoS derivation -- derivation writes to a scratch context, so a
-   * request that is rejected/retried leaves this ledger untouched. Upserted
-   * qosDecs/pccRules are recorded (created-or-updated), removed ones dropped.
+   * The ledger is only ever mutated here (after a successful association
+   * apply), never during QoS derivation -- derivation writes to a scratch
+   * context, so a request that is rejected/retried leaves this ledger
+   * untouched. Upserted qosDecs/pccRules are recorded (created-or-updated),
+   * removed ones dropped.
    */
   void apply_committed_delta(const oai::pcf::app::sm_policy_delta& delta);
 
@@ -114,7 +115,8 @@ class qos_context {
    */
   void erase_owned_from(oai::_3gpp::model::SmPolicyDecision& decision) const;
 
-  /** Durable projection helpers (for app_session_record / future DB backend). */
+  /** Durable projection helpers (for app_session_record / future DB backend).
+   */
   [[nodiscard]] qos_ledger snapshot() const;
   void restore(const qos_ledger& ledger);
 

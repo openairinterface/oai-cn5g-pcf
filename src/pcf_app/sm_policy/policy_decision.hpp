@@ -82,7 +82,8 @@ class policy_decision {
   // Cheap immutable snapshot; safe to hold after the association lock is
   // released (e.g. to notify the SMF without holding the lock across the
   // blocking network call).
-  [[nodiscard]] virtual std::shared_ptr<const oai::_3gpp::model::SmPolicyDecision>
+  [[nodiscard]] virtual std::shared_ptr<
+      const oai::_3gpp::model::SmPolicyDecision>
   snapshot_decision() const;
 
   [[nodiscard]] virtual uint64_t decision_version() const;
@@ -111,8 +112,8 @@ class policy_decision {
       std::string& problem_details);
 
   // Authoritative decision held copy-on-write: an immutable snapshot published
-  // via shared_ptr. Writers (set/apply) build a new snapshot and rebind; readers
-  // take a cheap shared_ptr copy. Always non-null after construction.
+  // via shared_ptr. Writers (set/apply) build a new snapshot and rebind;
+  // readers take a cheap shared_ptr copy. Always non-null after construction.
   std::shared_ptr<const oai::_3gpp::model::SmPolicyDecision> m_decision;
   uint64_t m_version{0};
 };

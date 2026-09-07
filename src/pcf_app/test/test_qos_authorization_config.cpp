@@ -4,9 +4,9 @@
 
 // Tests for the operator QoS-authorization config parsing
 // (oai::config::pcf::qos_authorization_config). Verifies that the
-// `pcf.qos_authorization` YAML block maps to the config getters that pcf_app.cpp
-// converts into oai::pcf::app::operator_qos_policy. The BitRate-string ->
-// bit/s conversion itself is covered by test_bitrate.cpp.
+// `pcf.qos_authorization` YAML block maps to the config getters that
+// pcf_app.cpp converts into oai::pcf::app::operator_qos_policy. The
+// BitRate-string -> bit/s conversion itself is covered by test_bitrate.cpp.
 
 #include <gtest/gtest.h>
 

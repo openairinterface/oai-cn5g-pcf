@@ -25,9 +25,10 @@
 #include "uint_generator.hpp"
 
 // Base precedence for Policy-Authorization-derived PCC rules. TS 23.503 §6.3.1
-// requires PCC rule precedence to be unambiguous and leaves the numeric range to
-// operator/PCF configuration; we reserve the 1000-1999 band for PA-derived rules
-// (distinct from the SM Policy Control side) per the QoS implementation plan.
+// requires PCC rule precedence to be unambiguous and leaves the numeric range
+// to operator/PCF configuration; we reserve the 1000-1999 band for PA-derived
+// rules (distinct from the SM Policy Control side) per the QoS implementation
+// plan.
 #define PA_QOS_PRECEDENCE_BASE 1000
 
 namespace oai::pcf::app::policy_auth {
@@ -39,9 +40,9 @@ using namespace oai::utils;
 namespace {
 
 // FlowDirection for an SDF filter, inferred from the IPFilterRule direction
-// token. TS 29.212 clause 5.4.2 / TS 29.514 FlowDescription: "permit out ..." is
-// downlink (gateway -> UE), "permit in ..." is uplink (UE -> gateway). Defaults
-// to BIDIRECTIONAL when the token can't be determined.
+// token. TS 29.212 clause 5.4.2 / TS 29.514 FlowDescription: "permit out ..."
+// is downlink (gateway -> UE), "permit in ..." is uplink (UE -> gateway).
+// Defaults to BIDIRECTIONAL when the token can't be determined.
 FlowDirectionRm flow_direction_from_desc(const std::string& desc) {
   FlowDirectionRm dir;
   if (desc.find(" out ") != std::string::npos ||
@@ -72,7 +73,7 @@ FlowInformation flow_info_from_desc(const std::string& desc) {
 // resPrio -> priorityLevel is deferred (ReservPriority is an empty generated
 // model, so the value is unreadable); preemptCap/preemptVuln are taken from the
 // request when present (TS 29.514 §5.6.2.7), else safe defaults.
-template <typename MediaComponentT>
+template<typename MediaComponentT>
 oai::_3gpp::model::Arp derive_arp(const MediaComponentT& mc) {
   oai::_3gpp::model::Arp arp;
   // TODO [QOS] Map MediaComponent.resPrio -> arp.priorityLevel. Two blockers:
@@ -96,7 +97,8 @@ oai::_3gpp::model::Arp derive_arp(const MediaComponentT& mc) {
   // shape (see the resPrio TODO above) -- there is no accessor to read an
   // actual value out of them. MediaComponent (the create/POST path) has the
   // real, non-empty types, so those are still read normally.
-  if constexpr (std::is_same_v<MediaComponentT, oai::_3gpp::model::MediaComponent>) {
+  if constexpr (std::is_same_v<
+                    MediaComponentT, oai::_3gpp::model::MediaComponent>) {
     if (mc.preemptCapIsSet()) {
       arp.setPreemptCap(mc.getPreemptCap());
     } else {
@@ -183,8 +185,10 @@ session_ambr_limit find_authorized_session_ambr(
     } else {
       // Conservative fallback: keep the tightest AMBR seen across conditionals.
       ++conditional_count;
-      if (ul && (!tightest.ul_bps || *ul < *tightest.ul_bps)) tightest.ul_bps = ul;
-      if (dl && (!tightest.dl_bps || *dl < *tightest.dl_bps)) tightest.dl_bps = dl;
+      if (ul && (!tightest.ul_bps || *ul < *tightest.ul_bps))
+        tightest.ul_bps = ul;
+      if (dl && (!tightest.dl_bps || *dl < *tightest.dl_bps))
+        tightest.dl_bps = dl;
     }
   }
 
@@ -214,7 +218,7 @@ qos_deriver::qos_deriver(
 
 // Extract and process the QoS requirements of one MediaComponent, orchestrating
 // QosData creation, QoS characteristics and monitoring [TS 29.513 §7.3.3].
-template <typename MediaComponentT>
+template<typename MediaComponentT>
 handler_result qos_deriver::handle_qos_requirements(
     const MediaComponentT& media_component, const std::string& app_session_id,
     SmPolicyDecision& decision, qos_context& qos_ctx) {
@@ -241,7 +245,7 @@ handler_result qos_deriver::handle_qos_requirements(
 
 // Create the QosData + PccRule (with SDF filters) for one MediaComponent
 // [TS 29.512 §5.6.2.8, §4.1.4.2.1; TS 29.513 §7.3.3].
-template <typename MediaComponentT>
+template<typename MediaComponentT>
 handler_result qos_deriver::create_qos_data_from_media_component(
     const MediaComponentT& media_component, const std::string& app_session_id,
     SmPolicyDecision& decision, qos_context& qos_ctx, QosData& out_qos_data) {
@@ -296,26 +300,27 @@ handler_result qos_deriver::create_qos_data_from_media_component(
       Logger::pcf_app().info(fmt::format(
           "Using operator-preconfigured QoS reference '{}' for qosId '{}'",
           media_component.getQosReference(), qos_id));
-        Logger::pcf_app().debug(
+      Logger::pcf_app().debug(
           "Because the qosReference resolved successfully, operator-"
           "configured 5QI, MBR, GBR, and ARP values override any QoS "
           "derivation from the request.");
     } else {
       Logger::pcf_app().warn(fmt::format(
-          "qosReference '{}' not found in the QoS reference store; deriving QoS "
+          "qosReference '{}' not found in the QoS reference store; deriving "
+          "QoS "
           "from the MediaComponent instead",
           media_component.getQosReference()));
     }
   }
 
-  // Build SDF filters from the request's flow descriptions regardless of whether
-  // QoS was taken from a reference set [TS 29.512 §4.1.4.2.1, TS 29.514 §5.6.2.7].
-  // Also accumulate the per-SDF Maximum Authorized Data Rate (MBR) as the sum
-  // over service data flows [TS 29.513 Table 7.3.3-2].
+  // Build SDF filters from the request's flow descriptions regardless of
+  // whether QoS was taken from a reference set [TS 29.512 §4.1.4.2.1, TS 29.514
+  // §5.6.2.7]. Also accumulate the per-SDF Maximum Authorized Data Rate (MBR)
+  // as the sum over service data flows [TS 29.513 Table 7.3.3-2].
   std::vector<FlowInformation> flow_infos;
   std::optional<std::string> mbr_ul;
   std::optional<std::string> mbr_dl;
-  bool has_sub_components = media_component.medSubCompsIsSet();
+  bool has_sub_components             = media_component.medSubCompsIsSet();
   bool has_non_removed_sub_components = false;
   bool has_uplink_sdf                 = false;
   bool has_downlink_sdf               = false;
@@ -327,7 +332,8 @@ handler_result qos_deriver::create_qos_data_from_media_component(
         "MediaComponent has {} sub-component(s) (SDFs)",
         media_component.getMedSubComps().size()));
     for (const auto& [key, sub] : media_component.getMedSubComps()) {
-      // Removed flows contribute 0 data rate and install no filter [Table 7.3.3-1].
+      // Removed flows contribute 0 data rate and install no filter
+      // [Table 7.3.3-1].
       if (sub_component_removed(sub)) {
         Logger::pcf_app().trace(fmt::format(
             "Sub-component fNum={} is REMOVED; skipping (0 data rate)", key));
@@ -421,9 +427,9 @@ handler_result qos_deriver::create_qos_data_from_media_component(
     Logger::pcf_app().debug(fmt::format(
         "Aggregated per-SDF MBR from request: ul='{}', dl='{}'{}",
         mbr_ul.value_or("<none>"), mbr_dl.value_or("<none>"),
-        from_reference
-            ? " (ignored: MBR/GBR are taken from the qosReference set)"
-            : ""));
+        from_reference ?
+            " (ignored: MBR/GBR are taken from the qosReference set)" :
+            ""));
   } else {
     // No service data flows described: use the component-level MBR directly.
     if (media_component.marBwUlIsSet()) mbr_ul = media_component.getMarBwUl();
@@ -459,12 +465,12 @@ handler_result qos_deriver::create_qos_data_from_media_component(
         qos_data.setGbrDl(media_component.getMirBwDl());
       Logger::pcf_app().debug(fmt::format(
           "GBR requested (mirBw present): gbrUl='{}', gbrDl='{}'",
-          media_component.mirBwUlIsSet() ? media_component.getMirBwUl()
-                                         : "<none>",
-          media_component.mirBwDlIsSet() ? media_component.getMirBwDl()
-                                         : "<none>"));
-      } else {
-        Logger::pcf_app().debug(
+          media_component.mirBwUlIsSet() ? media_component.getMirBwUl() :
+                                           "<none>",
+          media_component.mirBwDlIsSet() ? media_component.getMirBwDl() :
+                                           "<none>"));
+    } else {
+      Logger::pcf_app().debug(
           "No minimum or guaranteed bitrate was requested. Leaving the "
           "authorized QoS as non-GBR and omitting GBR fields.");
     }
@@ -474,20 +480,20 @@ handler_result qos_deriver::create_qos_data_from_media_component(
     // desMaxLoss ("maximum desirable transport level packet loss rate") is the
     // loss twin of desMaxLatency: TS 29.513 §7.3.3 NOTE 15/17 map it to the 5QI
     // Packet Error Rate exactly as desMaxLatency maps to the Packet Delay
-    // Budget. It is intentionally NOT read here. Both fields carry Applicability
-    // "QoSHint"/"FLUS" [TS 29.514 §5.6.2.7, §4.2.2.33], a feature this PCF does
-    // not negotiate (kPcfSupportedFeatures = 0x0), and the spec prescribes NO
-    // mapping formula for either -- NOTE 15/17 only say the derivation "may
-    // consider" them, citing non-normative examples. Rather than invent a
-    // second non-normative heuristic for a field a compliant AF can't even send
-    // until QoSHint is advertised, desMaxLoss stays deferred.
+    // Budget. It is intentionally NOT read here. Both fields carry
+    // Applicability "QoSHint"/"FLUS" [TS 29.514 §5.6.2.7, §4.2.2.33], a feature
+    // this PCF does not negotiate (kPcfSupportedFeatures = 0x0), and the spec
+    // prescribes NO mapping formula for either -- NOTE 15/17 only say the
+    // derivation "may consider" them, citing non-normative examples. Rather
+    // than invent a second non-normative heuristic for a field a compliant AF
+    // can't even send until QoSHint is advertised, desMaxLoss stays deferred.
     // NOTE: desMaxLatency below is read as a pragmatic best-effort
     // despite the same gate; the QoSHint pair should be handled together (and
     // the feature formally negotiated) when QoSHint is taken on.
     std::optional<float> latency =
-        media_component.desMaxLatencyIsSet()
-            ? std::optional<float>(media_component.getDesMaxLatency())
-            : std::nullopt;
+        media_component.desMaxLatencyIsSet() ?
+            std::optional<float>(media_component.getDesMaxLatency()) :
+            std::nullopt;
     const int32_t r5qi = derive_5qi(latency, has_gbr);
     qos_data.setR5qi(r5qi);
     Logger::pcf_app().debug(fmt::format(
@@ -571,8 +577,8 @@ handler_result qos_deriver::create_qos_data_from_media_component(
   // modify-in-place, reuse the existing rule's precedence so SMF rule ordering
   // is stable; on a new flow, assign a fresh unique value from the uid
   // generator.
-  auto pcc_rules_map        = decision.getPccRules();
-  const auto existing_rule  = pcc_rules_map.find(rule_id);
+  auto pcc_rules_map       = decision.getPccRules();
+  const auto existing_rule = pcc_rules_map.find(rule_id);
   int32_t precedence;
   if (existing_rule != pcc_rules_map.end() &&
       existing_rule->second.precedenceIsSet()) {
@@ -596,8 +602,7 @@ handler_result qos_deriver::create_qos_data_from_media_component(
   // can later edit exactly these entries; the payload lives in the decision
   // owned by the SM policy association.
   qos_ctx.record_qos_flow(qos_id);
-  qos_ctx.record_pcc_rule(
-      rule_id, static_cast<uint32_t>(precedence), {qos_id});
+  qos_ctx.record_pcc_rule(rule_id, static_cast<uint32_t>(precedence), {qos_id});
 
   Logger::pcf_app().info(fmt::format(
       "Created QosData '{}' ({}) and PccRule '{}' (precedence={}, {} SDF "
@@ -763,17 +768,16 @@ handler_result qos_deriver::validate_qos_authorization(
 // the create path (POST) and MediaComponentRm for the update path (PATCH). The
 // definitions live in this TU; these make both specializations available to
 // callers (pcf_policy_authorization.cpp, tests) at link time.
-template handler_result qos_deriver::create_qos_data_from_media_component<
-    MediaComponent>(
+template handler_result
+qos_deriver::create_qos_data_from_media_component<MediaComponent>(
     const MediaComponent&, const std::string&, SmPolicyDecision&, qos_context&,
     QosData&);
-template handler_result qos_deriver::create_qos_data_from_media_component<
-    MediaComponentRm>(
+template handler_result
+qos_deriver::create_qos_data_from_media_component<MediaComponentRm>(
     const MediaComponentRm&, const std::string&, SmPolicyDecision&,
     qos_context&, QosData&);
 template handler_result qos_deriver::handle_qos_requirements<MediaComponent>(
-    const MediaComponent&, const std::string&, SmPolicyDecision&,
-    qos_context&);
+    const MediaComponent&, const std::string&, SmPolicyDecision&, qos_context&);
 template handler_result qos_deriver::handle_qos_requirements<MediaComponentRm>(
     const MediaComponentRm&, const std::string&, SmPolicyDecision&,
     qos_context&);

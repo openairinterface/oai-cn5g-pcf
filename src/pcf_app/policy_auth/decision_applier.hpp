@@ -29,7 +29,8 @@
  *   1. pending_commit / pending_rollback_tracker -- "which commit does this
  *      (association_id, version) refer to", with TTL + hard cap.
  *   2. decision_applier -- CAS-retry apply, recording into (1) on commit.
- *   3. compute_rollback_delta -- pure: the staleness-checked compensating delta.
+ *   3. compute_rollback_delta -- pure: the staleness-checked compensating
+ * delta.
  *   4. perform_compensating_rollback -- fetch-live-then-apply orchestration,
  *      with both collaborators injected.
  */
@@ -190,7 +191,8 @@ class decision_applier {
  * glue -- so it's unit-testable without a real timerfd/thread (§6.11).
  */
 [[nodiscard]] oai::pcf::app::sm_policy_delta compute_rollback_delta(
-    const oai::_3gpp::model::SmPolicyDecision& live, const pending_commit& pending);
+    const oai::_3gpp::model::SmPolicyDecision& live,
+    const pending_commit& pending);
 
 // ---- 4. rollback orchestration ---------------------------------------------
 

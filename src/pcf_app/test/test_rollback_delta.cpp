@@ -82,7 +82,7 @@ pending_commit make_pending(
 }  // namespace
 
 TEST(RollbackDelta, EmptyCommittedDeltaYieldsEmptyRollback) {
-  auto base = decision_with_qos({{"A", make_qos("A", 9)}});
+  auto base          = decision_with_qos({{"A", make_qos("A", 9)}});
   const auto pending = make_pending(base, base);  // no-op commit
 
   const auto rollback = compute_rollback_delta(base, pending);
@@ -91,8 +91,8 @@ TEST(RollbackDelta, EmptyCommittedDeltaYieldsEmptyRollback) {
 }
 
 TEST(RollbackDelta, CreateIsCompensatedByRemoval) {
-  auto base    = decision_with_qos({});
-  auto updated = decision_with_qos({{"A", make_qos("A", 3)}});
+  auto base          = decision_with_qos({});
+  auto updated       = decision_with_qos({{"A", make_qos("A", 3)}});
   const auto pending = make_pending(base, updated);
 
   // Live still shows exactly what was committed -- unchanged since.
@@ -103,8 +103,8 @@ TEST(RollbackDelta, CreateIsCompensatedByRemoval) {
 }
 
 TEST(RollbackDelta, ModifyIsCompensatedByRestoringThePriorValue) {
-  auto base    = decision_with_qos({{"A", make_qos("A", 9)}});
-  auto updated = decision_with_qos({{"A", make_qos("A", 3)}});
+  auto base          = decision_with_qos({{"A", make_qos("A", 9)}});
+  auto updated       = decision_with_qos({{"A", make_qos("A", 3)}});
   const auto pending = make_pending(base, updated);
 
   const auto rollback = compute_rollback_delta(updated, pending);
@@ -115,8 +115,8 @@ TEST(RollbackDelta, ModifyIsCompensatedByRestoringThePriorValue) {
 }
 
 TEST(RollbackDelta, RemovalIsCompensatedByRestoringThePriorValue) {
-  auto base    = decision_with_qos({{"A", make_qos("A", 9)}});
-  auto updated = decision_with_qos({});  // A removed
+  auto base          = decision_with_qos({{"A", make_qos("A", 9)}});
+  auto updated       = decision_with_qos({});  // A removed
   const auto pending = make_pending(base, updated);
 
   // Live still shows A absent -- unchanged since.
@@ -127,12 +127,13 @@ TEST(RollbackDelta, RemovalIsCompensatedByRestoringThePriorValue) {
 }
 
 TEST(RollbackDelta, ChangedSinceUpsertIsSkipped) {
-  auto base    = decision_with_qos({});
-  auto updated = decision_with_qos({{"A", make_qos("A", 3)}});  // committed value
+  auto base = decision_with_qos({});
+  auto updated =
+      decision_with_qos({{"A", make_qos("A", 3)}});  // committed value
   const auto pending = make_pending(base, updated);
 
   // Something else changed A's value since this commit.
-  auto live = decision_with_qos({{"A", make_qos("A", 7)}});
+  auto live           = decision_with_qos({{"A", make_qos("A", 7)}});
   const auto rollback = compute_rollback_delta(live, pending);
 
   EXPECT_TRUE(rollback.upsert_qos_decs.empty());
@@ -140,12 +141,12 @@ TEST(RollbackDelta, ChangedSinceUpsertIsSkipped) {
 }
 
 TEST(RollbackDelta, ChangedSinceUpsertKeyNowAbsentIsSkipped) {
-  auto base    = decision_with_qos({});
-  auto updated = decision_with_qos({{"A", make_qos("A", 3)}});
+  auto base          = decision_with_qos({});
+  auto updated       = decision_with_qos({{"A", make_qos("A", 3)}});
   const auto pending = make_pending(base, updated);
 
   // Something else removed A entirely since this commit.
-  auto live = decision_with_qos({});
+  auto live           = decision_with_qos({});
   const auto rollback = compute_rollback_delta(live, pending);
 
   EXPECT_TRUE(rollback.upsert_qos_decs.empty());
@@ -153,19 +154,20 @@ TEST(RollbackDelta, ChangedSinceUpsertKeyNowAbsentIsSkipped) {
 }
 
 TEST(RollbackDelta, ChangedSinceRemovalIsSkipped) {
-  auto base    = decision_with_qos({{"A", make_qos("A", 9)}});
-  auto updated = decision_with_qos({});  // A removed by this commit
+  auto base          = decision_with_qos({{"A", make_qos("A", 9)}});
+  auto updated       = decision_with_qos({});  // A removed by this commit
   const auto pending = make_pending(base, updated);
 
   // Something else re-created A since -- must not be clobbered by a restore.
-  auto live = decision_with_qos({{"A", make_qos("A", 1)}});
+  auto live           = decision_with_qos({{"A", make_qos("A", 1)}});
   const auto rollback = compute_rollback_delta(live, pending);
 
   EXPECT_TRUE(rollback.upsert_qos_decs.empty());
 }
 
 TEST(RollbackDelta, IndependentKeysAreEvaluatedOnTheirOwnStaleness) {
-  auto base = decision_with_qos({{"A", make_qos("A", 9)}, {"B", make_qos("B", 9)}});
+  auto base =
+      decision_with_qos({{"A", make_qos("A", 9)}, {"B", make_qos("B", 9)}});
   auto updated =
       decision_with_qos({{"A", make_qos("A", 3)}, {"B", make_qos("B", 4)}});
   const auto pending = make_pending(base, updated);

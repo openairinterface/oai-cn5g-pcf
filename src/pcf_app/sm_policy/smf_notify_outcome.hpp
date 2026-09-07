@@ -13,11 +13,11 @@ namespace oai::pcf::app::sm_policy {
 // sm_policy::status_code, which serves other (association create/bind) paths
 // and collapses PCC_RULE_EVENT/PCC_QOS_FLOW_EVENT together.
 enum class smf_notify_outcome {
-  applied,               // 200 OK / 204 No Content, no partial-failure report
-  partial_failure,       // 200 OK + a PartialSuccessReport array present
-  temporary_rejection,   // cause == PCC_QOS_FLOW_EVENT (or unrecognized/other)
-  permanent_rejection,   // cause == PCC_RULE_EVENT
-  transport_ambiguous,   // no HTTP response at all, or an unmodeled 5xx/other
+  applied,              // 200 OK / 204 No Content, no partial-failure report
+  partial_failure,      // 200 OK + a PartialSuccessReport array present
+  temporary_rejection,  // cause == PCC_QOS_FLOW_EVENT (or unrecognized/other)
+  permanent_rejection,  // cause == PCC_RULE_EVENT
+  transport_ambiguous,  // no HTTP response at all, or an unmodeled 5xx/other
 };
 
 inline const char* to_string(smf_notify_outcome outcome) {

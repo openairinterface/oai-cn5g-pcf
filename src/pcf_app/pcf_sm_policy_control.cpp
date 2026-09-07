@@ -52,8 +52,8 @@ pcf_smpc::pcf_smpc(
           notify_failure_recovery.max_notify_retries,
           notify_failure_recovery.retry_backoff_initial),
       m_http_send(
-          http_send ? std::move(http_send)
-                    : http_send_fn([](method_e m, const request& r) {
+          http_send ? std::move(http_send) :
+                      http_send_fn([](method_e m, const request& r) {
                         return http_client_inst->send_http_request(m, r);
                       })),
       m_event_sub(ev) {
@@ -85,8 +85,7 @@ pcf_smpc::pcf_smpc(
           boost::placeholders::_3));
 
   m_task_tick_connection = m_event_sub.subscribe_task_nf_heartbeat(
-      boost::bind(
-          &pcf_smpc::drain_retry_queue, this, boost::placeholders::_1),
+      boost::bind(&pcf_smpc::drain_retry_queue, this, boost::placeholders::_1),
       kRetryDrainCheckPeriodMs);
 
   m_get_association_decision_connection =
@@ -209,9 +208,10 @@ void pcf_smpc::handle_session_binding_request(
     oai::_3gpp::model::SmPolicyDecision& decision, std::uint64_t& version) {
   // The decision handed back below already carries the QoS baseline Policy
   // Authorization needs: the authorized Session-AMBR / default 5QI-ARP that
-  // create_sm_policy_handler() put in a SessionRule [TS 29.512 §4.2.6.6.1], plus
-  // every PCC rule and QosData currently installed. Slice-level resource
-  // utilisation is not included -- see the admission-control TODO in the header.
+  // create_sm_policy_handler() put in a SessionRule [TS 29.512 §4.2.6.6.1],
+  // plus every PCC rule and QosData currently installed. Slice-level resource
+  // utilisation is not included -- see the admission-control TODO in the
+  // header.
 
   // TODO: support multiple sessions
 
@@ -316,8 +316,9 @@ void pcf_smpc::handle_commit_decision_request(
     }
 
     iter->second.apply_delta(delta);  // copy-on-write + version bump
-    out = {true, iter->second.decision_version(),
-           iter->second.snapshot_decision()};
+    out = {
+        true, iter->second.decision_version(),
+        iter->second.snapshot_decision()};
     // Capture the context under the lock so persist runs off-lock
     context = iter->second.get_sm_policy_context_data();
   }  // m_associations_mutex released
@@ -368,8 +369,8 @@ void pcf_smpc::handle_notify_committed_decision_request(
   bool association_found;
   {
     std::shared_lock lock_associations(m_associations_mutex);
-    auto iter          = m_associations.find(association_id);
-    association_found  = iter != m_associations.end();
+    auto iter         = m_associations.find(association_id);
+    association_found = iter != m_associations.end();
     if (association_found) {
       decision = iter->second.snapshot_decision();
       context  = iter->second.get_sm_policy_context_data();
@@ -384,7 +385,7 @@ void pcf_smpc::handle_notify_committed_decision_request(
     return;
   }
 
-  outcome = smf_notify_outcome::applied;
+  outcome  = smf_notify_outcome::applied;
   auto ret = send_sm_policy_control_update_notify(context, decision, outcome);
   if (ret != status_code::CREATED) {
     Logger::pcf_app().error(
@@ -421,7 +422,8 @@ void pcf_smpc::drain_retry_queue(std::uint64_t /*tick_ms*/) {
   const auto now = std::chrono::steady_clock::now();
   m_retry_drain_queue.sweep_expired(now);
 
-  for (const auto& [association_id, version] : m_retry_drain_queue.due_entries(now)) {
+  for (const auto& [association_id, version] :
+       m_retry_drain_queue.due_entries(now)) {
     // Re-fetch the association's LIVE decision + context under lock
     // immediately before this attempt (finding J) -- never resend a frozen
     // snapshot, since an unrelated disjoint-key commit may have landed on
@@ -431,8 +433,8 @@ void pcf_smpc::drain_retry_queue(std::uint64_t /*tick_ms*/) {
     bool association_found;
     {
       std::shared_lock lock_associations(m_associations_mutex);
-      auto iter          = m_associations.find(association_id);
-      association_found  = iter != m_associations.end();
+      auto iter         = m_associations.find(association_id);
+      association_found = iter != m_associations.end();
       if (association_found) {
         decision = iter->second.snapshot_decision();
         context  = iter->second.get_sm_policy_context_data();
@@ -442,8 +444,8 @@ void pcf_smpc::drain_retry_queue(std::uint64_t /*tick_ms*/) {
     if (!association_found) {
       // Association gone (e.g. PDU session released concurrently); nothing
       // left to retry.
-      const auto drain_outcome =
-          m_retry_drain_queue.report_attempt(association_id, version, true, now);
+      const auto drain_outcome = m_retry_drain_queue.report_attempt(
+          association_id, version, true, now);
       Logger::pcf_app().debug(
           "drain_retry_queue: association %s version %lu gone -> %s",
           association_id.c_str(), version, to_string(drain_outcome));
@@ -465,7 +467,7 @@ void pcf_smpc::drain_retry_queue(std::uint64_t /*tick_ms*/) {
     // exhaust (report_attempt logs the exhaustion itself at ERROR -- this
     // debug line traces every attempt's outcome, not just the terminal one).
     const bool resolved = outcome == smf_notify_outcome::applied ||
-                           outcome == smf_notify_outcome::permanent_rejection;
+                          outcome == smf_notify_outcome::permanent_rejection;
     const auto drain_outcome = m_retry_drain_queue.report_attempt(
         association_id, version, resolved, now);
     Logger::pcf_app().debug(
@@ -582,9 +584,9 @@ sm_policy::status_code pcf_smpc::update_sm_policy_handler(
   // TODO [QOS] This is where the SMF's own PCC rule error reports arrive
   // ("ruleReports"/"sessRuleReports" in SmPolicyUpdateContextData) [TS 29.512
   // §4.2.4.15, §4.2.4.7]. They are currently NOT read: redecide() only switches
-  // on repPolicyCtrlReqTriggers, so a rule the SMF failed to install -- or a QoS
-  // flow it later terminated -- leaves this PCF believing the QoS is active,
-  // with no compensating rollback and no AF notification.
+  // on repPolicyCtrlReqTriggers, so a rule the SMF failed to install -- or a
+  // QoS flow it later terminated -- leaves this PCF believing the QoS is
+  // active, with no compensating rollback and no AF notification.
 
   std::unique_lock lock_associations(m_associations_mutex);
   auto iter = m_associations.find(id);

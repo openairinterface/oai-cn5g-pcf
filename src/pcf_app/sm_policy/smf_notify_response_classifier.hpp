@@ -34,8 +34,8 @@ inline constexpr const char* kCauseUserUnknown  = "USER_UNKNOWN";
  * PartialSuccessReport-array case.
  */
 struct smf_notify_classification {
-  status_code response              = status_code::INTERNAL_SERVER_ERROR;
-  smf_notify_outcome outcome         = smf_notify_outcome::transport_ambiguous;
+  status_code response       = status_code::INTERNAL_SERVER_ERROR;
+  smf_notify_outcome outcome = smf_notify_outcome::transport_ambiguous;
   std::string info;
   std::string cause;
   std::string detail;

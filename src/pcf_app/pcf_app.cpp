@@ -59,7 +59,8 @@ pcf_app::pcf_app(pcf_event& ev) : m_event_sub(ev) {
   }
 
   // Operator QoS-authorization limits, shared by both services (SM-side
-  // Session-AMBR authorization and PA-side QoS validation) [TS 29.512 §4.2.6.6].
+  // Session-AMBR authorization and PA-side QoS validation) [TS 29.512
+  // §4.2.6.6].
   const operator_qos_policy qos_auth_policy =
       make_operator_qos_policy(pcf_cfg->get_qos_authorization());
 
@@ -76,11 +77,13 @@ pcf_app::pcf_app(pcf_event& ev) : m_event_sub(ev) {
   // DB-backed crud_store here later); it generates restart-safe UUID ids and
   // maintains the association index.
   auto app_sessions = std::make_shared<policy_auth::app_session_storage>(
-      std::make_shared<oai::utils::crud_store_memory<policy_auth::app_session>>());
+      std::make_shared<
+          oai::utils::crud_store_memory<policy_auth::app_session>>());
 
   // Operator-preconfigured QoS reference sets [TS 29.513 §7.3.3]. The store is
   // just the generic in-memory backend (a DB backend can be swapped in here
-  // later); loading is a separate provisioning step through the store interface.
+  // later); loading is a separate provisioning step through the store
+  // interface.
   auto qos_ref_store = std::make_shared<
       oai::utils::crud_store_memory<const oai::_3gpp::model::QosData>>();
   policy_auth::load_qos_references_from_directory(

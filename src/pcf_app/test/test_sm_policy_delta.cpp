@@ -67,8 +67,9 @@ std::set<std::string> keys(const std::map<std::string, QosData>& m) {
 }  // namespace
 
 TEST(SmPolicyDelta, ComputeDetectsAdded) {
-  auto base    = decision_with_qos({{"A", make_qos("A", 9)}});
-  auto updated = decision_with_qos({{"A", make_qos("A", 9)}, {"B", make_qos("B", 5)}});
+  auto base = decision_with_qos({{"A", make_qos("A", 9)}});
+  auto updated =
+      decision_with_qos({{"A", make_qos("A", 9)}, {"B", make_qos("B", 5)}});
 
   const auto delta = compute_sm_policy_delta(base, updated);
 
@@ -87,7 +88,8 @@ TEST(SmPolicyDelta, ComputeDetectsModified) {
 }
 
 TEST(SmPolicyDelta, ComputeDetectsRemoved) {
-  auto base    = decision_with_qos({{"A", make_qos("A", 9)}, {"B", make_qos("B", 5)}});
+  auto base =
+      decision_with_qos({{"A", make_qos("A", 9)}, {"B", make_qos("B", 5)}});
   auto updated = decision_with_qos({{"A", make_qos("A", 9)}});
 
   const auto delta = compute_sm_policy_delta(base, updated);
@@ -106,9 +108,12 @@ TEST(SmPolicyDelta, ComputeOmitsUnchangedAndIsEmpty) {
 }
 
 TEST(SmPolicyDelta, ApplyUpsertsAndRemoves) {
-  auto base    = decision_with_qos({{"A", make_qos("A", 9)}, {"B", make_qos("B", 5)}});
-  auto updated = decision_with_qos({{"A", make_qos("A", 3)}, {"C", make_qos("C", 7)}});
-  const auto delta = compute_sm_policy_delta(base, updated);  // mod A, add C, remove B
+  auto base =
+      decision_with_qos({{"A", make_qos("A", 9)}, {"B", make_qos("B", 5)}});
+  auto updated =
+      decision_with_qos({{"A", make_qos("A", 3)}, {"C", make_qos("C", 7)}});
+  const auto delta =
+      compute_sm_policy_delta(base, updated);  // mod A, add C, remove B
 
   SmPolicyDecision live = base;
   apply_sm_policy_delta(live, delta);
@@ -123,8 +128,10 @@ TEST(SmPolicyDelta, ApplyUpsertsAndRemoves) {
 TEST(SmPolicyDelta, ConcurrentDisjointDeltasDoNotLoseUpdates) {
   auto base = decision_with_qos({{"A", make_qos("A", 9)}});
 
-  auto updated1 = decision_with_qos({{"A", make_qos("A", 9)}, {"B", make_qos("B", 5)}});
-  auto updated2 = decision_with_qos({{"A", make_qos("A", 9)}, {"C", make_qos("C", 7)}});
+  auto updated1 =
+      decision_with_qos({{"A", make_qos("A", 9)}, {"B", make_qos("B", 5)}});
+  auto updated2 =
+      decision_with_qos({{"A", make_qos("A", 9)}, {"C", make_qos("C", 7)}});
   const auto delta1 = compute_sm_policy_delta(base, updated1);  // add B
   const auto delta2 = compute_sm_policy_delta(base, updated2);  // add C
 
@@ -138,22 +145,28 @@ TEST(SmPolicyDelta, ConcurrentDisjointDeltasDoNotLoseUpdates) {
 // A delta that only adds must NOT resurrect an entry another writer removed:
 // unchanged keys are omitted, so writer-1's "add B" never re-asserts A or C.
 TEST(SmPolicyDelta, UpsertDeltaDoesNotResurrectConcurrentlyRemovedEntry) {
-  auto base = decision_with_qos({{"A", make_qos("A", 9)}, {"C", make_qos("C", 7)}});
+  auto base =
+      decision_with_qos({{"A", make_qos("A", 9)}, {"C", make_qos("C", 7)}});
   // Writer 1 only adds B (A and C unchanged in its view).
   auto updated1 = decision_with_qos(
-      {{"A", make_qos("A", 9)}, {"C", make_qos("C", 7)}, {"B", make_qos("B", 5)}});
+      {{"A", make_qos("A", 9)},
+       {"C", make_qos("C", 7)},
+       {"B", make_qos("B", 5)}});
   const auto delta1 = compute_sm_policy_delta(base, updated1);
 
   // Writer 2 concurrently removed C; live already reflects that.
   SmPolicyDecision live = decision_with_qos({{"A", make_qos("A", 9)}});
   apply_sm_policy_delta(live, delta1);
 
-  EXPECT_EQ(keys(live.getQosDecs()), (std::set<std::string>{"A", "B"}));  // C stays gone
+  EXPECT_EQ(
+      keys(live.getQosDecs()),
+      (std::set<std::string>{"A", "B"}));  // C stays gone
 }
 
 TEST(SmPolicyDelta, PccRulesTrackedIndependently) {
   auto base    = decision_with_qos({}, {{"R1", make_rule("R1", 1000)}});
-  auto updated = decision_with_qos({}, {{"R1", make_rule("R1", 1000)}, {"R2", make_rule("R2", 1001)}});
+  auto updated = decision_with_qos(
+      {}, {{"R1", make_rule("R1", 1000)}, {"R2", make_rule("R2", 1001)}});
 
   const auto delta = compute_sm_policy_delta(base, updated);
 
@@ -171,9 +184,11 @@ TEST(SmPolicyDeltaCow, AssociationApplyDeltaIsAtomicReadModifyWrite) {
   individual_sm_association assoc(SmPolicyContextData{}, pd, "assoc-1");
 
   const auto add_b = compute_sm_policy_delta(
-      base, decision_with_qos({{"A", make_qos("A", 9)}, {"B", make_qos("B", 5)}}));
+      base,
+      decision_with_qos({{"A", make_qos("A", 9)}, {"B", make_qos("B", 5)}}));
   const auto add_c = compute_sm_policy_delta(
-      base, decision_with_qos({{"A", make_qos("A", 9)}, {"C", make_qos("C", 7)}}));
+      base,
+      decision_with_qos({{"A", make_qos("A", 9)}, {"C", make_qos("C", 7)}}));
 
   const uint64_t v0 = assoc.decision_version();
   assoc.apply_delta(add_b);
@@ -193,8 +208,9 @@ TEST(SmPolicyDeltaCow, SnapshotIsImmutableAcrossSubsequentApply) {
   individual_sm_association assoc(SmPolicyContextData{}, pd, "assoc-2");
 
   const auto snap_before = assoc.snapshot_decision();
-  const auto add_b = compute_sm_policy_delta(
-      base, decision_with_qos({{"A", make_qos("A", 9)}, {"B", make_qos("B", 5)}}));
+  const auto add_b       = compute_sm_policy_delta(
+      base,
+      decision_with_qos({{"A", make_qos("A", 9)}, {"B", make_qos("B", 5)}}));
   assoc.apply_delta(add_b);
 
   EXPECT_EQ(keys(snap_before->getQosDecs()), (std::set<std::string>{"A"}));
@@ -206,10 +222,11 @@ TEST(SmPolicyDeltaCow, SnapshotIsImmutableAcrossSubsequentApply) {
 // Mirrors the version-CAS (compare-and-swap) + retry loop in
 // pcf_policy_authorization.cpp. Two
 // requests read the same (decision, version). Writer 1 commits, so writer 2's
-// expected version is now stale: instead of clobbering, it detects the mismatch,
-// re-derives its intent against the freshly committed snapshot, and retries. The
-// result is the MERGE of both intents -- no lost update, no stale cumulative
-// base. This is exactly what closes both races the snapshot analysis surfaced.
+// expected version is now stale: instead of clobbering, it detects the
+// mismatch, re-derives its intent against the freshly committed snapshot, and
+// retries. The result is the MERGE of both intents -- no lost update, no stale
+// cumulative base. This is exactly what closes both races the snapshot analysis
+// surfaced.
 TEST(SmPolicyDeltaCow, StaleWriterReDerivesAgainstCommittedBaseAndConverges) {
   auto base = decision_with_qos({{"A", make_qos("A", 9)}});
   policy_decision pd(base);
@@ -222,11 +239,12 @@ TEST(SmPolicyDeltaCow, StaleWriterReDerivesAgainstCommittedBaseAndConverges) {
   // Writer 1 derives "add B" against the shared base and commits (CAS holds).
   auto w1_updated = *shared_base;
   {
-    auto q  = w1_updated.getQosDecs();
-    q["B"]  = make_qos("B", 5);
+    auto q = w1_updated.getQosDecs();
+    q["B"] = make_qos("B", 5);
     w1_updated.setQosDecs(q);
   }
-  ASSERT_EQ(assoc.decision_version(), expected_v);  // still unchanged: CAS holds
+  ASSERT_EQ(
+      assoc.decision_version(), expected_v);  // still unchanged: CAS holds
   assoc.apply_delta(compute_sm_policy_delta(*shared_base, w1_updated));
 
   // Writer 2 wanted "add C" against the same stale base. Its CAS now fails.
@@ -238,8 +256,8 @@ TEST(SmPolicyDeltaCow, StaleWriterReDerivesAgainstCommittedBaseAndConverges) {
   const auto fresh = assoc.snapshot_decision();
   auto w2_updated  = *fresh;
   {
-    auto q  = w2_updated.getQosDecs();
-    q["C"]  = make_qos("C", 7);
+    auto q = w2_updated.getQosDecs();
+    q["C"] = make_qos("C", 7);
     w2_updated.setQosDecs(q);
   }
   assoc.apply_delta(compute_sm_policy_delta(*fresh, w2_updated));
@@ -249,16 +267,16 @@ TEST(SmPolicyDeltaCow, StaleWriterReDerivesAgainstCommittedBaseAndConverges) {
       (std::set<std::string>{"A", "B", "C"}));
 }
 
-// qos_context is the app-session's ownership ledger. It is reconciled ONLY from a
-// committed delta (never during derivation, which writes to a scratch context),
-// so a rejected/retried attempt leaves no trace. Upserts become owned; removals
-// are dropped.
+// qos_context is the app-session's ownership ledger. It is reconciled ONLY from
+// a committed delta (never during derivation, which writes to a scratch
+// context), so a rejected/retried attempt leaves no trace. Upserts become
+// owned; removals are dropped.
 TEST(QosContextCommit, ApplyCommittedDeltaRecordsUpsertsThenDropsRemovals) {
   using oai::pcf::app::policy_auth::qos_context;
 
-  const auto empty = decision_with_qos({});
-  const auto with_entries =
-      decision_with_qos({{"Q1", make_qos("Q1", 9)}}, {{"R1", make_rule("R1", 100)}});
+  const auto empty        = decision_with_qos({});
+  const auto with_entries = decision_with_qos(
+      {{"Q1", make_qos("Q1", 9)}}, {{"R1", make_rule("R1", 100)}});
 
   qos_context ctx;
   ctx.apply_committed_delta(compute_sm_policy_delta(empty, with_entries));

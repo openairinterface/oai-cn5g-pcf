@@ -82,7 +82,7 @@ TEST(QosContext, EraseOwnedFromRemovesExactlyTheOwnedEntries) {
   owned_qos.setQosId("qos-owned");
   oai::_3gpp::model::QosData other_qos;
   other_qos.setQosId("qos-other");
-  auto qos_map = decision.getQosDecs();
+  auto qos_map         = decision.getQosDecs();
   qos_map["qos-owned"] = owned_qos;
   qos_map["qos-other"] = other_qos;
   decision.setQosDecs(qos_map);
@@ -91,7 +91,7 @@ TEST(QosContext, EraseOwnedFromRemovesExactlyTheOwnedEntries) {
   owned_rule.setPccRuleId("rule-owned");
   oai::_3gpp::model::PccRule other_rule;
   other_rule.setPccRuleId("rule-other");
-  auto rule_map = decision.getPccRules();
+  auto rule_map          = decision.getPccRules();
   rule_map["rule-owned"] = owned_rule;
   rule_map["rule-other"] = other_rule;
   decision.setPccRules(rule_map);
@@ -114,7 +114,7 @@ TEST(QosContext, EraseOwnedFromOnEmptyLedgerLeavesDecisionUnchanged) {
   oai::_3gpp::model::SmPolicyDecision decision;
   oai::_3gpp::model::QosData qos;
   qos.setQosId("qos-1");
-  auto qos_map = decision.getQosDecs();
+  auto qos_map     = decision.getQosDecs();
   qos_map["qos-1"] = qos;
   decision.setQosDecs(qos_map);
 

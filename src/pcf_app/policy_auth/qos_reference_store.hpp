@@ -19,8 +19,8 @@ namespace oai::pcf::app::policy_auth {
  *
  * This is exactly the generic keyed store with `find(qosReference)` returning
  * the preconfigured set, so it is just an alias: the value is the existing
- * oai::_3gpp::model::QosData (5QI, ARP, MBR/GBR, priorityLevel, PDB/PER, ...) held
- * read-only (const) since references are provisioned once at startup.
+ * oai::_3gpp::model::QosData (5QI, ARP, MBR/GBR, priorityLevel, PDB/PER, ...)
+ * held read-only (const) since references are provisioned once at startup.
  */
 using qos_reference_store =
     oai::utils::crud_store<const oai::_3gpp::model::QosData>;
@@ -29,14 +29,14 @@ using qos_reference_store =
  * @brief Provision operator-preconfigured QoS reference sets from YAML into a
  * qos_reference_store.
  *
- * Loading is a provisioning concern, not a storage one, so it is a free function
- * that populates through the generic crud_store `insert()` interface -- it works
- * with any backend (crud_store_memory now, a DB-backed crud_store later) and
- * removes the need for a bespoke qos_reference_store subclass.
+ * Loading is a provisioning concern, not a storage one, so it is a free
+ * function that populates through the generic crud_store `insert()` interface
+ * -- it works with any backend (crud_store_memory now, a DB-backed crud_store
+ * later) and removes the need for a bespoke qos_reference_store subclass.
  *
- * Each file in @p dir_path is a YAML map of `<qosReference>: { <QosData fields> }`,
- * parsed with the same yaml_to_json + QosData::from_json + validate() pipeline
- * used by sm_policy::policy_provisioning_file. [TS 29.513 §7.3.3]
+ * Each file in @p dir_path is a YAML map of `<qosReference>: { <QosData fields>
+ * }`, parsed with the same yaml_to_json + QosData::from_json + validate()
+ * pipeline used by sm_policy::policy_provisioning_file. [TS 29.513 §7.3.3]
  *
  * @return the number of QoS reference sets loaded.
  */

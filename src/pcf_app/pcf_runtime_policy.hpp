@@ -46,12 +46,12 @@ namespace oai::pcf::app {
  */
 struct operator_qos_policy {
   // Dynamic (non-standardized) 5QIs the PCF may authorize. Empty => allow any.
-  // Consumed by the Policy Authorization validator; not used SM-side (subscribed
-  // default 5QIs are inherently authorized).
+  // Consumed by the Policy Authorization validator; not used SM-side
+  // (subscribed default 5QIs are inherently authorized).
   std::set<int32_t> allowed_dynamic_5qi;
 
-  // Per-service-data-flow MBR ceiling (Policy Authorization side). nullopt => no
-  // cap. [TS 29.512 §4.2.6.6.2]
+  // Per-service-data-flow MBR ceiling (Policy Authorization side). nullopt =>
+  // no cap. [TS 29.512 §4.2.6.6.2]
   std::optional<uint64_t> max_flow_mbr_ul_bps;
   std::optional<uint64_t> max_flow_mbr_dl_bps;
 
@@ -62,8 +62,8 @@ struct operator_qos_policy {
 
   // When true, the Policy Authorization validator rejects QoS if no subscribed
   // Session-AMBR is available to check against (fail-closed). Default false =
-  // fail-open, per TS 29.512 §4.2.2.2 ("no Session-AMBR constraints apply unless
-  // operator policies define any").
+  // fail-open, per TS 29.512 §4.2.2.2 ("no Session-AMBR constraints apply
+  // unless operator policies define any").
   bool reject_on_missing_subscription{false};
 };
 

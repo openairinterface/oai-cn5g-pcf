@@ -27,8 +27,8 @@ namespace oai::pcf::app {
  * can apply it to the authoritative decision under a single lock -- turning the
  * previous read-modify-write (read a full copy, mutate locally, write the whole
  * object back) into an atomic apply. That removes the lost-update race on
- * concurrent PATCH: because unchanged entries are omitted, applying a delta to a
- * decision another writer has concurrently changed only touches the keys this
+ * concurrent PATCH: because unchanged entries are omitted, applying a delta to
+ * a decision another writer has concurrently changed only touches the keys this
  * writer actually changed.
  *
  * This is a PCF-internal representation only; the notification sent to the SMF
@@ -73,7 +73,8 @@ sm_policy_delta compute_sm_policy_delta(
  * @brief Apply `delta` to `decision` in place: upserts first, then removals.
  */
 void apply_sm_policy_delta(
-    oai::_3gpp::model::SmPolicyDecision& decision, const sm_policy_delta& delta);
+    oai::_3gpp::model::SmPolicyDecision& decision,
+    const sm_policy_delta& delta);
 
 /**
  * @brief Outcome of an optimistic (version-checked) delta apply on an
@@ -86,7 +87,7 @@ void apply_sm_policy_delta(
  * `version`/`decision` are the post-apply state.
  */
 struct decision_apply_result {
-  bool committed = false;
+  bool committed        = false;
   std::uint64_t version = 0;
   std::shared_ptr<const oai::_3gpp::model::SmPolicyDecision> decision;
 };

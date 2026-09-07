@@ -99,7 +99,9 @@ typedef bs2::signal_type<
 // timeouts, transport failures, or temporary_rejection outcomes.
 // (association_id in, version in, reason in.)
 typedef bs2::signal_type<
-    void(std::string, std::uint64_t, oai::pcf::app::sm_policy::smf_notify_outcome),
+    void(
+        std::string, std::uint64_t,
+        oai::pcf::app::sm_policy::smf_notify_outcome),
     bs2::keywords::mutex_type<bs2::dummy_mutex>>::type
     sm_policy_update_failed_sig_t;
 

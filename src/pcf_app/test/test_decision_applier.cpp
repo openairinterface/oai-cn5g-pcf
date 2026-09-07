@@ -56,9 +56,9 @@ auto make_derive(int32_t r5qi) {
   return [r5qi](
              const SmPolicyDecision& base,
              SmPolicyDecision& working) -> handler_result {
-    working         = base;
-    auto qos        = working.getQosDecs();
-    qos["X"]        = make_qos("X", r5qi);
+    working  = base;
+    auto qos = working.getQosDecs();
+    qos["X"] = make_qos("X", r5qi);
     working.setQosDecs(qos);
     return {};
   };
@@ -69,15 +69,15 @@ auto make_derive(int32_t r5qi) {
 TEST(DecisionApplier, FirstAttemptCommitsAndRecordsToTracker) {
   pending_rollback_tracker tracker(std::chrono::seconds(30), 100);
   std::optional<std::string> association_id = "assoc-1";
-  SmPolicyDecision initial_base = decision_with_qos({});
+  SmPolicyDecision initial_base             = decision_with_qos({});
   sm_policy_delta committed_delta;
   std::string problem_details;
   std::uint64_t committed_version = 0;
 
   int sm_update_decision_calls = 0;
   decision_applier applier(
-      [&](std::optional<std::string>&, std::uint64_t,
-          const sm_policy_delta&, decision_apply_result& result) {
+      [&](std::optional<std::string>&, std::uint64_t, const sm_policy_delta&,
+          decision_apply_result& result) {
         ++sm_update_decision_calls;
         result.committed = true;
         result.version   = 1;
@@ -105,7 +105,7 @@ TEST(DecisionApplier, FirstAttemptCommitsAndRecordsToTracker) {
 TEST(DecisionApplier, DeterministicDeriveFailureShortCircuits) {
   pending_rollback_tracker tracker(std::chrono::seconds(30), 100);
   std::optional<std::string> association_id = "assoc-1";
-  SmPolicyDecision initial_base = decision_with_qos({});
+  SmPolicyDecision initial_base             = decision_with_qos({});
   sm_policy_delta committed_delta;
   std::string problem_details;
   std::uint64_t committed_version = 0;
@@ -115,9 +115,11 @@ TEST(DecisionApplier, DeterministicDeriveFailureShortCircuits) {
       [&](std::optional<std::string>&, std::uint64_t, const sm_policy_delta&,
           decision_apply_result&) { sm_update_decision_called = true; },
       tracker, /*max_retries=*/3);
-  auto derive = [](const SmPolicyDecision&, SmPolicyDecision&)
-      -> handler_result {
-    return {status_code::FORBIDDEN, std::string("REQUESTED_SERVICE_NOT_AUTHORIZED")};
+  auto derive = [](const SmPolicyDecision&,
+                   SmPolicyDecision&) -> handler_result {
+    return {
+        status_code::FORBIDDEN,
+        std::string("REQUESTED_SERVICE_NOT_AUTHORIZED")};
   };
 
   const auto result = applier.apply(
@@ -134,7 +136,7 @@ TEST(DecisionApplier, DeterministicDeriveFailureShortCircuits) {
 TEST(DecisionApplier, ConflictRederivesAgainstFreshlyCommittedBase) {
   pending_rollback_tracker tracker(std::chrono::seconds(30), 100);
   std::optional<std::string> association_id = "assoc-1";
-  SmPolicyDecision initial_base = decision_with_qos({});
+  SmPolicyDecision initial_base             = decision_with_qos({});
   sm_policy_delta committed_delta;
   std::string problem_details;
   std::uint64_t committed_version = 0;
@@ -144,14 +146,14 @@ TEST(DecisionApplier, ConflictRederivesAgainstFreshlyCommittedBase) {
   // really did see the freshly-committed base (Y=42), not the stale initial
   // one (Y absent).
   std::vector<std::optional<int32_t>> bases_seen_y;
-  auto derive = [&](
-                    const SmPolicyDecision& base,
+  auto derive = [&](const SmPolicyDecision& base,
                     SmPolicyDecision& working) -> handler_result {
     const auto qos_decs = base.getQosDecs();
-    auto y_it = qos_decs.find("Y");
+    auto y_it           = qos_decs.find("Y");
     bases_seen_y.push_back(
-        y_it == qos_decs.end() ? std::nullopt
-                                : std::optional<int32_t>(y_it->second.getR5qi()));
+        y_it == qos_decs.end() ?
+            std::nullopt :
+            std::optional<int32_t>(y_it->second.getR5qi()));
     working  = base;
     auto qos = working.getQosDecs();
     qos["X"] = make_qos("X", 9);
@@ -188,15 +190,15 @@ TEST(DecisionApplier, ConflictRederivesAgainstFreshlyCommittedBase) {
   EXPECT_EQ(call_count, 2);
   EXPECT_EQ(committed_version, 6u);
   ASSERT_EQ(bases_seen_y.size(), 2u);
-  EXPECT_FALSE(bases_seen_y[0].has_value());   // 1st attempt: stale, no Y
-  ASSERT_TRUE(bases_seen_y[1].has_value());    // 2nd attempt: fresh, has Y
+  EXPECT_FALSE(bases_seen_y[0].has_value());  // 1st attempt: stale, no Y
+  ASSERT_TRUE(bases_seen_y[1].has_value());   // 2nd attempt: fresh, has Y
   EXPECT_EQ(*bases_seen_y[1], 42);
 }
 
 TEST(DecisionApplier, ExhaustsAfterMaxRetriesReturnsForbidden) {
   pending_rollback_tracker tracker(std::chrono::seconds(30), 100);
   std::optional<std::string> association_id = "assoc-1";
-  SmPolicyDecision initial_base = decision_with_qos({});
+  SmPolicyDecision initial_base             = decision_with_qos({});
   sm_policy_delta committed_delta;
   std::string problem_details;
   std::uint64_t committed_version = 0;
@@ -210,7 +212,8 @@ TEST(DecisionApplier, ExhaustsAfterMaxRetriesReturnsForbidden) {
         // freshly-conflicting decision.
         result.committed = false;
         result.version   = 100 + call_count;
-        result.decision  = std::make_shared<const SmPolicyDecision>(initial_base);
+        result.decision =
+            std::make_shared<const SmPolicyDecision>(initial_base);
       },
       tracker, /*max_retries=*/1);
 
@@ -230,7 +233,7 @@ TEST(DecisionApplier, ExhaustsAfterMaxRetriesReturnsForbidden) {
 TEST(DecisionApplier, ConflictWithNoDecisionExhaustsImmediately) {
   pending_rollback_tracker tracker(std::chrono::seconds(30), 100);
   std::optional<std::string> association_id = "assoc-1";
-  SmPolicyDecision initial_base = decision_with_qos({});
+  SmPolicyDecision initial_base             = decision_with_qos({});
   sm_policy_delta committed_delta;
   std::string problem_details;
   std::uint64_t committed_version = 0;

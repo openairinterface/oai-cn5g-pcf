@@ -49,7 +49,7 @@ TEST(Guarded, ArrowOperatorAccessesMembers) {
 
 TEST(Guarded, ConcurrentWritesAreSerialized) {
   guarded<int> counter(0);
-  constexpr int kThreads          = 8;
+  constexpr int kThreads             = 8;
   constexpr int kIncrementsPerThread = 1000;
 
   std::vector<std::thread> threads;
@@ -69,8 +69,14 @@ TEST(Guarded, ConcurrentWritesAreSerialized) {
 
 TEST(Guarded, ReadAfterWriteOnSeparateHandlesSeesLatestValue) {
   guarded<int> g(1);
-  { auto h = g.write(); *h = 2; }
+  {
+    auto h = g.write();
+    *h     = 2;
+  }
   EXPECT_EQ(*g.read(), 2);
-  { auto h = g.write(); *h = 3; }
+  {
+    auto h = g.write();
+    *h     = 3;
+  }
   EXPECT_EQ(*g.read(), 3);
 }

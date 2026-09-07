@@ -15,17 +15,18 @@
 namespace oai::pcf::app::sm_policy {
 
 /**
- * @brief Authorize the subscribed Session-AMBR / default QoS into a SessionRule.
+ * @brief Authorize the subscribed Session-AMBR / default QoS into a
+ * SessionRule.
  *
  * Implements the PCF's QoS control per TS 29.512 §4.2.6.6.1: the SMF forwards
- * the subscribed Session-AMBR (subsSessAmbr) and default 5QI/ARP (subsDefQos) in
- * the SmPolicyContextData; the PCF authorizes them against operator policy and,
- * in the home-routed roaming case, clamps the Session-AMBR to the VPLMN
+ * the subscribed Session-AMBR (subsSessAmbr) and default 5QI/ARP (subsDefQos)
+ * in the SmPolicyContextData; the PCF authorizes them against operator policy
+ * and, in the home-routed roaming case, clamps the Session-AMBR to the VPLMN
  * Session-AMBR when provided. The authorized values are returned in a
  * SessionRule [TS 29.512 §5.6.2.4].
  *
- * A field is left unset when its subscription input is absent, so the caller can
- * rely on SessionRule::authSessAmbrIsSet() / authDefQosIsSet().
+ * A field is left unset when its subscription input is absent, so the caller
+ * can rely on SessionRule::authSessAmbrIsSet() / authDefQosIsSet().
  *
  * @param context        the SM policy context from the SMF (source of the
  *                       subscribed values and any VPLMN limits).
@@ -42,8 +43,8 @@ oai::_3gpp::model::SessionRule authorize_session_rule(
  *
  * No-op when the context carries neither a subscribed Session-AMBR nor a
  * subscribed default QoS (nothing to authorize) -- consistent with the
- * fail-open rule of TS 29.512 §4.2.2.2. Enriching the decision here (rather than
- * inside policy_decision::decide()) keeps this uniform across every
+ * fail-open rule of TS 29.512 §4.2.2.2. Enriching the decision here (rather
+ * than inside policy_decision::decide()) keeps this uniform across every
  * policy_decision subclass (supi/dnn/slice/default) and out of the
  * config-unaware decision layer.
  */

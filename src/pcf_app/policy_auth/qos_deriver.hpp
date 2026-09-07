@@ -31,7 +31,7 @@ constexpr int32_t DEFAULT_ARP_PRIORITY_LEVEL = 8;
 // True when the SDF (MediaSubComponent) is flagged REMOVED. TS 29.513
 // Table 7.3.3-1: for a removed flow the authorized data rate is 0, i.e. the
 // flow contributes nothing to the aggregate and installs no filter.
-template <typename MediaSubComponentT>
+template<typename MediaSubComponentT>
 bool sub_component_removed(const MediaSubComponentT& sub) {
   return sub.fStatusIsSet() &&
          sub.getFStatus().getEnumValue() ==
@@ -58,7 +58,7 @@ class qos_deriver {
   // Templated on the media-component type so the SAME §7.3.3 mapping serves
   // both create (MediaComponent) and update (MediaComponentRm). Explicitly
   // instantiated for both in qos_deriver.cpp.
-  template <typename MediaComponentT>
+  template<typename MediaComponentT>
   [[nodiscard]] handler_result handle_qos_requirements(
       const MediaComponentT& media_component, const std::string& app_session_id,
       oai::_3gpp::model::SmPolicyDecision& decision, qos_context& qos_ctx);
@@ -70,7 +70,7 @@ class qos_deriver {
   // so the derivation logic stays directly unit-testable in isolation from
   // create_qos_characteristics/setup_qos_monitoring's side effects, matching
   // test_qos_processing.cpp's existing granular coverage.
-  template <typename MediaComponentT>
+  template<typename MediaComponentT>
   [[nodiscard]] handler_result create_qos_data_from_media_component(
       const MediaComponentT& media_component, const std::string& app_session_id,
       oai::_3gpp::model::SmPolicyDecision& decision, qos_context& qos_ctx,

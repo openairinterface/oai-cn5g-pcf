@@ -44,7 +44,7 @@ TEST(Bitrate, RejectsMalformedOrUnsupportedUnits) {
 TEST(Bitrate, FormatsUsingLargestExactUnit) {
   EXPECT_EQ(from_bps(10000000ULL), "10 Mbps");
   EXPECT_EQ(from_bps(10500000ULL), "10500 Kbps");  // not Mbps-exact -> Kbps
-  EXPECT_EQ(from_bps(1500ULL), "1500 bps");         // not Kbps-exact -> bps
+  EXPECT_EQ(from_bps(1500ULL), "1500 bps");        // not Kbps-exact -> bps
   EXPECT_EQ(from_bps(0ULL), "0 bps");
   EXPECT_EQ(from_bps(1000000000000ULL), "1 Tbps");
 }
@@ -55,7 +55,8 @@ TEST(Bitrate, RoundTripsExactValues) {
 }
 
 TEST(Bitrate, FormattedOutputIsAlwaysReparseable) {
-  for (uint64_t v : {0ULL, 1500ULL, 10500000ULL, 10000000ULL, 1000000000000ULL}) {
+  for (uint64_t v :
+       {0ULL, 1500ULL, 10500000ULL, 10000000ULL, 1000000000000ULL}) {
     auto s = from_bps(v);
     ASSERT_TRUE(to_bps(s).has_value()) << "not reparseable: " << s;
     EXPECT_EQ(to_bps(s).value(), v) << s;
@@ -63,15 +64,18 @@ TEST(Bitrate, FormattedOutputIsAlwaysReparseable) {
 }
 
 TEST(BitrateSum, SumsTwoPresentRates) {
-  EXPECT_EQ(sum(std::string("10 Mbps"), std::string("500 Kbps")).value(),
-            "10500 Kbps");
-  EXPECT_EQ(sum(std::string("1 Mbps"), std::string("1 Mbps")).value(), "2 Mbps");
+  EXPECT_EQ(
+      sum(std::string("10 Mbps"), std::string("500 Kbps")).value(),
+      "10500 Kbps");
+  EXPECT_EQ(
+      sum(std::string("1 Mbps"), std::string("1 Mbps")).value(), "2 Mbps");
 }
 
 TEST(BitrateSum, TreatsAbsentOrUnparseableOperandsAsZero) {
   EXPECT_EQ(sum(std::string("10 Mbps"), std::nullopt).value(), "10 Mbps");
   EXPECT_EQ(sum(std::nullopt, std::string("2 Mbps")).value(), "2 Mbps");
-  EXPECT_EQ(sum(std::string("garbage"), std::string("2 Mbps")).value(), "2 Mbps");
+  EXPECT_EQ(
+      sum(std::string("garbage"), std::string("2 Mbps")).value(), "2 Mbps");
 }
 
 TEST(BitrateSum, ReturnsNulloptWhenBothAbsent) {

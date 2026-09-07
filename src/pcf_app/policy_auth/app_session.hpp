@@ -69,10 +69,11 @@ struct app_session_record {
 class app_session {
  public:
   app_session(
-      std::string id, const oai::_3gpp::model::AppSessionContextReqData& context,
+      std::string id,
+      const oai::_3gpp::model::AppSessionContextReqData& context,
       std::optional<std::string> association_id);
 
-  app_session(const app_session&)            = delete;
+  app_session(const app_session&) = delete;
   app_session& operator=(const app_session&) = delete;
   virtual ~app_session()                     = default;
 
@@ -100,8 +101,8 @@ class app_session {
   void update_context(
       const oai::_3gpp::model::AppSessionContextReqData& context);
 
-  // Durable projection (documents the app_session_binding schema). from_record()
-  // ships with the future DB storage backend.
+  // Durable projection (documents the app_session_binding schema).
+  // from_record() ships with the future DB storage backend.
   [[nodiscard]] app_session_record to_record() const;
 
  private:
@@ -125,7 +126,8 @@ class app_session {
 // handle_service_function_chaining[_update] here -- callers must not derive
 // SFC from oai::_3gpp::model::AfRoutingRequirement yet.
 
-// QoS handling functions [TS 29.514 §4.2.2.2, TS 29.513 §7.3, TS 29.512 §4.2.6.6]
+// QoS handling functions [TS 29.514 §4.2.2.2, TS 29.513 §7.3, TS 29.512
+// §4.2.6.6]
 
 // Generate QoS characteristics for a non-standardized (dynamically assigned)
 // 5QI [TS 29.512 §4.2.6.6.3, §5.6.2.16]. No-op for standardized 5QI values.
@@ -135,9 +137,10 @@ oai::pcf::app::policy_auth::handler_result create_qos_characteristics(
 
 // --- QoS mapping helpers (pure; unit-tested directly) ---
 
-// True if `r5qi` is a standardized 5QI value per TS 23.501 §5.7.4 Table 5.7.4-1.
-// A standardized 5QI carries preconfigured characteristics, so the PCF need not
-// signal a QosCharacteristics entry for it [TS 29.512 §4.2.6.6.2].
+// True if `r5qi` is a standardized 5QI value per TS 23.501 §5.7.4
+// Table 5.7.4-1. A standardized 5QI carries preconfigured characteristics, so
+// the PCF need not signal a QosCharacteristics entry for it [TS 29.512
+// §4.2.6.6.2].
 [[nodiscard]] bool is_standardized_5qi(int32_t r5qi);
 
 // Derive an authorized 5QI from the desired max latency and whether the flow is

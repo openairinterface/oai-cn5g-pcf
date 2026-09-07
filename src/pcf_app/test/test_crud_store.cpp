@@ -2,9 +2,10 @@
  * SPDX-License-Identifier: LicenseRef-CSSL-1.0
  */
 
-// Tests for the generic string-keyed repository (src/common/utils/crud_store.hpp)
-// reused by every Policy Authorization store: the insert/find/find_all/remove
-// core and the on_inserted/on_removed secondary-index hooks. Dependency-free.
+// Tests for the generic string-keyed repository
+// (src/common/utils/crud_store.hpp) reused by every Policy Authorization store:
+// the insert/find/find_all/remove core and the on_inserted/on_removed
+// secondary-index hooks. Dependency-free.
 
 #include <gtest/gtest.h>
 

@@ -15,10 +15,10 @@ void qos_context::record_qos_flow(const std::string& qos_id) {
   auto ledger    = m_ledger.write();
 
   qos_flow_metadata meta;
-  meta.qos_id             = qos_id;
-  meta.state              = qos_flow_state::pending;
-  meta.created_at         = now;
-  meta.updated_at         = now;
+  meta.qos_id               = qos_id;
+  meta.state                = qos_flow_state::pending;
+  meta.created_at           = now;
+  meta.updated_at           = now;
   ledger->qos_flows[qos_id] = std::move(meta);
   Logger::pcf_app().trace(
       "qos_context: recorded QoS flow %s (owned flows: %zu)", qos_id.c_str(),
@@ -78,24 +78,24 @@ void qos_context::apply_committed_delta(
   // Upserts: record (or refresh) ownership of each qos flow / PCC rule the
   // committed delta added or modified.
   for (const auto& [qos_id, unused] : delta.upsert_qos_decs) {
-    (void)unused;
-    auto& meta      = ledger->qos_flows[qos_id];
-    meta.qos_id     = qos_id;
-    meta.state      = qos_flow_state::established;
+    (void) unused;
+    auto& meta  = ledger->qos_flows[qos_id];
+    meta.qos_id = qos_id;
+    meta.state  = qos_flow_state::established;
     if (meta.created_at.time_since_epoch().count() == 0) meta.created_at = now;
     meta.updated_at = now;
   }
   for (const auto& [rule_id, rule] : delta.upsert_pcc_rules) {
     auto& ctx        = ledger->pcc_rules[rule_id];
     ctx.pcc_rule_id  = rule_id;
-    ctx.precedence   = rule.precedenceIsSet()
-                           ? static_cast<uint32_t>(rule.getPrecedence())
-                           : 0;
-    ctx.ref_qos_data = rule.refQosDataIsSet() ? rule.getRefQosData()
-                                              : std::vector<std::string>{};
+    ctx.precedence   = rule.precedenceIsSet() ?
+                           static_cast<uint32_t>(rule.getPrecedence()) :
+                           0;
+    ctx.ref_qos_data = rule.refQosDataIsSet() ? rule.getRefQosData() :
+                                                std::vector<std::string>{};
     ctx.state        = qos_flow_state::established;
     if (ctx.created_at.time_since_epoch().count() == 0) ctx.created_at = now;
-    ctx.updated_at   = now;
+    ctx.updated_at = now;
   }
 
   // Removals: drop ownership of anything the delta removed.

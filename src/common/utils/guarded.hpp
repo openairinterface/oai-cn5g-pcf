@@ -14,10 +14,10 @@ namespace oai::utils {
 /**
  * @brief A value bundled with the mutex that guards it.
  *
- * Access to the wrapped value is only possible through an RAII handle that holds
- * the appropriate lock, so "the data is only touched under its lock" becomes a
- * compile-time property rather than a convention. This is the fine-grained
- * locking primitive used by the app-session aspects.
+ * Access to the wrapped value is only possible through an RAII handle that
+ * holds the appropriate lock, so "the data is only touched under its lock"
+ * becomes a compile-time property rather than a convention. This is the
+ * fine-grained locking primitive used by the app-session aspects.
  *
  * Equivalent in spirit to boost::synchronized_value and the C++ concurrency-TS
  * synchronized_value (N4033); kept in-house to avoid depending on Boost.Thread.
@@ -28,13 +28,13 @@ namespace oai::utils {
  * @tparam Mutex a SharedMutex type (defaults to std::shared_mutex so reads can
  *               proceed concurrently)
  */
-template <typename T, typename Mutex = std::shared_mutex>
+template<typename T, typename Mutex = std::shared_mutex>
 class guarded {
  public:
   guarded() : m_value() {}
   explicit guarded(T value) : m_value(std::move(value)) {}
 
-  guarded(const guarded&)            = delete;
+  guarded(const guarded&) = delete;
   guarded& operator=(const guarded&) = delete;
 
   /** Exclusive (read/write) access; holds a unique lock for its lifetime. */

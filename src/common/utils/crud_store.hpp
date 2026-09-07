@@ -24,19 +24,19 @@ namespace oai::utils {
  * a plain keyed CRUD -- id generation, secondary indexes -- are added by the
  * concrete store interface/implementation, not here.
  */
-template <typename Value>
+template<typename Value>
 class crud_store {
  public:
   virtual ~crud_store() = default;
 
-  virtual void insert(
-      const std::string& id, std::shared_ptr<Value> value) = 0;
+  virtual void insert(const std::string& id, std::shared_ptr<Value> value) = 0;
 
   /** @return the value, or nullptr if not found. */
   [[nodiscard]] virtual std::shared_ptr<Value> find(
       const std::string& id) const = 0;
 
-  [[nodiscard]] virtual std::vector<std::shared_ptr<Value>> find_all() const = 0;
+  [[nodiscard]] virtual std::vector<std::shared_ptr<Value>> find_all()
+      const = 0;
 
   virtual void remove(const std::string& id) = 0;
 };
@@ -56,7 +56,7 @@ class crud_store {
  * implementation and an extended store interface without duplicating the
  * crud_store subobject.
  */
-template <typename Value>
+template<typename Value>
 class crud_store_memory : public virtual crud_store<Value> {
  public:
   void insert(const std::string& id, std::shared_ptr<Value> value) override {

@@ -36,8 +36,8 @@ std::shared_ptr<app_session> make_session(
 
 TEST(AppSessionStorage, GenerateIdReturnsUniqueIds) {
   auto storage = make_storage();
-  auto id1 = storage.generate_id();
-  auto id2 = storage.generate_id();
+  auto id1     = storage.generate_id();
+  auto id2     = storage.generate_id();
   EXPECT_FALSE(id1.empty());
   EXPECT_NE(id1, id2);
 }

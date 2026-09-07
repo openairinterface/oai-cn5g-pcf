@@ -21,7 +21,8 @@ std::size_t load_qos_references_from_directory(
   namespace fs = boost::filesystem;
   if (!fs::exists(dir_path)) {
     Logger::pcf_app().warn(
-        "QoS reference directory %s does not exist; no qosReference sets loaded",
+        "QoS reference directory %s does not exist; no qosReference sets "
+        "loaded",
         dir_path.c_str());
     return 0;
   }

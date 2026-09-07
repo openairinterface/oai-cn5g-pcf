@@ -47,7 +47,7 @@ constexpr int kMaxApplyRetries = 3;
 // set the corresponding bit(s) in kPcfSupportedFeatures.
 std::string negotiate_supported_features(const std::string& af_supp_feat) {
   static constexpr unsigned long long kPcfSupportedFeatures = 0x0ULL;
-  unsigned long long af = 0;
+  unsigned long long af                                     = 0;
   try {
     if (!af_supp_feat.empty())
       af = std::stoull(af_supp_feat, nullptr, /*base=*/16);
@@ -105,14 +105,15 @@ status_code pcf_policy_authorization::push_decision_change(
         oai::_3gpp::model::SmPolicyDecision&)>& derive,
     sm_policy_delta& committed_delta, std::string& problem_details) {
   std::uint64_t committed_version = 0;
-  const status_code push = m_applier.apply(
+  const status_code push          = m_applier.apply(
       request, derive, committed_delta, problem_details, committed_version);
   if (push != status_code::OK) return push;
 
   // Ask SM to notify the SMF of the commit we just made and get the
   // classified outcome back directly -- a plain synchronous call/return,
   // not a signal, since we're already blocked waiting for the answer.
-  sm_policy::smf_notify_outcome outcome = sm_policy::smf_notify_outcome::applied;
+  sm_policy::smf_notify_outcome outcome =
+      sm_policy::smf_notify_outcome::applied;
   m_event_sub.notify_committed_decision(
       request.association_id.value(), committed_version, outcome);
   if (outcome == sm_policy::smf_notify_outcome::permanent_rejection) {
@@ -161,8 +162,9 @@ status_code pcf_policy_authorization::push_decision_change(
 //      commits, the second's CAS fails, it re-derives on top of the first and
 //      overwrites it. No corruption, but the earlier writer's value is gone.
 //      That is the intended semantics for concurrent modification of one
-//      resource -- the delta only carries the keys a request changed, so nothing
-//      *else* is lost; only the directly-contended field resolves last-wins.
+//      resource -- the delta only carries the keys a request changed, so
+//      nothing *else* is lost; only the directly-contended field resolves
+//      last-wins.
 //------------------------------------------------------------------------------
 // Per-attempt recompute for POST /app-sessions (see the header for the
 // contract): derive this request's QoS/SFC into `working`, authorize, merge
@@ -172,7 +174,8 @@ handler_result pcf_policy_authorization::derive_post_app_session(
     const std::string& app_session_id,
     const std::shared_ptr<policy_auth::app_session>& session,
     oai::_3gpp::model::SmPolicyDecision& working) {
-  oai::_3gpp::model::SmPolicyDecision request_decision = {};  // SFC/QoS contributions
+  oai::_3gpp::model::SmPolicyDecision request_decision =
+      {};                            // SFC/QoS contributions
   policy_auth::qos_context scratch;  // throwaway: decouples the real ledger
   bool qos_flow_processed = false;
 
@@ -180,7 +183,8 @@ handler_result pcf_policy_authorization::derive_post_app_session(
   // see the TODO in app_session.cpp -- so AfRoutingRequirement-bearing
   // components are not specially handled here.
   if (context.getAscReqData().medComponentsIsSet()) {
-    for (const auto& medComponent : context.getAscReqData().getMedComponents()) {
+    for (const auto& medComponent :
+         context.getAscReqData().getMedComponents()) {
       const auto& med_component = medComponent.second;
       if (
           // Any MediaComponent bearing QoS intent [TS 29.513 §7.3.3].
@@ -275,10 +279,10 @@ status_code pcf_policy_authorization::post_app_sessions_handler(
   // derive_post_app_session since only genuinely per-request state (context,
   // app_session_id, session) remains to thread through it -- m_qos_deriver
   // holds the stable deps.
-  auto derive = [this, &context, &app_session_id, &session](
-                    const oai::_3gpp::model::SmPolicyDecision&,
-                    oai::_3gpp::model::SmPolicyDecision& working)
-      -> handler_result {
+  auto derive =
+      [this, &context, &app_session_id, &session](
+          const oai::_3gpp::model::SmPolicyDecision&,
+          oai::_3gpp::model::SmPolicyDecision& working) -> handler_result {
     return derive_post_app_session(context, app_session_id, session, working);
   };
 
@@ -320,7 +324,8 @@ handler_result pcf_policy_authorization::derive_mod_app_session(
     const std::shared_ptr<policy_auth::app_session>& session,
     oai::_3gpp::model::AppSessionContextReqData& req_context,
     oai::_3gpp::model::SmPolicyDecision& working) {
-  oai::_3gpp::model::SmPolicyDecision request_decision = {};  // SFC contributions
+  oai::_3gpp::model::SmPolicyDecision request_decision =
+      {};                            // SFC contributions
   policy_auth::qos_context scratch;  // throwaway: decouples the real ledger
   req_context             = session->context_snapshot();
   bool qos_flow_processed = false;
@@ -457,10 +462,10 @@ policy_auth::status_code pcf_policy_authorization::mod_app_session_handler(
   // snapshot on every attempt (SFC routing mutates it, then RFC 7396 merges the
   // AF patch onto it); the committed attempt leaves the value used post-commit.
   const auto& patch_asc = app_session_context_update_data_patch.getAscReqData();
-  auto derive = [this, &patch_asc, &app_session_id, &session, &req_context](
-                    const oai::_3gpp::model::SmPolicyDecision&,
-                    oai::_3gpp::model::SmPolicyDecision& working)
-      -> handler_result {
+  auto derive =
+      [this, &patch_asc, &app_session_id, &session, &req_context](
+          const oai::_3gpp::model::SmPolicyDecision&,
+          oai::_3gpp::model::SmPolicyDecision& working) -> handler_result {
     return derive_mod_app_session(
         patch_asc, app_session_id, session, req_context, working);
   };
@@ -510,10 +515,10 @@ policy_auth::status_code pcf_policy_authorization::delete_app_session_handler(
   // session contributed (from its ledger), and push the reduced decision back
   // to the SM policy association (the single owner). CP.22: no storage lock is
   // held across the emits below.
-  const auto app_session_context = session->context_snapshot();
-  std::optional<std::string> association_id          = {};
+  const auto app_session_context            = session->context_snapshot();
+  std::optional<std::string> association_id = {};
   oai::_3gpp::model::SmPolicyDecision current_decision = {};
-  std::uint64_t bound_version                        = 0;
+  std::uint64_t bound_version                          = 0;
   try {
     m_event_sub.sm_session_binding(
         app_session_context.getUeIpv4(), app_session_context.getSupi(),
@@ -609,8 +614,7 @@ pcf_policy_authorization::~pcf_policy_authorization() {
 void pcf_policy_authorization::compensate_if_pending(
     const std::string& association_id, std::uint64_t version,
     sm_policy::smf_notify_outcome reason) {
-  auto commit =
-      m_context->rollback_tracker().try_take(association_id, version);
+  auto commit = m_context->rollback_tracker().try_take(association_id, version);
   if (!commit) {
     Logger::pcf_app().warn(
         "compensate_if_pending: no pending commit tracked for "
@@ -634,27 +638,27 @@ void pcf_policy_authorization::compensate_if_pending(
   // apply_with_retry a freshly-looked-up live decision, never this commit's
   // own stale pre-commit base/post-commit version (a prior bug).
   auto lookup_live_decision = [this](
-      const std::string& id, bool& found,
-      oai::_3gpp::model::SmPolicyDecision& decision,
-      std::uint64_t& out_version) {
-    m_event_sub.sm_get_association_decision(
-        id, found, decision, out_version);
+                                  const std::string& id, bool& found,
+                                  oai::_3gpp::model::SmPolicyDecision& decision,
+                                  std::uint64_t& out_version) {
+    m_event_sub.sm_get_association_decision(id, found, decision, out_version);
   };
-  auto apply_rollback_with_retry = [this](
-      policy_auth::decision_apply_request request,
-      const std::function<handler_result(
-          const oai::_3gpp::model::SmPolicyDecision&,
-          oai::_3gpp::model::SmPolicyDecision&)>& derive,
-      sm_policy_delta& committed_delta, std::string& problem_details) {
-    // Goes through push_decision_change (not m_applier.apply() directly) so
-    // the rollback's own re-commit ALSO gets notified and, if THAT notify
-    // is itself permanently rejected, ALSO gets its own compensate_if_pending
-    // check -- exactly the same treatment every other commit gets, since
-    // this is just another commit as far as push_decision_change is
-    // concerned.
-    return push_decision_change(
-        request, derive, committed_delta, problem_details);
-  };
+  auto apply_rollback_with_retry =
+      [this](
+          policy_auth::decision_apply_request request,
+          const std::function<handler_result(
+              const oai::_3gpp::model::SmPolicyDecision&,
+              oai::_3gpp::model::SmPolicyDecision&)>& derive,
+          sm_policy_delta& committed_delta, std::string& problem_details) {
+        // Goes through push_decision_change (not m_applier.apply() directly) so
+        // the rollback's own re-commit ALSO gets notified and, if THAT notify
+        // is itself permanently rejected, ALSO gets its own
+        // compensate_if_pending check -- exactly the same treatment every other
+        // commit gets, since this is just another commit as far as
+        // push_decision_change is concerned.
+        return push_decision_change(
+            request, derive, committed_delta, problem_details);
+      };
   const status_code rollback_push = policy_auth::perform_compensating_rollback(
       association_id, version, *commit, lookup_live_decision,
       apply_rollback_with_retry);
@@ -666,7 +670,7 @@ void pcf_policy_authorization::compensate_if_pending(
   // reverted for it.
   std::vector<std::string> affected_qos_ids;
   for (const auto& [id, unused] : commit->committed_delta.upsert_qos_decs) {
-    (void)unused;
+    (void) unused;
     affected_qos_ids.push_back(id);
   }
   for (const auto& id : commit->committed_delta.removed_qos_decs) {
@@ -674,7 +678,7 @@ void pcf_policy_authorization::compensate_if_pending(
   }
   std::vector<std::string> affected_pcc_rule_ids;
   for (const auto& [id, unused] : commit->committed_delta.upsert_pcc_rules) {
-    (void)unused;
+    (void) unused;
     affected_pcc_rule_ids.push_back(id);
   }
   for (const auto& id : commit->committed_delta.removed_pcc_rules) {

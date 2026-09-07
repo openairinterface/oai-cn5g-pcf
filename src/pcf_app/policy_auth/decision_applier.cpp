@@ -29,7 +29,7 @@ void pending_rollback_tracker::record(
         m_max_entries, association_id.c_str(), version);
     return;
   }
-  commit.recorded_at = std::chrono::steady_clock::now();
+  commit.recorded_at                         = std::chrono::steady_clock::now();
   (*pending)[key_t{association_id, version}] = std::move(commit);
 }
 
@@ -72,7 +72,7 @@ status_code decision_applier::apply(
     oai::pcf::app::sm_policy_delta& committed_delta,
     std::string& problem_details, std::uint64_t& committed_version) {
   const oai::_3gpp::model::SmPolicyDecision* base = &request.initial_base;
-  std::uint64_t base_version = request.initial_version;
+  std::uint64_t base_version                      = request.initial_version;
   // Holds a conflict snapshot so `base` stays valid across iterations.
   oai::_3gpp::model::SmPolicyDecision fresh_base;
   decision_apply_result result;
@@ -81,7 +81,7 @@ status_code decision_applier::apply(
     // Recompute this request's intended decision against the current base.
     // Pure w.r.t. shared state, so re-running on a conflict is safe.
     oai::_3gpp::model::SmPolicyDecision working = *base;
-    handler_result derived = derive(*base, working);
+    handler_result derived                      = derive(*base, working);
     if (derived.problem_details.has_value()) {
       // Deterministic failure (authorization/validation/derivation) --
       // retrying would fail identically, so surface it now.
@@ -104,7 +104,8 @@ status_code decision_applier::apply(
       m_tracker.record(
           request.association_id.value_or(""), result.version,
           pending_commit{
-              request.app_session_id, committed_delta,
+              request.app_session_id,
+              committed_delta,
               std::make_shared<const oai::_3gpp::model::SmPolicyDecision>(
                   *base),
               {}});
@@ -167,7 +168,7 @@ namespace {
 // Deliberately not attempted here: (B) changes what a rollback means from "undo
 // my keys" to "undo my keys as far as the result stays valid", and needs its
 // own tests.
-template <typename MapT>
+template<typename MapT>
 void rollback_map(
     const MapT& live, const MapT& committed_upsert,
     const std::vector<std::string>& committed_removed, const MapT& pre_commit,
@@ -181,7 +182,8 @@ void rollback_map(
       Logger::pcf_app().warn(
           "compute_rollback_delta: %s key %s changed since this commit; "
           "skipping its compensation (a newer writer owns that value now). "
-          "The rollback may therefore be partial -- see the reference-awareness "
+          "The rollback may therefore be partial -- see the "
+          "reference-awareness "
           "limitation in rollback_map()",
           map_name, key.c_str());
       continue;
@@ -200,7 +202,8 @@ void rollback_map(
       Logger::pcf_app().warn(
           "compute_rollback_delta: %s key %s was re-created since this commit "
           "removed it; skipping its compensation (a newer writer owns it now). "
-          "The rollback may therefore be partial -- see the reference-awareness "
+          "The rollback may therefore be partial -- see the "
+          "reference-awareness "
           "limitation in rollback_map()",
           map_name, key.c_str());
       continue;
@@ -254,7 +257,8 @@ status_code perform_compensating_rollback(
   bool association_found = false;
   oai::_3gpp::model::SmPolicyDecision live_decision;
   std::uint64_t live_version = 0;
-  lookup_live_decision(association_id, association_found, live_decision, live_version);
+  lookup_live_decision(
+      association_id, association_found, live_decision, live_version);
 
   if (!association_found) {
     Logger::pcf_app().warn(

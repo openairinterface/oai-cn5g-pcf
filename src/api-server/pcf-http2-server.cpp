@@ -253,9 +253,9 @@ void pcf_http2_server::start() {
         // so is_delete is excluded here and checked once the body is known.
         const bool has_json_body =
             is_pcscf || (is_event && request.method() == "PUT") || is_patch;
-        const bool content_type_ok =
-            is_patch ? is_merge_patch_content_type(request)
-                     : is_json_content_type(request);
+        const bool content_type_ok = is_patch ?
+                                         is_merge_patch_content_type(request) :
+                                         is_json_content_type(request);
         if (has_json_body && !content_type_ok) {
           handle_unsupported_media_type(response, request);
           return;
@@ -264,8 +264,8 @@ void pcf_http2_server::start() {
         auto request_body = std::make_shared<std::stringstream>();
 
         request.on_data([&, request_body, is_get_patch, is_delete, is_event,
-                         is_pcscf, app_session_id](
-                            const uint8_t* data, std::size_t len) {
+                         is_pcscf,
+                         app_session_id](const uint8_t* data, std::size_t len) {
           if (len > 0) {
             std::copy(
                 data, data + len,
@@ -281,8 +281,9 @@ void pcf_http2_server::start() {
               nlohmann::json::parse(request_body->str())
                   .get_to(pcscf_restoration_data);
               pcscf_restoration_data.validate();
-              resp = m_pcscf_restoration_indication_api_handler
-                         ->pcscf_restoration(pcscf_restoration_data);
+              resp =
+                  m_pcscf_restoration_indication_api_handler->pcscf_restoration(
+                      pcscf_restoration_data);
             } else if (is_delete) {
               const std::string body = request_body->str();
               if (!body.empty()) {
@@ -1118,7 +1119,8 @@ std::string pcf_http2_server::request_media_type(const request& request) {
   // keep only the type/subtype, normalised to lower case.
   std::string media_type = it->second.value;
   const auto semicolon   = media_type.find(';');
-  if (semicolon != std::string::npos) media_type = media_type.substr(0, semicolon);
+  if (semicolon != std::string::npos)
+    media_type = media_type.substr(0, semicolon);
   boost::algorithm::trim(media_type);
   boost::algorithm::to_lower(media_type);
   return media_type;

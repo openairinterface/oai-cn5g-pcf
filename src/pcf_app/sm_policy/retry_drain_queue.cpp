@@ -18,7 +18,7 @@ retry_drain_queue::retry_drain_queue(
 
 void retry_drain_queue::enqueue(
     const std::string& association_id, std::uint64_t version) {
-  auto entries  = m_entries.write();
+  auto entries = m_entries.write();
   const key_t key{association_id, version};
   if (entries->find(key) != entries->end()) {
     // Already queued -- leave its attempt count/backoff progress untouched.
@@ -32,7 +32,7 @@ void retry_drain_queue::enqueue(
         m_max_entries, association_id.c_str(), version);
     return;
   }
-  const auto now  = std::chrono::steady_clock::now();
+  const auto now = std::chrono::steady_clock::now();
   entry e;
   e.attempt          = 0;
   e.next_eligible_at = now + m_backoff_initial;

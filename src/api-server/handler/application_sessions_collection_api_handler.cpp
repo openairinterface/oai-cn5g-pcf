@@ -70,7 +70,8 @@ api_response application_sessions_collection_api_handler::post_app_sessions(
             created.getAscReqData()));
     to_json(json_data, created);
     response.headers.add<Pistache::Http::Header::Location>(location);
-    Logger::pcf_app().debug(fmt::format("Created app session; Location: {}", location));
+    Logger::pcf_app().debug(
+        fmt::format("Created app session; Location: {}", location));
   } else {
     to_json(json_data, problem_details);
   }

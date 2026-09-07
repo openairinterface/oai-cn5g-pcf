@@ -45,7 +45,9 @@ TEST(SmfNotifyResponseClassifier, Applied200WithUnrelatedObjectBody) {
   EXPECT_EQ(result.response, status_code::CREATED);
 }
 
-TEST(SmfNotifyResponseClassifier, PartialFailureWithPermanentCauseIsRollbackEligible) {
+TEST(
+    SmfNotifyResponseClassifier,
+    PartialFailureWithPermanentCauseIsRollbackEligible) {
   const nlohmann::json body =
       nlohmann::json::array({{{"failureCause", "PCC_RULE_EVENT"}}});
 
@@ -56,7 +58,9 @@ TEST(SmfNotifyResponseClassifier, PartialFailureWithPermanentCauseIsRollbackElig
   EXPECT_EQ(result.partial_failure_entries, 1u);
 }
 
-TEST(SmfNotifyResponseClassifier, PartialFailureWithOnlyTemporaryCauseIsRetryOnly) {
+TEST(
+    SmfNotifyResponseClassifier,
+    PartialFailureWithOnlyTemporaryCauseIsRetryOnly) {
   const nlohmann::json body =
       nlohmann::json::array({{{"failureCause", "PCC_QOS_FLOW_EVENT"}}});
 
@@ -66,7 +70,9 @@ TEST(SmfNotifyResponseClassifier, PartialFailureWithOnlyTemporaryCauseIsRetryOnl
   EXPECT_EQ(result.response, status_code::OK);
 }
 
-TEST(SmfNotifyResponseClassifier, PartialFailureIsPermanentIfAnyEntryIsPermanent) {
+TEST(
+    SmfNotifyResponseClassifier,
+    PartialFailureIsPermanentIfAnyEntryIsPermanent) {
   const nlohmann::json body = nlohmann::json::array(
       {{{"failureCause", "PCC_QOS_FLOW_EVENT"}},
        {{"failureCause", "PCC_RULE_EVENT"}}});
@@ -129,7 +135,9 @@ TEST(SmfNotifyResponseClassifier, BadRequestPccQosFlowEventIsTemporary) {
   EXPECT_EQ(result.outcome, smf_notify_outcome::temporary_rejection);
 }
 
-TEST(SmfNotifyResponseClassifier, BadRequestUnrecognizedCauseDefaultsToTemporary) {
+TEST(
+    SmfNotifyResponseClassifier,
+    BadRequestUnrecognizedCauseDefaultsToTemporary) {
   const nlohmann::json body = {{"cause", "SOME_FUTURE_CAUSE"}};
   const auto result =
       classify_smf_notify_response(http_status_code::BAD_REQUEST, body);
@@ -146,9 +154,12 @@ TEST(SmfNotifyResponseClassifier, BadRequestUnrecognizedCauseDefaultsToTemporary
 // when a codepath can never be exercised for real is "retry", not "assume
 // terminal and roll back". This test guards against "helpfully" reclassifying
 // it as permanent later without re-deriving that decision deliberately.
-TEST(SmfNotifyResponseClassifier, BadRequestFeatureGatedCausesDefaultToTemporary) {
+TEST(
+    SmfNotifyResponseClassifier,
+    BadRequestFeatureGatedCausesDefaultToTemporary) {
   for (const std::string cause :
-       {"RULE_PERMANENT_ERROR", "RULE_TEMPORARY_ERROR", "PENDING_TRANSACTION"}) {
+       {"RULE_PERMANENT_ERROR", "RULE_TEMPORARY_ERROR",
+        "PENDING_TRANSACTION"}) {
     const nlohmann::json body = {{"cause", cause}};
     const auto result =
         classify_smf_notify_response(http_status_code::BAD_REQUEST, body);
@@ -161,7 +172,8 @@ TEST(SmfNotifyResponseClassifier, BadRequestFeatureGatedCausesDefaultToTemporary
 // Directly re-validates the earlier bugfix: the response body for a 400 here
 // is an ErrorReport, {error: {cause, detail}, ruleReports: ...} -- cause must
 // be read from the nested "error" object, not the top level.
-TEST(SmfNotifyResponseClassifier, NestedErrorReportShapeExtractsCauseAndDetail) {
+TEST(
+    SmfNotifyResponseClassifier, NestedErrorReportShapeExtractsCauseAndDetail) {
   const nlohmann::json body = {
       {"error", {{"cause", "PCC_RULE_EVENT"}, {"detail", "nested"}}},
       {"ruleReports", nlohmann::json::array()}};
@@ -177,9 +189,10 @@ TEST(SmfNotifyResponseClassifier, NestedErrorReportShapeExtractsCauseAndDetail) 
 // Some responses (e.g. the generic 403 shape) are flat ProblemDetails, not
 // ErrorReport -- cause/detail must also be read correctly from the top level
 // when there's no "error" wrapper.
-TEST(SmfNotifyResponseClassifier, FlatProblemDetailsShapeExtractsCauseAndDetail) {
-  const nlohmann::json body = {
-      {"cause", "PCC_RULE_EVENT"}, {"detail", "flat"}};
+TEST(
+    SmfNotifyResponseClassifier,
+    FlatProblemDetailsShapeExtractsCauseAndDetail) {
+  const nlohmann::json body = {{"cause", "PCC_RULE_EVENT"}, {"detail", "flat"}};
 
   const auto result =
       classify_smf_notify_response(http_status_code::BAD_REQUEST, body);

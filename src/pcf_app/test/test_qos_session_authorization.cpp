@@ -38,9 +38,9 @@ using oai::pcf::app::sm_policy::authorize_session_rule_into;
 using oai::utils::bitrate::to_bps;
 
 using oai::_3gpp::model::Ambr;
-using oai::_3gpp::model::SubscribedDefaultQos;
 using oai::_3gpp::model::SmPolicyContextData;
 using oai::_3gpp::model::SmPolicyDecision;
+using oai::_3gpp::model::SubscribedDefaultQos;
 
 namespace {
 
@@ -139,8 +139,10 @@ TEST(SessionAuthorization, AppliesTightestOfOperatorAndVplmnCaps) {
   vplmn.setSessionAmbr(make_ambr("50 Mbps", "90 Mbps"));
   context.setVplmnQos(vplmn);
   operator_qos_policy op_policy;
-  op_policy.max_session_ambr_ul_bps = 70ULL * 1000 * 1000;  // VPLMN tighter (50)
-  op_policy.max_session_ambr_dl_bps = 60ULL * 1000 * 1000;  // operator tighter (60)
+  op_policy.max_session_ambr_ul_bps =
+      70ULL * 1000 * 1000;  // VPLMN tighter (50)
+  op_policy.max_session_ambr_dl_bps =
+      60ULL * 1000 * 1000;  // operator tighter (60)
 
   const auto rule = authorize_session_rule(context, "assoc-1", op_policy);
 

@@ -62,8 +62,9 @@ class pcf_smpc {
       const std::shared_ptr<oai::pcf::app::sm_policy::policy_storage>&
           policy_storage,
       pcf_event& ev,
-      oai::pcf::app::operator_qos_policy qos_authorization_policy         = {},
-      oai::pcf::app::notify_failure_recovery_policy notify_failure_recovery = {},
+      oai::pcf::app::operator_qos_policy qos_authorization_policy = {},
+      oai::pcf::app::notify_failure_recovery_policy notify_failure_recovery =
+          {},
       // The SMF-notify send seam. Empty
       // (the default) binds to the real http_client_inst global at
       // construction; tests inject a fake returning canned responses.
@@ -184,7 +185,8 @@ class pcf_smpc {
   // transport-ambiguous/etc.) that `status_code` alone can't express.
   sm_policy::status_code send_sm_policy_control_update_notify(
       const oai::_3gpp::model::SmPolicyContextData& context,
-      const std::shared_ptr<const oai::_3gpp::model::SmPolicyDecision>& decision,
+      const std::shared_ptr<const oai::_3gpp::model::SmPolicyDecision>&
+          decision,
       sm_policy::smf_notify_outcome& outcome);
 
   void handle_session_binding_request(
@@ -215,7 +217,8 @@ class pcf_smpc {
   // committed -- splitting the two steps this way means nothing here needs
   // to invoke anything the caller handed in.
   void handle_commit_decision_request(
-      std::optional<std::string>& association_id, std::uint64_t expected_version,
+      std::optional<std::string>& association_id,
+      std::uint64_t expected_version,
       const oai::pcf::app::sm_policy_delta& delta,
       oai::pcf::app::decision_apply_result& out);
 
@@ -237,7 +240,8 @@ class pcf_smpc {
   // and network-slice resource admission control [TS 29.512 §4.2.6.8,
   // TS 23.503 §6.1.4]. Today collisions are avoided by construction (the PA
   // side's id prefix + reserved precedence band) and the only capacity gate is
-  // the per-session cumulative Session-AMBR check in validate_qos_authorization().
+  // the per-session cumulative Session-AMBR check in
+  // validate_qos_authorization().
 
   // TODO [QOS-MON] Monitoring coordination (Phase 4) [TS 29.512 §4.2.3.25].
 

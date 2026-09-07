@@ -27,7 +27,8 @@ std::string app_session_storage::generate_id() {
 
 void app_session_storage::insert(const std::shared_ptr<app_session>& session) {
   if (!session) {
-    Logger::pcf_app().warn("app_session_storage: ignoring insert of null session");
+    Logger::pcf_app().warn(
+        "app_session_storage: ignoring insert of null session");
     return;
   }
   m_backend->insert(session->id(), session);
@@ -53,7 +54,8 @@ std::shared_ptr<app_session> app_session_storage::find(
   return session;
 }
 
-std::vector<std::shared_ptr<app_session>> app_session_storage::find_all() const {
+std::vector<std::shared_ptr<app_session>> app_session_storage::find_all()
+    const {
   return m_backend->find_all();
 }
 
@@ -77,7 +79,8 @@ app_session_storage::find_by_association(
 }
 
 void app_session_storage::remove(const std::string& app_session_id) {
-  // Capture the session first so we know which association-index entry to prune.
+  // Capture the session first so we know which association-index entry to
+  // prune.
   auto session = m_backend->find(app_session_id);
   if (!session) {
     Logger::pcf_app().trace(

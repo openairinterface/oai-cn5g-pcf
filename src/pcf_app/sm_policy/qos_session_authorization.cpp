@@ -17,11 +17,11 @@
 namespace oai::pcf::app::sm_policy {
 
 using oai::_3gpp::model::Ambr;
-using oai::_3gpp::model::SubscribedDefaultQos;
 using oai::_3gpp::model::AuthorizedDefaultQos;
 using oai::_3gpp::model::SessionRule;
 using oai::_3gpp::model::SmPolicyContextData;
 using oai::_3gpp::model::SmPolicyDecision;
+using oai::_3gpp::model::SubscribedDefaultQos;
 
 namespace {
 
@@ -32,13 +32,15 @@ namespace {
 std::string clamp_bitrate(
     const std::string& subscribed, const std::optional<uint64_t>& op_cap_bps,
     const std::optional<std::string>& vplmn_cap) {
-  const std::optional<uint64_t> sub_bps = oai::utils::bitrate::to_bps(subscribed);
+  const std::optional<uint64_t> sub_bps =
+      oai::utils::bitrate::to_bps(subscribed);
   if (!sub_bps) return subscribed;  // unparseable subscribed value: leave as-is
 
   uint64_t effective = *sub_bps;
   if (op_cap_bps) effective = std::min(effective, *op_cap_bps);
   if (vplmn_cap) {
-    if (const std::optional<uint64_t> v = oai::utils::bitrate::to_bps(*vplmn_cap))
+    if (const std::optional<uint64_t> v =
+            oai::utils::bitrate::to_bps(*vplmn_cap))
       effective = std::min(effective, *v);
   }
 

@@ -27,15 +27,14 @@ smf_notify_classification classify_smf_notify_response(
       // session-rule ruleReports/sessRuleReports extraction is deferred
       bool any_permanent = false;
       for (const auto& report : body_json) {
-        if (report.value("failureCause", std::string{}) ==
-            kCausePccRuleEvent) {
+        if (report.value("failureCause", std::string{}) == kCausePccRuleEvent) {
           any_permanent = true;
           break;
         }
       }
-      result.outcome  = any_permanent ? smf_notify_outcome::permanent_rejection
-                                        : smf_notify_outcome::temporary_rejection;
-      result.response = status_code::OK;
+      result.outcome = any_permanent ? smf_notify_outcome::permanent_rejection :
+                                       smf_notify_outcome::temporary_rejection;
+      result.response                = status_code::OK;
       result.partial_failure_entries = body_json.size();
       result.info =
           "SM Policy Update Notification: SMF returned a partial-failure "

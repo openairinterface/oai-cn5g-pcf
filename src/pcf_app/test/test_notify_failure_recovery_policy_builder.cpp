@@ -65,8 +65,7 @@ TEST(NotifyFailureRecoveryPolicyBuilder, EmptyConfigMatchesDefaultPolicy) {
   EXPECT_EQ(
       policy.retry_drain_max_entries, default_policy.retry_drain_max_entries);
   EXPECT_EQ(policy.max_notify_retries, default_policy.max_notify_retries);
-  EXPECT_EQ(
-      policy.retry_backoff_initial, default_policy.retry_backoff_initial);
+  EXPECT_EQ(policy.retry_backoff_initial, default_policy.retry_backoff_initial);
   EXPECT_EQ(policy.rollback_tracker_ttl, default_policy.rollback_tracker_ttl);
   EXPECT_EQ(
       policy.rollback_tracker_max_entries,
@@ -75,7 +74,9 @@ TEST(NotifyFailureRecoveryPolicyBuilder, EmptyConfigMatchesDefaultPolicy) {
 
 // A partial block converts only the provided fields; the rest keep their
 // default values.
-TEST(NotifyFailureRecoveryPolicyBuilder, PartialConfigLeavesOmittedFieldsDefault) {
+TEST(
+    NotifyFailureRecoveryPolicyBuilder,
+    PartialConfigLeavesOmittedFieldsDefault) {
   const auto cfg = config_from(R"(
 max_notify_retries: 10
 )");

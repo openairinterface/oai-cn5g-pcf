@@ -12,7 +12,7 @@ namespace {
 
 // Diff one map: upsert keys new-or-changed in `updated`, collect keys dropped
 // from `base`. Relies on the generated models' operator== to detect changes.
-template <typename MapT>
+template<typename MapT>
 void diff_map(
     const MapT& base, const MapT& updated, MapT& upsert,
     std::vector<std::string>& removed) {
@@ -31,11 +31,12 @@ void diff_map(
 
 // Apply one map's upserts and removals onto a decision map. getXxx() returns a
 // copy, so mutate the copy and set it back (matches the rest of the codebase).
-template <typename MapT>
+template<typename MapT>
 void apply_map(
     MapT decision_map, const MapT& upsert,
     const std::vector<std::string>& removed, MapT& out) {
-  for (const auto& [key, value] : upsert) decision_map.insert_or_assign(key, value);
+  for (const auto& [key, value] : upsert)
+    decision_map.insert_or_assign(key, value);
   for (const auto& key : removed) decision_map.erase(key);
   out = std::move(decision_map);
 }
