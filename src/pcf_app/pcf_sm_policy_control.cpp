@@ -519,6 +519,48 @@ status_code pcf_smpc::create_sm_policy_handler(
     // Authorization for QoS validation, TS 29.514 §4.1.3.1).
     sm_policy::authorize_session_rule_into(
         decision, context, association_id, m_qos_authorization_policy);
+
+    // Sanitize ARP priorityLevel to ensure 3GPP TS 38.413 compliance (must be
+    // 1–15)
+    if (decision.sessRulesIsSet()) {
+      auto sess_rules = decision.getSessRules();
+      for (auto& [key, sess_rule] : sess_rules) {
+        if (sess_rule.authDefQosIsSet()) {
+          auto def_qos = sess_rule.getAuthDefQos();
+          if (def_qos.arpIsSet() &&
+              (def_qos.getArp().getPriorityLevel() < 1 ||
+               def_qos.getArp().getPriorityLevel() > 15)) {
+            Logger::pcf_app().warn(
+                "Sanitizing invalid SessionRule ARP priorityLevel (%d -> 1) "
+                "for association %s",
+                def_qos.getArp().getPriorityLevel(), association_id.c_str());
+            auto arp = def_qos.getArp();
+            arp.setPriorityLevel(1);
+            def_qos.setArp(arp);
+            sess_rule.setAuthDefQos(def_qos);
+          }
+        }
+      }
+      decision.setSessRules(sess_rules);
+    }
+
+    if (decision.qosDecsIsSet()) {
+      auto qos_decs = decision.getQosDecs();
+      for (auto& [key, qos_data] : qos_decs) {
+        if (qos_data.arpIsSet() &&
+            (qos_data.getArp().getPriorityLevel() < 1 ||
+             qos_data.getArp().getPriorityLevel() > 15)) {
+          Logger::pcf_app().warn(
+              "Sanitizing invalid QosData ARP priorityLevel (%d -> 1) for "
+              "association %s",
+              qos_data.getArp().getPriorityLevel(), association_id.c_str());
+          auto arp = qos_data.getArp();
+          arp.setPriorityLevel(1);
+          qos_data.setArp(arp);
+        }
+      }
+      decision.setQosDecs(qos_decs);
+    }
     assoc.set_sm_policy_decision(decision);
 
     std::unique_lock lock_assocations(m_associations_mutex);
