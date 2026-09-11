@@ -45,6 +45,8 @@ function help()
   echo_error "  -v, --verbose                             Build process verbose."
   echo_error "  -V, --Verbose                             CMake only build process verbose, display compilation warnings and errors."
   echo_error "  -l, --lttng                               Build variant that will also include LTTNG"
+  echo_error "  -o, --odb                                 Build variant that will also include ODB/MySQL database persistence"
+  echo_error "  -t, --tests                                Build and run the PCF unit tests (GoogleTest/CTest)"
   echo_error " "
 }
 
@@ -56,6 +58,8 @@ function main()
   local -i verbose=0
   local -i var_check_install_min_deps=0
   local -i var_check_install_deps=0
+  local -i var_use_odb=0
+  local -i var_build_tests=0
   local    cmake_args=" "
   export make_args=" "
 
@@ -85,6 +89,18 @@ function main()
           cmake_args="$cmake_args -DUSE_LTTNG=ON"
           echo ${cmake_args}
         fi
+        shift;
+        ;;
+      -o | --odb)
+        var_use_odb=1
+        cmake_args="$cmake_args -DUSE_ODB=ON"
+        echo ${cmake_args}
+        shift;
+        ;;
+      -t | --tests)
+        var_build_tests=1
+        cmake_args="$cmake_args -DBUILD_TESTING=ON"
+        echo ${cmake_args}
         shift;
         ;;
 
@@ -142,7 +158,7 @@ function main()
   mkdir -m 777 -p $dext
 
   if [ $var_check_install_deps -gt 0 ];then
-    check_install_pcf_deps  $force $debug
+    check_install_pcf_deps  $force $debug $var_use_odb $var_build_tests
     if [[ $? -ne 0 ]]; then
         echo_error "Error: PCF deps installation failed"
         return 1
@@ -195,6 +211,28 @@ function main()
 
   compilations pcf pcf $OPENAIRCN_DIR/build/pcf/build/pcf $verbose
   ret=$?;[[ $ret -ne 0 ]] && return $ret
+
+  ##############################################################################
+  # Build and run unit tests (opt-in, --tests)
+  ##############################################################################
+  if [ $var_build_tests -ne 0 ]; then
+    compilations pcf pcf_unit_tests $OPENAIRCN_DIR/build/pcf/build/pcf_app/test/pcf_unit_tests $verbose
+    ret=$?
+    if [[ $ret -ne 0 ]]; then
+      echo_error "PCF unit tests compilation failed; log follows:"
+      cat $dlog/pcf_unit_tests.txt
+      return $ret
+    fi
+
+    cd $OPENAIRCN_DIR/build/pcf/build
+    ctest --output-on-failure -L unit
+    ret=$?
+    if [[ $ret -ne 0 ]]; then
+      echo_error "PCF unit tests failed"
+      return $ret
+    fi
+    echo_success "PCF unit tests passed"
+  fi
 
   # For daemon should not be group writable
   $SUDO chmod 755 $OPENAIRCN_DIR/build/pcf/build/pcf

@@ -29,6 +29,7 @@
 #include "nf_launch.hpp"
 #include "conversions.hpp"
 #include "http_client.hpp"
+#include "task_manager.hpp"
 
 #include <iostream>
 #include <csignal>
@@ -51,6 +52,12 @@ std::shared_ptr<oai::http::http_client> http_client_inst   = nullptr;
 std::unique_ptr<database_wrapper_abstraction> db_connector = nullptr;
 std::unique_ptr<task_manager> tm_inst                      = nullptr;
 std::unique_ptr<oai::config::lttng_configuration> lttng_config_yaml;
+// task_tick heartbeat (dormant today: nothing subscribes yet,
+// its destructor blocks until manage_tasks()'s
+// loop actually exits, so it must be reset (below) before task_manager_thread
+// is joined, never the other way around.
+std::unique_ptr<task_manager> task_manager_inst = nullptr;
+std::thread task_manager_thread;
 //------------------------------------------------------------------------------
 void signal_handler_sigint(int s) {
   auto shutdown_start = std::chrono::system_clock::now();
@@ -68,6 +75,15 @@ void signal_handler_sigint(int s) {
   }
   if (pcf_app_inst) {
     pcf_app_inst->stop();
+  }
+  Logger::system().debug("Shutting down task manager...");
+  // Resetting blocks until manage_tasks()'s loop actually exits (the
+  // destructor's terminate/terminated handshake) -- must complete before the
+  // std::thread running it is joined, or that thread is still running when
+  // its std::thread destructor would otherwise run.
+  task_manager_inst = nullptr;
+  if (task_manager_thread.joinable()) {
+    task_manager_thread.join();
   }
   // TODO exit is not always clean, check again after complete refactor
   // Ensure that objects are destructed before static libraries (e.g. Logger)

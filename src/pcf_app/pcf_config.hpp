@@ -15,6 +15,8 @@ const std::string DEFAULT_TRAFFIC_RULES_PATH =
 const std::string DEFAULT_POLICY_DECISIONS_PATH =
     "/openair-pcf/policies/policy_decisions";
 const std::string DEFAULT_QOS_DATA_PATH = "/openair-pcf/policies/qos_data";
+const std::string DEFAULT_QOS_REFERENCE_PATH =
+    "/openair-pcf/policies/qos_references";
 
 class pcf_config : public oai::config::config {
  public:
@@ -22,6 +24,8 @@ class pcf_config : public oai::config::config {
       const std::string& config_path, bool log_stdout, bool log_rot_file);
 
   const policy_config& get_pcf_policy() const;
+  const qos_authorization_config& get_qos_authorization() const;
+  const notify_failure_recovery_config& get_notify_failure_recovery() const;
   bool use_db_policy_storage() const;
 };
 }  // namespace oai::config::pcf

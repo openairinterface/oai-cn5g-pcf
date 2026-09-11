@@ -83,6 +83,47 @@ class pcf_event {
   bs2::connection subscribe_sm_update_decision(
       const sm_update_decision_sig_t::slot_type& sig);
 
+  /**
+   * Subscribe to Policy Authorization's request to notify the SMF of a
+   * decision it just committed, and report back the classified outcome.
+   * @param [const sm_notify_committed_decision_sig_t::slot_type&] sig:
+   * slot_type parameter
+   * @return boost::signals2::connection: the connection between the signal
+   * and the slot
+   */
+  bs2::connection subscribe_notify_committed_decision(
+      const sm_notify_committed_decision_sig_t::slot_type& sig);
+
+  /**
+   * Subscribe to a definitively "permanent" SMF notify rejection.
+   * Invariant (finding F): connect only once,
+   * at Policy Authorization's construction, before any HTTP thread starts --
+   * dummy_mutex gives no protection against a runtime connect/disconnect
+   * racing an invocation.
+   * @param [const sm_policy_update_failed_sig_t::slot_type&] sig: slot_type
+   * parameter
+   * @return boost::signals2::connection: the connection between the signal
+   * and the slot
+   */
+  bs2::connection subscribe_sm_policy_update_failed(
+      const sm_policy_update_failed_sig_t::slot_type& sig);
+
+  /**
+   * Subscribe to a lookup of an association's current decision + version by
+   * association_id.
+   * @param [const sm_get_association_decision_sig_t::slot_type&] sig:
+   * slot_type parameter
+   * @return boost::signals2::connection: the connection between the signal
+   * and the slot
+   */
+  bs2::connection subscribe_sm_get_association_decision(
+      const sm_get_association_decision_sig_t::slot_type& sig);
+
+  // TODO [QOS-SUB] AF notification subscriptions (Phase 3) [TS 29.514 §4.2.5]:
+  // QoS status, PDU session events, policy updates and monitoring reports.
+  // Signal types are declared in pcf_event_sig.hpp; each needs a
+  // subscribe_*() here plus a member below.
+
  private:
   task_sig_t task_tick;
 
@@ -94,6 +135,18 @@ class pcf_event {
   sm_session_binding_sig_t sm_session_binding;  // Signal for SM Session Binding
 
   sm_update_decision_sig_t sm_update_decision;  // Signal for SM Update Decision
+
+  sm_notify_committed_decision_sig_t
+      notify_committed_decision;  // Signal for PA to ask SM to notify the SMF
+
+  sm_policy_update_failed_sig_t
+      sm_policy_update_failed;  // Signal for a permanent SMF notify rejection
+
+  sm_get_association_decision_sig_t
+      sm_get_association_decision;  // Signal for association lookup by id
+
+  // TODO [QOS-SUB] AF notification signal members (Phase 3) -- see the
+  // subscribe_*() note above.
 };
 }  // namespace oai::pcf::app
 #endif
