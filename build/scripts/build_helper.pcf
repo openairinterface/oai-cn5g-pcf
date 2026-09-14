@@ -3,7 +3,7 @@
 # -------------------------------------------------------------------------------
 # Install the build and runtime dependencies of the OAI PCF: distribution
 # packages plus the libraries that are built from source.
-# Ubuntu 24.04 and the RHEL/Rocky 9 family are the supported distributions.
+# Ubuntu 24.04 and CentOS Stream 10 are the supported distributions.
 # -------------------------------------------------------------------------------
 
 # -------------------------------------------------------------------------------
@@ -102,12 +102,9 @@ check_install_pcf_deps() {
       check \
       nettle-devel \
       libcurl-devel \
-      pkgconfig \
+      pkgconf-pkg-config \
       boost-devel \
-      libasan \
-      mysql \
-      mysql-devel \
-      mysql-libs"
+      libasan"
   else
     echo_fatal "$OS_DISTRO is not a supported distribution."
   fi
