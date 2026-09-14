@@ -69,7 +69,7 @@ class policy_storage_yaml : public policy_storage {
  public:
   explicit policy_storage_yaml()                  = default;
   policy_storage_yaml(policy_storage_yaml const&) = delete;
-  void operator=(policy_storage_yaml const&) = delete;
+  void operator=(policy_storage_yaml const&)      = delete;
 
   // TODO methods to update and delete policies
   void insert_supi_decision(

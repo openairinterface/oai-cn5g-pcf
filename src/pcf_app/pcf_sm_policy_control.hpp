@@ -34,7 +34,7 @@ class pcf_smpc {
       const std::shared_ptr<oai::pcf::app::sm_policy::policy_storage>&
           policy_storage,
       pcf_event& ev);
-  pcf_smpc(pcf_smpc const&) = delete;
+  pcf_smpc(pcf_smpc const&)       = delete;
   void operator=(pcf_smpc const&) = delete;
 
   virtual ~pcf_smpc();
