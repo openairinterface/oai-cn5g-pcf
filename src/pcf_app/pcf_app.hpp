@@ -26,7 +26,7 @@ namespace oai::pcf::app {
 class pcf_app {
  public:
   explicit pcf_app(pcf_event& ev);
-  pcf_app(pcf_app const&) = delete;
+  pcf_app(pcf_app const&)        = delete;
   void operator=(pcf_app const&) = delete;
 
   virtual ~pcf_app();

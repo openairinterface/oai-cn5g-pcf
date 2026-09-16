@@ -19,11 +19,6 @@ Source: https://github.com/google/googletest
 Author: Google
 License: BSD 3-Clause License
 
-Folly
-Source: https://github.com/facebook/folly
-Author: Facebook
-License: Apache License 2.0
-
 fmt
 Source: https://github.com/fmtlib/fmt
 Author: Hello World Foundation
@@ -48,6 +43,26 @@ spdlog
 Source: https://github.com/gabime/spdlog
 Author: Gabi Melman (gmelman1@gmail.com)
 License: MIT License
+
+yaml-cpp
+Source: https://github.com/jbeder/yaml-cpp
+Author: Jesse Beder
+License: MIT License
+
+libodb
+Source: https://www.codesynthesis.com/products/odb/
+Author: Code Synthesis
+License: GNU General Public License version 2, or a commercial license from Code Synthesis
+
+libodb-mysql
+Source: https://www.codesynthesis.com/products/odb/
+Author: Code Synthesis
+License: GNU General Public License version 2, or a commercial license from Code Synthesis
+
+libmysqlclient
+Source: https://www.mysql.com
+Author: Oracle
+License: GNU General Public License version 2 with the MySQL Universal FOSS Exception
 
 ------------------------------------------------------------------
 

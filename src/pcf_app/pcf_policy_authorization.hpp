@@ -32,7 +32,7 @@ class pcf_policy_authorization {
  public:
   explicit pcf_policy_authorization(pcf_event& ev);
   pcf_policy_authorization(pcf_policy_authorization const&) = delete;
-  void operator=(pcf_policy_authorization const&) = delete;
+  void operator=(pcf_policy_authorization const&)           = delete;
 
   virtual ~pcf_policy_authorization();
 

@@ -36,9 +36,9 @@ class AlreadyExistException : public std::exception {
 template<class DerivedT>
 class database_wrapper : public database_wrapper_abstraction {
  public:
-  database_wrapper(){};
+  database_wrapper() {};
 
-  virtual ~database_wrapper(){};
+  virtual ~database_wrapper() {};
 
   bool connect(uint32_t num_retries) override {
     Logger::pcf_app().debug(

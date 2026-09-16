@@ -16,8 +16,8 @@ namespace oai::pcf::app {
 class task_manager;
 class pcf_event {
  public:
-  pcf_event(){};
-  pcf_event(pcf_event const&) = delete;
+  pcf_event() {};
+  pcf_event(pcf_event const&)      = delete;
   void operator=(pcf_event const&) = delete;
 
   static pcf_event& get_instance() {

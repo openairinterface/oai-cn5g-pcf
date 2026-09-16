@@ -27,7 +27,7 @@ namespace oai::pcf::api {
 class ApiBase {
  public:
   explicit ApiBase(const std::shared_ptr<Pistache::Rest::Router>& rtr)
-      : router(rtr){};
+      : router(rtr) {};
   virtual ~ApiBase()  = default;
   virtual void init() = 0;
 

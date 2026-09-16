@@ -20,7 +20,7 @@ class pcf_nrf {
 
  public:
   explicit pcf_nrf(pcf_event& ev);
-  pcf_nrf(pcf_nrf const&) = delete;
+  pcf_nrf(pcf_nrf const&)        = delete;
   void operator=(pcf_nrf const&) = delete;
 
   virtual ~pcf_nrf();

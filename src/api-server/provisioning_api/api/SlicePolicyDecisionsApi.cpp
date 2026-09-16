@@ -100,9 +100,9 @@ void SlicePolicyDecisionsApi::slice_policy_decision_delete_handler(
     // Getting the query params
     auto sstQuery = request.query().get("sst");
     std::optional<int32_t> sst;
-    if (!sstQuery.isEmpty()) {
+    if (sstQuery.has_value()) {
       int32_t valueQuery_instance;
-      if (fromStringValue(sstQuery.get(), valueQuery_instance)) {
+      if (fromStringValue(sstQuery.value(), valueQuery_instance)) {
         sst = valueQuery_instance;
       }
     } else {
@@ -111,9 +111,9 @@ void SlicePolicyDecisionsApi::slice_policy_decision_delete_handler(
     }
     auto sdQuery = request.query().get("sd");
     std::optional<std::string> sd;
-    if (!sdQuery.isEmpty()) {
+    if (sdQuery.has_value()) {
       std::string valueQuery_instance;
-      if (fromStringValue(sdQuery.get(), valueQuery_instance)) {
+      if (fromStringValue(sdQuery.value(), valueQuery_instance)) {
         sd = valueQuery_instance;
       }
     } else {
@@ -143,9 +143,9 @@ void SlicePolicyDecisionsApi::slice_policy_decision_get_handler(
     // Getting the query params
     auto sstQuery = request.query().get("sst");
     std::optional<int32_t> sst;
-    if (!sstQuery.isEmpty()) {
+    if (sstQuery.has_value()) {
       int32_t valueQuery_instance;
-      if (fromStringValue(sstQuery.get(), valueQuery_instance)) {
+      if (fromStringValue(sstQuery.value(), valueQuery_instance)) {
         sst = valueQuery_instance;
       }
     } else {
@@ -154,9 +154,9 @@ void SlicePolicyDecisionsApi::slice_policy_decision_get_handler(
     }
     auto sdQuery = request.query().get("sd");
     std::optional<std::string> sd;
-    if (!sdQuery.isEmpty()) {
+    if (sdQuery.has_value()) {
       std::string valueQuery_instance;
-      if (fromStringValue(sdQuery.get(), valueQuery_instance)) {
+      if (fromStringValue(sdQuery.value(), valueQuery_instance)) {
         sd = valueQuery_instance;
       }
     } else {
@@ -224,9 +224,9 @@ void SlicePolicyDecisionsApi::slice_policy_decision_put_handler(
     // Getting the query params
     auto sstQuery = request.query().get("sst");
     std::optional<int32_t> sst;
-    if (!sstQuery.isEmpty()) {
+    if (sstQuery.has_value()) {
       int32_t valueQuery_instance;
-      if (fromStringValue(sstQuery.get(), valueQuery_instance)) {
+      if (fromStringValue(sstQuery.value(), valueQuery_instance)) {
         sst = valueQuery_instance;
       }
     } else {
@@ -235,9 +235,9 @@ void SlicePolicyDecisionsApi::slice_policy_decision_put_handler(
     }
     auto sdQuery = request.query().get("sd");
     std::optional<std::string> sd;
-    if (!sdQuery.isEmpty()) {
+    if (sdQuery.has_value()) {
       std::string valueQuery_instance;
-      if (fromStringValue(sdQuery.get(), valueQuery_instance)) {
+      if (fromStringValue(sdQuery.value(), valueQuery_instance)) {
         sd = valueQuery_instance;
       }
     } else {

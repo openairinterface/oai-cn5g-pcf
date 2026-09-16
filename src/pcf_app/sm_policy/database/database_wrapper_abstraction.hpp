@@ -17,9 +17,9 @@
 namespace oai::pcf::app {
 class database_wrapper_abstraction {
  public:
-  database_wrapper_abstraction(){};
+  database_wrapper_abstraction() {};
 
-  virtual ~database_wrapper_abstraction(){};
+  virtual ~database_wrapper_abstraction() {};
 
   /*
    * Establish the connection between PCF and the DB
