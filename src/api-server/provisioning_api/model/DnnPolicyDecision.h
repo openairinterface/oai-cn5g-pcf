@@ -22,14 +22,18 @@
 #include <string>
 #include <vector>
 #include <nlohmann/json.hpp>
+#ifdef USE_ODB
 #include <odb/core.hxx>
+#endif
 
 namespace oai::pcf::provisioning::model {
 
 /// <summary>
 ///
 /// </summary>
+#ifdef USE_ODB
 #pragma db object
+#endif
 class DnnPolicyDecision {
  public:
   DnnPolicyDecision();
@@ -78,14 +82,18 @@ class DnnPolicyDecision {
   friend void from_json(const nlohmann::json& j, DnnPolicyDecision& o);
 
  protected:
+#ifdef USE_ODB
 #pragma db id
+#endif
   std::string m_Dnn;
   bool m_DnnIsSet;
   std::vector<std::string> m_PccRuleIds;
   bool m_PccRuleIdsIsSet;
 
  private:
+#ifdef USE_ODB
   friend class odb::access;
+#endif
 };
 
 }  // namespace oai::pcf::provisioning::model
