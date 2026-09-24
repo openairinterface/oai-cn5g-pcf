@@ -9,6 +9,8 @@
 #include <string>
 #include <vector>
 
+#include "AppSessionContextReqData.h"
+#include "AppSessionContextUpdateData.h"
 #include "FlowStatus.h"
 #include "FlowStatus_anyOf.h"
 #include "QosData.h"
@@ -75,6 +77,22 @@ class qos_deriver {
       const MediaComponentT& media_component, const std::string& app_session_id,
       oai::_3gpp::model::SmPolicyDecision& decision, qos_context& qos_ctx,
       oai::_3gpp::model::QosData& out_qos_data);
+
+  // Apply a PATCH's media-component changes to `decision` [TS 29.514
+  // §4.2.3.2]. Each component the PATCH touches is re-derived from `merged`
+  // (the stored context with the RFC 7396 patch already applied, see
+  // merge_patch_context), never from the patch fragment, which carries only
+  // what changed. A component flagged REMOVED, or left with no sub-components
+  // because the PATCH removed the last one, has its QosData and PccRule
+  // removed. Sets `qos_flow_processed` if any flow was added, modified or
+  // removed. Returns BAD_REQUEST / INVALID_SERVICE_INFORMATION if the PATCH
+  // carries marBw*/mirBw* for a component that uses a qosReference.
+  [[nodiscard]] handler_result apply_media_component_patch(
+      const oai::_3gpp::model::AppSessionContextUpdateData& patch,
+      const oai::_3gpp::model::AppSessionContextReqData& merged,
+      const std::string& app_session_id,
+      oai::_3gpp::model::SmPolicyDecision& decision, qos_context& qos_ctx,
+      bool& qos_flow_processed);
 
   // Validate the QoS this app-session authorized against operator policy and
   // the subscribed envelope [TS 29.514 §4.1.3.1, TS 23.503 §6.1.3.2.3]. See

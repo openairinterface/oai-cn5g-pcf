@@ -2193,3 +2193,254 @@ TEST(
   GTEST_SKIP() << "Blocked: session-modification QoS update handling is not "
                   "implemented yet";
 }
+
+/*
+ * 3GPP TS 29.514 §4.2.3.2 -- a PATCH is an RFC 7396 merge patch, so each media
+ * component it touches is re-derived from its merged state, never from the
+ * patch fragment alone (qos_deriver::apply_media_component_patch).
+ */
+namespace {
+
+constexpr const char* kSdf1      = "permit out ip from any 5000 to assigned";
+constexpr const char* kSdf2      = "permit out ip from any 6000 to assigned";
+constexpr const char* kPermitAll = "permit out ip from any to assigned";
+constexpr const char* kRuleId    = "PA-QOS-as-1";
+constexpr const char* kQosId     = "PA-QOS-as-qos-1";
+
+MediaSubComponent make_dl_sub(
+    int32_t f_num, const std::string& fdesc, const std::string& mar_bw_dl) {
+  MediaSubComponent sub = make_sub(f_num, {fdesc});
+  sub.setMarBwDl(mar_bw_dl);
+  return sub;
+}
+
+// The stored context of every partial-PATCH test: media component 1 with two
+// downlink SDFs, sub-component 1 (port 5000, 4 Mbps) and 2 (port 6000, 2 Mbps).
+AppSessionContextReqData two_sdf_context(
+    std::optional<std::string> qos_reference = std::nullopt) {
+  MediaComponent mc;
+  mc.setMedCompN(1);
+  if (qos_reference) mc.setQosReference(*qos_reference);
+  mc.setMedSubComps(
+      {{"1", make_dl_sub(1, kSdf1, "4 Mbps")},
+       {"2", make_dl_sub(2, kSdf2, "2 Mbps")}});
+  AppSessionContextReqData ctx = make_stored_context();
+  ctx.setMedComponents({{"1", mc}});
+  return ctx;
+}
+
+// Owns a deriver, the stored context and the decision the create installed,
+// then applies one PATCH of media component 1 on top.
+struct partial_patch_fixture {
+  fake_qos_reference_store store;
+  operator_qos_policy op_policy;
+  qos_deriver deriver{store, op_policy};
+  AppSessionContextReqData stored;
+  SmPolicyDecision decision;
+
+  explicit partial_patch_fixture(
+      std::optional<std::string> qos_reference = std::nullopt) {
+    if (qos_reference) {
+      auto preset = std::make_shared<QosData>();
+      preset->setR5qi(2);
+      preset->setGbrDl("3 Mbps");
+      store.insert(*qos_reference, preset);
+    }
+    stored = two_sdf_context(qos_reference);
+    qos_context ledger;
+    created = deriver.handle_qos_requirements(
+        stored.getMedComponents().at("1"), "as", decision, ledger);
+  }
+
+  handler_result apply(const MediaComponentRm& patch_component) {
+    AppSessionContextUpdateData patch;
+    patch.setMedComponents({{"1", patch_component}});
+    const auto merged = merge_patch_context(stored, patch);
+    qos_context scratch;
+    return deriver.apply_media_component_patch(
+        patch, merged, "as", decision, scratch, processed);
+  }
+
+  std::set<std::string> filters() const {
+    std::set<std::string> descs;
+    for (const auto& f : decision.getPccRules().at(kRuleId).getFlowInfos())
+      descs.insert(f.getFlowDescription());
+    return descs;
+  }
+
+  handler_result created;
+  bool processed = false;
+};
+
+}  // namespace
+
+// Removing one sub-component keeps the other's filter and rate; deriving from
+// the fragment alone produced a rule with no filters at all.
+TEST(QosPartialPatch, RemovingOneSubComponentKeepsTheOthersFilter) {
+  partial_patch_fixture f;
+  ASSERT_FALSE(f.created.problem_details.has_value());
+  MediaComponentRm patch = make_component_rm(1);
+  patch.setMedSubComps({{"2", make_sub_component_rm(2, /*removed=*/true)}});
+
+  const auto result = f.apply(patch);
+
+  ASSERT_FALSE(result.problem_details.has_value());
+  EXPECT_TRUE(f.processed);
+  EXPECT_EQ(f.filters(), std::set<std::string>({kSdf1}));
+  EXPECT_EQ(f.decision.getQosDecs().at(kQosId).getMaxbrDl(), "4 Mbps");
+}
+
+// Modifying one sub-component keeps the other and re-sums the rate.
+TEST(QosPartialPatch, ModifyingOneSubComponentKeepsTheOther) {
+  partial_patch_fixture f;
+  ASSERT_FALSE(f.created.problem_details.has_value());
+  MediaComponentRm patch  = make_component_rm(1);
+  MediaSubComponentRm sub = make_sub_component_rm(2);
+  sub.setMarBwDl("3 Mbps");
+  patch.setMedSubComps({{"2", sub}});
+
+  const auto result = f.apply(patch);
+
+  ASSERT_FALSE(result.problem_details.has_value());
+  EXPECT_EQ(f.filters(), std::set<std::string>({kSdf1, kSdf2}));
+  EXPECT_EQ(f.decision.getQosDecs().at(kQosId).getMaxbrDl(), "7 Mbps");
+}
+
+// A bandwidth-only PATCH (no medSubComps) keeps the AF's filters; deriving
+// from the fragment installed a permit-all filter matching all UE traffic.
+TEST(QosPartialPatch, BandwidthOnlyPatchKeepsSdfFilters) {
+  partial_patch_fixture f;
+  ASSERT_FALSE(f.created.problem_details.has_value());
+
+  const auto result = f.apply(make_component_rm(1, "20 Mbps"));
+
+  ASSERT_FALSE(result.problem_details.has_value());
+  EXPECT_EQ(f.filters(), std::set<std::string>({kSdf1, kSdf2}));
+  EXPECT_EQ(f.filters().count(kPermitAll), 0u);
+}
+
+// A qosReference set at create time still applies after a PATCH that does not
+// repeat it [TS 29.513 §7.3.3].
+TEST(QosPartialPatch, QosReferenceSurvivesPatchThatOmitsIt) {
+  partial_patch_fixture f("gbr-ref");
+  ASSERT_FALSE(f.created.problem_details.has_value());
+  MediaComponentRm patch = make_component_rm(1);
+  patch.setMedSubComps({{"2", make_sub_component_rm(2, /*removed=*/true)}});
+
+  const auto result = f.apply(patch);
+
+  ASSERT_FALSE(result.problem_details.has_value());
+  EXPECT_EQ(f.filters(), std::set<std::string>({kSdf1}));
+  const auto& qos = f.decision.getQosDecs().at(kQosId);
+  EXPECT_EQ(qos.getR5qi(), 2);
+  EXPECT_EQ(qos.getGbrDl(), "3 Mbps");
+}
+
+// Individual bitrates cannot modify a component on a qosReference: they would
+// be ignored [TS 29.513 Table 7.3.3-1], so the PATCH is rejected
+// [TS 29.514 §4.2.2.2, §4.2.3.30] and the installed flow is left unchanged.
+TEST(QosPartialPatch, ComponentMbrOnQosReferenceIsRejected) {
+  partial_patch_fixture f("gbr-ref");
+  ASSERT_FALSE(f.created.problem_details.has_value());
+  const SmPolicyDecision before = f.decision;
+
+  const auto result = f.apply(make_component_rm(1, "5 Mbps"));
+
+  ASSERT_TRUE(result.status.has_value());
+  EXPECT_EQ(*result.status, status_code::BAD_REQUEST);
+  EXPECT_EQ(result.problem_details, "INVALID_SERVICE_INFORMATION");
+  EXPECT_FALSE(f.processed);
+  EXPECT_EQ(f.decision.getQosDecs().at(kQosId), before.getQosDecs().at(kQosId));
+}
+
+TEST(QosPartialPatch, ComponentGbrOnQosReferenceIsRejected) {
+  partial_patch_fixture f("gbr-ref");
+  ASSERT_FALSE(f.created.problem_details.has_value());
+  MediaComponentRm patch = make_component_rm(1);
+  patch.setMirBwDl("3 Mbps");
+
+  const auto result = f.apply(patch);
+
+  EXPECT_EQ(result.status, status_code::BAD_REQUEST);
+  EXPECT_EQ(result.problem_details, "INVALID_SERVICE_INFORMATION");
+}
+
+TEST(QosPartialPatch, SubComponentMbrOnQosReferenceIsRejected) {
+  partial_patch_fixture f("gbr-ref");
+  ASSERT_FALSE(f.created.problem_details.has_value());
+  MediaComponentRm patch  = make_component_rm(1);
+  MediaSubComponentRm sub = make_sub_component_rm(2);
+  sub.setMarBwDl("1 Mbps");
+  patch.setMedSubComps({{"2", sub}});
+
+  const auto result = f.apply(patch);
+
+  EXPECT_EQ(result.status, status_code::BAD_REQUEST);
+  EXPECT_EQ(result.problem_details, "INVALID_SERVICE_INFORMATION");
+}
+
+// Sending a different qosReference is how the AF changes QoS on a reference
+// session [TS 23.503 §6.1.3.22, TS 29.514 §4.2.3.30].
+TEST(QosPartialPatch, NewQosReferenceReplacesTheQos) {
+  partial_patch_fixture f("gbr-ref");
+  ASSERT_FALSE(f.created.problem_details.has_value());
+  auto low = std::make_shared<QosData>();
+  low->setR5qi(2);
+  low->setMaxbrDl("5 Mbps");
+  low->setGbrDl("3 Mbps");
+  f.store.insert("gbr-ref-low", low);
+  MediaComponentRm patch = make_component_rm(1);
+  patch.setQosReference("gbr-ref-low");
+
+  const auto result = f.apply(patch);
+
+  ASSERT_FALSE(result.problem_details.has_value());
+  EXPECT_TRUE(f.processed);
+  EXPECT_EQ(f.filters(), std::set<std::string>({kSdf1, kSdf2}));
+  const auto& qos = f.decision.getQosDecs().at(kQosId);
+  EXPECT_EQ(qos.getMaxbrDl(), "5 Mbps");
+  EXPECT_EQ(qos.getGbrDl(), "3 Mbps");
+}
+
+// Removing the last sub-component removes the flow instead of falling back to
+// a permit-all filter [TS 29.513 Table 7.3.3-1].
+TEST(QosPartialPatch, RemovingLastSubComponentRemovesTheFlow) {
+  partial_patch_fixture f;
+  ASSERT_FALSE(f.created.problem_details.has_value());
+  MediaComponentRm patch = make_component_rm(1);
+  patch.setMedSubComps(
+      {{"1", make_sub_component_rm(1, /*removed=*/true)},
+       {"2", make_sub_component_rm(2, /*removed=*/true)}});
+
+  const auto result = f.apply(patch);
+
+  ASSERT_FALSE(result.problem_details.has_value());
+  EXPECT_TRUE(f.processed);
+  EXPECT_EQ(f.decision.getPccRules().count(kRuleId), 0u);
+  EXPECT_EQ(f.decision.getQosDecs().count(kQosId), 0u);
+}
+
+// A whole component flagged REMOVED is removed, as before.
+TEST(QosPartialPatch, RemovedComponentRemovesTheFlow) {
+  partial_patch_fixture f;
+  ASSERT_FALSE(f.created.problem_details.has_value());
+
+  const auto result = f.apply(make_removed_component_rm(1));
+
+  ASSERT_FALSE(result.problem_details.has_value());
+  EXPECT_EQ(f.decision.getPccRules().count(kRuleId), 0u);
+  EXPECT_EQ(f.decision.getQosDecs().count(kQosId), 0u);
+}
+
+// Re-deriving from the merged context keeps the rule's precedence, so SMF rule
+// ordering is stable across a PATCH.
+TEST(QosPartialPatch, PrecedenceIsPreserved) {
+  partial_patch_fixture f;
+  ASSERT_FALSE(f.created.problem_details.has_value());
+  const int32_t before = f.decision.getPccRules().at(kRuleId).getPrecedence();
+
+  const auto result = f.apply(make_component_rm(1, "20 Mbps"));
+
+  ASSERT_FALSE(result.problem_details.has_value());
+  EXPECT_EQ(f.decision.getPccRules().at(kRuleId).getPrecedence(), before);
+}

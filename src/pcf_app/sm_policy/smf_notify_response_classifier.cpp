@@ -112,4 +112,24 @@ smf_notify_classification classify_smf_notify_response(
   return result;
 }
 
+std::vector<std::string> describe_rule_reports(
+    const oai::_3gpp::model::SmPolicyUpdateContextData& update_context) {
+  std::vector<std::string> lines;
+  if (update_context.ruleReportsIsSet()) {
+    for (const auto& report : update_context.getRuleReports()) {
+      nlohmann::json j;
+      to_json(j, report);
+      lines.push_back("ruleReport " + j.dump());
+    }
+  }
+  if (update_context.sessRuleReportsIsSet()) {
+    for (const auto& report : update_context.getSessRuleReports()) {
+      nlohmann::json j;
+      to_json(j, report);
+      lines.push_back("sessRuleReport " + j.dump());
+    }
+  }
+  return lines;
+}
+
 }  // namespace oai::pcf::app::sm_policy

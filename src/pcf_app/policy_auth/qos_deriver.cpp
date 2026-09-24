@@ -4,6 +4,8 @@
 
 #include "policy_auth/qos_deriver.hpp"
 
+#include <algorithm>
+#include <map>
 #include <optional>
 #include <set>
 #include <string>
@@ -776,6 +778,92 @@ template handler_result
 qos_deriver::create_qos_data_from_media_component<MediaComponentRm>(
     const MediaComponentRm&, const std::string&, SmPolicyDecision&,
     qos_context&, QosData&);
+// See qos_deriver.hpp for the contract.
+handler_result qos_deriver::apply_media_component_patch(
+    const AppSessionContextUpdateData& patch,
+    const AppSessionContextReqData& merged, const std::string& app_session_id,
+    SmPolicyDecision& decision, qos_context& qos_ctx,
+    bool& qos_flow_processed) {
+  if (!patch.medComponentsIsSet()) return {.status = status_code::OK};
+
+  const std::map<std::string, MediaComponent> merged_components =
+      merged.medComponentsIsSet() ? merged.getMedComponents() :
+                                    std::map<std::string, MediaComponent>{};
+
+  for (const auto& [med_comp_key, patch_component] : patch.getMedComponents()) {
+    const int32_t med_comp_n = patch_component.getMedCompN();
+    const auto merged_it     = merged_components.find(med_comp_key);
+
+    // A flow with no active service data flow gets no PCC rule: the whole
+    // component was REMOVED, or this PATCH removed its last sub-component
+    // (merge_patch_context drops an emptied medSubComps). Never re-derive it,
+    // which would install a permit-all fallback filter matching all UE traffic
+    // [TS 29.514 §4.2.3.2, TS 29.513 Table 7.3.3-1].
+    const bool component_removed =
+        (patch_component.fStatusIsSet() &&
+         patch_component.getFStatus().getEnumValue() ==
+             FlowStatus_anyOf::eFlowStatus_anyOf::REMOVED) ||
+        merged_it == merged_components.end();
+    const bool last_sub_component_removed =
+        !component_removed && patch_component.medSubCompsIsSet() &&
+        !merged_it->second.medSubCompsIsSet();
+    if (component_removed || last_sub_component_removed) {
+      // The ledger removal is deferred -- apply_committed_delta() reconciles
+      // it post-commit from the removals in the committed delta.
+      const std::string qos_id =
+          "PA-QOS-" + app_session_id + "-qos-" + std::to_string(med_comp_n);
+      const std::string rule_id =
+          "PA-QOS-" + app_session_id + "-" + std::to_string(med_comp_n);
+      auto pcc_rules = decision.getPccRules();
+      auto qos_decs  = decision.getQosDecs();
+      pcc_rules.erase(rule_id);
+      qos_decs.erase(qos_id);
+      decision.setPccRules(pcc_rules);
+      decision.setQosDecs(qos_decs);
+      qos_flow_processed = true;
+      continue;
+    }
+
+    // A component on a qosReference takes MBR/GBR "as configured by operator"
+    // [TS 29.513 Table 7.3.3-1], and its QoS is changed by sending a different
+    // qosReference [TS 23.503 §6.1.3.22, TS 29.514 §4.2.3.30]. Individual
+    // bitrates would be silently ignored, so reject them [TS 29.514 §4.2.2.2].
+    bool patch_has_individual_qos =
+        patch_component.marBwUlIsSet() || patch_component.marBwDlIsSet() ||
+        patch_component.mirBwUlIsSet() || patch_component.mirBwDlIsSet();
+    if (!patch_has_individual_qos && patch_component.medSubCompsIsSet()) {
+      const auto sub_components = patch_component.getMedSubComps();
+      patch_has_individual_qos  = std::any_of(
+          sub_components.begin(), sub_components.end(), [](const auto& entry) {
+            return entry.second.marBwUlIsSet() || entry.second.marBwDlIsSet();
+          });
+    }
+    if (patch_has_individual_qos && merged_it->second.qosReferenceIsSet()) {
+      Logger::pcf_app().warn(fmt::format(
+          "Rejecting PATCH of app-session '{}': media component {} uses "
+          "qosReference '{}', so individual QoS parameters (marBwUl/marBwDl/"
+          "mirBwUl/mirBwDl) cannot modify it. Send a different qosReference "
+          "instead [TS 29.514 §4.2.3.30].",
+          app_session_id, med_comp_n, merged_it->second.getQosReference()));
+      return {
+          .status          = status_code::BAD_REQUEST,
+          .problem_details = "INVALID_SERVICE_INFORMATION"};
+    }
+
+    // Modify / add, only when the PATCH touches this component's QoS. The
+    // deterministic medCompN-keyed ids make re-deriving overwrite the existing
+    // flow in place or install a new one [TS 29.513 §7.3.3].
+    if (patch_component.qosReferenceIsSet() ||
+        patch_component.medSubCompsIsSet() || patch_has_individual_qos) {
+      handler_result r = handle_qos_requirements(
+          merged_it->second, app_session_id, decision, qos_ctx);
+      if (r.problem_details.has_value()) return r;
+      qos_flow_processed = true;
+    }
+  }
+  return {.status = status_code::OK};
+}
+
 template handler_result qos_deriver::handle_qos_requirements<MediaComponent>(
     const MediaComponent&, const std::string&, SmPolicyDecision&, qos_context&);
 template handler_result qos_deriver::handle_qos_requirements<MediaComponentRm>(

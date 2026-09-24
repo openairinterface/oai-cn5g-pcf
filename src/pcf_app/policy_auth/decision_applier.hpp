@@ -18,6 +18,7 @@
 #include "SmPolicyDecision.h"
 #include "guarded.hpp"
 #include "pcf_policy_authorization_status_code.hpp"
+#include "sm_policy/smf_notify_outcome.hpp"
 #include "sm_policy_delta.hpp"
 
 /**
@@ -235,6 +236,24 @@ using apply_with_retry_fn = std::function<status_code(
     const pending_commit& commit,
     const live_decision_lookup_fn& lookup_live_decision,
     const apply_with_retry_fn& apply_with_retry);
+
+// ---- 5. AF-facing result of the SMF notify ---------------------------------
+
+/**
+ * @brief The status to return to the AF for a request whose commit was
+ * notified to the SMF with `outcome`.
+ *
+ * Only a confirmed permanent rejection fails the request: the SMF will not
+ * install the rules and push_decision_change has already compensated the
+ * commit, so a 2xx would tell the AF its QoS is in place when it is not. Sets
+ * `problem_details` to REQUESTED_SERVICE_NOT_AUTHORIZED and returns FORBIDDEN
+ * [TS 29.514 Table 5.7.3-1]. Temporary and ambiguous outcomes are retried off
+ * the request path and never fail it, so they return OK [TS 29.512
+ * Table 5.7.3-2].
+ */
+[[nodiscard]] status_code af_status_for_notify_outcome(
+    oai::pcf::app::sm_policy::smf_notify_outcome outcome,
+    std::string& problem_details);
 
 }  // namespace oai::pcf::app::policy_auth
 

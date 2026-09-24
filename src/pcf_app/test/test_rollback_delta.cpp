@@ -13,6 +13,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "PccRule.h"
 #include "QosCharacteristics.h"
@@ -219,4 +220,30 @@ TEST(RollbackDelta, TraffContDecsCreateIsCompensatedByRemoval) {
   const auto rollback = compute_rollback_delta(updated, pending);
 
   EXPECT_EQ(rollback.removed_traff_cont_decs, (std::vector<std::string>{"T1"}));
+}
+
+// KNOWN LIMITATION, pinned (see rollback_map): the staleness check is per key
+// and reference-blind. A commit created QosData Q and PccRule R with
+// refQosData=[Q]; another writer then changed R but left Q alone. The rollback
+// removes Q and skips R, so R is left referencing a QosData that is gone.
+// Reference-aware rollback is scheduled for a follow-up; update this test when
+// it lands.
+TEST(RollbackDelta, WorkedExampleProducesDanglingCandidate) {
+  PccRule rule = make_rule("R", 1001);
+  rule.setRefQosData({"Q"});
+  SmPolicyDecision committed;
+  committed.setQosDecs({{"Q", make_qos("Q", 9)}});
+  committed.setPccRules({{"R", rule}});
+  const auto pending = make_pending(SmPolicyDecision{}, committed);
+
+  SmPolicyDecision live      = committed;
+  PccRule changed_by_another = rule;
+  changed_by_another.setPrecedence(1002);
+  live.setPccRules({{"R", changed_by_another}});
+
+  const auto rollback = compute_rollback_delta(live, pending);
+
+  EXPECT_EQ(rollback.removed_qos_decs, std::vector<std::string>({"Q"}));
+  EXPECT_TRUE(rollback.removed_pcc_rules.empty());
+  EXPECT_TRUE(rollback.upsert_pcc_rules.empty());
 }

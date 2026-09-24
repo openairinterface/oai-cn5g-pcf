@@ -7,9 +7,11 @@
 
 #include <cstddef>
 #include <string>
+#include <vector>
 
 #include <nlohmann/json.hpp>
 
+#include "SmPolicyUpdateContextData.h"
 #include "sm_policy/pcf_smpc_status_code.hpp"
 #include "sm_policy/smf_notify_outcome.hpp"
 
@@ -54,6 +56,21 @@ struct smf_notify_classification {
  */
 [[nodiscard]] smf_notify_classification classify_smf_notify_response(
     int http_status, const nlohmann::json& body_json);
+
+/**
+ * @brief One log-ready line per PCC rule report ("ruleReports") and session
+ * rule report ("sessRuleReports") the SMF sent in an
+ * Npcf_SMPolicyControl_Update request [TS 29.512 §4.2.4.15, §4.2.4.7,
+ * §5.6.2.27, §5.6.2.37]. Each line names the report kind and carries the
+ * report as compact JSON (rule ids, ruleStatus, failure code). Empty when the
+ * request carries no reports.
+ *
+ * Pure, like classify_smf_notify_response, so it is unit-testable without an
+ * association. The reports are only logged today; reconciling the reported
+ * rules is not implemented yet.
+ */
+[[nodiscard]] std::vector<std::string> describe_rule_reports(
+    const oai::_3gpp::model::SmPolicyUpdateContextData& update_context);
 
 }  // namespace oai::pcf::app::sm_policy
 

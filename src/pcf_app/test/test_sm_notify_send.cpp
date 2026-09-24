@@ -120,6 +120,8 @@ struct fixture {
   std::shared_ptr<pcf_smpc> smpc;
   std::shared_ptr<policy_auth_context> pa_context;
   std::shared_ptr<pcf_policy_authorization> pa;
+  // problem_details from the last post_app_sessions_handler call.
+  std::string pa_problem_details;
 
   explicit fixture(const SmPolicyDecision& initial_decision) {
     storage = std::make_shared<fake_policy_storage>(
@@ -175,7 +177,6 @@ struct fixture {
     context.setAscReqData(req_data);
 
     std::string app_session_id;
-    std::string pa_problem_details;
     return pa->post_app_sessions_handler(
         context, app_session_id, pa_problem_details);
   }
@@ -218,11 +219,13 @@ TEST(SmNotifySend, PermanentRejectionTriggersASecondNotifyForTheRollback) {
   std::string association_id;
   const auto result = f.create_association_and_push(association_id);
 
-  // The CAS commit itself succeeded before the notify ever ran, so PA's
-  // handler reports success regardless of the SMF's notify outcome -- only
-  // the rollback path (triggered asynchronously in this same call, since the
-  // fake http_send runs synchronously) differs.
-  EXPECT_EQ(result, oai::pcf::app::policy_auth::status_code::CREATED);
+  // The SMF confirmed it will not install the commit, so after the inline
+  // compensating rollback (the second notify, sent in this same call since the
+  // fake http_send runs synchronously) the AF is told the request failed, and
+  // no app-session is stored [TS 29.514 Table 5.7.3-1].
+  EXPECT_EQ(result, oai::pcf::app::policy_auth::status_code::FORBIDDEN);
+  EXPECT_EQ(f.pa_problem_details, "REQUESTED_SERVICE_NOT_AUTHORIZED");
+  EXPECT_TRUE(f.pa_context->app_sessions().find_all().empty());
   ASSERT_EQ(f.sent.size(), 2u);
   EXPECT_EQ(f.sent[1].uri, f.sent[0].uri);
 

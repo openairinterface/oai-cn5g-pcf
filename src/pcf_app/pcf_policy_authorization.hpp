@@ -128,6 +128,11 @@ class pcf_policy_authorization {
    * Every handler
    * (POST/PATCH/DELETE/rollback) calls this instead of m_applier.apply()
    * directly.
+   *
+   * Returns OK once the change committed. `outcome` reports the classified
+   * SMF notify result; on permanent_rejection the commit has already been
+   * compensated, and the caller decides what to tell the AF
+   * (policy_auth::af_status_for_notify_outcome).
    */
   policy_auth::status_code push_decision_change(
       policy_auth::decision_apply_request request,
@@ -135,7 +140,8 @@ class pcf_policy_authorization {
           const oai::_3gpp::model::SmPolicyDecision& base,
           oai::_3gpp::model::SmPolicyDecision& working)>& derive,
       oai::pcf::app::sm_policy_delta& committed_delta,
-      std::string& problem_details);
+      std::string& problem_details,
+      oai::pcf::app::sm_policy::smf_notify_outcome& outcome);
 
   /**
    * @brief Consumes (try_take) the matching pending_rollback_tracker entry,
@@ -171,11 +177,12 @@ class pcf_policy_authorization {
       const std::shared_ptr<policy_auth::app_session>& session,
       oai::_3gpp::model::SmPolicyDecision& working);
 
-  // Per-attempt recompute for PATCH /app-sessions/{id}'s derive: re-derives
-  // this PATCH's changes -- SFC, QoS modify/add, and REMOVED deletions --
-  // into `working`, authorizes, merges and validates, then applies the AF's
-  // JSON Merge Patch onto `req_context` (rebuilt from the session snapshot on
-  // every attempt; the committed attempt leaves the value used post-commit).
+  // Per-attempt recompute for PATCH /app-sessions/{id}'s derive: applies the
+  // AF's JSON Merge Patch onto `req_context` (rebuilt from the session
+  // snapshot on every attempt; the committed attempt leaves the value used
+  // post-commit), then re-derives each touched component from that merged
+  // context -- QoS modify/add and REMOVED deletions -- into `working`, and
+  // authorizes, merges and validates.
   policy_auth::handler_result derive_mod_app_session(
       const oai::_3gpp::model::AppSessionContextUpdateData& patch_asc,
       const std::string& app_session_id,

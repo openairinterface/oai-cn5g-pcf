@@ -29,6 +29,7 @@ using oai::_3gpp::model::QosData;
 using oai::_3gpp::model::SmPolicyDecision;
 using oai::pcf::app::decision_apply_result;
 using oai::pcf::app::sm_policy_delta;
+using oai::pcf::app::policy_auth::af_status_for_notify_outcome;
 using oai::pcf::app::policy_auth::decision_applier;
 using oai::pcf::app::policy_auth::decision_apply_request;
 using oai::pcf::app::policy_auth::handler_result;
@@ -256,4 +257,33 @@ TEST(DecisionApplier, ConflictWithNoDecisionExhaustsImmediately) {
 
   EXPECT_EQ(result, status_code::FORBIDDEN);
   EXPECT_EQ(call_count, 1);
+}
+
+// TS 29.514 Table 5.7.3-1 / TS 29.512 Table 5.7.3-2: only a confirmed
+// permanent SMF rejection fails the AF's request. Temporary, partial and
+// ambiguous outcomes are handled off the request path and never fail it.
+TEST(AfStatusForNotifyOutcome, OnlyPermanentRejectionFailsTheRequest) {
+  using oai::pcf::app::sm_policy::smf_notify_outcome;
+  for (const auto outcome :
+       {smf_notify_outcome::applied, smf_notify_outcome::partial_failure,
+        smf_notify_outcome::temporary_rejection,
+        smf_notify_outcome::transport_ambiguous}) {
+    std::string problem_details;
+    EXPECT_EQ(
+        af_status_for_notify_outcome(outcome, problem_details),
+        status_code::OK);
+    EXPECT_TRUE(problem_details.empty());
+  }
+}
+
+TEST(
+    AfStatusForNotifyOutcome,
+    PermanentRejectionIsRequestedServiceNotAuthorized) {
+  std::string problem_details;
+  EXPECT_EQ(
+      af_status_for_notify_outcome(
+          oai::pcf::app::sm_policy::smf_notify_outcome::permanent_rejection,
+          problem_details),
+      status_code::FORBIDDEN);
+  EXPECT_EQ(problem_details, "REQUESTED_SERVICE_NOT_AUTHORIZED");
 }

@@ -97,13 +97,16 @@ pcf_policy_authorization::pcf_policy_authorization(
 // checking whether that notify came back as a confirmed permanent rejection.
 // Every handler
 // (POST/PATCH/DELETE/rollback) calls this instead of m_applier.apply()
-// directly.
+// directly. Returns OK once the change committed; `outcome` reports what the
+// SMF made of it, so the caller decides what to tell the AF.
 status_code pcf_policy_authorization::push_decision_change(
     decision_apply_request request,
     const std::function<handler_result(
         const oai::_3gpp::model::SmPolicyDecision&,
         oai::_3gpp::model::SmPolicyDecision&)>& derive,
-    sm_policy_delta& committed_delta, std::string& problem_details) {
+    sm_policy_delta& committed_delta, std::string& problem_details,
+    sm_policy::smf_notify_outcome& outcome) {
+  outcome                         = sm_policy::smf_notify_outcome::applied;
   std::uint64_t committed_version = 0;
   const status_code push          = m_applier.apply(
       request, derive, committed_delta, problem_details, committed_version);
@@ -112,8 +115,6 @@ status_code pcf_policy_authorization::push_decision_change(
   // Ask SM to notify the SMF of the commit we just made and get the
   // classified outcome back directly -- a plain synchronous call/return,
   // not a signal, since we're already blocked waiting for the answer.
-  sm_policy::smf_notify_outcome outcome =
-      sm_policy::smf_notify_outcome::applied;
   m_event_sub.notify_committed_decision(
       request.association_id.value(), committed_version, outcome);
   if (outcome == sm_policy::smf_notify_outcome::permanent_rejection) {
@@ -287,10 +288,16 @@ status_code pcf_policy_authorization::post_app_sessions_handler(
   };
 
   sm_policy_delta committed_delta;
+  sm_policy::smf_notify_outcome outcome;
   const status_code push = push_decision_change(
       {association_id, base_decision, bound_version, app_session_id}, derive,
-      committed_delta, problem_details);
+      committed_delta, problem_details, outcome);
   if (push != status_code::OK) return push;
+  // The SMF refused the commit and it has been rolled back: fail the request
+  // and never store the app-session.
+  const status_code accepted =
+      af_status_for_notify_outcome(outcome, problem_details);
+  if (accepted != status_code::OK) return accepted;
 
   // ---- post-commit side-effects (reached only once the delta committed) ----
   // Persist the app-session, reconcile its ledger with what actually committed,
@@ -313,11 +320,11 @@ status_code pcf_policy_authorization::post_app_sessions_handler(
 
 //------------------------------------------------------------------------------
 // Per-attempt recompute for PATCH /app-sessions/{id} (see the header for the
-// contract): re-derive this PATCH's changes -- SFC, QoS modify/add, and
-// REMOVED deletions -- into `working`, authorize, merge, validate, then apply
-// the AF's JSON Merge Patch onto `req_context`. Ids are deterministic per
-// medCompN, so re-deriving a component modifies its flow in place
-// [TS 29.514 §4.2.3.2, TS 29.512 §4.2.6.2.1].
+// contract): apply the AF's JSON Merge Patch onto the stored context, then
+// re-derive each touched component from that merged state -- QoS modify/add
+// and REMOVED deletions -- into `working`, authorize, merge and validate. Ids
+// are deterministic per medCompN, so re-deriving a component modifies its flow
+// in place [TS 29.514 §4.2.3.2, TS 29.512 §4.2.6.2.1].
 handler_result pcf_policy_authorization::derive_mod_app_session(
     const oai::_3gpp::model::AppSessionContextUpdateData& patch_asc,
     const std::string& app_session_id,
@@ -327,54 +334,20 @@ handler_result pcf_policy_authorization::derive_mod_app_session(
   oai::_3gpp::model::SmPolicyDecision request_decision =
       {};                            // SFC contributions
   policy_auth::qos_context scratch;  // throwaway: decouples the real ledger
-  req_context             = session->context_snapshot();
   bool qos_flow_processed = false;
 
-  if (patch_asc.medComponentsIsSet()) {
-    for (const auto& [med_comp_key, med_component] :
-         patch_asc.getMedComponents()) {
-      // Service function chaining update (TS 29.514 §4.2.2.8) is not
-      // present anymore -- see the TODO in app_session.cpp.
+  // Merge first (RFC 7396): the merged context is both what a subsequent GET
+  // returns and the input each touched component is re-derived from, since
+  // the patch fragment carries only what changed [TS 29.514 §4.2.3.2]. Service
+  // function chaining (TS 29.514 §4.2.2.8) is not present anymore -- see the
+  // TODO in app_session.cpp.
+  req_context =
+      policy_auth::merge_patch_context(session->context_snapshot(), patch_asc);
 
-      const int32_t med_comp_n = med_component.getMedCompN();
-      const std::string qos_id =
-          "PA-QOS-" + app_session_id + "-qos-" + std::to_string(med_comp_n);
-      const std::string rule_id =
-          "PA-QOS-" + app_session_id + "-" + std::to_string(med_comp_n);
-
-      // Removal (fStatus=REMOVED): drop this flow + PCC rule from `working`.
-      // The ledger removal is deferred -- apply_committed_delta() reconciles
-      // it post-commit from the removals in the committed delta
-      // [TS 29.514 §4.2.3.2].
-      const bool removed =
-          med_component.fStatusIsSet() &&
-          med_component.getFStatus().getEnumValue() ==
-              oai::_3gpp::model::FlowStatus_anyOf::eFlowStatus_anyOf::REMOVED;
-      if (removed) {
-        auto pcc_rules = working.getPccRules();
-        auto qos_decs  = working.getQosDecs();
-        pcc_rules.erase(rule_id);
-        qos_decs.erase(qos_id);
-        working.setPccRules(pcc_rules);
-        working.setQosDecs(qos_decs);
-        qos_flow_processed = true;
-        continue;
-      }
-
-      // Modify / add: re-deriving with the same deterministic ids overwrites
-      // an existing flow (upgrade/downgrade) or installs a new one
-      // [TS 29.513 §7.3.3].
-      if (med_component.qosReferenceIsSet() ||
-          med_component.medSubCompsIsSet() || med_component.marBwUlIsSet() ||
-          med_component.marBwDlIsSet() || med_component.mirBwUlIsSet() ||
-          med_component.mirBwDlIsSet()) {
-        handler_result r = m_qos_deriver.handle_qos_requirements(
-            med_component, app_session_id, working, scratch);
-        if (r.problem_details.has_value()) return r;
-        qos_flow_processed = true;
-      }
-    }
-  }
+  handler_result d = m_qos_deriver.apply_media_component_patch(
+      patch_asc, req_context, app_session_id, working, scratch,
+      qos_flow_processed);
+  if (d.problem_details.has_value()) return d;
 
   // Authorize the modified/added QoS, same gate as create. Owned = prior
   // committed ids (removed flows still listed here are harmless -- they are
@@ -396,10 +369,6 @@ handler_result pcf_policy_authorization::derive_mod_app_session(
   handler_result v = policy_auth::validate_policy_decision(working);
   if (v.problem_details.has_value()) return v;
 
-  // Apply the AF's JSON Merge Patch (RFC 7396) onto the stored request data so
-  // a subsequent GET reflects the modification: scalar fields replaced, media
-  // components merged in place, added, or removed [TS 29.514 §4.2.3.2].
-  req_context = policy_auth::merge_patch_context(req_context, patch_asc);
   return {};  // ok
 }
 
@@ -458,9 +427,9 @@ policy_auth::status_code pcf_policy_authorization::mod_app_session_handler(
   // [TS 29.514 §4.2.3.2, TS 29.512 §4.2.6.2.1]. On a version conflict
   // apply_with_retry re-invokes this against the freshly committed base.
   //
-  // The stored-context projection `req_context` is rebuilt from the session
-  // snapshot on every attempt (SFC routing mutates it, then RFC 7396 merges the
-  // AF patch onto it); the committed attempt leaves the value used post-commit.
+  // The stored-context projection `req_context` is rebuilt on every attempt
+  // (the session snapshot with the AF patch merged onto it, RFC 7396); the
+  // committed attempt leaves the value used post-commit.
   const auto& patch_asc = app_session_context_update_data_patch.getAscReqData();
   auto derive =
       [this, &patch_asc, &app_session_id, &session, &req_context](
@@ -471,10 +440,16 @@ policy_auth::status_code pcf_policy_authorization::mod_app_session_handler(
   };
 
   sm_policy_delta committed_delta;
+  sm_policy::smf_notify_outcome outcome;
   const status_code push = push_decision_change(
       {association_id, base_decision, bound_version, app_session_id}, derive,
-      committed_delta, problem_details);
+      committed_delta, problem_details, outcome);
   if (push != status_code::OK) return push;
+  // The SMF refused the commit and it has been rolled back: fail the request
+  // and leave the session's ledger, context and version as they were.
+  const status_code accepted =
+      af_status_for_notify_outcome(outcome, problem_details);
+  if (accepted != status_code::OK) return accepted;
 
   // ---- post-commit side-effects (reached only once the delta committed) ----
   // Reconcile the ledger with what committed, persist the merged request
@@ -543,9 +518,13 @@ policy_auth::status_code pcf_policy_authorization::delete_app_session_handler(
     };
 
     sm_policy_delta committed_delta;
+    // TODO
+    // The notify outcome is not acted on here yet: what DELETE should do when
+    // the SMF refuses a removal is left to the compensation follow-up.
+    sm_policy::smf_notify_outcome outcome;
     const status_code push = push_decision_change(
         {association_id, current_decision, bound_version, app_session_id},
-        derive, committed_delta, problem_details);
+        derive, committed_delta, problem_details, outcome);
     if (push != status_code::OK) {
       // Best-effort cleanup: the AF's session is being torn down regardless, so
       // proceed to drop it from storage even if persistent contention stopped
@@ -655,9 +634,11 @@ void pcf_policy_authorization::compensate_if_pending(
         // is itself permanently rejected, ALSO gets its own
         // compensate_if_pending check -- exactly the same treatment every other
         // commit gets, since this is just another commit as far as
-        // push_decision_change is concerned.
+        // push_decision_change is concerned. A refused rollback notify is
+        // handled that way too, so it is not reported as a failed commit.
+        sm_policy::smf_notify_outcome outcome;
         return push_decision_change(
-            request, derive, committed_delta, problem_details);
+            request, derive, committed_delta, problem_details, outcome);
       };
   const status_code rollback_push = policy_auth::perform_compensating_rollback(
       association_id, version, *commit, lookup_live_decision,

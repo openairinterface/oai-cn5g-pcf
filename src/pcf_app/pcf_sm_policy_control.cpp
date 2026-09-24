@@ -623,12 +623,20 @@ sm_policy::status_code pcf_smpc::update_sm_policy_handler(
     SmPolicyDecision& decision, std::string& problem_details) {
   Logger::pcf_app().info("Entering update_sm_policy_handler");
 
-  // TODO [QOS] This is where the SMF's own PCC rule error reports arrive
-  // ("ruleReports"/"sessRuleReports" in SmPolicyUpdateContextData) [TS 29.512
-  // §4.2.4.15, §4.2.4.7]. They are currently NOT read: redecide() only switches
-  // on repPolicyCtrlReqTriggers, so a rule the SMF failed to install -- or a
-  // QoS flow it later terminated -- leaves this PCF believing the QoS is
-  // active, with no compensating rollback and no AF notification.
+  // The SMF's own PCC/session rule error reports ("ruleReports"/
+  // "sessRuleReports") [TS 29.512 §4.2.4.15, §4.2.4.7]. Logged before the
+  // trigger handling, since they are not gated on a policy control request
+  // trigger, so a rule the SMF failed to install -- or a QoS flow it later
+  // terminated -- is at least visible.
+  // TODO [QOS] Act on them: remove the reported rules from the decision and
+  // from the owning app-sessions' ledgers, and notify subscribed AFs with
+  // FAILED_RESOURCES_ALLOCATION [TS 29.514 §4.2.5.8]. Until then this PCF
+  // keeps treating the reported QoS as active.
+  for (const auto& report : sm_policy::describe_rule_reports(update_context)) {
+    Logger::pcf_app().warn(fmt::format(
+        "SM policy {}: SMF reported a rule failure, not acted on yet: {}", id,
+        report));
+  }
 
   std::unique_lock lock_associations(m_associations_mutex);
   auto iter = m_associations.find(id);

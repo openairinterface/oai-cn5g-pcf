@@ -37,5 +37,10 @@ struct handler_result {
 inline constexpr const char* kCauseRequestedServiceTemporarilyNotAuthorized =
     "REQUESTED_SERVICE_TEMPORARILY_NOT_AUTHORIZED";
 
+// TS 29.514 Table 5.7.3-1 cause used when the SMF confirms it will not install
+// a committed decision (af_status_for_notify_outcome).
+inline constexpr const char* kCauseRequestedServiceNotAuthorized =
+    "REQUESTED_SERVICE_NOT_AUTHORIZED";
+
 }  // namespace oai::pcf::app::policy_auth
 #endif

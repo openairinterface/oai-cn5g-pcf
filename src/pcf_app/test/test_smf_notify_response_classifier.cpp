@@ -15,6 +15,7 @@
 
 using oai::common::sbi::http_status_code;
 using oai::pcf::app::sm_policy::classify_smf_notify_response;
+using oai::pcf::app::sm_policy::describe_rule_reports;
 using oai::pcf::app::sm_policy::smf_notify_outcome;
 using oai::pcf::app::sm_policy::status_code;
 
@@ -235,4 +236,36 @@ TEST(SmfNotifyResponseClassifier, UnmodeledStatusCodeIsTransportAmbiguous) {
 
   EXPECT_EQ(result.outcome, smf_notify_outcome::transport_ambiguous);
   EXPECT_EQ(result.response, status_code::INTERNAL_SERVER_ERROR);
+}
+
+// TS 29.512 §4.2.4.15 / §4.2.4.7: the SMF's rule error reports in an
+// Npcf_SMPolicyControl_Update request are surfaced, one line per report, with
+// the rule ids and failure code.
+TEST(DescribeRuleReports, OneLinePerReportWithRuleIdsAndFailureCode) {
+  const nlohmann::json j = {
+      {"ruleReports",
+       {{{"pccRuleIds", {"PA-QOS-as-1"}},
+         {"ruleStatus", "INACTIVE"},
+         {"failureCode", "RES_ALLO_FAIL"}}}},
+      {"sessRuleReports",
+       {{{"ruleIds", {"sess-1"}},
+         {"ruleStatus", "INACTIVE"},
+         {"sessRuleFailureCode", "NF_MAL"}}}}};
+  oai::_3gpp::model::SmPolicyUpdateContextData update_context;
+  from_json(j, update_context);
+
+  const auto lines = describe_rule_reports(update_context);
+
+  ASSERT_EQ(lines.size(), 2u);
+  EXPECT_NE(lines[0].find("ruleReport"), std::string::npos);
+  EXPECT_NE(lines[0].find("PA-QOS-as-1"), std::string::npos);
+  EXPECT_NE(lines[0].find("RES_ALLO_FAIL"), std::string::npos);
+  EXPECT_NE(lines[1].find("sessRuleReport"), std::string::npos);
+  EXPECT_NE(lines[1].find("sess-1"), std::string::npos);
+  EXPECT_NE(lines[1].find("NF_MAL"), std::string::npos);
+}
+
+TEST(DescribeRuleReports, NoReportsYieldsNoLines) {
+  const oai::_3gpp::model::SmPolicyUpdateContextData update_context;
+  EXPECT_TRUE(describe_rule_reports(update_context).empty());
 }

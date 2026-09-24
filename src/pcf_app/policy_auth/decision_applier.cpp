@@ -307,4 +307,17 @@ status_code perform_compensating_rollback(
   return rollback_push;
 }
 
+// ---- 5. AF-facing result of the SMF notify ---------------------------------
+
+status_code af_status_for_notify_outcome(
+    oai::pcf::app::sm_policy::smf_notify_outcome outcome,
+    std::string& problem_details) {
+  if (outcome !=
+      oai::pcf::app::sm_policy::smf_notify_outcome::permanent_rejection) {
+    return status_code::OK;
+  }
+  problem_details = kCauseRequestedServiceNotAuthorized;
+  return status_code::FORBIDDEN;
+}
+
 }  // namespace oai::pcf::app::policy_auth

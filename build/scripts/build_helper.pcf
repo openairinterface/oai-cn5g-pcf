@@ -138,7 +138,7 @@ check_install_pcf_deps() {
   if [ "$use_tests" -eq 1 ]; then
     echo "Install unit-test dependencies (GoogleTest/GoogleMock)"
     if [[ $OS_DISTRO == "ubuntu" ]]; then
-      $SUDO $INSTALLER install $OPTION libgtest-dev libgmock-dev googletest-tools
+      $SUDO $INSTALLER install $OPTION libgtest-dev libgmock-dev
     elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
       $SUDO $INSTALLER install $OPTION gtest-devel gmock-devel
     fi
