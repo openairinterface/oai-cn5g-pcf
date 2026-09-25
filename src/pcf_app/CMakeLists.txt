@@ -28,14 +28,19 @@ include(${SRC_TOP_DIR}/common/utils/utils.cmake)
 add_library (PCF STATIC
   pcf_config_types.cpp
   pcf_config.cpp
+  pcf_runtime_policy.cpp
   pcf_app.cpp
   pcf_nrf.cpp
   pcf_profile.cpp
   pcf_event.cpp
+  sm_policy_delta.cpp
   pcf_sm_policy_control.cpp
   task_manager.cpp
   sm_policy/individual_sm_association.cpp
+  sm_policy/retry_drain_queue.cpp
+  sm_policy/smf_notify_response_classifier.cpp
   sm_policy/policy_decision.cpp
+  sm_policy/qos_session_authorization.cpp
   sm_policy/slice_policy_decision.cpp
   sm_policy/supi_policy_decision.cpp
   sm_policy/dnn_policy_decision.cpp
@@ -43,6 +48,22 @@ add_library (PCF STATIC
   sm_policy/policy_storage_db.cpp
   sm_policy/policy_provisioning_file.cpp
   policy_auth/app_session.cpp
+  policy_auth/qos_deriver.cpp
+  policy_auth/qos_context.cpp
+  policy_auth/decision_applier.cpp
+  policy_auth/af_notify.cpp
+  policy_auth/app_session_storage.cpp
+  policy_auth/qos_reference_store.cpp
   pcf_policy_authorization.cpp
   sm_policy/database/mysql_db.cpp
   )
+
+################################################################################
+# Unit tests (GoogleTest + CTest). Opt-in: off by default, enabled with
+# -DBUILD_TESTING=ON. Not part of the default build; the runtime "pcf"
+# executable does not depend on this target. Test registration is enabled at
+# the PCF build root so root-level ctest sees these tests.
+################################################################################
+if(BUILD_TESTING)
+  ADD_SUBDIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/test ${CMAKE_CURRENT_BINARY_DIR}/test)
+endif()
