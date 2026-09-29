@@ -29,6 +29,7 @@
 #include "nf_launch.hpp"
 #include "conversions.hpp"
 #include "http_client.hpp"
+#include "task_manager.hpp"
 
 #include <iostream>
 #include <csignal>

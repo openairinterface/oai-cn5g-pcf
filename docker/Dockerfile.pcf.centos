@@ -16,6 +16,9 @@
 FROM quay.io/centos/centos:stream10 AS oai-pcf-builder
 
 ENV IS_DOCKERFILE=1
+# ODB/MySQL database persistence is optional and disabled by default. Set to 1
+# to build and package the ODB stack. When 0 the image carries no ODB artifacts.
+ARG USE_ODB=0
 
 # meson and ninja-build come from CRB; libidn-devel comes from EPEL.
 # The other build_pcf dependencies are in BaseOS/AppStream.
@@ -47,11 +50,25 @@ COPY . /openair-pcf
 
 # Install and Build PCF
 WORKDIR /openair-pcf/build/scripts
-RUN ./build_pcf --install-deps --force
-RUN ldconfig && \
-    ./build_pcf --clean --Verbose --build-type Release --jobs && \
+RUN ODB_FLAG=""; [ "$USE_ODB" = "1" ] && ODB_FLAG="--odb"; \
+    ./build_pcf --install-deps --force $ODB_FLAG
+RUN ODB_FLAG=""; [ "$USE_ODB" = "1" ] && ODB_FLAG="--odb"; \
+    ldconfig && \
+    ./build_pcf --clean --Verbose --build-type Release --jobs $ODB_FLAG && \
     ldd /openair-pcf/build/pcf/build/pcf && \
     mv /openair-pcf/build/pcf/build/pcf /openair-pcf/build/pcf/build/oai_pcf
+
+# Stage the optional ODB/MySQL runtime libraries only when ODB is enabled. When
+# disabled the directory stays empty so the runtime image carries no ODB libs.
+RUN mkdir -p /openair-pcf/odb-libs && \
+    if [ "$USE_ODB" = "1" ]; then \
+        cp -a /usr/local/lib/libodb-2.5.so \
+              /usr/local/lib/libodb-mysql-2.5.so \
+              /usr/local/lib/libmysqlclient-21.so \
+              /usr/local/lib/libssl-1.1.so \
+              /usr/local/lib/libcrypto-1.1.so \
+              /openair-pcf/odb-libs/; \
+    fi
 
 FROM mikefarah/yq:latest AS yq-source
 
@@ -60,6 +77,7 @@ FROM mikefarah/yq:latest AS yq-source
 #---------------------------------------------------------------------
 FROM quay.io/centos/centos:stream10-minimal AS oai-pcf
 ENV TZ=Europe/Paris
+ARG USE_ODB=0
 
 RUN microdnf update -y && \
     microdnf install -y \
@@ -89,9 +107,7 @@ COPY --from=yq-source /usr/bin/yq /usr/bin
 
 # Only the libraries built from source; the rest come from the packages above.
 # pistache (meson) and nghttp2 (autotools) install into lib, the CMake-built
-# spdlog, fmt, yaml-cpp and cpr into lib64. EL 10 ships no MySQL client, so
-# the ODB stack, its MySQL client and the OpenSSL 1.1 it links all come from
-# the build2 toolchain under lib.
+# spdlog, fmt, yaml-cpp and cpr into lib64.
 COPY --from=oai-pcf-builder \
     /usr/local/lib/libpistache.so* \
     /usr/local/lib/libnghttp2_asio.so \
@@ -100,12 +116,13 @@ COPY --from=oai-pcf-builder \
     /usr/local/lib64/libfmt.so \
     /usr/local/lib64/libyaml-cpp.so.0.* \
     /usr/local/lib64/libcpr.so.1* \
-    /usr/local/lib/libodb-2.5.so \
-    /usr/local/lib/libodb-mysql-2.5.so \
-    /usr/local/lib/libmysqlclient-21.so \
-    /usr/local/lib/libssl-1.1.so \
-    /usr/local/lib/libcrypto-1.1.so \
     /usr/lib64/
+
+# Optional ODB/MySQL libraries: this directory is empty unless the image was
+# built with --build-arg USE_ODB=1, so a default build stays free of ODB.
+# EL 10 ships no MySQL client, so the ODB stack, its MySQL client and the
+# OpenSSL 1.1 it links all come from the build2 toolchain under lib.
+COPY --from=oai-pcf-builder /openair-pcf/odb-libs/ /usr/lib64/
 
 RUN ldconfig && \
     ldd /openair-pcf/bin/oai_pcf && \

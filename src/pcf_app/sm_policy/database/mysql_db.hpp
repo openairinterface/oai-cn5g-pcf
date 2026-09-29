@@ -5,6 +5,8 @@
 #ifndef MYSQL_DB_HPP
 #define MYSQL_DB_HPP
 
+#ifdef USE_ODB
+
 #include <mysql/mysql.h>
 #include <shared_mutex>
 #include <odb/database.hxx>
@@ -173,5 +175,7 @@ class mysql_db : public database_wrapper<mysql_db> {
   }
 };
 }  // namespace oai::pcf::app
+
+#endif  // USE_ODB
 
 #endif  // MYSQL_DB_HPP
