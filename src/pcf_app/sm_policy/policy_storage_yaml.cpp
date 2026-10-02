@@ -2,6 +2,7 @@
  * SPDX-License-Identifier: LicenseRef-CSSL-1.0
  */
 
+#include <algorithm>
 #include "policy_storage_yaml.hpp"
 #include "logger.hpp"
 #include <string>
@@ -141,7 +142,7 @@ void policy_storage_yaml::insert_ip_association(
     const std::string& ip, const std::string& association_id) {
   std::unique_lock ip_association_lock(m_ip_to_association_map_mutex);
 
-  m_ip_to_association_map.insert(std::make_pair(ip, association_id));
+  m_ip_to_association_map.insert_or_assign(ip, association_id);
   ip_association_lock.unlock();
 }
 
@@ -149,7 +150,7 @@ void policy_storage_yaml::insert_supi_association(
     const std::string& supi, const std::string& association_id) {
   std::unique_lock supi_to_association_lock(m_supi_to_association_map_mutex);
 
-  m_supi_to_association_map.insert(std::make_pair(supi, association_id));
+  m_supi_to_association_map.insert_or_assign(supi, association_id);
   supi_to_association_lock.unlock();
 }
 
@@ -170,6 +171,40 @@ void policy_storage_yaml::insert_dnn_association(
   dnn_to_association_lock.unlock();
 }
 
+void policy_storage_yaml::remove_associations(
+    const oai::_3gpp::model::SmPolicyContextData& context,
+    const std::string& association_id) {
+  Logger::pcf_app().debug(
+      "Removing from association maps [IPv4 -> %s, SUPI -> %s, DNN -> %s] : "
+      "[Assoc Id -> %s]",
+      context.getIpv4Address().c_str(), context.getSupi().c_str(),
+      context.getDnn().c_str(), association_id.c_str());
+
+  {
+    std::unique_lock lock(m_ip_to_association_map_mutex);
+    auto it = m_ip_to_association_map.find(context.getIpv4Address());
+    if (it != m_ip_to_association_map.end() && it->second == association_id) {
+      m_ip_to_association_map.erase(it);
+    }
+  }
+  {
+    std::unique_lock lock(m_supi_to_association_map_mutex);
+    auto it = m_supi_to_association_map.find(context.getSupi());
+    if (it != m_supi_to_association_map.end() && it->second == association_id) {
+      m_supi_to_association_map.erase(it);
+    }
+  }
+  {
+    std::unique_lock lock(m_dnn_to_association_map_mutex);
+    auto it = m_dnn_to_association_map.find(context.getDnn());
+    if (it != m_dnn_to_association_map.end()) {
+      auto& ids = it->second;
+      ids.erase(std::remove(ids.begin(), ids.end(), association_id), ids.end());
+      if (ids.empty()) m_dnn_to_association_map.erase(it);
+    }
+  }
+}
+
 std::shared_ptr<std::string> policy_storage_yaml::find_association(
     const std::optional<std::string>& ipv4,
     const std::optional<std::string>& supi,
@@ -178,40 +213,38 @@ std::shared_ptr<std::string> policy_storage_yaml::find_association(
 
   // First, check based on SUPI, then DNN, then Slice, then global default rule.
   std::shared_lock lock_supi(m_ip_to_association_map_mutex);
-  auto got_ip = m_ip_to_association_map.end();
-  if (ipv4.has_value() &&
-      (got_ip = m_ip_to_association_map.find(ipv4.value())) ==
-          m_ip_to_association_map.end()) {
+  if (ipv4.has_value()) {
+    auto got_ip = m_ip_to_association_map.find(ipv4.value());
+    if (got_ip != m_ip_to_association_map.end()) {
+      Logger::pcf_app().debug(
+          "%s - Decide based on Ipv4 -> %s", msg_base.c_str(),
+          ipv4.value().c_str());
+      return std::make_shared<std::string>(got_ip->second);
+    }
     Logger::pcf_app().debug(
         "%s - Did not find for IPv4 -> %s", msg_base.c_str(),
         ipv4.value().c_str());
+  }
 
-    auto got_supi = m_supi_to_association_map.end();
-    if (supi.has_value() &&
-        (got_supi = m_supi_to_association_map.find(supi.value())) ==
-            m_supi_to_association_map.end()) {
-      Logger::pcf_app().debug(
-          "%s - Did not find for SUPI -> %s", msg_base.c_str(),
-          supi.value().c_str());
-
-      // TODO [PAS] handle DNN
-      /* The since during creation of association, the IP address might be
-       * absent, we need to make sure either it's updated or the we loop through
-       * the associations on DNN that have had the an association with the IP
-       * updated i.e., for each assoc in DNN find one with IP == Ipv4 */
-
-    } else if (got_supi != m_supi_to_association_map.end()) {
+  // The IPv4 address may be absent or not yet indexed, so fall back to SUPI.
+  if (supi.has_value()) {
+    auto got_supi = m_supi_to_association_map.find(supi.value());
+    if (got_supi != m_supi_to_association_map.end()) {
       Logger::pcf_app().debug(
           "%s - Decide based on SUPI -> %s", msg_base.c_str(),
           supi.value().c_str());
       return std::make_shared<std::string>(got_supi->second);
     }
-  } else if (got_ip != m_ip_to_association_map.end()) {
     Logger::pcf_app().debug(
-        "%s - Decide based on Ipv4 -> %s", msg_base.c_str(),
-        ipv4.value().c_str());
-    return std::make_shared<std::string>(got_ip->second);
+        "%s - Did not find for SUPI -> %s", msg_base.c_str(),
+        supi.value().c_str());
   }
+
+  // TODO [PAS] handle DNN
+  /* The since during creation of association, the IP address might be
+   * absent, we need to make sure either it's updated or the we loop through
+   * the associations on DNN that have had the an association with the IP
+   * updated i.e., for each assoc in DNN find one with IP == Ipv4 */
   Logger::pcf_app().debug(
       "%s - Failed to find association, returning NULL", msg_base.c_str());
   return nullptr;

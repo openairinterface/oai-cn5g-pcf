@@ -64,6 +64,16 @@ class policy_storage {
   virtual void insert_dnn_association(
       const std::string& dnn, const std::string& association_id) = 0;
 
+  /**
+   * Remove the IP, SUPI and DNN index entries that insert_associations()
+   * created for this association. IP/SUPI entries are only erased if they
+   * still point at association_id, so a newer association that reused the
+   * same key is left alone.
+   */
+  virtual void remove_associations(
+      const oai::_3gpp::model::SmPolicyContextData& context,
+      const std::string& association_id) = 0;
+
   virtual std::shared_ptr<std::string> find_association(
       const std::optional<std::string>& ipv4,
       const std::optional<std::string>& supi,

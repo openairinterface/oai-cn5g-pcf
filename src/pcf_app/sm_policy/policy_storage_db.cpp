@@ -178,6 +178,13 @@ void policy_storage_db::insert_dnn_association(
   Logger::pcf_app().debug("Not implemented: Inserting DNN association into DB");
 }
 
+void policy_storage_db::remove_associations(
+    const oai::_3gpp::model::SmPolicyContextData& context,
+    const std::string& association_id) {
+  // TODO implement
+  Logger::pcf_app().debug("Not implemented: Removing associations from DB");
+}
+
 std::shared_ptr<std::string> policy_storage_db::find_association(
     const std::optional<std::string>& ipv4,
     const std::optional<std::string>& supi,
