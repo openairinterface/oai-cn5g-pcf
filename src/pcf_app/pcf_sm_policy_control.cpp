@@ -501,9 +501,6 @@ status_code pcf_smpc::create_sm_policy_handler(
 
   status_code res = assoc.decide_policy(decision);
 
-  // XXX: Perform session binding
-  m_policy_storage->insert_associations(context, association_id);
-
   if (res != status_code::CREATED) {
     problem_details = fmt::format(
         "SM Policy request from SUPI {}: Invalid policy decision provisioned",
@@ -563,6 +560,10 @@ status_code pcf_smpc::create_sm_policy_handler(
     }
     assoc.set_sm_policy_decision(decision);
 
+    // Perform session binding. Only index associations that are actually
+    // stored, so a rejected request leaves no stale entries behind.
+    m_policy_storage->insert_associations(context, association_id);
+
     std::unique_lock lock_assocations(m_associations_mutex);
     m_associations.insert(std::make_pair(association_id, assoc));
 
@@ -586,6 +587,8 @@ sm_policy::status_code pcf_smpc::delete_sm_policy_handler(
     Logger::pcf_app().info(problem_details);
     return status_code::NOT_FOUND;
   }
+  m_policy_storage->remove_associations(
+      iter->second.get_sm_policy_context_data(), id);
   m_associations.erase(iter);
   Logger::pcf_app().info(
       fmt::format("Deleted policy association with ID {}", id));
