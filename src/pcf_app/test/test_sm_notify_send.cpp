@@ -89,6 +89,14 @@ class fake_policy_storage : public policy_storage {
       const std::string&, const std::string&) override {}
   void insert_dnn_association(const std::string&, const std::string&) override {
   }
+  void remove_associations(
+      const SmPolicyContextData& context,
+      const std::string& association_id) override {
+    auto it = m_supi_to_assoc.find(context.getSupi());
+    if (it != m_supi_to_assoc.end() && it->second == association_id) {
+      m_supi_to_assoc.erase(it);
+    }
+  }
   std::shared_ptr<std::string> find_association(
       const std::optional<std::string>&, const std::optional<std::string>& supi,
       const std::optional<std::string>&) override {

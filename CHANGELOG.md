@@ -23,6 +23,9 @@
   new `pcf.notify_failure_recovery` block
   - Operator-preconfigured QoS reference sets loaded from
   `pcf.local_policy.qos_reference_path`
+* Bug fixes
+  - SM policy association index (IP/SUPI/DNN) is now reclaimed when a policy is
+  deleted
 * Tests
   - GoogleTest/CTest unit-test infrastructure for the PCF application layer,
   with 247 cases across 20 suites; build with `build_pcf --tests` or the
