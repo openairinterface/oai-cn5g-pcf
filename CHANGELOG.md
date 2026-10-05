@@ -23,6 +23,13 @@
   new `pcf.notify_failure_recovery` block
   - Operator-preconfigured QoS reference sets loaded from
   `pcf.local_policy.qos_reference_path`
+* Bug fixes
+  - SM policy association index (IP/SUPI/DNN) is now reclaimed when a policy is
+  deleted
+  - Session binding requires every provided UE IPv4, SUPI and DNN to match
+  (3GPP TS 29.513 clause 6.2) and follows UE_IP_CH updates
+  - A failed session binding on `POST /app-sessions` returns `500` with cause
+  `PDU_SESSION_NOT_AVAILABLE` (3GPP TS 29.514 clause 4.2.2.2)
 * Tests
   - GoogleTest/CTest unit-test infrastructure for the PCF application layer,
   with 247 cases across 20 suites; build with `build_pcf --tests` or the

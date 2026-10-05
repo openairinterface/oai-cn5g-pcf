@@ -43,6 +43,8 @@ add_executable(${NF_TARGET}
   test_notify_failure_recovery_policy_builder.cpp
   test_pending_rollback_tracker.cpp
   test_retry_drain_queue.cpp
+  test_policy_storage_associations.cpp
+  test_sm_policy_association_index.cpp
 )
 
 ## Common modules (re-included with NF_TARGET=pcf_unit_tests so their

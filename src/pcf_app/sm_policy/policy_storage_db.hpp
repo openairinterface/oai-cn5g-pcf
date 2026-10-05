@@ -45,14 +45,7 @@ class policy_storage_db : public policy_storage {
       const oai::_3gpp::model::SmPolicyContextData& context,
       const std::string& association_id);
 
-  void insert_ip_association(
-      const std::string& dnn, const std::string& association_id);
-
-  void insert_supi_association(
-      const std::string& supi, const std::string& association_id);
-
-  void insert_dnn_association(
-      const std::string& dnn, const std::string& association_id);
+  void remove_associations(const std::string& association_id);
 
   std::shared_ptr<std::string> find_association(
       const std::optional<std::string>& ipv4,

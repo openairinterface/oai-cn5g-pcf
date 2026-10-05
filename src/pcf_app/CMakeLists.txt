@@ -44,6 +44,7 @@ add_library (PCF STATIC
   sm_policy/slice_policy_decision.cpp
   sm_policy/supi_policy_decision.cpp
   sm_policy/dnn_policy_decision.cpp
+  sm_policy/association_index.cpp
   sm_policy/policy_storage_yaml.cpp
   sm_policy/policy_storage_db.cpp
   sm_policy/policy_provisioning_file.cpp
