@@ -98,7 +98,7 @@ TEST(PolicyStorageAssociations, RemoveErasesIpAndSupiEntries) {
   ASSERT_EQ(find_by_ip(storage, "12.1.1.2"), "1");
   ASSERT_EQ(find_by_supi(storage, "imsi-1"), "1");
 
-  storage.remove_associations(ctx, "1");
+  storage.remove_associations("1");
 
   EXPECT_FALSE(find_by_ip(storage, "12.1.1.2").has_value());
   EXPECT_FALSE(find_by_supi(storage, "imsi-1").has_value());
@@ -112,7 +112,7 @@ TEST(PolicyStorageAssociations, CreateDeleteCyclesDoNotAccumulate) {
     const auto ctx       = make_context("12.1.1.2", "imsi-1", "oai");
     const std::string id = std::to_string(i);
     storage.insert_associations(ctx, id);
-    storage.remove_associations(ctx, id);
+    storage.remove_associations(id);
   }
   EXPECT_FALSE(find_by_ip(storage, "12.1.1.2").has_value());
   EXPECT_FALSE(find_by_supi(storage, "imsi-1").has_value());
@@ -143,13 +143,29 @@ TEST(PolicyStorageAssociations, RemovingOldAssociationKeepsNewerOwnersEntry) {
   storage.insert_associations(ctx, "1");
   storage.insert_associations(ctx, "2");  // same UE re-establishes
 
-  storage.remove_associations(ctx, "1");  // late delete of the old one
+  storage.remove_associations("1");  // late delete of the old one
 
   EXPECT_EQ(find_by_ip(storage, "12.1.1.2"), "2");
   EXPECT_EQ(find_by_supi(storage, "imsi-1"), "2");
 
-  storage.remove_associations(ctx, "2");
+  storage.remove_associations("2");
   EXPECT_FALSE(find_by_ip(storage, "12.1.1.2").has_value());
+}
+
+// Indexing an id again moves it to its new keys, as after a UE_IP_CH update:
+// the PCF updates the binding information, so only the new address binds
+// [TS 29.513 §5.2.2.3 steps 16 to 21].
+TEST(PolicyStorageAssociations, ReindexingMovesAssociationToItsNewKeys) {
+  policy_storage_yaml storage;
+  storage.insert_associations(make_context("10.0.0.5", "imsi-1", "oai"), "1");
+  storage.insert_associations(make_context("10.0.0.9", "imsi-1", "oai"), "1");
+
+  EXPECT_FALSE(find_by_ip(storage, "10.0.0.5").has_value());
+  EXPECT_EQ(find_by_ip(storage, "10.0.0.9"), "1");
+
+  storage.remove_associations("1");
+  EXPECT_FALSE(find_by_ip(storage, "10.0.0.9").has_value());
+  EXPECT_FALSE(find_by_supi(storage, "imsi-1").has_value());
 }
 
 // Robustness, not mandated: removing an unknown or already-removed id is a
@@ -158,11 +174,11 @@ TEST(PolicyStorageAssociations, RemoveIsIdempotentAndIgnoresUnknownIds) {
   policy_storage_yaml storage;
   const auto ctx = make_context("12.1.1.2", "imsi-1", "oai");
 
-  EXPECT_NO_THROW(storage.remove_associations(ctx, "does-not-exist"));
+  EXPECT_NO_THROW(storage.remove_associations("does-not-exist"));
 
   storage.insert_associations(ctx, "1");
-  storage.remove_associations(ctx, "1");
-  EXPECT_NO_THROW(storage.remove_associations(ctx, "1"));
+  storage.remove_associations("1");
+  EXPECT_NO_THROW(storage.remove_associations("1"));
 }
 
 // Terminating one UE's PDU session must not touch another UE's binding
@@ -174,7 +190,7 @@ TEST(PolicyStorageAssociations, DistinctUesAreIndependent) {
 
   storage.insert_associations(a, "1");
   storage.insert_associations(b, "2");
-  storage.remove_associations(a, "1");
+  storage.remove_associations("1");
 
   EXPECT_FALSE(find_by_ip(storage, "12.1.1.2").has_value());
   EXPECT_EQ(find_by_ip(storage, "12.1.1.3"), "2");
@@ -255,7 +271,7 @@ TEST(
   storage.insert_associations(internet, "1");
   storage.insert_associations(ims, "2");
 
-  storage.remove_associations(ims, "2");
+  storage.remove_associations("2");
 
   EXPECT_EQ(find(storage, "", "imsi-1", "internet"), "1");
 }
@@ -321,8 +337,7 @@ TEST(PolicyStorageAssociations, ConcurrentLookupsAndUpdatesAreSafe) {
     }
     for (int i = 0; i < kSupis; ++i) {
       const auto id = std::to_string(round * kSupis + i);
-      storage.remove_associations(
-          make_context_without_ipv4("imsi-" + std::to_string(i), "oai"), id);
+      storage.remove_associations(id);
     }
   }
 

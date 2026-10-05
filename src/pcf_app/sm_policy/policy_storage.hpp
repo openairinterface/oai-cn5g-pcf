@@ -51,29 +51,27 @@ class policy_storage {
       const oai::_3gpp::model::Snssai&,
       const oai::_3gpp::model::SmPolicyDecision& decision) = 0;
 
+  /**
+   * Indexes association_id for session binding under the UE IPv4 address,
+   * SUPI and DNN of context [TS 29.513 §6.2]. Calling it again for the same id
+   * re-indexes it, e.g. after a UE_IP_CH update [TS 29.513 §5.2.2.3].
+   */
   virtual void insert_associations(
       const oai::_3gpp::model::SmPolicyContextData& context,
       const std::string& association_id) = 0;
 
-  virtual void insert_ip_association(
-      const std::string& dnn, const std::string& association_id) = 0;
-
-  virtual void insert_supi_association(
-      const std::string& supi, const std::string& association_id) = 0;
-
-  virtual void insert_dnn_association(
-      const std::string& dnn, const std::string& association_id) = 0;
+  /**
+   * Removes association_id from the session-binding index, whatever keys it
+   * was indexed under [TS 29.513 §5.2.3.1 step 14].
+   */
+  virtual void remove_associations(const std::string& association_id) = 0;
 
   /**
-   * Remove the IP, SUPI and DNN index entries that insert_associations()
-   * created for this association. IP/SUPI entries are only erased if they
-   * still point at association_id, so a newer association that reused the
-   * same key is left alone.
+   * Session binding: finds the association whose UE IPv4 address, SUPI and
+   * DNN match every provided (non-empty) parameter [TS 29.513 §6.2].
+   *
+   * @return the association id, null if no association matches
    */
-  virtual void remove_associations(
-      const oai::_3gpp::model::SmPolicyContextData& context,
-      const std::string& association_id) = 0;
-
   virtual std::shared_ptr<std::string> find_association(
       const std::optional<std::string>& ipv4,
       const std::optional<std::string>& supi,
