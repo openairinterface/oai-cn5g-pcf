@@ -2,7 +2,6 @@
  * SPDX-License-Identifier: LicenseRef-CSSL-1.0
  */
 
-#include <algorithm>
 #include "policy_storage_yaml.hpp"
 #include "logger.hpp"
 #include <string>
@@ -124,130 +123,33 @@ void policy_storage_yaml::subscribe_to_decision_change(
 void policy_storage_yaml::insert_associations(
     const oai::_3gpp::model::SmPolicyContextData& context,
     const std::string& association_id) {
+  const auto keys = association_index::keys_of(context);
   Logger::pcf_app().debug(
-      "Inserting into association maps [IPv4 -> %s, SUPI -> %s, DNN -> %s] : "
+      "Indexing association [IPv4 -> %s, SUPI -> %s, DNN -> %s] : "
       "[Assoc Id -> %s]",
-      context.getIpv4Address().c_str(), context.getSupi().c_str(),
-      context.getDnn().c_str(), association_id.c_str());
-  policy_storage_yaml::insert_ip_association(
-      context.getIpv4Address(), association_id);
-
-  policy_storage_yaml::insert_supi_association(
-      context.getSupi(), association_id);
-
-  policy_storage_yaml::insert_dnn_association(context.getDnn(), association_id);
-}
-
-void policy_storage_yaml::insert_ip_association(
-    const std::string& ip, const std::string& association_id) {
-  std::unique_lock ip_association_lock(m_ip_to_association_map_mutex);
-
-  m_ip_to_association_map.insert_or_assign(ip, association_id);
-  ip_association_lock.unlock();
-}
-
-void policy_storage_yaml::insert_supi_association(
-    const std::string& supi, const std::string& association_id) {
-  std::unique_lock supi_to_association_lock(m_supi_to_association_map_mutex);
-
-  m_supi_to_association_map.insert_or_assign(supi, association_id);
-  supi_to_association_lock.unlock();
-}
-
-void policy_storage_yaml::insert_dnn_association(
-    const std::string& dnn, const std::string& association_id) {
-  std::unique_lock dnn_to_association_lock(m_dnn_to_association_map_mutex);
-
-  auto assocs = m_dnn_to_association_map.find(dnn);
-  if (assocs == m_dnn_to_association_map.end()) {
-    // Insert with empty vector
-    std::vector<std::string> assocs_v = {association_id};
-    m_dnn_to_association_map.insert(std::make_pair(dnn, assocs_v));
-  } else {
-    // Insert into vector that was found
-    assocs->second.push_back(association_id);
-  }
-
-  dnn_to_association_lock.unlock();
+      keys.ipv4.c_str(), keys.supi.c_str(), keys.dnn.c_str(),
+      association_id.c_str());
+  m_associations.upsert(association_id, keys);
 }
 
 void policy_storage_yaml::remove_associations(
-    const oai::_3gpp::model::SmPolicyContextData& context,
     const std::string& association_id) {
   Logger::pcf_app().debug(
-      "Removing from association maps [IPv4 -> %s, SUPI -> %s, DNN -> %s] : "
-      "[Assoc Id -> %s]",
-      context.getIpv4Address().c_str(), context.getSupi().c_str(),
-      context.getDnn().c_str(), association_id.c_str());
-
-  {
-    std::unique_lock lock(m_ip_to_association_map_mutex);
-    auto it = m_ip_to_association_map.find(context.getIpv4Address());
-    if (it != m_ip_to_association_map.end() && it->second == association_id) {
-      m_ip_to_association_map.erase(it);
-    }
-  }
-  {
-    std::unique_lock lock(m_supi_to_association_map_mutex);
-    auto it = m_supi_to_association_map.find(context.getSupi());
-    if (it != m_supi_to_association_map.end() && it->second == association_id) {
-      m_supi_to_association_map.erase(it);
-    }
-  }
-  {
-    std::unique_lock lock(m_dnn_to_association_map_mutex);
-    auto it = m_dnn_to_association_map.find(context.getDnn());
-    if (it != m_dnn_to_association_map.end()) {
-      auto& ids = it->second;
-      ids.erase(std::remove(ids.begin(), ids.end(), association_id), ids.end());
-      if (ids.empty()) m_dnn_to_association_map.erase(it);
-    }
-  }
+      "Removing association from index : [Assoc Id -> %s]",
+      association_id.c_str());
+  m_associations.remove(association_id);
 }
 
 std::shared_ptr<std::string> policy_storage_yaml::find_association(
     const std::optional<std::string>& ipv4,
     const std::optional<std::string>& supi,
     const std::optional<std::string>& dnn) {
-  std::string msg_base = "Finding SM Association: ";
-
-  // First, check based on SUPI, then DNN, then Slice, then global default rule.
-  std::shared_lock lock_supi(m_ip_to_association_map_mutex);
-  if (ipv4.has_value()) {
-    auto got_ip = m_ip_to_association_map.find(ipv4.value());
-    if (got_ip != m_ip_to_association_map.end()) {
-      Logger::pcf_app().debug(
-          "%s - Decide based on Ipv4 -> %s", msg_base.c_str(),
-          ipv4.value().c_str());
-      return std::make_shared<std::string>(got_ip->second);
-    }
-    Logger::pcf_app().debug(
-        "%s - Did not find for IPv4 -> %s", msg_base.c_str(),
-        ipv4.value().c_str());
-  }
-
-  // The IPv4 address may be absent or not yet indexed, so fall back to SUPI.
-  if (supi.has_value()) {
-    auto got_supi = m_supi_to_association_map.find(supi.value());
-    if (got_supi != m_supi_to_association_map.end()) {
-      Logger::pcf_app().debug(
-          "%s - Decide based on SUPI -> %s", msg_base.c_str(),
-          supi.value().c_str());
-      return std::make_shared<std::string>(got_supi->second);
-    }
-    Logger::pcf_app().debug(
-        "%s - Did not find for SUPI -> %s", msg_base.c_str(),
-        supi.value().c_str());
-  }
-
-  // TODO [PAS] handle DNN
-  /* The since during creation of association, the IP address might be
-   * absent, we need to make sure either it's updated or the we loop through
-   * the associations on DNN that have had the an association with the IP
-   * updated i.e., for each assoc in DNN find one with IP == Ipv4 */
+  auto found = m_associations.find(ipv4, supi, dnn);
   Logger::pcf_app().debug(
-      "%s - Failed to find association, returning NULL", msg_base.c_str());
-  return nullptr;
+      "Finding SM Association [IPv4 -> %s, SUPI -> %s, DNN -> %s] : %s",
+      ipv4.value_or("").c_str(), supi.value_or("").c_str(),
+      dnn.value_or("").c_str(), found ? found->c_str() : "not found");
+  return found ? std::make_shared<std::string>(*found) : nullptr;
 }
 
 std::string policy_storage_yaml::to_string() const {

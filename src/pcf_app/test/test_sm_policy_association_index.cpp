@@ -147,6 +147,18 @@ SmPolicyUpdateContextData ue_ip_change(
   return update;
 }
 
+// The SMF's report that the UE IPv4 address was released and none allocated
+// in its place [TS 29.512 §5.6.3.6].
+SmPolicyUpdateContextData ue_ip_release(const std::string& released_ipv4) {
+  PolicyControlRequestTrigger trigger;
+  trigger.setEnumValue(PolicyControlRequestTrigger_anyOf::
+                           ePolicyControlRequestTrigger_anyOf::UE_IP_CH);
+  SmPolicyUpdateContextData update;
+  update.setRepPolicyCtrlReqTriggers({trigger});
+  update.setRelIpv4Address(released_ipv4);
+  return update;
+}
+
 AppSessionContext app_session_request(
     const std::string& ue_ipv4, const std::string& supi) {
   AppSessionContextReqData req;
@@ -208,6 +220,45 @@ TEST(SmPolicyAssociationIndex, UeIpChangeReindexesTheNewAddress) {
 
   EXPECT_EQ(find_by_ip(*f.storage, "10.0.0.9"), id);
   EXPECT_FALSE(find_by_ip(*f.storage, "10.0.0.5").has_value());
+}
+
+// A released IPv4 address with no new one: the PCF deregisters the address
+// from its binding information [TS 29.513 §5.2.2.3 step 18], so it no longer
+// binds, while the PDU session stays bindable by the SUPI [TS 29.513 §6.2 b)].
+TEST(SmPolicyAssociationIndex, UeIpReleaseUnbindsTheReleasedAddress) {
+  fixture f{std::make_shared<policy_storage_yaml>()};
+  const std::string id = f.create("10.0.0.5", "imsi-1");
+
+  SmPolicyDecision decision;
+  std::string problem_details;
+  ASSERT_EQ(
+      f.smpc->update_sm_policy_handler(
+          id, ue_ip_release("10.0.0.5"), decision, problem_details),
+      status_code::OK)
+      << problem_details;
+
+  EXPECT_FALSE(find_by_ip(*f.storage, "10.0.0.5").has_value());
+  auto by_supi = f.storage->find_association("", "imsi-1", "oai");
+  ASSERT_TRUE(by_supi);
+  EXPECT_EQ(*by_supi, id);
+}
+
+// An AF request whose "ueIpv4", "supi" and "dnn" all match a PDU session binds
+// to it [TS 29.513 §6.2], and the AF session is created [TS 29.514 §4.2.2.2].
+TEST(SmPolicyAssociationIndex, AppSessionBindsToItsPduSession) {
+  fixture f{std::make_shared<policy_storage_yaml>()};
+  f.create("10.0.0.5", "imsi-1");
+
+  std::string app_session_id;
+  std::string problem_details;
+  const auto result = f.pa->post_app_sessions_handler(
+      app_session_request("10.0.0.5", "imsi-1"), app_session_id,
+      problem_details);
+
+  EXPECT_EQ(result, oai::pcf::app::policy_auth::status_code::CREATED)
+      << problem_details;
+  EXPECT_FALSE(app_session_id.empty());
+  EXPECT_EQ(f.sent_uris.size(), 1u);
 }
 
 // No PDU session matches the AF request: session binding fails, and the PCF

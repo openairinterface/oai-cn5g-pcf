@@ -20,6 +20,7 @@
 #include "supi_policy_decision.hpp"
 #include "snssai_hasher.hpp"
 #include "policy_storage.hpp"
+#include "association_index.hpp"
 
 namespace oai::pcf::app::sm_policy {
 /**
@@ -54,17 +55,8 @@ class policy_storage_yaml : public policy_storage {
   mutable std::shared_mutex m_dnn_policy_decisions_mutex;
   mutable std::shared_mutex m_supi_policy_decisions_mutex;
 
-  // ip_association_map < IP, association_id>
-  std::unordered_map<std::string, std::string> m_ip_to_association_map;
-  // supi_association_map <supi, association_id>
-  std::unordered_map<std::string, std::string> m_supi_to_association_map;
-  // dnn_to_association_map < DNN, vector<association_id>>
-  std::unordered_map<std::string, std::vector<std::string>>
-      m_dnn_to_association_map;
-
-  mutable std::shared_mutex m_ip_to_association_map_mutex;
-  mutable std::shared_mutex m_supi_to_association_map_mutex;
-  mutable std::shared_mutex m_dnn_to_association_map_mutex;
+  // Session-binding index of the live SM policy associations.
+  association_index m_associations;
 
  public:
   explicit policy_storage_yaml()                  = default;
@@ -114,18 +106,8 @@ class policy_storage_yaml : public policy_storage {
   void insert_associations(
       const oai::_3gpp::model::SmPolicyContextData& context,
       const std::string& association_id);
-  void insert_ip_association(
-      const std::string& dnn, const std::string& association_id);
 
-  void insert_supi_association(
-      const std::string& supi, const std::string& association_id);
-
-  void insert_dnn_association(
-      const std::string& dnn, const std::string& association_id);
-
-  void remove_associations(
-      const oai::_3gpp::model::SmPolicyContextData& context,
-      const std::string& association_id);
+  void remove_associations(const std::string& association_id);
 
   std::shared_ptr<std::string> find_association(
       const std::optional<std::string>& ipv4,

@@ -246,12 +246,15 @@ status_code pcf_policy_authorization::post_app_sessions_handler(
   } catch (const std::exception& e) {
     Logger::pcf_app().info(e.what());
     problem_details = "PDU_SESSION_NOT_AVAILABLE";
-    return status_code::INTERNAL_SERVER_ERROR;
+    return status_code::PDU_SESSION_NOT_AVAILABLE;
   }
 
+  // Session binding failed: reject with HTTP 500 and cause
+  // PDU_SESSION_NOT_AVAILABLE [TS 29.514 §4.2.2.2, Table 5.7.3-1].
   if (!association_id.has_value()) {
     Logger::pcf_app().debug("Failed to find session");
-    return status_code::NOT_FOUND;
+    problem_details = "PDU_SESSION_NOT_AVAILABLE";
+    return status_code::PDU_SESSION_NOT_AVAILABLE;
   }
 
   // Base the update on the decision + version session binding returned;

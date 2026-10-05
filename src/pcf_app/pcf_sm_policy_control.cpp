@@ -224,20 +224,21 @@ void pcf_smpc::handle_session_binding_request(
     return;
   }
 
-  assoc_id = association_id->c_str();
-
   std::unique_lock lock_assocations(m_associations_mutex);
-  auto iter = m_associations.find(association_id->c_str());
+  auto iter = m_associations.find(*association_id);
   if (iter == m_associations.end()) {
+    // Binding is to an existing PDU session [TS 29.513 §6.2]: an id the index
+    // returned but this PCF does not hold is a binding failure, so assoc_id
+    // stays empty.
     Logger::pcf_app().info(fmt::format(
-        "Could not find policy association: ID {} not found",
-        association_id->c_str()));
+        "Could not find policy association: ID {} not found", *association_id));
     return;
   }
 
-  // Hand back the decision and the version it was read at, under the same lock,
-  // so Policy Authorization can later present that version for an optimistic
-  // (version-checked) apply.
+  // Hand back the id, the decision and the version it was read at, under the
+  // same lock, so Policy Authorization can later present that version for an
+  // optimistic (version-checked) apply.
+  assoc_id = *association_id;
   decision = iter->second.get_sm_policy_decision_dto();
   version  = iter->second.decision_version();
 }
@@ -560,12 +561,12 @@ status_code pcf_smpc::create_sm_policy_handler(
     }
     assoc.set_sm_policy_decision(decision);
 
-    // Perform session binding. Only index associations that are actually
-    // stored, so a rejected request leaves no stale entries behind.
-    m_policy_storage->insert_associations(context, association_id);
-
+    // Index for session binding only once stored, and under the same lock, so
+    // binding never finds an association that is not (yet) held and a
+    // rejected request leaves no index entry behind.
     std::unique_lock lock_assocations(m_associations_mutex);
     m_associations.insert(std::make_pair(association_id, assoc));
+    m_policy_storage->insert_associations(context, association_id);
 
     Logger::pcf_app().info(fmt::format(
         "Created Policy Decision for SUPI {} with ID {}", context.getSupi(),
@@ -587,13 +588,12 @@ sm_policy::status_code pcf_smpc::delete_sm_policy_handler(
     Logger::pcf_app().info(problem_details);
     return status_code::NOT_FOUND;
   }
-  m_policy_storage->remove_associations(
-      iter->second.get_sm_policy_context_data(), id);
+  // Remove all binding information of the PDU session [TS 29.513 §5.2.3.1
+  // step 14], by id, since its context may have changed since it was indexed.
+  m_policy_storage->remove_associations(id);
   m_associations.erase(iter);
   Logger::pcf_app().info(
       fmt::format("Deleted policy association with ID {}", id));
-
-  // TODO [PAS]: Perform session binding delete
 
   return status_code::OK;
 }
@@ -651,12 +651,16 @@ sm_policy::status_code pcf_smpc::update_sm_policy_handler(
     return status_code::NOT_FOUND;
   }
 
-  // TODO [PAS]: Perform session binding update
+  const status_code res =
+      iter->second.redecide_policy(update_context, decision, problem_details);
 
-  SmPolicyDecision new_decision;
+  // redecide_policy() applies reported changes (e.g. UE_IP_CH) to the stored
+  // context, so re-index it for session binding [TS 29.513 §5.2.2.3 steps 16
+  // to 21].
+  m_policy_storage->insert_associations(
+      iter->second.get_sm_policy_context_data(), id);
 
-  return iter->second.redecide_policy(
-      update_context, decision, problem_details);
+  return res;
 }
 
 //------------------------------------------------------------------------------
