@@ -3,9 +3,11 @@
  */
 
 // Tests for how pcf_smpc keeps the IP/SUPI/DNN association index in step with
-// the SM policy lifecycle, and how session binding treats what the index
-// returns. They drive the real handlers (create/update/delete, and Policy
-// Authorization's POST /app-sessions) over a real policy_storage_yaml.
+// the SM policy lifecycle, how session binding treats what the index returns,
+// and how Policy Authorization finds the PDU session of an existing AF session.
+// They drive the real handlers (SM policy create/update/delete, and Policy
+// Authorization's POST/PATCH/DELETE /app-sessions) over a real
+// policy_storage_yaml.
 //
 // What the standards mandate, and what these tests check:
 //  - When the UE IPv4 address changes, the SMF reports "UE_IP_CH" with the new
@@ -18,6 +20,12 @@
 //    [TS 29.513 §6.2]. If binding fails, the PCF rejects
 //    Npcf_PolicyAuthorization_Create with HTTP "500 Internal Server Error" and
 //    cause "PDU_SESSION_NOT_AVAILABLE" [TS 29.514 §4.2.2.2, Table 5.7.3-1].
+//  - An AF session is bound to one and only one PDU session
+//    [TS 23.503 §6.1.3.2.2]. On termination the PCF acts on the PDU session
+//    "where PCC rules related with this AF session are installed"
+//    [TS 29.513 §5.2.2.2.2.3 step 2], and a modification cannot change the
+//    binding attributes [TS 29.514 §4.2.3.2], so modification and termination
+//    use the binding made at creation instead of binding again.
 //
 // References are to Release 18: TS 29.512 V18.13.0, TS 29.513 V18.7.0,
 // TS 29.514 V18.7.0.
@@ -31,8 +39,15 @@
 
 #include "AppSessionContext.h"
 #include "AppSessionContextReqData.h"
+#include "AppSessionContextUpdateData.h"
+#include "AppSessionContextUpdateDataPatch.h"
+#include "MediaComponent.h"
+#include "MediaComponentRm.h"
+#include "MediaSubComponent.h"
+#include "PccRule.h"
 #include "PolicyControlRequestTrigger.h"
 #include "SmPolicyContextData.h"
+#include "SmPolicyControl.h"
 #include "SmPolicyDecision.h"
 #include "SmPolicyDeleteData.h"
 #include "SmPolicyUpdateContextData.h"
@@ -47,9 +62,16 @@
 
 using oai::_3gpp::model::AppSessionContext;
 using oai::_3gpp::model::AppSessionContextReqData;
+using oai::_3gpp::model::AppSessionContextUpdateData;
+using oai::_3gpp::model::AppSessionContextUpdateDataPatch;
+using oai::_3gpp::model::MediaComponent;
+using oai::_3gpp::model::MediaComponentRm;
+using oai::_3gpp::model::MediaSubComponent;
+using oai::_3gpp::model::PccRule;
 using oai::_3gpp::model::PolicyControlRequestTrigger;
 using oai::_3gpp::model::PolicyControlRequestTrigger_anyOf;
 using oai::_3gpp::model::SmPolicyContextData;
+using oai::_3gpp::model::SmPolicyControl;
 using oai::_3gpp::model::SmPolicyDecision;
 using oai::_3gpp::model::SmPolicyDeleteData;
 using oai::_3gpp::model::SmPolicyUpdateContextData;
@@ -65,6 +87,8 @@ using oai::pcf::app::policy_auth::app_session_storage;
 using oai::pcf::app::policy_auth::policy_auth_context;
 using oai::pcf::app::sm_policy::policy_storage_yaml;
 using oai::pcf::app::sm_policy::status_code;
+
+namespace pa = oai::pcf::app::policy_auth;
 
 namespace {
 
@@ -110,12 +134,15 @@ struct fixture {
     pa         = std::make_shared<pcf_policy_authorization>(pa_context, ev);
   }
 
-  std::string create(const std::string& ipv4, const std::string& supi) {
+  std::string create(
+      const std::string& ipv4, const std::string& supi,
+      const std::string& dnn = "oai") {
     SmPolicyContextData ctx;
     ctx.setIpv4Address(ipv4);
     ctx.setSupi(supi);
-    ctx.setDnn("oai");
-    ctx.setNotificationUri("http://smf.example.com/callback");
+    ctx.setDnn(dnn);
+    // Per-DNN callback, so the notify URI shows which PDU session was updated.
+    ctx.setNotificationUri("http://smf.example.com/" + dnn);
 
     SmPolicyDecision decision;
     std::string id;
@@ -124,6 +151,64 @@ struct fixture {
         smpc->create_sm_policy_handler(ctx, decision, id, problem_details),
         status_code::CREATED);
     return id;
+  }
+
+  void delete_sm_policy(const std::string& id) {
+    std::string problem_details;
+    ASSERT_EQ(
+        smpc->delete_sm_policy_handler(
+            id, SmPolicyDeleteData{}, problem_details),
+        status_code::OK);
+  }
+
+  // Ids of the PCC rules installed on an SM policy association.
+  std::vector<std::string> pcc_rule_ids(const std::string& association_id) {
+    SmPolicyControl control;
+    std::string problem_details;
+    EXPECT_EQ(
+        smpc->get_sm_policy_handler(association_id, control, problem_details),
+        status_code::OK);
+    std::vector<std::string> ids;
+    for (const auto& [id, rule] : control.getPolicy().getPccRules()) {
+      ids.push_back(id);
+    }
+    return ids;
+  }
+
+  std::size_t pcc_rules(const std::string& association_id) {
+    return pcc_rule_ids(association_id).size();
+  }
+
+  // POST /app-sessions with one video media component; returns its id.
+  std::string post_video(const AppSessionContext& request) {
+    std::string app_session_id;
+    std::string problem_details;
+    EXPECT_EQ(
+        pa->post_app_sessions_handler(request, app_session_id, problem_details),
+        pa::status_code::CREATED)
+        << problem_details;
+    return app_session_id;
+  }
+
+  // PATCH /app-sessions/{id}: raise the video's downlink bitrate.
+  pa::status_code patch_video_bitrate(
+      const std::string& app_session_id, std::string& problem_details) {
+    MediaComponentRm video;
+    video.setMedCompN(1);
+    video.setMarBwDl("10 Mbps");
+    AppSessionContextUpdateData update;
+    update.setMedComponents({{"1", video}});
+    AppSessionContextUpdateDataPatch patch;
+    patch.setAscReqData(update);
+
+    AppSessionContext out;
+    return pa->mod_app_session_handler(
+        app_session_id, patch, out, problem_details);
+  }
+
+  pa::status_code delete_app_session(const std::string& app_session_id) {
+    std::string problem_details;
+    return pa->delete_app_session_handler(app_session_id, problem_details);
   }
 };
 
@@ -160,14 +245,38 @@ SmPolicyUpdateContextData ue_ip_release(const std::string& released_ipv4) {
 }
 
 AppSessionContext app_session_request(
-    const std::string& ue_ipv4, const std::string& supi) {
+    const std::string& ue_ipv4, const std::string& supi,
+    const std::string& dnn = "oai") {
   AppSessionContextReqData req;
-  req.setUeIpv4(ue_ipv4);
+  if (!ue_ipv4.empty()) req.setUeIpv4(ue_ipv4);
   req.setSupi(supi);
-  req.setDnn("oai");
+  if (!dnn.empty()) req.setDnn(dnn);
   req.setNotifUri("http://af.example.com/notify");
   req.setSuppFeat("0");
   AppSessionContext context;
+  context.setAscReqData(req);
+  return context;
+}
+
+// The same request with one video media component, which installs one PCC rule
+// on the bound PDU session.
+AppSessionContext video_request(
+    const std::string& ue_ipv4, const std::string& supi,
+    const std::string& dnn = "oai") {
+  MediaSubComponent flow;
+  flow.setFNum(1);
+  flow.setFDescs(
+      {"permit out ip from 198.51.100.10 to assigned",
+       "permit in ip from assigned to 198.51.100.10"});
+  MediaComponent video;
+  video.setMedCompN(1);
+  video.setMarBwDl("5 Mbps");
+  video.setMarBwUl("1 Mbps");
+  video.setMedSubComps({{"1", flow}});
+
+  AppSessionContext context    = app_session_request(ue_ipv4, supi, dnn);
+  AppSessionContextReqData req = context.getAscReqData();
+  req.setMedComponents({{"1", video}});
   context.setAscReqData(req);
   return context;
 }
@@ -305,4 +414,172 @@ TEST(SmPolicyAssociationIndex, AppSessionIsNotBoundToAnUnknownAssociation) {
       << "an app-session id was allocated for a request that never bound";
   EXPECT_TRUE(f.sent_uris.empty());
   EXPECT_TRUE(f.pa_context->app_sessions().find_all().empty());
+}
+
+// --- Modification and termination of an existing AF session ----------------
+
+// After a UE_IP_CH the AF session's creation-time "ueIpv4" no longer matches
+// its PDU session, and a PATCH cannot update it [TS 29.514 §4.2.3.2]. The
+// modification still applies to the PDU session the AF session was bound to
+// [TS 29.513 §5.2.2.2.2.2, TS 23.503 §6.1.3.2.2], instead of failing a fresh
+// binding on the stale address.
+TEST(SmPolicyAssociationIndex, PatchAfterUeIpChangeReachesItsPduSession) {
+  fixture f{std::make_shared<policy_storage_yaml>()};
+  const std::string id = f.create("10.0.0.5", "imsi-1");
+  const std::string app_session_id =
+      f.post_video(video_request("10.0.0.5", "imsi-1"));
+  ASSERT_EQ(f.sent_uris.size(), 1u);
+
+  SmPolicyDecision decision;
+  std::string problem_details;
+  ASSERT_EQ(
+      f.smpc->update_sm_policy_handler(
+          id, ue_ip_change("10.0.0.5", "10.0.0.9"), decision, problem_details),
+      status_code::OK)
+      << problem_details;
+
+  EXPECT_EQ(
+      f.patch_video_bitrate(app_session_id, problem_details),
+      pa::status_code::OK)
+      << problem_details;
+  EXPECT_EQ(f.sent_uris.size(), 2u) << "the SMF was not notified of the PATCH";
+  EXPECT_EQ(f.pcc_rules(id), 1u);
+}
+
+// On termination the PCF removes the AF session's PCC rules from the PDU
+// session where they are installed [TS 29.513 §5.2.2.2.2.3 step 2], even after
+// a UE_IP_CH made the AF session's creation-time "ueIpv4" stale.
+TEST(SmPolicyAssociationIndex, DeleteAfterUeIpChangeRemovesItsPccRules) {
+  fixture f{std::make_shared<policy_storage_yaml>()};
+  const std::string id = f.create("10.0.0.5", "imsi-1");
+  const std::string app_session_id =
+      f.post_video(video_request("10.0.0.5", "imsi-1"));
+  ASSERT_EQ(f.pcc_rules(id), 1u);
+
+  SmPolicyDecision decision;
+  std::string problem_details;
+  ASSERT_EQ(
+      f.smpc->update_sm_policy_handler(
+          id, ue_ip_change("10.0.0.5", "10.0.0.9"), decision, problem_details),
+      status_code::OK)
+      << problem_details;
+
+  EXPECT_EQ(f.delete_app_session(app_session_id), pa::status_code::OK);
+  EXPECT_EQ(f.pcc_rules(id), 0u) << "the AF session's PCC rule was left behind";
+  EXPECT_TRUE(f.pa_context->app_sessions().find_all().empty());
+}
+
+// The AF session stays on the PDU session it was bound to. Here it was bound by
+// SUPI alone; when the UE then opens a second PDU session, a fresh binding on
+// the same attributes would pick the newer one [TS 23.503 §6.1.3.2.2]. The
+// PATCH must be committed to, and notified on, the first PDU session.
+TEST(SmPolicyAssociationIndex, PatchStaysOnTheBoundSessionWhenUeOpensAnother) {
+  fixture f{std::make_shared<policy_storage_yaml>()};
+  f.create("10.0.0.5", "imsi-1", "oai");
+  const std::string app_session_id =
+      f.post_video(video_request("", "imsi-1", ""));
+  const std::string second = f.create("10.0.0.6", "imsi-1", "ims");
+  const auto sent_before   = f.sent_uris.size();
+
+  std::string problem_details;
+  EXPECT_EQ(
+      f.patch_video_bitrate(app_session_id, problem_details),
+      pa::status_code::OK)
+      << problem_details;
+  ASSERT_EQ(f.sent_uris.size(), sent_before + 1);
+  EXPECT_EQ(f.sent_uris.back().rfind("http://smf.example.com/oai/", 0), 0u)
+      << "the PATCH was applied to another PDU session: " << f.sent_uris.back();
+  EXPECT_EQ(f.pcc_rules(second), 0u) << "the PATCH changed another PDU session";
+}
+
+// The PDU session has ended but the AF session is still stored (this PCF does
+// not yet tell the AF to terminate [TS 29.513 §5.2.3.1 step 4]). A PATCH is
+// rejected cleanly with "PDU_SESSION_NOT_AVAILABLE" (the API handler answers
+// HTTP 500), and nothing is pushed to the SMF. TS 29.514 defines no cause for
+// this case; Table 5.7.3-1 lists PDU_SESSION_NOT_AVAILABLE for POST.
+TEST(SmPolicyAssociationIndex, PatchAfterPduSessionEndedIsRejected) {
+  fixture f{std::make_shared<policy_storage_yaml>()};
+  const std::string id = f.create("10.0.0.5", "imsi-1");
+  const std::string app_session_id =
+      f.post_video(video_request("10.0.0.5", "imsi-1"));
+  f.delete_sm_policy(id);
+  const auto sent_before = f.sent_uris.size();
+
+  std::string problem_details;
+  EXPECT_EQ(
+      f.patch_video_bitrate(app_session_id, problem_details),
+      pa::status_code::PDU_SESSION_NOT_AVAILABLE);
+  EXPECT_EQ(problem_details, "PDU_SESSION_NOT_AVAILABLE");
+  EXPECT_EQ(f.sent_uris.size(), sent_before);
+}
+
+// The PDU session has ended, so its PCC rules are already gone. Deleting the
+// AF session still succeeds and removes it [TS 29.514 §4.2.4.2].
+TEST(SmPolicyAssociationIndex, DeleteAfterPduSessionEndedRemovesAppSession) {
+  fixture f{std::make_shared<policy_storage_yaml>()};
+  const std::string id = f.create("10.0.0.5", "imsi-1");
+  const std::string app_session_id =
+      f.post_video(video_request("10.0.0.5", "imsi-1"));
+  f.delete_sm_policy(id);
+
+  EXPECT_EQ(f.delete_app_session(app_session_id), pa::status_code::OK);
+  EXPECT_TRUE(f.pa_context->app_sessions().find_all().empty());
+}
+
+// --- Scope of AF-derived PCC rules ------------------------------------------
+//
+// PCC rules derived from an AF session belong to the one PDU session it is
+// bound to [TS 23.503 §6.1.3.2.2, TS 29.513 §5.2.2.2.2.1 step 5] and are
+// removed when the AF session ends [TS 29.513 §5.2.2.2.2.3 step 2]. They must
+// not leak into the policies the PCF provisions for the UE's other or later PDU
+// sessions.
+
+// A UE's next PDU session starts from the provisioned policy, without the PCC
+// rules of an AF session bound to its first PDU session.
+TEST(SmPolicyProvisionedDecision, NewPduSessionDoesNotInheritAfRules) {
+  fixture f{std::make_shared<policy_storage_yaml>()};
+  const std::string first = f.create("10.0.0.5", "imsi-1", "oai");
+  f.post_video(video_request("10.0.0.5", "imsi-1", "oai"));
+  ASSERT_EQ(f.pcc_rules(first), 1u);
+
+  const std::string second = f.create("10.0.0.6", "imsi-1", "ims");
+
+  EXPECT_EQ(f.pcc_rules(second), 0u)
+      << "the new PDU session inherited the AF session's PCC rule";
+}
+
+// Once the AF session and its PDU session have ended, a new PDU session of the
+// same UE on the same DNN carries none of the old AF session's PCC rules.
+TEST(SmPolicyProvisionedDecision, AfRulesDoNotOutliveTheAfSession) {
+  fixture f{std::make_shared<policy_storage_yaml>()};
+  const std::string first = f.create("10.0.0.5", "imsi-1");
+  const std::string app_session_id =
+      f.post_video(video_request("10.0.0.5", "imsi-1"));
+  ASSERT_EQ(f.delete_app_session(app_session_id), pa::status_code::OK);
+  f.delete_sm_policy(first);
+
+  const std::string next = f.create("10.0.0.5", "imsi-1");
+
+  EXPECT_EQ(f.pcc_rules(next), 0u)
+      << "the deleted AF session's PCC rule came back";
+}
+
+// The operator's provisioned DNN policy still applies to the UE's PDU session
+// on that DNN after an AF session on another of the UE's PDU sessions committed
+// QoS; the AF commit does not create a per-SUPI policy that takes precedence.
+TEST(SmPolicyProvisionedDecision, ProvisionedDnnPolicyStillApplies) {
+  fixture f{std::make_shared<policy_storage_yaml>()};
+  PccRule operator_rule;
+  operator_rule.setPccRuleId("operator-ims");
+  operator_rule.setPrecedence(100);
+  SmPolicyDecision ims_policy;
+  ims_policy.setPccRules({{"operator-ims", operator_rule}});
+  f.storage->insert_dnn_decision("ims", ims_policy);
+
+  f.create("10.0.0.5", "imsi-1", "oai");
+  f.post_video(video_request("10.0.0.5", "imsi-1", "oai"));
+
+  const std::string ims = f.create("10.0.0.6", "imsi-1", "ims");
+
+  EXPECT_EQ(f.pcc_rule_ids(ims), std::vector<std::string>{"operator-ims"});
 }

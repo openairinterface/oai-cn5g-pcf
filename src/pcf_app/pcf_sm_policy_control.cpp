@@ -213,8 +213,6 @@ void pcf_smpc::handle_session_binding_request(
   // utilisation is not included -- see the admission-control TODO in the
   // header.
 
-  // TODO: support multiple sessions
-
   std::shared_ptr<std::string> association_id =
       m_policy_storage->find_association(ipv4, supi, dnn);
 
@@ -290,7 +288,14 @@ void pcf_smpc::handle_commit_decision_request(
   // semantics for concurrent modification of one resource; cross-session
   // updates (disjoint keys) all survive because the delta only carries the
   // keys its request actually changed.
-  oai::_3gpp::model::SmPolicyContextData context;
+  if (!association_id.has_value()) {
+    // No bound association to commit to: report a terminal (non-committed)
+    // result rather than dereferencing an empty id.
+    Logger::pcf_app().info("Could not update policy association: no ID given");
+    out = {false, 0, nullptr};
+    return;
+  }
+
   {
     std::unique_lock lock_associations(m_associations_mutex);
     auto iter = m_associations.find(association_id.value());
@@ -320,31 +325,15 @@ void pcf_smpc::handle_commit_decision_request(
     out = {
         true, iter->second.decision_version(),
         iter->second.snapshot_decision()};
-    // Capture the context under the lock so persist runs off-lock
-    context = iter->second.get_sm_policy_context_data();
   }  // m_associations_mutex released
 
-  // TODO [PAS] confirm if the storage should be updated
-  /**
-   * The changes from the update policy authorisation request should be
-   * be for an existing policy association for an existing PDU session.
-   * THe SMF gets the updated policy decision from the PCF for which the
-   * PCF reads the new decision from the policy storage. However the policy
-   * storage persists over new UE connections.
-   *
-   * The TODO is to confirm if the policy storage should be updated with the
-   * new decision and to look for an alternative way to store the updates for
-   * the policy decisions that are not persisted.
-   */
-  // Reached only on commit (conflicts/not-found returned above). Persist
-  // against the immutable post-commit snapshot.
-  if (!context.getSupi().empty()) {
-    m_policy_storage->insert_supi_decision(context.getSupi(), *out.decision);
-  } else if (!context.getDnn().empty()) {
-    m_policy_storage->insert_dnn_decision(context.getDnn(), *out.decision);
-  } else {
-    Logger::pcf_app().error("Failed to update policy decision");
-  }
+  // The committed decision lives only on this association: the SMF is notified
+  // from its snapshot, and GET/update read it. It is deliberately not written
+  // back to the provisioned (per-SUPI/DNN) policies in m_policy_storage. AF-
+  // derived PCC rules belong to the one PDU session the AF session is bound to
+  // [TS 23.503 §6.1.3.2.2, TS 29.513 §5.2.2.2.2.1 step 5], so they must not
+  // become the starting policy of the UE's later PDU sessions, nor outlive the
+  // AF session.
 }
 
 void pcf_smpc::handle_notify_committed_decision_request(
@@ -595,6 +584,12 @@ sm_policy::status_code pcf_smpc::delete_sm_policy_handler(
   Logger::pcf_app().info(
       fmt::format("Deleted policy association with ID {}", id));
 
+  // TODO [QOS-SUB] Notify the AF of every app-session bound to this
+  // association to terminate it ("{notifUri}/terminate", cause
+  // PDU_SESSION_TERMINATION) [TS 29.513 §5.2.3.1 step 4, TS 29.514 §4.2.5.3].
+  // Until then those app-sessions stay stored: PATCH on them fails with
+  // PDU_SESSION_NOT_AVAILABLE and DELETE still removes them.
+
   return status_code::OK;
 }
 
@@ -659,6 +654,20 @@ sm_policy::status_code pcf_smpc::update_sm_policy_handler(
   // to 21].
   m_policy_storage->insert_associations(
       iter->second.get_sm_policy_context_data(), id);
+
+  // TODO [PAS] Released UE address ("relIpv4Address" with UE_IP_CH). App-
+  // sessions bound to that address keep working through their stored
+  // association, but their flow filters no longer match any traffic, and
+  // Rel-17 gives the AF no way to learn of the change.
+  //  - Possible Rel-17 workaround (PCF policy, behind configuration): remove
+  //    their PCC rules and notify the AF to terminate with cause
+  //    ALL_SDF_DEACTIVATION, the closest Rel-17 value -- not
+  //    PDU_SESSION_TERMINATION, since the PDU session is still up
+  //    [TS 29.514 §4.2.5.3]. Needs the terminate notification (see
+  //    delete_sm_policy_handler).
+  //  - Rel-19: when the AF negotiated "ReleasedUEaddrReport", terminate them
+  //    with cause UE_ADDR_RELEASE [TS 29.514 V19 §4.2.5.31]; keep the Rel-17
+  //    behaviour for AFs that did not.
 
   return res;
 }
