@@ -246,12 +246,15 @@ status_code pcf_policy_authorization::post_app_sessions_handler(
   } catch (const std::exception& e) {
     Logger::pcf_app().info(e.what());
     problem_details = "PDU_SESSION_NOT_AVAILABLE";
-    return status_code::INTERNAL_SERVER_ERROR;
+    return status_code::PDU_SESSION_NOT_AVAILABLE;
   }
 
+  // Session binding failed: reject with HTTP 500 and cause
+  // PDU_SESSION_NOT_AVAILABLE [TS 29.514 §4.2.2.2, Table 5.7.3-1].
   if (!association_id.has_value()) {
     Logger::pcf_app().debug("Failed to find session");
-    return status_code::NOT_FOUND;
+    problem_details = "PDU_SESSION_NOT_AVAILABLE";
+    return status_code::PDU_SESSION_NOT_AVAILABLE;
   }
 
   // Base the update on the decision + version session binding returned;
@@ -379,8 +382,8 @@ policy_auth::status_code pcf_policy_authorization::mod_app_session_handler(
         app_session_context_update_data_patch,
     oai::_3gpp::model::AppSessionContext& app_session_context,
     std::string& problem_details) {
-  // Base decision from binding; the per-attempt working copy is derived from it
-  // inside `derive` (below).
+  // Base decision of the bound association; the per-attempt working copy is
+  // derived from it inside `derive` (below).
   oai::_3gpp::model::SmPolicyDecision current_decision = {};
 
   const oai::_3gpp::model::AppSessionContextUpdateData reqContext =
@@ -404,18 +407,21 @@ policy_auth::status_code pcf_policy_authorization::mod_app_session_handler(
 
   auto req_context = session->context_snapshot();
 
-  try {
-    // Perform session binding (returns the association's decision + version).
-    m_event_sub.sm_session_binding(
-        req_context.getUeIpv4(), req_context.getSupi(), req_context.getDnn(),
-        association_id, current_decision, bound_version);
-  } catch (const std::exception& e) {
-    Logger::pcf_app().info(e.what());
+  // Modify the PDU session this AF session was bound to at creation
+  // [TS 29.513 §5.2.2.2.2.2, §6.2; TS 23.503 §6.1.3.2.2].
+  if (!find_bound_association(
+          *session, association_id, current_decision, bound_version)) {
+    // The PDU session has ended. TS 29.514 defines no cause for a
+    // modification in this state; PDU_SESSION_NOT_AVAILABLE is the cause that
+    // describes it (Table 5.7.3-1 lists it for POST only).
+    Logger::pcf_app().info(
+        "PATCH /app-sessions/%s: bound SM policy association %s not found",
+        app_session_id.c_str(), association_id.value_or("<none>").c_str());
     problem_details = "PDU_SESSION_NOT_AVAILABLE";
-    return status_code::INTERNAL_SERVER_ERROR;
+    return status_code::PDU_SESSION_NOT_AVAILABLE;
   }
 
-  // Base this PATCH's update on the decision + version binding returned;
+  // Base this PATCH's update on the bound association's decision + version;
   // apply_with_retry re-derives against a newer base on a concurrent commit
   // [TS 29.512 §4.2.3.2].
   const oai::_3gpp::model::SmPolicyDecision base_decision = current_decision;
@@ -485,27 +491,19 @@ policy_auth::status_code pcf_policy_authorization::delete_app_session_handler(
   // Mark released first so a concurrent PATCH aborts (plan §5.5).
   session->set_state(app_session_state::released);
 
-  // Re-fetch the bound association's current decision (existing binding signal,
-  // keyed by the session's stored context), remove exactly the entries this
+  // Fetch the current decision of the association this session was bound to --
+  // the PDU session "where PCC rules related with this AF session are
+  // installed" [TS 29.513 §5.2.2.2.2.3 step 2], remove exactly the entries this
   // session contributed (from its ledger), and push the reduced decision back
   // to the SM policy association (the single owner). CP.22: no storage lock is
   // held across the emits below.
-  const auto app_session_context            = session->context_snapshot();
-  std::optional<std::string> association_id = {};
+  std::optional<std::string> association_id            = {};
   oai::_3gpp::model::SmPolicyDecision current_decision = {};
   std::uint64_t bound_version                          = 0;
-  try {
-    m_event_sub.sm_session_binding(
-        app_session_context.getUeIpv4(), app_session_context.getSupi(),
-        app_session_context.getDnn(), association_id, current_decision,
-        bound_version);
-  } catch (const std::exception& e) {
-    // The PDU session/association may already be gone; still drop the
-    // app-session from storage below.
-    Logger::pcf_app().info(e.what());
-  }
+  const bool bound                                     = find_bound_association(
+      *session, association_id, current_decision, bound_version);
 
-  if (association_id.has_value()) {
+  if (bound) {
     // Removals-only recompute: strip exactly this session's owned entries from
     // the base decision. Idempotent, so re-deriving on a version conflict is
     // safe; the resulting delta leaves other sessions' entries untouched
@@ -536,8 +534,12 @@ policy_auth::status_code pcf_policy_authorization::delete_app_session_handler(
           app_session_id, association_id.value_or("<none>")));
     }
   } else {
+    // The PDU session has ended, so its PCC rules are already gone; still drop
+    // the app-session from storage below.
     Logger::pcf_app().debug(
-        "No SM policy association bound; skipping SMF decision update");
+        "DELETE %s: bound SM policy association %s not found; skipping SMF "
+        "decision update",
+        app_session_id.c_str(), association_id.value_or("<none>").c_str());
   }
 
   // TODO [QOS-SUB] If the DELETE carried an EventsSubscReqData, send the
@@ -587,6 +589,20 @@ pcf_policy_authorization::build_response_data(
 //------------------------------------------------------------------------------
 pcf_policy_authorization::~pcf_policy_authorization() {
   Logger::pcf_app().debug("Delete PCF PA instance...");
+}
+
+//------------------------------------------------------------------------------
+bool pcf_policy_authorization::find_bound_association(
+    const policy_auth::app_session& session,
+    std::optional<std::string>& association_id,
+    oai::_3gpp::model::SmPolicyDecision& decision, std::uint64_t& version) {
+  association_id = session.association_id();
+  if (!association_id.has_value()) return false;
+
+  bool found = false;
+  m_event_sub.sm_get_association_decision(
+      association_id.value(), found, decision, version);
+  return found;
 }
 
 //------------------------------------------------------------------------------
