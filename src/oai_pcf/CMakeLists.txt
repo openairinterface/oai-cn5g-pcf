@@ -225,6 +225,13 @@ include(CheckTypeSize)
 
 add_boolean_option( DISPLAY_LICENCE_INFO            False    "If a module has a licence banner to show")
 add_boolean_option( LOG_OAI                         False    "Thread safe logging utility")
+add_boolean_option( USE_NGHTTP2_CLIENT              False    "Use the nghttp2 HTTP client instead of the CPR HTTP client")
+
+if(USE_NGHTTP2_CLIENT)
+  set(PCF_HTTP_CLIENT_DIR nghttp)
+else()
+  set(PCF_HTTP_CLIENT_DIR http)
+endif()
 
 
 # System packages that are required
@@ -282,13 +289,18 @@ include_directories(${SRC_TOP_DIR}/api-server/provisioning_api/api)
 include_directories(${SRC_TOP_DIR}/api-server/provisioning_api/impl)
 include_directories(${SRC_TOP_DIR}/api-server/provisioning_api/handler)
 include_directories(${SRC_TOP_DIR}/api-server/provisioning_api/model)
+include_directories(${SRC_TOP_DIR}/${MOUNTED_COMMON}/${PCF_HTTP_CLIENT_DIR})
 
 add_executable(pcf
   ${SRC_TOP_DIR}/oai_pcf/main.cpp
   )
 
 ## Common modules
-include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/http/http.cmake)
+if(USE_NGHTTP2_CLIENT)
+  include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/nghttp/nghttp.cmake)
+else()
+  include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/http/http.cmake)
+endif()
 include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/logger/logger.cmake)
 include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/config/config.cmake)
 include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/utils/utils.cmake)
@@ -305,6 +317,10 @@ ENDIF(STATIC_LINKING)
 
 target_link_libraries (pcf ${ASAN}  -Wl,--start-group PCF PCF_API ${CRYPTO_LIBRARIES} -lnghttp2_asio -lboost_system -lboost_thread -lssl -lcrypto -lfmt -lspdlog dl -Wl,--end-group
 pthread m rt event boost_system -lboost_filesystem pistache curl -lyaml-cpp cpr::cpr)
+
+if(USE_NGHTTP2_CLIENT)
+  target_link_libraries(pcf nghttp2 boost_system boost_thread boost_date_time)
+endif()
 
 if (USE_ODB)
     target_link_libraries(pcf -lodb -lodb-mysql -lmysqlclient odb odb-mysql)

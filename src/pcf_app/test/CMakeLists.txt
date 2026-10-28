@@ -71,7 +71,11 @@ include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/model/common_model.cmake)
 # transitively via used_common_files.cmake's own include(smf_model.cmake).
 # Re-included explicitly here for the same reason as the includes above.
 include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/model/smf_model.cmake)
-include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/http/http.cmake)
+if(USE_NGHTTP2_CLIENT)
+  include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/nghttp/nghttp.cmake)
+else()
+  include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/http/http.cmake)
+endif()
 
 target_link_libraries(${NF_TARGET}
   PCF
@@ -84,5 +88,9 @@ target_link_libraries(${NF_TARGET}
   curl
   pthread m rt dl
 )
+
+if(USE_NGHTTP2_CLIENT)
+  target_link_libraries(${NF_TARGET} nghttp2_asio nghttp2 boost_date_time)
+endif()
 
 gtest_discover_tests(${NF_TARGET} PROPERTIES LABELS "unit")

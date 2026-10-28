@@ -47,6 +47,7 @@ function help()
   echo_error "  -l, --lttng                               Build variant that will also include LTTNG"
   echo_error "  -o, --odb                                 Build variant that will also include ODB/MySQL database persistence"
   echo_error "  -t, --tests                                Build and run the PCF unit tests (GoogleTest/CTest)"
+  echo_error "  -n, --nghttp2-client                      Use the nghttp2 HTTP client instead of the CPR HTTP client"
   echo_error " "
 }
 
@@ -94,6 +95,11 @@ function main()
       -o | --odb)
         var_use_odb=1
         cmake_args="$cmake_args -DUSE_ODB=ON"
+        echo ${cmake_args}
+        shift;
+        ;;
+      -n | --nghttp2-client)
+        cmake_args="$cmake_args -DUSE_NGHTTP2_CLIENT=ON"
         echo ${cmake_args}
         shift;
         ;;

@@ -4,55 +4,50 @@
 
 #pragma once
 
-#include <boost/atomic.hpp>
+#include <memory>
 #include <string>
 
 #include "3gpp_29.500.h"
 #include "pcf_profile.hpp"
 #include "pcf_event.hpp"
-#include "PatchItem.h"
 #include "sbi_helper.hpp"
+#include "../common-src/sba/nf_service.hpp"
 
 namespace oai::pcf::app {
 
-class pcf_nrf {
-  const uint32_t HEART_BEAT_TIMER = 10;
-
+/*
+ * PCF side of the NRF procedures (Nnrf_NFManagement). Registration,
+ * heartbeat, re-registration on heartbeat failure, registration retry and
+ * deregistration are provided by oai::sba::nf_service; this class only builds
+ * the PCF NF profile and supplies the PCF configuration.
+ */
+class pcf_nrf : public oai::sba::nf_service {
  public:
-  explicit pcf_nrf(pcf_event& ev);
+  explicit pcf_nrf(const std::shared_ptr<pcf_event>& ev);
   pcf_nrf(pcf_nrf const&)        = delete;
   void operator=(pcf_nrf const&) = delete;
 
-  virtual ~pcf_nrf();
+  ~pcf_nrf() override;
+
+  using oai::sba::nf_service::register_to_nrf;
 
   /**
-   * Start event nf heartbeat procedure
+   * Trigger NF instance registration to NRF with the PCF profile and the NRF
+   * address from the configuration
+   * @return true if the PCF is registered, false otherwise (a retry is then
+   * scheduled by nf_service)
    */
-  void start_event_nf_heartbeat(std::string& remoteURI);
-  /**
-   * Trigger NF heartbeat procedure
-   */
-  void trigger_nf_heartbeat_procedure(uint64_t ms);
-  /**
-   * Trigger NF instance registration to NRF
-   */
-  void register_to_nrf();
+  bool register_to_nrf();
 
-  /**
-   * Trigger NF instance de-registration to NRF
-   */
-  void deregister_to_nrf();
+ protected:
+  bool nrf_registration_enabled() const override;
 
  private:
   pcf_profile m_nf_instance_profile;  // PCF profile
-  std::string m_pcf_instance_id;      // PCF instance id
-  // for Event Handling
-  pcf_event& m_event_sub;
-  bs2::connection m_task_connection;
-  std::string m_nrf_url;
+  oai::common::sbi::nf_addr_t m_nrf_addr;
 
   /**
-   * Generate PCF profile and stores it in nf_instance_profile
+   * Generate PCF profile and stores it in m_nf_instance_profile
    */
   void generate_pcf_profile();
 };
