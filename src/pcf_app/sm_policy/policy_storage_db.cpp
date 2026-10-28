@@ -159,23 +159,9 @@ void policy_storage_db::insert_associations(
   Logger::pcf_app().debug("Not implemented: Inserting associations into DB");
 }
 
-void policy_storage_db::insert_ip_association(
-    const std::string& dnn, const std::string& association_id) {
+void policy_storage_db::remove_associations(const std::string&) {
   // TODO implement
-  Logger::pcf_app().debug("Not implemented: Inserting IP association into DB");
-}
-
-void policy_storage_db::insert_supi_association(
-    const std::string& supi, const std::string& association_id) {
-  // TODO implement
-  Logger::pcf_app().debug(
-      "Not implemented: Inserting SUPI association into DB");
-}
-
-void policy_storage_db::insert_dnn_association(
-    const std::string& dnn, const std::string& association_id) {
-  // TODO implement
-  Logger::pcf_app().debug("Not implemented: Inserting DNN association into DB");
+  Logger::pcf_app().debug("Not implemented: Removing associations from DB");
 }
 
 std::shared_ptr<std::string> policy_storage_db::find_association(
