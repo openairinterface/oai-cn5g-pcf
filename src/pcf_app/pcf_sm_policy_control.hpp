@@ -20,7 +20,7 @@
 // 3gpp_29.500.h (not the heavier http_definitions.hpp) is deliberate here:
 // it's the lightweight header that declares method_e, with none of
 // http_definitions.hpp's <cpr/cpr.h>/<curl/curl.h>/<fmt/format.h>/
-// <nlohmann/json.hpp> pulled in. oai::http::request/response below are
+// <nlohmann/json.hpp> pulled in. The HTTP client request/response below are
 // forward-declared instead of included for the same reason -- this header
 // is included well beyond pcf_smpc's own .cpp (e.g. transitively via
 // pcf_app.hpp into api-server sources), and those consumers have no need
@@ -37,10 +37,28 @@
 #include "pcf_event.hpp"
 #include "pcf_runtime_policy.hpp"
 
+// The HTTP client implementation is selected at build time
+// (USE_NGHTTP2_CLIENT, see oai_pcf/CMakeLists.txt), the same way as in
+// oai::sba::nf_service. sbi_http names whichever one is in use.
+#if defined(USE_NGHTTP2_CLIENT) && USE_NGHTTP2_CLIENT
+namespace oai::nghttp2 {
+struct request;
+struct response;
+class http_client;
+}  // namespace oai::nghttp2
+namespace oai::pcf::app {
+namespace sbi_http = oai::nghttp2;
+}  // namespace oai::pcf::app
+#else
 namespace oai::http {
 struct request;
 struct response;
+class http_client;
 }  // namespace oai::http
+namespace oai::pcf::app {
+namespace sbi_http = oai::http;
+}  // namespace oai::pcf::app
+#endif
 
 namespace oai::pcf::app {
 
@@ -49,8 +67,8 @@ namespace oai::pcf::app {
 // shared across every CN5G NF -- not ours to change), so injecting
 // std::shared_ptr<http_client> alone would not give mockability; this
 // std::function seam does.
-using http_send_fn = std::function<oai::http::response(
-    oai::common::sbi::method_e, const oai::http::request&)>;
+using http_send_fn = std::function<sbi_http::response(
+    oai::common::sbi::method_e, const sbi_http::request&)>;
 
 /**
  * @brief Service class to handle Session Management Policies

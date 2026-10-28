@@ -25,7 +25,7 @@ extern std::unique_ptr<pcf_config> pcf_cfg;
 extern std::unique_ptr<database_wrapper_abstraction> db_connector;
 
 //------------------------------------------------------------------------------
-pcf_app::pcf_app(pcf_event& ev) : m_event_sub(ev) {
+pcf_app::pcf_app(const std::shared_ptr<pcf_event>& ev) : m_event_sub(*ev) {
   Logger::pcf_app().startup("Starting...");
 
   if (pcf_cfg->use_db_policy_storage() &&
@@ -71,7 +71,7 @@ pcf_app::pcf_app(pcf_event& ev) : m_event_sub(ev) {
           pcf_cfg->get_notify_failure_recovery());
 
   m_pcf_smpc_service = std::make_shared<pcf_smpc>(
-      m_policy_storage, ev, qos_auth_policy, notify_failure_recovery_pol);
+      m_policy_storage, *ev, qos_auth_policy, notify_failure_recovery_pol);
 
   // App-session storage backed by the generic in-memory store (swap in a
   // DB-backed crud_store here later); it generates restart-safe UUID ids and
@@ -95,7 +95,7 @@ pcf_app::pcf_app(pcf_event& ev) : m_event_sub(ev) {
       notify_failure_recovery_pol);
 
   m_pcf_policy_authorization_service =
-      std::make_shared<pcf_policy_authorization>(m_policy_auth_context, ev);
+      std::make_shared<pcf_policy_authorization>(m_policy_auth_context, *ev);
 }
 
 //------------------------------------------------------------------------------
