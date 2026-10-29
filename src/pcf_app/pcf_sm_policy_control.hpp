@@ -138,6 +138,11 @@ class pcf_smpc {
       std::string& problem_details);
 
  private:
+  // TODO [PAS] Association ids restart from the first value when the PCF
+  // restarts. App-sessions store the id they were bound to, so before
+  // app-sessions are persisted the ids must be unique across restarts (e.g. a
+  // UUID); otherwise a reloaded app-session can point at another UE's PDU
+  // session.
   oai::utils::uint_generator<uint32_t> m_association_id_generator;
 
   std::unordered_map<

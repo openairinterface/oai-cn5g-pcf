@@ -135,6 +135,13 @@ individual_application_session_context_document_api_handler::mod_app_session(
       problem_details.setCause(problem_description);
       http_code = http_status_code::NOT_FOUND;
       break;
+    // The PDU session the AF session was bound to has ended. TS 29.514 defines
+    // no cause for PATCH here; this is the cause describing the condition
+    // (Table 5.7.3-1).
+    case status_code::PDU_SESSION_NOT_AVAILABLE:
+      problem_details.setCause("PDU_SESSION_NOT_AVAILABLE");
+      http_code = http_status_code::INTERNAL_SERVER_ERROR;
+      break;
     default:
       problem_details.setCause("INTERNAL_ERROR");
       http_code = http_status_code::INTERNAL_SERVER_ERROR;
