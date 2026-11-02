@@ -60,12 +60,54 @@ FlowDirectionRm flow_direction_from_desc(const std::string& desc) {
   return dir;
 }
 
+// Re-encode an N5 flow description into the N7 form. TS 29.514 clause 5.6.3.2
+// defers to TS 29.214 clause 5.3.8, where the direction token carries the
+// uplink/downlink distinction and an uplink filter reads "permit in" from the
+// UE to the remote end. TS 29.512 clause 5.6.3.2 defers to TS 29.212
+// clause 5.4.2, where the direction "shall be keyword out", the IPFilterRule
+// source is the remote end and the destination is the UE, and the direction
+// travels in the accompanying flowDirection instead. An uplink description
+// therefore has to be flipped before it goes into a PCC rule; forwarding
+// "permit in" unchanged leaves the SMF with a filter it cannot parse.
+std::string to_n7_flow_description(const std::string& desc) {
+  static const std::string kPermitIn = "permit in ";
+  static const std::string kFrom     = " from ";
+  static const std::string kTo       = " to ";
+
+  // Downlink ("permit out ...") is already in the N7 form: remote -> UE.
+  if (desc.rfind(kPermitIn, 0) != 0) {
+    return desc;
+  }
+
+  const std::size_t from_pos = desc.find(kFrom);
+  const std::size_t to_pos   = from_pos == std::string::npos ?
+                                   std::string::npos :
+                                   desc.find(kTo, from_pos + kFrom.size());
+  if (from_pos == std::string::npos || to_pos == std::string::npos) {
+    Logger::pcf_app().warn(fmt::format(
+        "Cannot re-encode uplink flow description '{}' for N7: no 'from'/'to' "
+        "found. Forwarding it unchanged; the SMF is likely to reject it.",
+        desc));
+    return desc;
+  }
+
+  const std::string proto =
+      desc.substr(kPermitIn.size(), from_pos - kPermitIn.size());
+  const std::string src =
+      desc.substr(from_pos + kFrom.size(), to_pos - (from_pos + kFrom.size()));
+  const std::string dst = desc.substr(to_pos + kTo.size());
+
+  return "permit out " + proto + kFrom + dst + kTo + src;
+}
+
 // Build one FlowInformation (SDF filter) from an IPFilterRule flow-description
 // string. TS 29.512 §4.1.4.2.1 / §5.6.2.3: PCC rule SDF template carries the
 // flow descriptions; TS 29.514 §5.6.2.7: MediaSubComponent.fDescs.
 FlowInformation flow_info_from_desc(const std::string& desc) {
   FlowInformation flow_info;
-  flow_info.setFlowDescription(desc);
+  // The direction is read from the original N5 token; the description itself
+  // is re-encoded into the "permit out" form N7 requires.
+  flow_info.setFlowDescription(to_n7_flow_description(desc));
   flow_info.setFlowDirection(flow_direction_from_desc(desc));
   flow_info.setPacketFilterUsage(true);
   return flow_info;

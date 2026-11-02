@@ -619,12 +619,72 @@ TEST(QosDataSdf, FlowFiltersAreBuiltFromSubComponentDescriptions) {
   QosData out;
   deriver.create_qos_data_from_media_component(mc, "s", decision, qos_ctx, out);
 
+  // Both filters reach N7 as "permit out" with the UE on the destination side
+  // (TS 29.212 clause 5.4.2); the uplink one is distinguished only by its
+  // flowDirection, so the two descriptions are identical here by design.
   const auto& flows = only_pcc_rule(decision).getFlowInfos();
   ASSERT_EQ(flows.size(), 2u);
-  std::set<std::string> descs;
-  for (const auto& f : flows) descs.insert(f.getFlowDescription());
-  EXPECT_TRUE(descs.count("permit out ip from 1.2.3.4 to assigned") > 0);
-  EXPECT_TRUE(descs.count("permit in ip from assigned to 1.2.3.4") > 0);
+  std::set<FlowDirection_anyOf::eFlowDirection_anyOf> dirs;
+  for (const auto& f : flows) {
+    EXPECT_EQ(f.getFlowDescription(), "permit out ip from 1.2.3.4 to assigned");
+    dirs.insert(f.getFlowDirection().getEnumValue());
+  }
+  EXPECT_TRUE(
+      dirs.count(FlowDirection_anyOf::eFlowDirection_anyOf::DOWNLINK) > 0);
+  EXPECT_TRUE(
+      dirs.count(FlowDirection_anyOf::eFlowDirection_anyOf::UPLINK) > 0);
+}
+
+// TS 29.514 clause 5.6.3.2 -> TS 29.214 clause 5.3.8 encode an uplink SDF as
+// "permit in" from the UE; TS 29.512 clause 5.6.3.2 -> TS 29.212 clause 5.4.2
+// require "permit out" with the UE as destination on N7. The uplink filter
+// must therefore be flipped, not forwarded verbatim.
+TEST(QosDataSdf, UplinkFlowDescriptionIsReEncodedForN7) {
+  MediaComponent mc;
+  std::map<std::string, MediaSubComponent> subs;
+  subs["1"] = make_sub(1, {"permit in ip from 12.1.1.2 5000 to 0.0.0.0/0"});
+  mc.setMedSubComps(subs);
+  SmPolicyDecision decision;
+  qos_context qos_ctx;
+  fake_qos_reference_store store;
+  operator_qos_policy op_policy;
+  qos_deriver deriver(store, op_policy);
+  QosData out;
+  deriver.create_qos_data_from_media_component(mc, "s", decision, qos_ctx, out);
+
+  const auto& flows = only_pcc_rule(decision).getFlowInfos();
+  ASSERT_EQ(flows.size(), 1u);
+  EXPECT_EQ(
+      flows.front().getFlowDescription(),
+      "permit out ip from 0.0.0.0/0 to 12.1.1.2 5000");
+  EXPECT_EQ(
+      flows.front().getFlowDirection().getEnumValue(),
+      FlowDirection_anyOf::eFlowDirection_anyOf::UPLINK);
+}
+
+// A downlink description is already in the N7 form and must pass through
+// untouched.
+TEST(QosDataSdf, DownlinkFlowDescriptionIsLeftUnchanged) {
+  MediaComponent mc;
+  std::map<std::string, MediaSubComponent> subs;
+  subs["1"] = make_sub(1, {"permit out ip from 0.0.0.0/0 to 12.1.1.2 5000"});
+  mc.setMedSubComps(subs);
+  SmPolicyDecision decision;
+  qos_context qos_ctx;
+  fake_qos_reference_store store;
+  operator_qos_policy op_policy;
+  qos_deriver deriver(store, op_policy);
+  QosData out;
+  deriver.create_qos_data_from_media_component(mc, "s", decision, qos_ctx, out);
+
+  const auto& flows = only_pcc_rule(decision).getFlowInfos();
+  ASSERT_EQ(flows.size(), 1u);
+  EXPECT_EQ(
+      flows.front().getFlowDescription(),
+      "permit out ip from 0.0.0.0/0 to 12.1.1.2 5000");
+  EXPECT_EQ(
+      flows.front().getFlowDirection().getEnumValue(),
+      FlowDirection_anyOf::eFlowDirection_anyOf::DOWNLINK);
 }
 
 // TS 29.512 §4.1.4.2.1: a PCC rule with an SDF template must carry at least
