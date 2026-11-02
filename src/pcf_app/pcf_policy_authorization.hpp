@@ -165,6 +165,24 @@ class pcf_policy_authorization {
       const std::string& association_id, std::uint64_t version,
       oai::pcf::app::sm_policy::smf_notify_outcome reason);
 
+  /**
+   * @brief Fetches the current decision and version of the SM policy
+   * association `session` was bound to when it was created.
+   *
+   * Modification and termination of an AF session act on the PDU session it
+   * was bound to; they do not perform session binding again
+   * [TS 29.513 §5.2.2.2.2.3 step 2, §6.2; TS 23.503 §6.1.3.2.2]. The
+   * creation-time binding attributes cannot be updated by the AF and may be
+   * stale, e.g. after a UE_IP_CH.
+   *
+   * @return true if the association still exists; false if the app-session has
+   * none or the PDU session has ended
+   */
+  bool find_bound_association(
+      const policy_auth::app_session& session,
+      std::optional<std::string>& association_id,
+      oai::_3gpp::model::SmPolicyDecision& decision, std::uint64_t& version);
+
   // Per-attempt recompute for POST /app-sessions's derive (called once per
   // apply() attempt against the current base): derives this request's QoS/SFC
   // into `working` (side-effect-free w.r.t. shared session state), authorizes,

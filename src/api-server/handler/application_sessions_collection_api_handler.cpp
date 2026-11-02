@@ -53,6 +53,11 @@ api_response application_sessions_collection_api_handler::post_app_sessions(
       problem_details.setCause(problem_description);
       http_code = http_status_code::NOT_FOUND;
       break;
+    // Session binding failed [TS 29.514 §4.2.2.2, Table 5.7.3-1].
+    case status_code::PDU_SESSION_NOT_AVAILABLE:
+      problem_details.setCause("PDU_SESSION_NOT_AVAILABLE");
+      http_code = http_status_code::INTERNAL_SERVER_ERROR;
+      break;
     default:
       problem_details.setCause("INTERNAL_ERROR");
       http_code = http_status_code::INTERNAL_SERVER_ERROR;

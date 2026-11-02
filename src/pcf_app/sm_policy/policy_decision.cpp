@@ -83,6 +83,17 @@ status_code policy_decision::handle_ip_address_change(
   // TODO actually also change m_decision, method should not be static
   problem_details  = "";
   status_code code = status_code::INVALID_PARAMETERS;
+  // A released UE IPv4 address no longer identifies the PDU session, so it
+  // must stop binding AF requests [TS 29.512 §4.2.4.2, TS 29.513 §5.2.2.3
+  // step 18]. Applied before a newly allocated address, so a report carrying
+  // both ends on the new one.
+  if (update.relIpv4AddressIsSet()) {
+    if (orig_context.ipv4AddressIsSet() &&
+        orig_context.getIpv4Address() == update.getRelIpv4Address()) {
+      orig_context.unsetIpv4Address();
+    }
+    code = status_code::OK;
+  }
   if (update.ipv4AddressIsSet()) {
     orig_context.setIpv4Address(update.getIpv4Address());
     code = status_code::OK;
@@ -91,8 +102,8 @@ status_code policy_decision::handle_ip_address_change(
     orig_context.setIpv6AddressPrefix(update.getIpv6AddressPrefix());
     code = status_code::OK;
   }
-  if (update.relIpv4AddressIsSet() || update.relIpv6AddressPrefixIsSet()) {
-    Logger::pcf_app().debug("Ignore released IP address");
+  if (update.relIpv6AddressPrefixIsSet()) {
+    Logger::pcf_app().debug("Ignore released IPv6 prefix");
     code = status_code::OK;
   }
   if (update.addIpv6AddrPrefixesIsSet() || update.relIpv6AddressPrefixIsSet()) {
