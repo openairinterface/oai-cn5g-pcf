@@ -18,9 +18,7 @@ namespace oai::pcf::app {
 
 using namespace oai::_3gpp::model;
 
-typedef bs2::signal_type<
-    void(uint64_t), bs2::keywords::mutex_type<bs2::dummy_mutex>>::type
-    task_sig_t;
+// task_sig_t (NF heartbeat tick) is provided by oai::sba::nf_event.
 
 // Signal for Loss of Connectivity
 // SUPI, Connectivity status, HTTP version

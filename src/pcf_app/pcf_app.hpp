@@ -44,7 +44,7 @@ namespace oai::pcf::app {
 
 class pcf_app {
  public:
-  explicit pcf_app(pcf_event& ev);
+  explicit pcf_app(const std::shared_ptr<pcf_event>& ev);
   pcf_app(pcf_app const&)        = delete;
   void operator=(pcf_app const&) = delete;
 

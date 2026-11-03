@@ -10,7 +10,9 @@
 // isn't part of this executable (this target has its own gtest main.cpp
 // instead) -- this stub supplies just the storage so the link succeeds.
 #include "http_client.hpp"
+#include "pcf_sm_policy_control.hpp"
 
 #include <memory>
 
-std::shared_ptr<oai::http::http_client> http_client_inst = nullptr;
+std::shared_ptr<oai::pcf::app::sbi_http::http_client> http_client_inst =
+    nullptr;

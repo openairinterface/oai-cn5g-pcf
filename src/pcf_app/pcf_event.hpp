@@ -10,14 +10,16 @@
 namespace bs2 = boost::signals2;
 
 #include "pcf_event_sig.hpp"
-#include "task_manager.hpp"
+#include "../common-src/sba/nf_event.hpp"
 
 namespace oai::pcf::app {
-class task_manager;
-class pcf_event {
+using oai::sba::task_sig_t;
+
+class pcf_event : public oai::sba::nf_event {
  public:
-  pcf_event() {};
+  pcf_event()                      = default;
   pcf_event(pcf_event const&)      = delete;
+  ~pcf_event() override            = default;
   void operator=(pcf_event const&) = delete;
 
   static pcf_event& get_instance() {
@@ -28,21 +30,9 @@ class pcf_event {
   // class register/handle event
   friend class pcf_app;
   friend class pcf_nrf;
-  friend class task_manager;
   friend class pcf_policy_authorization;
   friend class pcf_smpc;
 
-  //------------------------------------------------------------------------------
-  /*
-   * Subscribe to the task tick event
-   * @param [const task_sig_t::slot_type &] sig
-   * @param [uint64_t] period: interval between two events
-   * @param [uint64_t] start:
-   * @return void
-   */
-  bs2::connection subscribe_task_nf_heartbeat(
-      const task_sig_t::slot_type& sig, uint64_t period, uint64_t start = 0);
-  //------------------------------------------------------------------------------
   /*
    * Subscribe to UE Loss of Connectivity Status signal
    * @param [const loss_of_connectivity_sig_t::slot_type&] sig: slot_type
@@ -125,8 +115,6 @@ class pcf_event {
   // subscribe_*() here plus a member below.
 
  private:
-  task_sig_t task_tick;
-
   loss_of_connectivity_sig_t
       loss_of_connectivity;  // Signal for Loss of Connectivity Report
   ue_reachability_for_data_sig_t

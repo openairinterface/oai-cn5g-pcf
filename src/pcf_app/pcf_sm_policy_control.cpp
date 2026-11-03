@@ -25,11 +25,12 @@ using namespace oai::pcf::app::sm_policy;
 using namespace oai::config::pcf;
 using namespace oai::_3gpp::model;
 using namespace oai::_3gpp::model;
-using namespace oai::http;
+using oai::pcf::app::sbi_http::request;
+using oai::pcf::app::sbi_http::response;
 
 using namespace std;
 
-extern std::shared_ptr<oai::http::http_client> http_client_inst;
+extern std::shared_ptr<sbi_http::http_client> http_client_inst;
 
 namespace {
 // Retry-drain heartbeat period [N5_QoS_Phase2_§2.8 plan §5.2] -- well above
