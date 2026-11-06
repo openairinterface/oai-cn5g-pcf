@@ -244,8 +244,8 @@ class pcf_smpc {
   // id/precedence-band convention [TS 23.503 §6.1.3.7, TS 29.512 §4.1.4.2.1],
   // and network-slice resource admission control [TS 29.512 §4.2.6.8,
   // TS 23.503 §6.1.4]. Today collisions are avoided by construction (the PA
-  // side's id prefix + reserved precedence band) and the only capacity gate is
-  // the per-session cumulative Session-AMBR check in
+  // side's id prefix + a precedence no other rule of the PDU session uses) and
+  // the only capacity gate is the per-session cumulative Session-AMBR check in
   // validate_qos_authorization().
 
   // TODO [QOS-MON] Monitoring coordination (Phase 4) [TS 29.512 §4.2.3.25].

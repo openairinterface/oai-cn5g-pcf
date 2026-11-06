@@ -24,14 +24,6 @@
 #include "bitrate.hpp"
 #include "logger.hpp"
 #include "policy_auth/app_session.hpp"
-#include "uint_generator.hpp"
-
-// Base precedence for Policy-Authorization-derived PCC rules. TS 23.503 §6.3.1
-// requires PCC rule precedence to be unambiguous and leaves the numeric range
-// to operator/PCF configuration; we reserve the 1000-1999 band for PA-derived
-// rules (distinct from the SM Policy Control side) per the QoS implementation
-// plan.
-#define PA_QOS_PRECEDENCE_BASE 1000
 
 namespace oai::pcf::app::policy_auth {
 
@@ -40,6 +32,37 @@ using namespace oai::pcf::app;
 using namespace oai::utils;
 
 namespace {
+
+// Precedence values Policy Authorization assigns to the PCC rules it derives.
+// A precedence is 0..255, and 70..99 is for PCC rules subject to Reflective
+// QoS [TS 29.512 §5.6.2.6 NOTE 4]; it must be unambiguous within the PDU
+// session [TS 23.503 §6.3.1]. Values from 100 put the AF's flows before
+// operator-provisioned catch-all rules, which use the top of the range.
+constexpr int32_t kPaRulePrecedenceFirst = 100;
+constexpr int32_t kPaRulePrecedenceLast  = 255;
+
+// The precedence of PCC rule `rule_id`: kept on a modify-in-place so the
+// SMF's rule order is stable, else the lowest value from
+// kPaRulePrecedenceFirst that no PCC rule of the PDU session uses. None when
+// the range is exhausted.
+std::optional<int32_t> allocate_pa_rule_precedence(
+    const std::map<std::string, PccRule>& pcc_rules,
+    const std::string& rule_id) {
+  const auto existing = pcc_rules.find(rule_id);
+  if (existing != pcc_rules.end() && existing->second.precedenceIsSet()) {
+    return existing->second.getPrecedence();
+  }
+  std::set<int32_t> used;
+  for (const auto& entry : pcc_rules) {
+    if (entry.second.precedenceIsSet())
+      used.insert(entry.second.getPrecedence());
+  }
+  for (int32_t precedence = kPaRulePrecedenceFirst;
+       precedence <= kPaRulePrecedenceLast; ++precedence) {
+    if (used.count(precedence) == 0) return precedence;
+  }
+  return std::nullopt;
+}
 
 // FlowDirection for an SDF filter, inferred from the IPFilterRule direction
 // token. TS 29.212 clause 5.4.2 / TS 29.514 FlowDescription: "permit out ..."
@@ -617,21 +640,19 @@ handler_result qos_deriver::create_qos_data_from_media_component(
   qos_data_map.insert_or_assign(qos_id, qos_data);
   decision.setQosDecs(qos_data_map);
 
-  // Precedence in the PA band [TS 29.512 §4.1.4.2.1, TS 23.503 §6.3.1]. On a
-  // modify-in-place, reuse the existing rule's precedence so SMF rule ordering
-  // is stable; on a new flow, assign a fresh unique value from the uid
-  // generator.
-  auto pcc_rules_map       = decision.getPccRules();
-  const auto existing_rule = pcc_rules_map.find(rule_id);
-  int32_t precedence;
-  if (existing_rule != pcc_rules_map.end() &&
-      existing_rule->second.precedenceIsSet()) {
-    precedence = existing_rule->second.getPrecedence();
-  } else {
-    auto& uid_generator = uint_uid_generator<uint32_t>::get_instance();
-    precedence =
-        PA_QOS_PRECEDENCE_BASE + static_cast<int32_t>(uid_generator.get_uid());
+  // Precedence [TS 29.512 §4.1.4.2.1, §5.6.2.6 NOTE 4; TS 23.503 §6.3.1].
+  auto pcc_rules_map = decision.getPccRules();
+  const std::optional<int32_t> allocated =
+      allocate_pa_rule_precedence(pcc_rules_map, rule_id);
+  if (!allocated) {
+    Logger::pcf_app().error(fmt::format(
+        "No PCC rule precedence left in {}..{} for '{}' [TS 29.512 §5.6.2.6]",
+        kPaRulePrecedenceFirst, kPaRulePrecedenceLast, rule_id));
+    return {
+        .status          = status_code::FORBIDDEN,
+        .problem_details = kCauseRequestedServiceNotAuthorized};
   }
+  const int32_t precedence = *allocated;
 
   PccRule pcc_rule;
   pcc_rule.setPccRuleId(rule_id);
