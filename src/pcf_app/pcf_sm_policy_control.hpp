@@ -250,13 +250,14 @@ class pcf_smpc {
 
   // TODO [QOS-MON] Monitoring coordination (Phase 4) [TS 29.512 §4.2.3.25].
 
-  // for Event Handling
+  // for Event Handling. Scoped: disconnected when this object is destroyed,
+  // so no signal calls into it afterwards.
   pcf_event& m_event_sub;
-  bs2::connection m_sm_session_binding_connection;
-  bs2::connection m_sm_update_decision_connection;
-  bs2::connection m_notify_committed_decision_connection;
-  bs2::connection m_task_tick_connection;
-  bs2::connection m_get_association_decision_connection;
+  bs2::scoped_connection m_sm_session_binding_connection;
+  bs2::scoped_connection m_sm_update_decision_connection;
+  bs2::scoped_connection m_notify_committed_decision_connection;
+  bs2::scoped_connection m_task_tick_connection;
+  bs2::scoped_connection m_get_association_decision_connection;
 };
 }  // namespace oai::pcf::app
 #endif /* FILE_PCF_SM_POLICY_CONTROL_SEEN */

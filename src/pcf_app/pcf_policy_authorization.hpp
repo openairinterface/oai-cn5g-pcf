@@ -223,9 +223,10 @@ class pcf_policy_authorization {
   // through every call (qos_ref_store, op_policy), bound once at construction.
   policy_auth::qos_deriver m_qos_deriver;
 
-  // for Event Handling
+  // for Event Handling. Scoped: disconnected when this object is destroyed,
+  // so no signal calls into it afterwards.
   pcf_event& m_event_sub;
-  bs2::connection m_sm_policy_update_failed_connection;
+  bs2::scoped_connection m_sm_policy_update_failed_connection;
 
   // TODO [QOS-SUB] AF notification infrastructure (Phase 3) [TS 29.514 §4.2.5,
   // TS 29.500 §6.2]: an HTTP/2 notification client, a subscription registry

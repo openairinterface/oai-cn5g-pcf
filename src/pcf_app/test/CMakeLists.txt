@@ -47,6 +47,7 @@ add_executable(${NF_TARGET}
   test_policy_storage_associations.cpp
   test_sm_policy_association_index.cpp
   test_sm_policy_create.cpp
+  test_event_connections.cpp
 )
 
 ## Common modules (re-included with NF_TARGET=pcf_unit_tests so their
