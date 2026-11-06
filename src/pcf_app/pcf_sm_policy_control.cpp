@@ -37,6 +37,12 @@ namespace {
 // the backoff schedule itself. An internal polling detail, not an operator
 // policy choice, so unlike TTL/cap/retry-count/backoff it isn't config-driven.
 constexpr std::uint64_t kRetryDrainCheckPeriodMs = 1000;
+
+// The Npcf_SMPolicyControl features negotiated with any SMF, as a
+// SupportedFeatures string [TS 29.571 §5.2.2]: none. The negotiated set is
+// what both sides support [TS 29.500 §6.6.2], and this PCF supports no
+// optional Npcf_SMPolicyControl feature [TS 29.512 §5.8].
+constexpr const char* kSmPolicyNegotiatedFeatures = "0";
 }  // namespace
 
 //------------------------------------------------------------------------------
@@ -548,6 +554,9 @@ status_code pcf_smpc::create_sm_policy_handler(
       }
       decision.setQosDecs(qos_decs);
     }
+
+    // Negotiated features, supplied in the create answer [TS 29.512 §5.6.2.4]
+    decision.setSuppFeat(kSmPolicyNegotiatedFeatures);
     assoc.set_sm_policy_decision(decision);
 
     // Index for session binding only once stored, and under the same lock, so
