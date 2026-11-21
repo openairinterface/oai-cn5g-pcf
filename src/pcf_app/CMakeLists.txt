@@ -15,15 +15,22 @@ include_directories(${SRC_TOP_DIR}/api-server/provisioning_api/api)
 include_directories(${SRC_TOP_DIR}/api-server/provisioning_api/impl)
 include_directories(${SRC_TOP_DIR}/api-server/provisioning_api/handler)
 include_directories(${SRC_TOP_DIR}/api-server/provisioning_api/model)
+include_directories(${SRC_TOP_DIR}/${MOUNTED_COMMON}/sba)
+include_directories(${SRC_TOP_DIR}/${MOUNTED_COMMON}/${PCF_HTTP_CLIENT_DIR})
 
 ## Common modules
-include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/http/http.cmake)
+if(USE_NGHTTP2_CLIENT)
+  include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/nghttp/nghttp.cmake)
+else()
+  include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/http/http.cmake)
+endif()
 include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/common/common.cmake)
 include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/utils/utils.cmake)
 include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/logger/logger.cmake)
 include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/config/config.cmake)
 include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/model/pcf_model.cmake)
 include(${SRC_TOP_DIR}/common/utils/utils.cmake)
+include(${SRC_TOP_DIR}/${MOUNTED_COMMON}/sba/sba.cmake)
 
 add_library (PCF STATIC
   pcf_config_types.cpp
@@ -35,7 +42,6 @@ add_library (PCF STATIC
   pcf_event.cpp
   sm_policy_delta.cpp
   pcf_sm_policy_control.cpp
-  task_manager.cpp
   sm_policy/individual_sm_association.cpp
   sm_policy/retry_drain_queue.cpp
   sm_policy/smf_notify_response_classifier.cpp

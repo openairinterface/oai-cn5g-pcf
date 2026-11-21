@@ -29,7 +29,7 @@
 #include "nf_launch.hpp"
 #include "conversions.hpp"
 #include "http_client.hpp"
-#include "task_manager.hpp"
+#include "../common-src/sba/task_manager.hpp"
 
 #include <iostream>
 #include <csignal>
@@ -48,9 +48,9 @@ std::unique_ptr<pcf_app> pcf_app_inst                      = nullptr;
 std::unique_ptr<pcf_config> pcf_cfg                        = nullptr;
 std::unique_ptr<PCFApiServer> pcf_api_server_1             = nullptr;
 std::unique_ptr<pcf_http2_server> pcf_api_server_2         = nullptr;
-std::shared_ptr<oai::http::http_client> http_client_inst   = nullptr;
+std::shared_ptr<oai::sba::http_client> http_client_inst    = nullptr;
 std::unique_ptr<database_wrapper_abstraction> db_connector = nullptr;
-std::unique_ptr<task_manager> tm_inst                      = nullptr;
+std::unique_ptr<oai::sba::task_manager> tm_inst            = nullptr;
 std::unique_ptr<oai::config::lttng_configuration> lttng_config_yaml;
 //------------------------------------------------------------------------------
 void signal_handler_sigint(int s) {
@@ -141,19 +141,19 @@ int main(int argc, char** argv) {
   pcf_cfg->display();
 
   // HTTP Client
-  http_client_inst = oai::http::http_client::create_instance(
+  http_client_inst = oai::sba::http_client::create_instance(
       Logger::pcf_client(), oai::common::sbi::kNfDefaultHttpRequestTimeout,
       pcf_cfg->local().get_sbi().get_if_name(), pcf_cfg->get_http_version());
 
   // Event subsystem
-  pcf_event ev;
+  auto ev = std::make_shared<pcf_event>();
 
   // PCF application layer
   pcf_app_inst = std::make_unique<pcf_app>(ev);
 
   // Task Manager
-  tm_inst = std::make_unique<task_manager>(ev);
-  std::thread task_manager_thread(&task_manager::run, tm_inst.get());
+  tm_inst = std::make_unique<oai::sba::task_manager>(ev);
+  std::thread task_manager_thread(&oai::sba::task_manager::run, tm_inst.get());
 
   std::string v4_address =
       oai::utils::conv::toString(pcf_cfg->local().get_sbi().get_addr4());
