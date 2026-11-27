@@ -451,9 +451,9 @@ TEST(Is5qiStandardized, DynamicRangeValuesAreNotStandardized) {
  * Dynamic PCC rule precedence and ordering.
  */
 
-// TS 23.503 §6.3.1: PCC rule precedence shall be unambiguous; PA-derived rules
-// stay inside the reserved PA precedence band.
-TEST(QosDataGeneration, PrecedenceIsInThePaBand) {
+// TS 29.512 §5.6.2.6 NOTE 4: a PCC rule precedence is 0..255, and 70..99 is
+// for rules subject to Reflective QoS. PA-derived rules start at 100.
+TEST(QosDataGeneration, PrecedenceIsInTheRangeOfPccRules) {
   MediaComponent mc;
   SmPolicyDecision decision;
   qos_context qos_ctx;
@@ -461,10 +461,61 @@ TEST(QosDataGeneration, PrecedenceIsInThePaBand) {
   operator_qos_policy op_policy;
   qos_deriver deriver(store, op_policy);
   QosData out;
-  deriver.create_qos_data_from_media_component(mc, "s", decision, qos_ctx, out);
+  ASSERT_FALSE(
+      deriver
+          .create_qos_data_from_media_component(mc, "s", decision, qos_ctx, out)
+          .problem_details.has_value());
 
-  EXPECT_GE(only_pcc_rule(decision).getPrecedence(), 1000);
-  EXPECT_LT(only_pcc_rule(decision).getPrecedence(), 100000);
+  EXPECT_EQ(only_pcc_rule(decision).getPrecedence(), 100);
+}
+
+// TS 23.503 §6.3.1: the precedence is unambiguous within the PDU session: a
+// new rule takes the lowest value from 100 no rule of the session uses.
+TEST(QosDataGeneration, PrecedenceSkipsValuesInUse) {
+  MediaComponent mc;
+  mc.setMedCompN(2);
+  SmPolicyDecision decision;
+  auto rules = decision.getPccRules();
+  for (int32_t precedence : {100, 101, 254}) {
+    rules["provisioned-" + std::to_string(precedence)] =
+        make_pcc_rule("provisioned-" + std::to_string(precedence), precedence);
+  }
+  decision.setPccRules(rules);
+  qos_context qos_ctx;
+  fake_qos_reference_store store;
+  operator_qos_policy op_policy;
+  qos_deriver deriver(store, op_policy);
+  QosData out;
+  ASSERT_FALSE(
+      deriver
+          .create_qos_data_from_media_component(mc, "s", decision, qos_ctx, out)
+          .problem_details.has_value());
+
+  EXPECT_EQ(decision.getPccRules().at("PA-QOS-s-2").getPrecedence(), 102);
+}
+
+// No precedence left in 100..255: the service cannot be authorized.
+TEST(QosDataGeneration, NoPrecedenceLeftIsRefused) {
+  MediaComponent mc;
+  SmPolicyDecision decision;
+  auto rules = decision.getPccRules();
+  for (int32_t precedence = 100; precedence <= 255; ++precedence) {
+    rules["r" + std::to_string(precedence)] =
+        make_pcc_rule("r" + std::to_string(precedence), precedence);
+  }
+  decision.setPccRules(rules);
+  qos_context qos_ctx;
+  fake_qos_reference_store store;
+  operator_qos_policy op_policy;
+  qos_deriver deriver(store, op_policy);
+  QosData out;
+
+  const handler_result r = deriver.create_qos_data_from_media_component(
+      mc, "s", decision, qos_ctx, out);
+
+  ASSERT_TRUE(r.problem_details.has_value());
+  EXPECT_EQ(r.status, status_code::FORBIDDEN);
+  EXPECT_EQ(r.problem_details.value(), "REQUESTED_SERVICE_NOT_AUTHORIZED");
 }
 
 // TS 23.503 §6.3.1: when a dynamic PCC rule is provisioned without an explicit

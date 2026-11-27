@@ -37,8 +37,9 @@ namespace oai::pcf::app {
 //   (rollback path)
 //
 // PCC rule identity and precedence are kept disjoint by construction rather
-// than negotiated: Policy Authorization owns the "PA-QOS-" id prefix and a
-// reserved precedence band [TS 29.512 §4.1.4.2.1, TS 23.503 §6.3.1]. Active
+// than negotiated: Policy Authorization owns the "PA-QOS-" id prefix and gives
+// its rules a precedence in 100..255 that no other PCC rule of the PDU session
+// uses [TS 29.512 §4.1.4.2.1, §5.6.2.6 NOTE 4; TS 23.503 §6.3.1]. Active
 // conflict detection and slice-level resource admission control are not
 // implemented -- see the TODOs in pcf_sm_policy_control.hpp.
 
@@ -65,7 +66,7 @@ class pcf_app {
   std::string m_pcf_instance_id;      // PCF instance id
   // for Event Handling
   pcf_event& m_event_sub;
-  bs2::connection m_task_connection;
+  bs2::scoped_connection m_task_connection;
 
   std::shared_ptr<pcf_smpc> m_pcf_smpc_service;
   std::shared_ptr<oai::pcf::app::sm_policy::policy_storage> m_policy_storage;

@@ -244,19 +244,20 @@ class pcf_smpc {
   // id/precedence-band convention [TS 23.503 §6.1.3.7, TS 29.512 §4.1.4.2.1],
   // and network-slice resource admission control [TS 29.512 §4.2.6.8,
   // TS 23.503 §6.1.4]. Today collisions are avoided by construction (the PA
-  // side's id prefix + reserved precedence band) and the only capacity gate is
-  // the per-session cumulative Session-AMBR check in
+  // side's id prefix + a precedence no other rule of the PDU session uses) and
+  // the only capacity gate is the per-session cumulative Session-AMBR check in
   // validate_qos_authorization().
 
   // TODO [QOS-MON] Monitoring coordination (Phase 4) [TS 29.512 §4.2.3.25].
 
-  // for Event Handling
+  // for Event Handling. Scoped: disconnected when this object is destroyed,
+  // so no signal calls into it afterwards.
   pcf_event& m_event_sub;
-  bs2::connection m_sm_session_binding_connection;
-  bs2::connection m_sm_update_decision_connection;
-  bs2::connection m_notify_committed_decision_connection;
-  bs2::connection m_task_tick_connection;
-  bs2::connection m_get_association_decision_connection;
+  bs2::scoped_connection m_sm_session_binding_connection;
+  bs2::scoped_connection m_sm_update_decision_connection;
+  bs2::scoped_connection m_notify_committed_decision_connection;
+  bs2::scoped_connection m_task_tick_connection;
+  bs2::scoped_connection m_get_association_decision_connection;
 };
 }  // namespace oai::pcf::app
 #endif /* FILE_PCF_SM_POLICY_CONTROL_SEEN */

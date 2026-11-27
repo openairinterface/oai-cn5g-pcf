@@ -48,7 +48,7 @@ class pcf_nrf {
   std::string m_pcf_instance_id;      // PCF instance id
   // for Event Handling
   pcf_event& m_event_sub;
-  bs2::connection m_task_connection;
+  bs2::scoped_connection m_task_connection;
   std::string m_nrf_url;
 
   /**
